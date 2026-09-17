@@ -10,7 +10,27 @@ export type DeadlineInput = {
   faellig_am: string;
   typ: Enums<"deadline_typ">;
   kategorie: Enums<"deadline_kategorie">;
+  /** ISO-Datum: wenn gesetzt, wöchentliche Einzel-Instanzen bis einschließlich diesem Datum anlegen. */
+  wiederholenBisDatum?: string | null;
 };
+
+function woechentlicheTermine(start: string, bisDatum: string): string[] {
+  const termine: string[] = [start];
+  const startDatum = new Date(start);
+  const ende = new Date(bisDatum);
+  ende.setHours(23, 59, 59, 999);
+
+  let naechster = new Date(startDatum);
+  naechster.setDate(naechster.getDate() + 7);
+
+  while (naechster <= ende) {
+    termine.push(naechster.toISOString());
+    naechster = new Date(naechster);
+    naechster.setDate(naechster.getDate() + 7);
+  }
+
+  return termine;
+}
 
 export async function createDeadline(input: DeadlineInput) {
   const supabase = await createClient();
@@ -19,16 +39,25 @@ export async function createDeadline(input: DeadlineInput) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht angemeldet");
 
-  const payload: TablesInsert<"deadline"> = {
+  const termine = input.wiederholenBisDatum
+    ? woechentlicheTermine(input.faellig_am, input.wiederholenBisDatum)
+    : [input.faellig_am];
+
+  const wiederhol_regel = input.wiederholenBisDatum
+    ? `woechentlich_bis_${input.wiederholenBisDatum}`
+    : null;
+
+  const payload: TablesInsert<"deadline">[] = termine.map((faellig_am) => ({
     user_id: user.id,
     fach_id: input.fach_id,
     titel: input.titel,
-    faellig_am: input.faellig_am,
+    faellig_am,
     typ: input.typ,
     kategorie: input.kategorie,
-  };
+    wiederhol_regel,
+  }));
 
-  const { data, error } = await supabase.from("deadline").insert(payload).select().single();
+  const { data, error } = await supabase.from("deadline").insert(payload).select();
   if (error) throw new Error(error.message);
 
   revalidatePath("/");

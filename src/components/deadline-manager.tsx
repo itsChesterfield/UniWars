@@ -54,6 +54,7 @@ const LEERES_FORMULAR: DeadlineInput = {
   faellig_am: toDatetimeLocal(new Date().toISOString()),
   typ: "SONSTIGE",
   kategorie: "NORMAL",
+  wiederholenBisDatum: null,
 };
 
 export function DeadlineManager({
@@ -110,8 +111,11 @@ export function DeadlineManager({
           posthog.capture("deadline_bearbeitet", { deadline_id: editId });
         } else {
           const created = await createDeadline(payload);
-          setDeadlines((prev) => [...prev, created]);
-          posthog.capture("deadline_angelegt", { deadline_id: created.id });
+          setDeadlines((prev) => [...prev, ...created]);
+          posthog.capture("deadline_angelegt", {
+            anzahl: created.length,
+            wiederkehrend: Boolean(payload.wiederholenBisDatum),
+          });
         }
         setFormOpen(false);
       } catch (err) {
@@ -267,6 +271,40 @@ export function DeadlineManager({
               </option>
             ))}
           </select>
+
+          {!editId && (
+            <>
+              <label className="fach-checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.wiederholenBisDatum != null}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      wiederholenBisDatum: e.target.checked
+                        ? new Date().toISOString().slice(0, 10)
+                        : null,
+                    }))
+                  }
+                />
+                Wöchentlich wiederholen
+              </label>
+
+              {form.wiederholenBisDatum != null && (
+                <>
+                  <label htmlFor="deadline-wiederholen-bis">Bis einschließlich</label>
+                  <input
+                    id="deadline-wiederholen-bis"
+                    type="date"
+                    value={form.wiederholenBisDatum}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, wiederholenBisDatum: e.target.value }))
+                    }
+                  />
+                </>
+              )}
+            </>
+          )}
 
           <div className="crud-form-actions">
             <button type="submit" className="btn-primary" disabled={isPending}>

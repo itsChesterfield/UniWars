@@ -2,7 +2,13 @@
 
 import { useState, useTransition } from "react";
 import posthog from "posthog-js";
-import { createFach, updateFach, archiveFach, type FachInput } from "@/app/fach/actions";
+import {
+  createFach,
+  updateFach,
+  archiveFach,
+  fehltageAendern,
+  type FachInput,
+} from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Fach = Tables<"fach">;
@@ -82,6 +88,17 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
     });
   }
 
+  function handleFehltag(id: string, delta: number) {
+    startTransition(async () => {
+      try {
+        const updated = await fehltageAendern(id, delta);
+        setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      }
+    });
+  }
+
   return (
     <section className="fach-section">
       <header className="fach-section-header">
@@ -110,6 +127,34 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
                   .filter(Boolean)
                   .join(" · ")}
               </span>
+              {fach.anwesenheitspflicht && (
+                <span
+                  className={`fach-fehltage ${
+                    fach.max_fehltage != null && fach.fehltage_genutzt >= fach.max_fehltage
+                      ? "fach-fehltage-warnung"
+                      : ""
+                  }`}
+                >
+                  Fehltage: {fach.fehltage_genutzt}
+                  {fach.max_fehltage != null ? `/${fach.max_fehltage}` : ""}
+                  <button
+                    type="button"
+                    onClick={() => handleFehltag(fach.id, 1)}
+                    aria-label="Fehltag hinzufügen"
+                  >
+                    +1
+                  </button>
+                  {fach.fehltage_genutzt > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleFehltag(fach.id, -1)}
+                      aria-label="Fehltag entfernen"
+                    >
+                      -1
+                    </button>
+                  )}
+                </span>
+              )}
             </div>
             <div className="fach-card-actions">
               <button type="button" onClick={() => openEditForm(fach)}>

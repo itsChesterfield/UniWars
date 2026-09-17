@@ -71,3 +71,28 @@ export async function archiveFach(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/");
 }
+
+export async function fehltageAendern(id: string, delta: number) {
+  const supabase = await createClient();
+
+  const { data: aktuell, error: leseFehler } = await supabase
+    .from("fach")
+    .select("fehltage_genutzt")
+    .eq("id", id)
+    .single();
+  if (leseFehler) throw new Error(leseFehler.message);
+
+  const neuerWert = Math.max(0, aktuell.fehltage_genutzt + delta);
+
+  const { data, error } = await supabase
+    .from("fach")
+    .update({ fehltage_genutzt: neuerWert })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  return data;
+}

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { DashboardContent } from "@/components/dashboard-content";
 
@@ -23,6 +24,9 @@ export default async function DashboardPage() {
     { data: pruefungen, error: pruefungenError },
     { data: stundenplanEintraege, error: stundenplanError },
     { data: notenschnitt, error: notenschnittError },
+    { data: lernSessions, error: lernSessionError },
+    { data: benachrichtigungen, error: benachrichtigungError },
+    { data: settingsRoh, error: settingsError },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -31,6 +35,13 @@ export default async function DashboardPage() {
     supabase.from("pruefung").select("*").order("datum", { ascending: true }),
     supabase.from("stundenplan_eintrag").select("*"),
     supabase.rpc("notenschnitt"),
+    supabase.from("lern_session").select("*"),
+    supabase
+      .from("benachrichtigung")
+      .select("*")
+      .order("erstellt_am", { ascending: false })
+      .limit(20),
+    supabase.from("settings").select("*").eq("user_id", user.id).single(),
   ]);
 
   const error =
@@ -40,12 +51,17 @@ export default async function DashboardPage() {
     notesError ||
     pruefungenError ||
     stundenplanError ||
-    notenschnittError;
+    notenschnittError ||
+    lernSessionError ||
+    benachrichtigungError ||
+    settingsError;
   if (error) throw new Error(error.message);
 
+  const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
+
   return (
-    <div className="dashboard">
-      <Sidebar email={user.email ?? ""} />
+    <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
+      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} />
       <main className="dashboard-main">
         <h1>Übersicht</h1>
         <Suspense fallback={null}>
@@ -57,6 +73,9 @@ export default async function DashboardPage() {
             pruefungen={pruefungen ?? []}
             stundenplanEintraege={stundenplanEintraege ?? []}
             notenschnitt={notenschnitt}
+            lernSessions={lernSessions ?? []}
+            benachrichtigungen={benachrichtigungen ?? []}
+            sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
           />
         </Suspense>
       </main>
