@@ -4,15 +4,11 @@ import { useState, useTransition } from "react";
 import { setSichtbareWidgets } from "@/app/settings/actions";
 
 export const ALLE_WIDGETS = [
-  { key: "heute", label: "Heute" },
-  { key: "faecher", label: "Fächer" },
-  { key: "kalender", label: "Kalender" },
-  { key: "stundenplan", label: "Stundenplan" },
-  { key: "deadlines", label: "Deadlines" },
-  { key: "todos", label: "To-Dos" },
+  { key: "heute", label: "Termine" },
+  { key: "aufgaben", label: "Aufgaben & Fristen" },
   { key: "noten", label: "Noten" },
-  { key: "pruefungen", label: "Prüfungen" },
-  { key: "rechner", label: "Rechner" },
+  { key: "fortschritt", label: "Fortschritt" },
+  { key: "faecher", label: "Fächer" },
 ] as const;
 
 export function istWidgetSichtbar(sichtbareWidgets: string[], key: string): boolean {
@@ -35,7 +31,7 @@ export function WidgetToggle({ initialSichtbareWidgets }: { initialSichtbareWidg
 
   return (
     <div className="widget-toggle">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="btn-secondary">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="btng">
         Dashboard anpassen
       </button>
 

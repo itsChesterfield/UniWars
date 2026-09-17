@@ -63,7 +63,6 @@ export default async function DashboardPage() {
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
       <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} />
       <main className="dashboard-main">
-        <h1>Übersicht</h1>
         <Suspense fallback={null}>
           <DashboardContent
             faecher={faecher ?? []}
@@ -76,6 +75,8 @@ export default async function DashboardPage() {
             lernSessions={lernSessions ?? []}
             benachrichtigungen={benachrichtigungen ?? []}
             sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
+            settings={settings}
+            userEmail={user.email ?? ""}
           />
         </Suspense>
       </main>

@@ -100,13 +100,16 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   }
 
   return (
-    <section className="fach-section">
-      <header className="fach-section-header">
-        <h2>Fächer</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
-          + Fach
+    <section className="card">
+      <div className="ch" style={{ marginBottom: 14 }}>
+        <span className="ct">Fächer</span>
+        <button type="button" onClick={openCreateForm} className="btng" style={{ padding: "5px 11px" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Fach
         </button>
-      </header>
+      </div>
 
       {faecher.length === 0 && !formOpen && (
         <p className="empty-state">Noch keine Fächer angelegt.</p>
@@ -116,8 +119,8 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
         {faecher.map((fach) => (
           <li key={fach.id} className="fach-card">
             <span
-              className="fach-farbpunkt"
-              style={{ backgroundColor: fach.farbe ?? "#94a3b8" }}
+              className="dot"
+              style={{ background: fach.farbe ?? "#94a3b8" }}
               aria-hidden
             />
             <div className="fach-card-info">
@@ -242,7 +245,7 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
           )}
 
           <div className="fach-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             <button type="button" onClick={closeForm} disabled={isPending}>

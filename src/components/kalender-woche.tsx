@@ -81,8 +81,7 @@ export function KalenderWoche({
   );
 
   return (
-    <section className="crud-section">
-      <h2>Kalender — diese Woche</h2>
+    <>
       <div className="stundenplan-grid" style={{ height: RASTER_HOEHE + 24 }}>
         <div className="stundenplan-stunden">
           {stunden.map((h) => (
@@ -155,6 +154,6 @@ export function KalenderWoche({
           );
         })}
       </div>
-    </section>
+    </>
   );
 }

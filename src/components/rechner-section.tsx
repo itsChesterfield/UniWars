@@ -21,7 +21,35 @@ function summeUndGewicht(notes: Note[]) {
   );
 }
 
-function ZielnotenRechner({ notes }: { notes: Note[] }) {
+export function NotenPrognose({ notenschnitt, notes }: { notenschnitt: number | null; notes: Note[] }) {
+  if (notenschnitt == null || notes.length === 0) {
+    return <p className="empty-state">Noch keine Noten für eine Prognose.</p>;
+  }
+
+  const anteil = Math.max(0, Math.min(1, (5 - notenschnitt) / 4));
+
+  return (
+    <div>
+      <div className="row" style={{ gap: 18, alignItems: "flex-end", marginTop: 8 }}>
+        <div>
+          <div className="muted" style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Aktueller Schnitt</div>
+          <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 34, fontWeight: 700, lineHeight: 1 }}>
+            Ø {notenschnitt.toFixed(1)}
+          </div>
+        </div>
+      </div>
+      <div className="progress-track" style={{ marginTop: 20 }}>
+        <div className="progress-fill" style={{ width: `${anteil * 100}%` }} />
+      </div>
+      <p className="muted" style={{ fontSize: 12, marginTop: 12 }}>
+        Beruht auf {notes.length} {notes.length === 1 ? "eingetragenen Note" : "eingetragenen Noten"}.
+        Aktualisiert sich mit jeder neuen Note.
+      </p>
+    </div>
+  );
+}
+
+export function ZielnotenRechner({ notes }: { notes: Note[] }) {
   const [zielschnitt, setZielschnitt] = useState("2.0");
   const [verbleibendesGewicht, setVerbleibendesGewicht] = useState("1");
 
@@ -47,10 +75,10 @@ function ZielnotenRechner({ notes }: { notes: Note[] }) {
 
   return (
     <div className="rechner-karte">
-      <h3>Zielnoten-Rechner</h3>
       <label htmlFor="ziel-schnitt">Zielschnitt</label>
       <input
         id="ziel-schnitt"
+        className="field"
         type="number"
         step="0.1"
         min="1"
@@ -61,6 +89,7 @@ function ZielnotenRechner({ notes }: { notes: Note[] }) {
       <label htmlFor="ziel-gewicht">Verbleibendes Gewicht</label>
       <input
         id="ziel-gewicht"
+        className="field"
         type="number"
         step="0.1"
         min="0"
@@ -72,7 +101,7 @@ function ZielnotenRechner({ notes }: { notes: Note[] }) {
   );
 }
 
-function WasWaereWenn({ notes }: { notes: Note[] }) {
+export function WasWaereWenn({ notes }: { notes: Note[] }) {
   const [wert, setWert] = useState("2.0");
   const [gewichtNeu, setGewichtNeu] = useState("1");
 
@@ -91,20 +120,21 @@ function WasWaereWenn({ notes }: { notes: Note[] }) {
 
   return (
     <div className="rechner-karte">
-      <h3>Was-wäre-wenn</h3>
       <label htmlFor="www-wert">Angenommene Note</label>
       <input
         id="www-wert"
-        type="number"
-        step="0.1"
+        type="range"
         min="1"
         max="5"
+        step="0.1"
         value={wert}
         onChange={(e) => setWert(e.target.value)}
+        style={{ width: "100%", accentColor: "var(--accent)", marginBottom: 4 }}
       />
       <label htmlFor="www-gewicht">Gewicht</label>
       <input
         id="www-gewicht"
+        className="field"
         type="number"
         step="0.1"
         min="0"
@@ -116,7 +146,7 @@ function WasWaereWenn({ notes }: { notes: Note[] }) {
   );
 }
 
-function BestandenUebersicht({ pruefungen }: { pruefungen: Pruefung[] }) {
+export function BestandenUebersicht({ pruefungen }: { pruefungen: Pruefung[] }) {
   const gruppen = useMemo(() => {
     const zaehler: Record<Enums<"pruefung_status">, number> = {
       ANSTEHEND: 0,
@@ -128,21 +158,18 @@ function BestandenUebersicht({ pruefungen }: { pruefungen: Pruefung[] }) {
   }, [pruefungen]);
 
   return (
-    <div className="rechner-karte">
-      <h3>Bestanden-Übersicht</h3>
-      <ul className="bestanden-liste">
-        {Object.entries(STATUS_LABEL).map(([status, label]) => (
-          <li key={status}>
-            <span className={`status-marke status-${status.toLowerCase()}`} aria-hidden />
-            {label}: <strong>{gruppen[status as Enums<"pruefung_status">]}</strong>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <ul className="bestanden-liste">
+      {Object.entries(STATUS_LABEL).map(([status, label]) => (
+        <li key={status}>
+          <span className={`status-marke status-${status.toLowerCase()}`} aria-hidden />
+          {label}: <strong>{gruppen[status as Enums<"pruefung_status">]}</strong>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-function PruefungsCountdown({
+export function PruefungsCountdown({
   pruefungen,
   faecher,
 }: {
@@ -154,12 +181,7 @@ function PruefungsCountdown({
     .sort((a, b) => new Date(a.datum).getTime() - new Date(b.datum).getTime())[0];
 
   if (!naechste) {
-    return (
-      <div className="rechner-karte">
-        <h3>Prüfungs-Countdown</h3>
-        <p className="empty-state">Keine anstehende Prüfung.</p>
-      </div>
-    );
+    return <p className="empty-state">Keine anstehende Prüfung.</p>;
   }
 
   const fach = faecher.find((f) => f.id === naechste.fach_id);
@@ -168,18 +190,22 @@ function PruefungsCountdown({
   );
 
   return (
-    <div className="rechner-karte">
-      <h3>Prüfungs-Countdown</h3>
-      <p className="rechner-ergebnis">
-        {naechste.titel} {fach ? `(${fach.name})` : ""}
-        <br />
-        {diffTage <= 0 ? "heute" : `in ${diffTage} Tagen`}
-      </p>
+    <div className="rowb" style={{ padding: "13px 15px", borderRadius: 12, background: "var(--accent-soft)" }}>
+      <div>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{naechste.titel}</div>
+        <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{fach?.name}</div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1, color: "var(--accent-strong)" }}>
+          {diffTage <= 0 ? "heute" : diffTage}
+        </div>
+        {diffTage > 0 && <div style={{ fontSize: 11, fontWeight: 600, color: "var(--accent-strong)" }}>Tage</div>}
+      </div>
     </div>
   );
 }
 
-function LernzeitStatistik({
+export function LernzeitStatistik({
   lernSessions,
   faecher,
 }: {
@@ -202,54 +228,32 @@ function LernzeitStatistik({
       .sort((a, b) => b.minuten - a.minuten);
   }, [lernSessions, faecher]);
 
+  const gesamtMinuten = proFach.reduce((sum, f) => sum + f.minuten, 0);
   const maxMinuten = Math.max(...proFach.map((f) => f.minuten), 1);
 
-  return (
-    <div className="rechner-karte">
-      <h3>Lernzeit-Statistik</h3>
-      {proFach.length === 0 ? (
-        <p className="empty-state">Noch keine Lernzeit erfasst.</p>
-      ) : (
-        <ul className="lernzeit-liste">
-          {proFach.map((f) => (
-            <li key={f.fachId} className="lernzeit-zeile">
-              <span className="lernzeit-name">{f.name}</span>
-              <div className="lernzeit-balken-spur">
-                <div
-                  className="lernzeit-balken"
-                  style={{ width: `${(f.minuten / maxMinuten) * 100}%`, backgroundColor: f.farbe }}
-                />
-              </div>
-              <span className="lernzeit-wert">{Math.round(f.minuten / 60)} h</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+  if (proFach.length === 0) {
+    return <p className="empty-state">Noch keine Lernzeit erfasst.</p>;
+  }
 
-export function RechnerSection({
-  notes,
-  pruefungen,
-  lernSessions,
-  faecher,
-}: {
-  notes: Note[];
-  pruefungen: Pruefung[];
-  lernSessions: LernSession[];
-  faecher: FachOption[];
-}) {
   return (
-    <section className="crud-section">
-      <h2>Rechner</h2>
-      <div className="rechner-grid">
-        <ZielnotenRechner notes={notes} />
-        <WasWaereWenn notes={notes} />
-        <BestandenUebersicht pruefungen={pruefungen} />
-        <PruefungsCountdown pruefungen={pruefungen} faecher={faecher} />
-        <LernzeitStatistik lernSessions={lernSessions} faecher={faecher} />
+    <div className="lernzeit-balken-reihe">
+      {proFach.map((f) => (
+        <div key={f.fachId} className="lernzeit-saeule">
+          <span className="lernzeit-saeule-wert">{Math.round((f.minuten / 60) * 10) / 10} h</span>
+          <div
+            className="lernzeit-saeule-balken"
+            style={{ height: Math.max((f.minuten / maxMinuten) * 120, 6), backgroundColor: f.farbe }}
+          />
+          <span className="lernzeit-saeule-name">{f.name}</span>
+        </div>
+      ))}
+      <div style={{ width: 1, alignSelf: "stretch", background: "var(--border)", margin: "10px 0" }} />
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, paddingBottom: 24 }}>
+        <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Gesamt</span>
+        <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 28, fontWeight: 700 }}>
+          {Math.round(gesamtMinuten / 60)} h
+        </span>
       </div>
-    </section>
+    </div>
   );
 }

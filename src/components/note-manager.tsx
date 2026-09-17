@@ -20,10 +20,12 @@ export function NoteManager({
   initialNotes,
   faecher,
   notenschnitt,
+  embedded = false,
 }: {
   initialNotes: Note[];
   faecher: FachOption[];
   notenschnitt: number | null;
+  embedded?: boolean;
 }) {
   const [notes, setNotes] = useState(initialNotes);
   const [formOpen, setFormOpen] = useState(false);
@@ -86,35 +88,44 @@ export function NoteManager({
     });
   }
 
-  return (
-    <section className="crud-section">
-      <header className="crud-section-header">
-        <h2>Noten</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
+  const inhalt = (
+    <>
+      <div className="rowb" style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            fontFamily: "var(--font-display), sans-serif",
+            fontSize: 34,
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          Ø {notenschnitt != null ? notenschnitt.toFixed(1) : "–"}
+        </div>
+        <button type="button" onClick={openCreateForm} className="btnp">
           + Note
         </button>
-      </header>
-
-      <p className="notenschnitt">
-        Schnitt: <strong>{notenschnitt != null ? notenschnitt.toFixed(1) : "–"}</strong>
-      </p>
+      </div>
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Noten.</p>}
 
-      <ul className="entry-list">
+      <ul className="fach-list">
         {sortiert.map((n) => {
           const fach = faecher.find((f) => f.id === n.fach_id);
           return (
-            <li key={n.id} className="entry-row">
-              <div className="entry-info">
-                <span className="entry-title">
-                  {n.titel} — {n.wert.toFixed(1)}
-                </span>
-                <span className="entry-meta">
+            <li key={n.id} className="fach-card">
+              <span className="dot" style={{ background: fach?.farbe ?? "#94a3b8" }} aria-hidden />
+              <div className="fach-card-info">
+                <span className="fach-card-name">{n.titel}</span>
+                <span className="fach-card-meta">
                   {[fach?.name, `Gewicht ${n.gewicht}`, n.datum].filter(Boolean).join(" · ")}
                 </span>
               </div>
-              <div className="entry-actions">
+              <span
+                style={{ fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}
+              >
+                {n.wert.toFixed(1)}
+              </span>
+              <div className="fach-card-actions">
                 <button type="button" onClick={() => openEditForm(n)}>
                   Bearbeiten
                 </button>
@@ -187,7 +198,7 @@ export function NoteManager({
           />
 
           <div className="crud-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
@@ -196,6 +207,17 @@ export function NoteManager({
           </div>
         </form>
       )}
+    </>
+  );
+
+  if (embedded) return inhalt;
+
+  return (
+    <section className="card">
+      <div className="ch">
+        <span className="ct">Noten</span>
+      </div>
+      {inhalt}
     </section>
   );
 }

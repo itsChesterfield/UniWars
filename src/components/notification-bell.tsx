@@ -24,9 +24,12 @@ export function NotificationBell({ initial }: { initial: Benachrichtigung[] }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Benachrichtigungen"
-        className="notification-bell-toggle"
+        className="icon-btn"
       >
-        🔔
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
+          <path d="M10 20a2 2 0 0 0 4 0" />
+        </svg>
         {ungelesen > 0 && <span className="notification-count">{ungelesen}</span>}
       </button>
 
@@ -42,7 +45,20 @@ export function NotificationBell({ initial }: { initial: Benachrichtigung[] }) {
                   className={n.gelesen ? "" : "notification-unread"}
                   onClick={() => markiereGelesen(n.id)}
                 >
-                  {n.text}
+                  <span
+                    className="dot"
+                    style={{ marginTop: 6, background: n.gelesen ? "var(--faint)" : "var(--danger)" }}
+                    aria-hidden
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, lineHeight: 1.4 }}>{n.text}</div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>
+                      {new Date(n.erstellt_am).toLocaleString("de-DE", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

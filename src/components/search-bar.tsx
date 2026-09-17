@@ -48,9 +48,15 @@ export function SearchBar() {
 
   return (
     <div className="search-bar">
+      <span className="search-bar-icon" aria-hidden>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.2-3.2" />
+        </svg>
+      </span>
       <input
         type="search"
-        placeholder="Suchen… (Fach, Deadline, To-Do, Note)"
+        placeholder="Alles durchsuchen — Fach, Deadline, To-Do, Note …"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -59,6 +65,7 @@ export function SearchBar() {
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
+      <span className="kbd">Q</span>
 
       {open && query.trim().length >= 2 && (
         <div className="search-overlay">

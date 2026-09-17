@@ -38,9 +38,11 @@ function leeresFormular(ersteFachId: string | null): PruefungInput {
 export function PruefungManager({
   initialPruefungen,
   faecher,
+  embedded = false,
 }: {
   initialPruefungen: Pruefung[];
   faecher: FachOption[];
+  embedded?: boolean;
 }) {
   const [pruefungen, setPruefungen] = useState(initialPruefungen);
   const [formOpen, setFormOpen] = useState(false);
@@ -111,14 +113,14 @@ export function PruefungManager({
     });
   }
 
-  return (
-    <section className="crud-section">
-      <header className="crud-section-header">
-        <h2>Prüfungen</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
+  const inhalt = (
+    <>
+      <div className="rowb" style={{ marginBottom: 14 }}>
+        <span />
+        <button type="button" onClick={openCreateForm} className="btnp">
           + Prüfung
         </button>
-      </header>
+      </div>
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Prüfungen.</p>}
 
@@ -216,7 +218,7 @@ export function PruefungManager({
           </select>
 
           <div className="crud-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
@@ -225,6 +227,17 @@ export function PruefungManager({
           </div>
         </form>
       )}
+    </>
+  );
+
+  if (embedded) return inhalt;
+
+  return (
+    <section className="card">
+      <div className="ch">
+        <span className="ct">Prüfungen</span>
+      </div>
+      {inhalt}
     </section>
   );
 }

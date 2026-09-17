@@ -27,9 +27,11 @@ const LEERES_FORMULAR: TodoInput = { titel: "", fach_id: null, prioritaet: "MITT
 export function TodoManager({
   initialTodos,
   faecher,
+  embedded = false,
 }: {
   initialTodos: Todo[];
   faecher: FachOption[];
+  embedded?: boolean;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [formOpen, setFormOpen] = useState(false);
@@ -105,14 +107,14 @@ export function TodoManager({
     });
   }
 
-  return (
-    <section className="crud-section">
-      <header className="crud-section-header">
-        <h2>To-Dos</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
+  const inhalt = (
+    <>
+      <div className="rowb" style={{ marginBottom: 14 }}>
+        <span />
+        <button type="button" onClick={openCreateForm} className="btnp">
           + To-Do
         </button>
-      </header>
+      </div>
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine To-Dos.</p>}
 
@@ -190,7 +192,7 @@ export function TodoManager({
           </select>
 
           <div className="crud-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
@@ -199,6 +201,17 @@ export function TodoManager({
           </div>
         </form>
       )}
+    </>
+  );
+
+  if (embedded) return inhalt;
+
+  return (
+    <section className="card">
+      <div className="ch">
+        <span className="ct">To-Dos</span>
+      </div>
+      {inhalt}
     </section>
   );
 }

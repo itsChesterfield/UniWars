@@ -36,9 +36,13 @@ export function FachFilterChips({ faecher }: { faecher: FachOption[] }) {
           key={f.id}
           type="button"
           className={`chip ${aktivFachId === f.id ? "chip-active" : ""}`}
-          style={{ borderColor: f.farbe ?? undefined }}
           onClick={() => setFilter(f.id)}
         >
+          <span
+            className="dot"
+            style={{ background: aktivFachId === f.id ? "#fff" : f.farbe ?? "#94a3b8" }}
+            aria-hidden
+          />
           {f.name}
         </button>
       ))}

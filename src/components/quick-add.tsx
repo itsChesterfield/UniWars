@@ -120,12 +120,14 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
     <>
       <button
         type="button"
-        className="quick-add-fab"
+        className="btnp"
         onClick={() => setOpen(true)}
-        aria-label="Schnell hinzufügen"
-        title="Schnell hinzufügen (Taste Q)"
+        title="Schnell erfassen (Taste Q)"
       >
-        +
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Schnell erfassen
       </button>
 
       {open && (
@@ -135,7 +137,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <h3>Schnell hinzufügen</h3>
+            <h3>Neu anlegen</h3>
             {error && <p className="auth-error">{error}</p>}
 
             <select value={typ} onChange={(e) => setTyp(e.target.value as QuickAddTyp)}>
@@ -166,7 +168,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
             />
 
             <div className="crud-form-actions">
-              <button type="submit" className="btn-primary" disabled={isPending}>
+              <button type="submit" className="btnp" disabled={isPending}>
                 {isPending ? "Speichern…" : "Hinzufügen (Enter)"}
               </button>
               <button type="button" onClick={() => setOpen(false)} disabled={isPending}>

@@ -60,9 +60,11 @@ const LEERES_FORMULAR: DeadlineInput = {
 export function DeadlineManager({
   initialDeadlines,
   faecher,
+  embedded = false,
 }: {
   initialDeadlines: Deadline[];
   faecher: FachOption[];
+  embedded?: boolean;
 }) {
   const [deadlines, setDeadlines] = useState(initialDeadlines);
   const [formOpen, setFormOpen] = useState(false);
@@ -151,14 +153,14 @@ export function DeadlineManager({
     });
   }
 
-  return (
-    <section className="crud-section">
-      <header className="crud-section-header">
-        <h2>Deadlines</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
+  const inhalt = (
+    <>
+      <div className="rowb" style={{ marginBottom: 14 }}>
+        <span />
+        <button type="button" onClick={openCreateForm} className="btnp">
           + Deadline
         </button>
-      </header>
+      </div>
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Deadlines.</p>}
 
@@ -307,7 +309,7 @@ export function DeadlineManager({
           )}
 
           <div className="crud-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
@@ -316,6 +318,17 @@ export function DeadlineManager({
           </div>
         </form>
       )}
+    </>
+  );
+
+  if (embedded) return inhalt;
+
+  return (
+    <section className="card">
+      <div className="ch">
+        <span className="ct">Deadlines</span>
+      </div>
+      {inhalt}
     </section>
   );
 }

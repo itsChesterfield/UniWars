@@ -51,9 +51,11 @@ function leeresFormular(ersteFachId: string | null): StundenplanInput {
 export function StundenplanManager({
   initialEintraege,
   faecher,
+  embedded = false,
 }: {
   initialEintraege: Eintrag[];
   faecher: FachOption[];
+  embedded?: boolean;
 }) {
   const [eintraege, setEintraege] = useState(initialEintraege);
   const [formOpen, setFormOpen] = useState(false);
@@ -122,14 +124,14 @@ export function StundenplanManager({
   const rasterHoehe = (END_STUNDE - BASIS_STUNDE) * 60 * PX_PRO_MINUTE;
   const stunden = Array.from({ length: END_STUNDE - BASIS_STUNDE + 1 }, (_, i) => BASIS_STUNDE + i);
 
-  return (
-    <section className="crud-section">
-      <header className="crud-section-header">
-        <h2>Stundenplan</h2>
-        <button type="button" onClick={openCreateForm} className="btn-primary">
+  const inhalt = (
+    <>
+      <div className="rowb" style={{ marginBottom: 14 }}>
+        <span />
+        <button type="button" onClick={openCreateForm} className="btnp">
           + Eintrag
         </button>
-      </header>
+      </div>
 
       {error && <p className="auth-error">{error}</p>}
 
@@ -243,7 +245,7 @@ export function StundenplanManager({
           />
 
           <div className="crud-form-actions">
-            <button type="submit" className="btn-primary" disabled={isPending}>
+            <button type="submit" className="btnp" disabled={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
             {editId && (
@@ -261,6 +263,17 @@ export function StundenplanManager({
           </div>
         </form>
       )}
+    </>
+  );
+
+  if (embedded) return inhalt;
+
+  return (
+    <section className="card">
+      <div className="ch">
+        <span className="ct">Stundenplan</span>
+      </div>
+      {inhalt}
     </section>
   );
 }

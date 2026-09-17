@@ -113,36 +113,40 @@ export function HeuteView({
   });
 
   return (
-    <section className="heute-card">
-      <h2>Heute</h2>
+    <>
       {timeline.length === 0 ? (
         <p className="empty-state">Nichts Anstehendes für heute.</p>
       ) : (
         <ul className="heute-liste">
-          {timeline.map((item) => (
-            <li
-              key={item.key}
-              className={`heute-item ${item.erledigt ? "entry-erledigt" : ""}`}
-            >
-              {item.onToggle ? (
-                <input
-                  type="checkbox"
-                  checked={item.erledigt}
-                  onChange={item.onToggle}
-                  aria-label="Erledigt"
-                />
-              ) : (
-                <span className="heute-icon" aria-hidden>
-                  📅
+          {timeline.map((item) => {
+            const dringend = item.typ === "Deadline" && !item.erledigt;
+            return (
+              <li
+                key={item.key}
+                className={`heute-item ${item.erledigt ? "entry-erledigt" : ""} ${dringend ? "entry-dringend" : ""}`}
+              >
+                {item.onToggle ? (
+                  <input
+                    type="checkbox"
+                    checked={item.erledigt}
+                    onChange={item.onToggle}
+                    aria-label="Erledigt"
+                  />
+                ) : (
+                  <span className="heute-icon" aria-hidden>
+                    📅
+                  </span>
+                )}
+                {item.zeit && <span className="heute-zeit">{item.zeit}</span>}
+                <span className="entry-title" style={{ flex: 1 }}>
+                  {item.titel}
                 </span>
-              )}
-              {item.zeit && <span className="heute-zeit">{item.zeit}</span>}
-              <span className="heute-typ-marke">{item.typ}</span>
-              <span className="entry-title">{item.titel}</span>
-            </li>
-          ))}
+                <span className={`tag ${dringend ? "tag-danger" : ""}`}>{item.typ}</span>
+              </li>
+            );
+          })}
         </ul>
       )}
-    </section>
+    </>
   );
 }
