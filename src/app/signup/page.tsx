@@ -22,21 +22,37 @@ export default async function SignupPage({
         )}
 
         <div className="auth-field">
-          <label htmlFor="username">Nutzername</label>
-          <input id="username" name="username" type="text" required autoComplete="nickname" maxLength={40} />
+          <label htmlFor="username" className="sr-only">Nutzername</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="Nutzername"
+            required
+            autoComplete="nickname"
+            maxLength={40}
+          />
         </div>
 
         <div className="auth-field">
-          <label htmlFor="email">E-Mail</label>
-          <input id="email" name="email" type="email" required autoComplete="email" />
+          <label htmlFor="email" className="sr-only">E-Mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="E-Mail"
+            required
+            autoComplete="email"
+          />
         </div>
 
         <div className="auth-field">
-          <label htmlFor="password">Passwort</label>
+          <label htmlFor="password" className="sr-only">Passwort</label>
           <input
             id="password"
             name="password"
             type="password"
+            placeholder="Passwort (mind. 6 Zeichen)"
             required
             minLength={6}
             autoComplete="new-password"

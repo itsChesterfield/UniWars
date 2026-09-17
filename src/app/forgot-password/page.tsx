@@ -22,8 +22,15 @@ export default async function ForgotPasswordPage({
         )}
 
         <div className="auth-field">
-          <label htmlFor="email">E-Mail</label>
-          <input id="email" name="email" type="email" required autoComplete="email" />
+          <label htmlFor="email" className="sr-only">E-Mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="E-Mail"
+            required
+            autoComplete="email"
+          />
         </div>
 
         <button formAction={requestPasswordReset} type="submit">

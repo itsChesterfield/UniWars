@@ -17,16 +17,24 @@ export default async function LoginPage({
         {reset && <p className="auth-info">Passwort geändert — du kannst dich jetzt anmelden.</p>}
 
         <div className="auth-field">
-          <label htmlFor="email">E-Mail</label>
-          <input id="email" name="email" type="email" required autoComplete="email" />
+          <label htmlFor="email" className="sr-only">E-Mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="E-Mail"
+            required
+            autoComplete="email"
+          />
         </div>
 
         <div className="auth-field">
-          <label htmlFor="password">Passwort</label>
+          <label htmlFor="password" className="sr-only">Passwort</label>
           <input
             id="password"
             name="password"
             type="password"
+            placeholder="Passwort"
             required
             autoComplete="current-password"
           />

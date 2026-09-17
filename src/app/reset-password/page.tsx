@@ -15,11 +15,12 @@ export default async function ResetPasswordPage({
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-field">
-          <label htmlFor="password">Neues Passwort</label>
+          <label htmlFor="password" className="sr-only">Neues Passwort</label>
           <input
             id="password"
             name="password"
             type="password"
+            placeholder="Neues Passwort"
             required
             minLength={6}
             autoComplete="new-password"
@@ -27,11 +28,12 @@ export default async function ResetPasswordPage({
         </div>
 
         <div className="auth-field">
-          <label htmlFor="password-wiederholung">Wiederholen</label>
+          <label htmlFor="password-wiederholung" className="sr-only">Passwort wiederholen</label>
           <input
             id="password-wiederholung"
             name="password-wiederholung"
             type="password"
+            placeholder="Passwort wiederholen"
             required
             minLength={6}
             autoComplete="new-password"
