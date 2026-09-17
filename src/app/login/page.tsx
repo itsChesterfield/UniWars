@@ -1,0 +1,40 @@
+import Link from "next/link";
+import { login } from "./actions";
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
+  return (
+    <main className="auth-page">
+      <form className="auth-form">
+        <h1>Anmelden</h1>
+
+        {error && <p className="auth-error">{error}</p>}
+
+        <label htmlFor="email">E-Mail</label>
+        <input id="email" name="email" type="email" required autoComplete="email" />
+
+        <label htmlFor="password">Passwort</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+        />
+
+        <button formAction={login} type="submit">
+          Anmelden
+        </button>
+
+        <p>
+          Noch kein Konto? <Link href="/signup">Registrieren</Link>
+        </p>
+      </form>
+    </main>
+  );
+}
