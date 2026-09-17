@@ -12,6 +12,8 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 
 type Eintrag = Tables<"stundenplan_eintrag">;
+type Deadline = Tables<"deadline">;
+type Pruefung = Tables<"pruefung">;
 
 const TAGE: Enums<"wochentag">[] = ["MO", "DI", "MI", "DO", "FR", "SA", "SO"];
 const TAG_LABEL: Record<Enums<"wochentag">, string> = {
@@ -23,10 +25,20 @@ const TAG_LABEL: Record<Enums<"wochentag">, string> = {
   SA: "Sa",
   SO: "So",
 };
+const JS_TAG_ZU_WOCHENTAG: Record<number, Enums<"wochentag">> = {
+  0: "SO",
+  1: "MO",
+  2: "DI",
+  3: "MI",
+  4: "DO",
+  5: "FR",
+  6: "SA",
+};
 
 const BASIS_STUNDE = 8;
-const END_STUNDE = 20;
-const PX_PRO_MINUTE = 1;
+const END_STUNDE = 18;
+const PX_PRO_MINUTE = 0.6;
+const RASTER_HOEHE = (END_STUNDE - BASIS_STUNDE) * 60 * PX_PRO_MINUTE;
 
 function minutenSeitBasis(zeit: string): number {
   const [h, m] = zeit.split(":").map(Number);
@@ -35,6 +47,20 @@ function minutenSeitBasis(zeit: string): number {
 
 function toTimeInput(zeit: string): string {
   return zeit.slice(0, 5);
+}
+
+function montagDieserWoche(datum: Date): Date {
+  const wochentag = datum.getDay();
+  const diffZuMontag = wochentag === 0 ? -6 : 1 - wochentag;
+  const montag = new Date(datum);
+  montag.setDate(datum.getDate() + diffZuMontag);
+  montag.setHours(0, 0, 0, 0);
+  return montag;
+}
+
+function positionFuerZeitpunkt(dt: Date): number {
+  const minuten = (dt.getHours() - BASIS_STUNDE) * 60 + dt.getMinutes();
+  return Math.min(Math.max(minuten * PX_PRO_MINUTE, 0), RASTER_HOEHE - 18);
 }
 
 function leeresFormular(ersteFachId: string | null): StundenplanInput {
@@ -51,10 +77,14 @@ function leeresFormular(ersteFachId: string | null): StundenplanInput {
 export function StundenplanManager({
   initialEintraege,
   faecher,
+  deadlines = [],
+  pruefungen = [],
   embedded = false,
 }: {
   initialEintraege: Eintrag[];
   faecher: FachOption[];
+  deadlines?: Deadline[];
+  pruefungen?: Pruefung[];
   embedded?: boolean;
 }) {
   const [eintraege, setEintraege] = useState(initialEintraege);
@@ -121,8 +151,20 @@ export function StundenplanManager({
     });
   }
 
-  const rasterHoehe = (END_STUNDE - BASIS_STUNDE) * 60 * PX_PRO_MINUTE;
   const stunden = Array.from({ length: END_STUNDE - BASIS_STUNDE + 1 }, (_, i) => BASIS_STUNDE + i);
+
+  const montag = montagDieserWoche(new Date());
+  const sonntag = new Date(montag);
+  sonntag.setDate(montag.getDate() + 6);
+  sonntag.setHours(23, 59, 59, 999);
+  const deadlinesDieseWoche = deadlines.filter((d) => {
+    const dt = new Date(d.faellig_am);
+    return dt >= montag && dt <= sonntag;
+  });
+  const pruefungenDieseWoche = pruefungen.filter((p) => {
+    const dt = new Date(p.datum);
+    return dt >= montag && dt <= sonntag;
+  });
 
   const inhalt = (
     <>
@@ -135,7 +177,7 @@ export function StundenplanManager({
 
       {error && <p className="auth-error">{error}</p>}
 
-      <div className="stundenplan-grid" style={{ height: rasterHoehe + 24 }}>
+      <div className="stundenplan-grid" style={{ height: RASTER_HOEHE + 24 }}>
         <div className="stundenplan-stunden">
           {stunden.map((h) => (
             <div key={h} className="stundenplan-stunde" style={{ height: 60 * PX_PRO_MINUTE }}>
@@ -147,7 +189,7 @@ export function StundenplanManager({
         {TAGE.map((tag) => (
           <div key={tag} className="stundenplan-tag-spalte">
             <div className="stundenplan-tag-label">{TAG_LABEL[tag]}</div>
-            <div className="stundenplan-tag-body" style={{ height: rasterHoehe }}>
+            <div className="stundenplan-tag-body" style={{ height: RASTER_HOEHE }}>
               {eintraege
                 .filter((e) => e.tag === tag)
                 .map((e) => {
@@ -163,7 +205,7 @@ export function StundenplanManager({
                       className="stundenplan-block"
                       style={{
                         top,
-                        height: Math.max(hoehe, 24),
+                        height: Math.max(hoehe, 20),
                         backgroundColor: fach?.farbe ?? "#3b82f6",
                       }}
                       onClick={() => openEditForm(e)}
@@ -176,6 +218,32 @@ export function StundenplanManager({
                     </button>
                   );
                 })}
+
+              {deadlinesDieseWoche
+                .filter((d) => JS_TAG_ZU_WOCHENTAG[new Date(d.faellig_am).getDay()] === tag)
+                .map((d) => (
+                  <div
+                    key={d.id}
+                    className="kalender-marker kalender-marker-deadline"
+                    style={{ top: positionFuerZeitpunkt(new Date(d.faellig_am)) }}
+                    title={d.titel}
+                  >
+                    ⚑ {d.titel}
+                  </div>
+                ))}
+
+              {pruefungenDieseWoche
+                .filter((p) => JS_TAG_ZU_WOCHENTAG[new Date(p.datum).getDay()] === tag)
+                .map((p) => (
+                  <div
+                    key={p.id}
+                    className="kalender-marker kalender-marker-pruefung"
+                    style={{ top: positionFuerZeitpunkt(new Date(p.datum)) }}
+                    title={p.titel}
+                  >
+                    ✎ {p.titel}
+                  </div>
+                ))}
             </div>
           </div>
         ))}

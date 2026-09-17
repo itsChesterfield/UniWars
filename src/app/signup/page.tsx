@@ -21,6 +21,9 @@ export default async function SignupPage({
           </p>
         )}
 
+        <label htmlFor="username">Nutzername</label>
+        <input id="username" name="username" type="text" required autoComplete="nickname" maxLength={40} />
+
         <label htmlFor="email">E-Mail</label>
         <input id="email" name="email" type="email" required autoComplete="email" />
 

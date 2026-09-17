@@ -59,6 +59,11 @@ export default async function DashboardPage() {
 
   const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
 
+  const username =
+    typeof user.user_metadata?.username === "string" && user.user_metadata.username.trim() !== ""
+      ? user.user_metadata.username
+      : (user.email ?? "").split("@")[0];
+
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
       <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} />
@@ -76,7 +81,7 @@ export default async function DashboardPage() {
             benachrichtigungen={benachrichtigungen ?? []}
             sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
             settings={settings}
-            userEmail={user.email ?? ""}
+            username={username}
           />
         </Suspense>
       </main>

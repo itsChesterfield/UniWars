@@ -13,26 +13,45 @@ import type { Tables } from "@/lib/supabase/types";
 
 type Fach = Tables<"fach">;
 
-const LEERES_FORMULAR: FachInput = {
-  name: "",
-  semester: "",
-  farbe: "#3B82F6",
-  ects: null,
-  anwesenheitspflicht: false,
-  max_fehltage: null,
-};
+const FARB_PALETTE = [
+  "#3E6FB0",
+  "#4C9A6B",
+  "#8A6BC0",
+  "#C8823C",
+  "#C0568A",
+  "#3E9FA8",
+  "#8A8A3E",
+  "#6B6BC0",
+];
+
+export function naechsteFarbe(faecher: { farbe: string | null }[]): string {
+  const genutzt = new Set(faecher.map((f) => f.farbe?.toUpperCase()));
+  const frei = FARB_PALETTE.find((c) => !genutzt.has(c));
+  return frei ?? FARB_PALETTE[faecher.length % FARB_PALETTE.length];
+}
+
+function leeresFormular(faecher: Fach[]): FachInput {
+  return {
+    name: "",
+    semester: "",
+    farbe: naechsteFarbe(faecher),
+    ects: null,
+    anwesenheitspflicht: false,
+    max_fehltage: null,
+  };
+}
 
 export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   const [faecher, setFaecher] = useState(initialFaecher);
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<FachInput>(LEERES_FORMULAR);
+  const [form, setForm] = useState<FachInput>(leeresFormular(initialFaecher));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function openCreateForm() {
     setEditId(null);
-    setForm(LEERES_FORMULAR);
+    setForm(leeresFormular(faecher));
     setFormOpen(true);
   }
 

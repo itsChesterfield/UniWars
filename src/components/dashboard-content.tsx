@@ -6,7 +6,6 @@ import posthog from "posthog-js";
 import { SearchBar } from "@/components/search-bar";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
-import { KalenderWoche } from "@/components/kalender-woche";
 import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
@@ -66,7 +65,7 @@ export function DashboardContent({
   benachrichtigungen,
   sichtbareWidgets,
   settings,
-  userEmail,
+  username,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -79,7 +78,7 @@ export function DashboardContent({
   benachrichtigungen: Benachrichtigung[];
   sichtbareWidgets: string[];
   settings: Settings;
-  userEmail: string;
+  username: string;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -99,7 +98,7 @@ export function DashboardContent({
   const filterKey = fachId ?? "alle";
   const sichtbar = (key: string) => istWidgetSichtbar(sichtbareWidgets, key);
 
-  const name = userEmail.split("@")[0];
+  const name = username;
 
   const stats = useMemo(() => {
     const heute = new Date().toISOString().slice(0, 10);
@@ -164,20 +163,10 @@ export function DashboardContent({
                   <StundenplanManager
                     key={`stundenplan-${filterKey}`}
                     initialEintraege={gefilterteStundenplan}
-                    faecher={faecher}
-                    embedded
-                  />
-                ),
-              },
-              {
-                key: "woche",
-                label: "Woche",
-                content: (
-                  <KalenderWoche
-                    stundenplanEintraege={gefilterteStundenplan}
                     deadlines={gefilterteDeadlines}
                     pruefungen={gefiltertePruefungen}
                     faecher={faecher}
+                    embedded
                   />
                 ),
               },

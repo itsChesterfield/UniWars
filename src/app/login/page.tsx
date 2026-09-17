@@ -4,9 +4,9 @@ import { login } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, reset } = await searchParams;
 
   return (
     <main className="auth-page">
@@ -14,6 +14,7 @@ export default async function LoginPage({
         <h1>Anmelden</h1>
 
         {error && <p className="auth-error">{error}</p>}
+        {reset && <p className="auth-info">Passwort geändert — du kannst dich jetzt anmelden.</p>}
 
         <label htmlFor="email">E-Mail</label>
         <input id="email" name="email" type="email" required autoComplete="email" />
@@ -31,6 +32,9 @@ export default async function LoginPage({
           Anmelden
         </button>
 
+        <p>
+          <Link href="/forgot-password">Passwort vergessen?</Link>
+        </p>
         <p>
           Noch kein Konto? <Link href="/signup">Registrieren</Link>
         </p>

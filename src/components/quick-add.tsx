@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import { createFach } from "@/app/fach/actions";
+import { naechsteFarbe } from "@/components/fach-manager";
 import { createDeadline } from "@/app/deadline/actions";
 import { createTodo } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";
@@ -64,7 +65,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
             await createFach({
               name: titel,
               semester: null,
-              farbe: "#3B82F6",
+              farbe: naechsteFarbe(faecher),
               ects: null,
               anwesenheitspflicht: false,
               max_fehltage: null,
