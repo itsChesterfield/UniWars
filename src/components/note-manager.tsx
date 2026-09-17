@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import posthog from "posthog-js";
 import { createNote, updateNote, deleteNote, type NoteInput } from "@/app/note/actions";
 import type { Tables } from "@/lib/supabase/types";
@@ -39,6 +39,23 @@ export function NoteManager({
   const sortiert = [...notes].sort(
     (a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime(),
   );
+
+  const proFachSchnitt = useMemo(() => {
+    const gruppen = new Map<string, { summe: number; gewicht: number }>();
+    notes.forEach((n) => {
+      const g = gruppen.get(n.fach_id) ?? { summe: 0, gewicht: 0 };
+      g.summe += n.wert * n.gewicht;
+      g.gewicht += n.gewicht;
+      gruppen.set(n.fach_id, g);
+    });
+    return [...gruppen.entries()]
+      .map(([fachId, g]) => ({
+        fach: faecher.find((f) => f.id === fachId),
+        schnitt: g.gewicht > 0 ? g.summe / g.gewicht : null,
+      }))
+      .filter((x) => x.fach && x.schnitt != null)
+      .sort((a, b) => (a.fach!.name < b.fach!.name ? -1 : 1));
+  }, [notes, faecher]);
 
   function openCreateForm() {
     if (faecher.length === 0) {
@@ -109,6 +126,17 @@ export function NoteManager({
           </button>
         )}
       </div>
+
+      {proFachSchnitt.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {proFachSchnitt.map(({ fach, schnitt }) => (
+            <span key={fach!.id} className="tag" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span className="dot" style={{ background: fach!.farbe ?? "#94a3b8" }} aria-hidden />
+              {fach!.name} Ø {schnitt!.toFixed(1)}
+            </span>
+          ))}
+        </div>
+      )}
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Noten.</p>}
 

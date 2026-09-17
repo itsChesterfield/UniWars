@@ -174,7 +174,7 @@ export function DashboardContent({
         )}
 
         {sichtbar("aufgaben") && (
-          <section className="card span-7">
+          <section className="card span-5">
             <div className="ch">
               <span className="ct">Aufgaben, Fristen &amp; Noten</span>
               <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
@@ -222,7 +222,7 @@ export function DashboardContent({
         {sichtbar("aufgaben") && (
           <SegmentedCard
             title="Noten-Rechner"
-            className="span-5"
+            className="span-7"
             segments={[
               {
                 key: "prognose",
