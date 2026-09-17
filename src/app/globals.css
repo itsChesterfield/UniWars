@@ -853,6 +853,38 @@ input[type="checkbox"] {
   margin-top: 0;
 }
 
+/* --- Nächster Termin (Banner) --- */
+
+.naechster-termin {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  margin-bottom: 18px;
+}
+
+.naechster-termin-dringend {
+  background: var(--danger-soft);
+}
+
+.naechster-termin-leer {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--card2);
+  margin-bottom: 18px;
+}
+
+.naechster-termin-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 60px;
+  color: var(--accent-strong);
+}
+
 /* --- Entry lists (Deadlines/Todos/Prüfungen/etc inside segments) --- */
 
 .entry-list {
@@ -902,6 +934,33 @@ input[type="checkbox"] {
   font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
+}
+
+.entry-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 56px;
+  color: var(--accent-strong);
+}
+
+.entry-countdown-dringend {
+  color: var(--danger);
+}
+
+.entry-countdown-wert {
+  font-family: var(--font-display), sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.entry-countdown-einheit {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .entry-actions {

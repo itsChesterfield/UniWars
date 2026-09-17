@@ -11,6 +11,7 @@ import {
 } from "@/app/deadline/actions";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
+import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
 
 type Deadline = Tables<"deadline">;
 
@@ -30,18 +31,6 @@ function toDatetimeLocal(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function restMillisekunden(iso: string): number {
-  return new Date(iso).getTime() - Date.now();
-}
-
-function restzeit(iso: string): string {
-  const diffMs = restMillisekunden(iso);
-  const stunden = diffMs / 1000 / 60 / 60;
-  if (diffMs < 0) return "überfällig";
-  if (stunden < 48) return `in ${Math.round(stunden)} h`;
-  return `in ${Math.round(stunden / 24)} Tagen`;
 }
 
 function istDringend(deadline: Deadline): boolean {
@@ -190,12 +179,18 @@ export function DeadlineManager({
                     fach?.name,
                     TYP_LABEL[d.typ],
                     d.kategorie !== "NORMAL" ? KATEGORIE_LABEL[d.kategorie] : null,
-                    d.erledigt ? "erledigt" : restzeit(d.faellig_am),
+                    absolutesDatum(d.faellig_am),
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
               </div>
+              {!d.erledigt && (
+                <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
+                  <span className="entry-countdown-wert">{restzeitGross(d.faellig_am).wert}</span>
+                  <span className="entry-countdown-einheit">{restzeitGross(d.faellig_am).einheit}</span>
+                </div>
+              )}
               <div className="entry-actions">
                 <button type="button" onClick={() => openEditForm(d)}>
                   Bearbeiten

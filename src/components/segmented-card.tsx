@@ -13,11 +13,13 @@ export function SegmentedCard({
   subtitle,
   segments,
   className,
+  banner,
 }: {
   title: string;
   subtitle?: ReactNode;
   segments: Segment[];
   className?: string;
+  banner?: ReactNode;
 }) {
   const [active, setActive] = useState(segments[0]?.key);
   const aktiv = segments.find((s) => s.key === active) ?? segments[0];
@@ -44,6 +46,7 @@ export function SegmentedCard({
           </div>
         )}
       </div>
+      {banner}
       <div style={{ minHeight: 220 }}>{aktiv?.content}</div>
     </section>
   );

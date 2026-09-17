@@ -21,11 +21,24 @@ const TYP_LABEL: Record<QuickAddTyp, string> = {
   pruefung: "Prüfung",
 };
 
+function toDatetimeLocal(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function morgenAbend(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(23, 59, 0, 0);
+  return toDatetimeLocal(d);
+}
+
 export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
   const [open, setOpen] = useState(false);
   const [typ, setTyp] = useState<QuickAddTyp>("todo");
   const [titel, setTitel] = useState("");
   const [fachId, setFachId] = useState<string>(faecher[0]?.id ?? "");
+  const [datumZeit, setDatumZeit] = useState(morgenAbend());
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +88,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
             await createDeadline({
               titel,
               fach_id: fachId || null,
-              faellig_am: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              faellig_am: new Date(datumZeit).toISOString(),
               typ: "SONSTIGE",
               kategorie: "NORMAL",
             });
@@ -98,7 +111,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
             await createPruefung({
               titel,
               fach_id: fachId,
-              datum: new Date().toISOString(),
+              datum: new Date(datumZeit).toISOString(),
               raum: null,
               status: "ANSTEHEND",
             });
@@ -107,6 +120,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
 
         posthog.capture("quick_add_benutzt", { typ });
         setTitel("");
+        setDatumZeit(morgenAbend());
         setOpen(false);
         router.refresh();
       } catch (err) {
@@ -116,6 +130,7 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
   }
 
   const brauchtFach = typ === "note" || typ === "pruefung";
+  const brauchtDatumZeit = typ === "deadline" || typ === "pruefung";
 
   return (
     <>
@@ -158,6 +173,16 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
                   </option>
                 ))}
               </select>
+            )}
+
+            {brauchtDatumZeit && (
+              <input
+                type="datetime-local"
+                value={datumZeit}
+                onChange={(e) => setDatumZeit(e.target.value)}
+                aria-label={typ === "deadline" ? "Fällig am" : "Termin am"}
+                required
+              />
             )}
 
             <input

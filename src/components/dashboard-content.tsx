@@ -6,6 +6,7 @@ import posthog from "posthog-js";
 import { SearchBar } from "@/components/search-bar";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
+import { NaechsterTermin } from "@/components/naechster-termin";
 import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
@@ -141,6 +142,9 @@ export function DashboardContent({
             title="Termine"
             subtitle={heutigesDatum()}
             className="span-12"
+            banner={
+              <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
+            }
             segments={[
               {
                 key: "heute",

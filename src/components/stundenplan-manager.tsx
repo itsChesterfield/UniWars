@@ -58,6 +58,12 @@ function montagDieserWoche(datum: Date): Date {
   return montag;
 }
 
+function uhrzeit(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function positionFuerZeitpunkt(dt: Date): number {
   const minuten = (dt.getHours() - BASIS_STUNDE) * 60 + dt.getMinutes();
   return Math.min(Math.max(minuten * PX_PRO_MINUTE, 0), RASTER_HOEHE - 18);
@@ -256,9 +262,9 @@ export function StundenplanManager({
                     key={d.id}
                     className="kalender-marker kalender-marker-deadline"
                     style={{ top: positionFuerZeitpunkt(new Date(d.faellig_am)) }}
-                    title={d.titel}
+                    title={`${uhrzeit(d.faellig_am)} · ${d.titel}`}
                   >
-                    ⚑ {d.titel}
+                    ⚑ {uhrzeit(d.faellig_am)} {d.titel}
                   </div>
                 ))}
 
@@ -269,9 +275,9 @@ export function StundenplanManager({
                     key={p.id}
                     className="kalender-marker kalender-marker-pruefung"
                     style={{ top: positionFuerZeitpunkt(new Date(p.datum)) }}
-                    title={p.titel}
+                    title={`${uhrzeit(p.datum)} · ${p.titel}`}
                   >
-                    ✎ {p.titel}
+                    ✎ {uhrzeit(p.datum)} {p.titel}
                   </div>
                 ))}
             </div>
