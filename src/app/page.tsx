@@ -8,9 +8,13 @@ import { DashboardContent } from "@/components/dashboard-content";
 export default async function DashboardPage() {
   const supabase = await createClient();
 
+  // proxy.ts (Middleware) already ran auth.getUser() for this exact request
+  // and refreshed the session cookie, so reading it back here needs no
+  // second network round-trip to Supabase.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   if (!user) {
     redirect("/login");
