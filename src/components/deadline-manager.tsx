@@ -61,10 +61,12 @@ export function DeadlineManager({
   initialDeadlines,
   faecher,
   embedded = false,
+  versteckeErstellen = false,
 }: {
   initialDeadlines: Deadline[];
   faecher: FachOption[];
   embedded?: boolean;
+  versteckeErstellen?: boolean;
 }) {
   const [deadlines, setDeadlines] = useState(initialDeadlines);
   const [formOpen, setFormOpen] = useState(false);
@@ -155,12 +157,14 @@ export function DeadlineManager({
 
   const inhalt = (
     <>
-      <div className="rowb" style={{ marginBottom: 14 }}>
-        <span />
-        <button type="button" onClick={openCreateForm} className="btnp">
-          + Deadline
-        </button>
-      </div>
+      {!versteckeErstellen && (
+        <div className="rowb" style={{ marginBottom: 14 }}>
+          <span />
+          <button type="button" onClick={openCreateForm} className="btnp">
+            + Deadline
+          </button>
+        </div>
+      )}
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Deadlines.</p>}
 

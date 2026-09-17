@@ -21,11 +21,13 @@ export function NoteManager({
   faecher,
   notenschnitt,
   embedded = false,
+  versteckeErstellen = false,
 }: {
   initialNotes: Note[];
   faecher: FachOption[];
   notenschnitt: number | null;
   embedded?: boolean;
+  versteckeErstellen?: boolean;
 }) {
   const [notes, setNotes] = useState(initialNotes);
   const [formOpen, setFormOpen] = useState(false);
@@ -101,9 +103,11 @@ export function NoteManager({
         >
           Ø {notenschnitt != null ? notenschnitt.toFixed(1) : "–"}
         </div>
-        <button type="button" onClick={openCreateForm} className="btnp">
-          + Note
-        </button>
+        {!versteckeErstellen && (
+          <button type="button" onClick={openCreateForm} className="btnp">
+            + Note
+          </button>
+        )}
       </div>
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Noten.</p>}

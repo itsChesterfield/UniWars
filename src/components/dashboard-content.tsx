@@ -20,7 +20,6 @@ import {
   LernzeitStatistik,
 } from "@/components/rechner-section";
 import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschritt-views";
-import { FristenView } from "@/components/fristen-view";
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
@@ -175,73 +174,56 @@ export function DashboardContent({
         )}
 
         {sichtbar("aufgaben") && (
-          <SegmentedCard
-            title="Aufgaben & Fristen"
-            className="span-7"
-            segments={[
-              {
-                key: "deadlines",
-                label: "Deadlines",
-                content: (
-                  <DeadlineManager
-                    key={`deadline-${filterKey}`}
-                    initialDeadlines={gefilterteDeadlines}
-                    faecher={faecher}
-                    embedded
-                  />
-                ),
-              },
-              {
-                key: "todos",
-                label: "To-Dos",
-                content: (
-                  <TodoManager
-                    key={`todo-${filterKey}`}
-                    initialTodos={gefilterteTodos}
-                    faecher={faecher}
-                    embedded
-                  />
-                ),
-              },
-              {
-                key: "pruefungen",
-                label: "Prüfungen",
-                content: (
-                  <PruefungManager
-                    key={`pruefung-${filterKey}`}
-                    initialPruefungen={gefiltertePruefungen}
-                    faecher={faecher}
-                    embedded
-                  />
-                ),
-              },
-              {
-                key: "fristen",
-                label: "Fristen",
-                content: <FristenView deadlines={gefilterteDeadlines} />,
-              },
-            ]}
-          />
+          <section className="card span-7">
+            <div className="ch">
+              <span className="ct">Aufgaben, Fristen &amp; Noten</span>
+              <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
+            </div>
+
+            <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
+            <DeadlineManager
+              key={`deadline-${filterKey}`}
+              initialDeadlines={gefilterteDeadlines}
+              faecher={faecher}
+              embedded
+              versteckeErstellen
+            />
+
+            <h3 className="aufgaben-untertitel">To-Dos</h3>
+            <TodoManager
+              key={`todo-${filterKey}`}
+              initialTodos={gefilterteTodos}
+              faecher={faecher}
+              embedded
+              versteckeErstellen
+            />
+
+            <h3 className="aufgaben-untertitel">Prüfungen</h3>
+            <PruefungManager
+              key={`pruefung-${filterKey}`}
+              initialPruefungen={gefiltertePruefungen}
+              faecher={faecher}
+              embedded
+              versteckeErstellen
+            />
+
+            <h3 className="aufgaben-untertitel">Noten</h3>
+            <NoteManager
+              key={`note-${filterKey}`}
+              initialNotes={gefilterteNotes}
+              faecher={faecher}
+              notenschnitt={notenschnitt}
+              embedded
+              versteckeErstellen
+            />
+          </section>
         )}
 
-        {sichtbar("noten") && (
+        {sichtbar("aufgaben") && (
           <SegmentedCard
-            title="Noten"
+            title="Noten-Rechner"
             className="span-5"
             segments={[
-              {
-                key: "uebersicht",
-                label: "Übersicht",
-                content: (
-                  <NoteManager
-                    key={`note-${filterKey}`}
-                    initialNotes={gefilterteNotes}
-                    faecher={faecher}
-                    notenschnitt={notenschnitt}
-                    embedded
-                  />
-                ),
-              },
               {
                 key: "prognose",
                 label: "Prognose",

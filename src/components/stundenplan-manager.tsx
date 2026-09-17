@@ -93,6 +93,7 @@ export function StundenplanManager({
   const [form, setForm] = useState<StundenplanInput>(leeresFormular(faecher[0]?.id ?? null));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [wochenOffset, setWochenOffset] = useState(0);
 
   function openCreateForm() {
     if (faecher.length === 0) {
@@ -154,9 +155,11 @@ export function StundenplanManager({
   const stunden = Array.from({ length: END_STUNDE - BASIS_STUNDE + 1 }, (_, i) => BASIS_STUNDE + i);
 
   const montag = montagDieserWoche(new Date());
+  montag.setDate(montag.getDate() + wochenOffset * 7);
   const sonntag = new Date(montag);
   sonntag.setDate(montag.getDate() + 6);
   sonntag.setHours(23, 59, 59, 999);
+  const wochenLabel = `${montag.toLocaleDateString("de-DE", { day: "2-digit", month: "short" })} – ${sonntag.toLocaleDateString("de-DE", { day: "2-digit", month: "short" })}`;
   const deadlinesDieseWoche = deadlines.filter((d) => {
     const dt = new Date(d.faellig_am);
     return dt >= montag && dt <= sonntag;
@@ -169,7 +172,34 @@ export function StundenplanManager({
   const inhalt = (
     <>
       <div className="rowb" style={{ marginBottom: 14 }}>
-        <span />
+        <div className="row" style={{ gap: 8 }}>
+          <button
+            type="button"
+            className="btng"
+            style={{ padding: "5px 9px" }}
+            onClick={() => setWochenOffset((o) => o - 1)}
+            aria-label="Vorherige Woche"
+          >
+            ←
+          </button>
+          <span className="muted" style={{ fontSize: 13, fontWeight: 600, minWidth: 100, textAlign: "center" }}>
+            {wochenLabel}
+          </span>
+          <button
+            type="button"
+            className="btng"
+            style={{ padding: "5px 9px" }}
+            onClick={() => setWochenOffset((o) => o + 1)}
+            aria-label="Nächste Woche"
+          >
+            →
+          </button>
+          {wochenOffset !== 0 && (
+            <button type="button" className="btng" style={{ padding: "5px 9px" }} onClick={() => setWochenOffset(0)}>
+              Heute
+            </button>
+          )}
+        </div>
         <button type="button" onClick={openCreateForm} className="btnp">
           + Eintrag
         </button>

@@ -2,13 +2,7 @@
 
 import { useState, useTransition } from "react";
 import posthog from "posthog-js";
-import {
-  createFach,
-  updateFach,
-  archiveFach,
-  fehltageAendern,
-  type FachInput,
-} from "@/app/fach/actions";
+import { createFach, updateFach, archiveFach, type FachInput } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Fach = Tables<"fach">;
@@ -107,17 +101,6 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
     });
   }
 
-  function handleFehltag(id: string, delta: number) {
-    startTransition(async () => {
-      try {
-        const updated = await fehltageAendern(id, delta);
-        setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-      }
-    });
-  }
-
   return (
     <section className="card">
       <div className="ch" style={{ marginBottom: 14 }}>
@@ -159,22 +142,7 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
                 >
                   Fehltage: {fach.fehltage_genutzt}
                   {fach.max_fehltage != null ? `/${fach.max_fehltage}` : ""}
-                  <button
-                    type="button"
-                    onClick={() => handleFehltag(fach.id, 1)}
-                    aria-label="Fehltag hinzufügen"
-                  >
-                    +1
-                  </button>
-                  {fach.fehltage_genutzt > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => handleFehltag(fach.id, -1)}
-                      aria-label="Fehltag entfernen"
-                    >
-                      -1
-                    </button>
-                  )}
+                  {" · in Fortschritt → Anwesenheit erfassen"}
                 </span>
               )}
             </div>

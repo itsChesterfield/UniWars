@@ -5,8 +5,7 @@ import { setSichtbareWidgets } from "@/app/settings/actions";
 
 export const ALLE_WIDGETS = [
   { key: "heute", label: "Termine" },
-  { key: "aufgaben", label: "Aufgaben & Fristen" },
-  { key: "noten", label: "Noten" },
+  { key: "aufgaben", label: "Aufgaben, Fristen & Noten" },
   { key: "fortschritt", label: "Fortschritt" },
   { key: "faecher", label: "Fächer" },
 ] as const;

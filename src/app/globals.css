@@ -838,6 +838,21 @@ input[type="checkbox"] {
   background: var(--accent);
 }
 
+/* --- Unified Aufgaben/Fristen/Noten column --- */
+
+.aufgaben-untertitel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  margin: 22px 0 4px;
+}
+
+.aufgaben-untertitel:first-of-type {
+  margin-top: 0;
+}
+
 /* --- Entry lists (Deadlines/Todos/Prüfungen/etc inside segments) --- */
 
 .entry-list {

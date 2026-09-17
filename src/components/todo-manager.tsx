@@ -28,10 +28,12 @@ export function TodoManager({
   initialTodos,
   faecher,
   embedded = false,
+  versteckeErstellen = false,
 }: {
   initialTodos: Todo[];
   faecher: FachOption[];
   embedded?: boolean;
+  versteckeErstellen?: boolean;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [formOpen, setFormOpen] = useState(false);
@@ -109,12 +111,14 @@ export function TodoManager({
 
   const inhalt = (
     <>
-      <div className="rowb" style={{ marginBottom: 14 }}>
-        <span />
-        <button type="button" onClick={openCreateForm} className="btnp">
-          + To-Do
-        </button>
-      </div>
+      {!versteckeErstellen && (
+        <div className="rowb" style={{ marginBottom: 14 }}>
+          <span />
+          <button type="button" onClick={openCreateForm} className="btnp">
+            + To-Do
+          </button>
+        </div>
+      )}
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine To-Dos.</p>}
 

@@ -39,10 +39,12 @@ export function PruefungManager({
   initialPruefungen,
   faecher,
   embedded = false,
+  versteckeErstellen = false,
 }: {
   initialPruefungen: Pruefung[];
   faecher: FachOption[];
   embedded?: boolean;
+  versteckeErstellen?: boolean;
 }) {
   const [pruefungen, setPruefungen] = useState(initialPruefungen);
   const [formOpen, setFormOpen] = useState(false);
@@ -115,12 +117,14 @@ export function PruefungManager({
 
   const inhalt = (
     <>
-      <div className="rowb" style={{ marginBottom: 14 }}>
-        <span />
-        <button type="button" onClick={openCreateForm} className="btnp">
-          + Prüfung
-        </button>
-      </div>
+      {!versteckeErstellen && (
+        <div className="rowb" style={{ marginBottom: 14 }}>
+          <span />
+          <button type="button" onClick={openCreateForm} className="btnp">
+            + Prüfung
+          </button>
+        </div>
+      )}
 
       {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Prüfungen.</p>}
 

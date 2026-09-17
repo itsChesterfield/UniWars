@@ -1,21 +1,38 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { fehltageAendern } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Fach = Tables<"fach">;
 type Settings = Tables<"settings">;
 
-export function AnwesenheitUebersicht({ faecher }: { faecher: Fach[] }) {
-  const relevante = faecher.filter((f) => f.anwesenheitspflicht && f.max_fehltage != null);
+export function AnwesenheitUebersicht({ faecher: initialFaecher }: { faecher: Fach[] }) {
+  const [faecher, setFaecher] = useState(initialFaecher);
+  const [, startTransition] = useTransition();
+
+  const relevante = faecher.filter((f) => f.anwesenheitspflicht);
+
+  function handleFehltag(id: string, delta: number) {
+    startTransition(async () => {
+      const updated = await fehltageAendern(id, delta);
+      setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));
+    });
+  }
 
   if (relevante.length === 0) {
-    return <p className="empty-state">Kein Fach mit Anwesenheitspflicht.</p>;
+    return (
+      <p className="empty-state">
+        Kein Fach mit Anwesenheitspflicht. Beim Bearbeiten eines Fachs (Fächer-Karte)
+        &quot;Anwesenheitspflicht&quot; anhaken, dann taucht es hier auf.
+      </p>
+    );
   }
 
   return (
     <div style={{ paddingTop: 6 }}>
       {relevante.map((f) => {
-        const anteil = Math.min(f.fehltage_genutzt / (f.max_fehltage ?? 1), 1);
+        const anteil = f.max_fehltage != null ? Math.min(f.fehltage_genutzt / f.max_fehltage, 1) : 0;
         const kritisch = f.max_fehltage != null && f.fehltage_genutzt >= f.max_fehltage - 1;
         return (
           <div key={f.id} style={{ marginBottom: 16 }}>
@@ -24,19 +41,32 @@ export function AnwesenheitUebersicht({ faecher }: { faecher: Fach[] }) {
                 <span className="dot" style={{ background: f.farbe ?? "#94a3b8" }} />
                 <span style={{ fontSize: 14, fontWeight: 500 }}>{f.name}</span>
               </span>
-              <span className="muted" style={{ fontSize: 12 }}>
-                {f.fehltage_genutzt} / {f.max_fehltage} Fehltage
+              <span className="row" style={{ gap: 8 }}>
+                <span className={`muted ${kritisch ? "" : ""}`} style={{ fontSize: 12, color: kritisch ? "var(--warn)" : undefined, fontWeight: kritisch ? 600 : 400 }}>
+                  {f.fehltage_genutzt}
+                  {f.max_fehltage != null ? ` / ${f.max_fehltage}` : ""} Fehltage
+                </span>
+                {f.fehltage_genutzt > 0 && (
+                  <button type="button" className="btng" style={{ padding: "2px 8px" }} onClick={() => handleFehltag(f.id, -1)}>
+                    −1
+                  </button>
+                )}
+                <button type="button" className="btng" style={{ padding: "2px 8px" }} onClick={() => handleFehltag(f.id, 1)}>
+                  +1 Fehltag
+                </button>
               </span>
             </div>
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${anteil * 100}%`,
-                  background: kritisch ? "var(--warn)" : "var(--accent)",
-                }}
-              />
-            </div>
+            {f.max_fehltage != null && (
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${anteil * 100}%`,
+                    background: kritisch ? "var(--warn)" : "var(--accent)",
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
       })}
