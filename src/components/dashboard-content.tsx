@@ -10,10 +10,10 @@ import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
 import { TodoManager } from "@/components/todo-manager";
-import { NoteManager } from "@/components/note-manager";
 import { PruefungManager } from "@/components/pruefung-manager";
 import {
   NotenPrognose,
+  NotenDurchschnittProFach,
   ZielnotenRechner,
   WasWaereWenn,
   BestandenUebersicht,
@@ -88,7 +88,6 @@ export function DashboardContent({
 
   const gefilterteDeadlines = fachId ? deadlines.filter((d) => d.fach_id === fachId) : deadlines;
   const gefilterteTodos = fachId ? todos.filter((t) => t.fach_id === fachId) : todos;
-  const gefilterteNotes = fachId ? notes.filter((n) => n.fach_id === fachId) : notes;
   const gefiltertePruefungen = fachId ? pruefungen.filter((p) => p.fach_id === fachId) : pruefungen;
   const gefilterteStundenplan = fachId
     ? stundenplanEintraege.filter((e) => e.fach_id === fachId)
@@ -176,7 +175,7 @@ export function DashboardContent({
         {sichtbar("aufgaben") && (
           <section className="card span-5">
             <div className="ch">
-              <span className="ct">Aufgaben, Fristen &amp; Noten</span>
+              <span className="ct">Aufgaben &amp; Fristen</span>
               <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
             </div>
 
@@ -206,46 +205,44 @@ export function DashboardContent({
               embedded
               versteckeErstellen
             />
-
-            <h3 className="aufgaben-untertitel">Noten</h3>
-            <NoteManager
-              key={`note-${filterKey}`}
-              initialNotes={gefilterteNotes}
-              faecher={faecher}
-              notenschnitt={notenschnitt}
-              embedded
-              versteckeErstellen
-            />
           </section>
         )}
 
         {sichtbar("aufgaben") && (
-          <SegmentedCard
-            title="Noten-Rechner"
-            className="span-7"
-            segments={[
-              {
-                key: "prognose",
-                label: "Prognose",
-                content: <NotenPrognose notenschnitt={notenschnitt} notes={notes} />,
-              },
-              {
-                key: "rechner",
-                label: "Rechner",
-                content: (
-                  <div className="rechner-grid">
-                    <ZielnotenRechner notes={notes} />
-                    <WasWaereWenn notes={notes} />
-                  </div>
-                ),
-              },
-              {
-                key: "status",
-                label: "Status",
-                content: <BestandenUebersicht pruefungen={pruefungen} />,
-              },
-            ]}
-          />
+          <div className="span-7" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <SegmentedCard
+              title="Noten-Rechner"
+              segments={[
+                {
+                  key: "prognose",
+                  label: "Prognose",
+                  content: <NotenPrognose notenschnitt={notenschnitt} notes={notes} />,
+                },
+                {
+                  key: "rechner",
+                  label: "Rechner",
+                  content: (
+                    <div className="rechner-grid">
+                      <ZielnotenRechner notes={notes} />
+                      <WasWaereWenn notes={notes} />
+                    </div>
+                  ),
+                },
+                {
+                  key: "status",
+                  label: "Status",
+                  content: <BestandenUebersicht pruefungen={pruefungen} />,
+                },
+              ]}
+            />
+
+            <section className="card">
+              <div className="ch">
+                <span className="ct">Durchschnitt pro Fach</span>
+              </div>
+              <NotenDurchschnittProFach notes={notes} faecher={faecher} />
+            </section>
+          </div>
         )}
 
         {sichtbar("fortschritt") && (

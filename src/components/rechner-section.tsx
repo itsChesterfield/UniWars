@@ -21,6 +21,51 @@ function summeUndGewicht(notes: Note[]) {
   );
 }
 
+export function NotenDurchschnittProFach({
+  notes,
+  faecher,
+}: {
+  notes: Note[];
+  faecher: FachOption[];
+}) {
+  const proFach = useMemo(() => {
+    const gruppen = new Map<string, { summe: number; gewicht: number }>();
+    notes.forEach((n) => {
+      const g = gruppen.get(n.fach_id) ?? { summe: 0, gewicht: 0 };
+      g.summe += n.wert * n.gewicht;
+      g.gewicht += n.gewicht;
+      gruppen.set(n.fach_id, g);
+    });
+    return [...gruppen.entries()]
+      .map(([fachId, g]) => ({
+        fach: faecher.find((f) => f.id === fachId),
+        schnitt: g.gewicht > 0 ? g.summe / g.gewicht : null,
+      }))
+      .filter((x): x is { fach: FachOption; schnitt: number } => x.fach != null && x.schnitt != null)
+      .sort((a, b) => a.schnitt - b.schnitt);
+  }, [notes, faecher]);
+
+  if (proFach.length === 0) {
+    return <p className="empty-state">Noch keine Noten erfasst.</p>;
+  }
+
+  return (
+    <ul className="fach-list">
+      {proFach.map(({ fach, schnitt }) => (
+        <li key={fach.id} className="fach-card">
+          <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} aria-hidden />
+          <div className="fach-card-info">
+            <span className="fach-card-name">{fach.name}</span>
+          </div>
+          <span style={{ fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}>
+            Ø {schnitt.toFixed(1)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function NotenPrognose({ notenschnitt, notes }: { notenschnitt: number | null; notes: Note[] }) {
   if (notenschnitt == null || notes.length === 0) {
     return <p className="empty-state">Noch keine Noten für eine Prognose.</p>;
