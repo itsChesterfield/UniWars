@@ -1,12 +1,8 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/sidebar";
-import { FachManager } from "@/components/fach-manager";
-import { DeadlineManager } from "@/components/deadline-manager";
-import { TodoManager } from "@/components/todo-manager";
-import { NoteManager } from "@/components/note-manager";
-import { PruefungManager } from "@/components/pruefung-manager";
-import { StundenplanManager } from "@/components/stundenplan-manager";
+import { DashboardContent } from "@/components/dashboard-content";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -47,26 +43,22 @@ export default async function DashboardPage() {
     notenschnittError;
   if (error) throw new Error(error.message);
 
-  const faecherListe = faecher ?? [];
-
   return (
     <div className="dashboard">
       <Sidebar email={user.email ?? ""} />
       <main className="dashboard-main">
         <h1>Übersicht</h1>
-        <FachManager initialFaecher={faecherListe} />
-        <StundenplanManager
-          initialEintraege={stundenplanEintraege ?? []}
-          faecher={faecherListe}
-        />
-        <DeadlineManager initialDeadlines={deadlines ?? []} faecher={faecherListe} />
-        <TodoManager initialTodos={todos ?? []} faecher={faecherListe} />
-        <NoteManager
-          initialNotes={notes ?? []}
-          faecher={faecherListe}
-          notenschnitt={notenschnitt}
-        />
-        <PruefungManager initialPruefungen={pruefungen ?? []} faecher={faecherListe} />
+        <Suspense fallback={null}>
+          <DashboardContent
+            faecher={faecher ?? []}
+            deadlines={deadlines ?? []}
+            todos={todos ?? []}
+            notes={notes ?? []}
+            pruefungen={pruefungen ?? []}
+            stundenplanEintraege={stundenplanEintraege ?? []}
+            notenschnitt={notenschnitt}
+          />
+        </Suspense>
       </main>
     </div>
   );
