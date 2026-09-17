@@ -127,12 +127,22 @@ button {
   font-size: 1.5rem;
 }
 
-.auth-form label {
+.auth-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-field label {
+  width: 110px;
+  flex-shrink: 0;
   font-size: 0.85rem;
   color: var(--muted);
 }
 
-.auth-form input {
+.auth-field input {
+  flex: 1;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);

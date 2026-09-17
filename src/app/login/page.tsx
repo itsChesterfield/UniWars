@@ -16,17 +16,21 @@ export default async function LoginPage({
         {error && <p className="auth-error">{error}</p>}
         {reset && <p className="auth-info">Passwort geändert — du kannst dich jetzt anmelden.</p>}
 
-        <label htmlFor="email">E-Mail</label>
-        <input id="email" name="email" type="email" required autoComplete="email" />
+        <div className="auth-field">
+          <label htmlFor="email">E-Mail</label>
+          <input id="email" name="email" type="email" required autoComplete="email" />
+        </div>
 
-        <label htmlFor="password">Passwort</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-        />
+        <div className="auth-field">
+          <label htmlFor="password">Passwort</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+          />
+        </div>
 
         <button formAction={login} type="submit">
           Anmelden
