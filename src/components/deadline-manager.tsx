@@ -185,12 +185,19 @@ export function DeadlineManager({
                     .join(" · ")}
                 </span>
               </div>
-              {!d.erledigt && (
-                <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
-                  <span className="entry-countdown-wert">{restzeitGross(d.faellig_am).wert}</span>
-                  <span className="entry-countdown-einheit">{restzeitGross(d.faellig_am).einheit}</span>
-                </div>
-              )}
+              {!d.erledigt && (() => {
+                const { wert, einheit } = restzeitGross(d.faellig_am);
+                const ueberfaellig = einheit === "überfällig";
+                return (
+                  <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
+                    <span className="entry-countdown-wert">{wert}</span>
+                    <span className="entry-countdown-einheit">
+                      {einheit}
+                      {!ueberfaellig && " übrig"}
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="entry-actions">
                 <button type="button" onClick={() => openEditForm(d)}>
                   Bearbeiten
