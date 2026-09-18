@@ -13,7 +13,7 @@ import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
 
-type TodoOption = Pick<Tables<"todo">, "id" | "titel" | "erledigt">;
+type TodoOption = Pick<Tables<"todo">, "id" | "titel" | "erledigt" | "parent_id">;
 type PruefungOption = Pick<Tables<"pruefung">, "id" | "titel">;
 
 type QuickAddTyp = "todo" | "deadline" | "fach" | "note" | "pruefung";
@@ -131,9 +131,16 @@ export function QuickAdd({
             }
             break;
           }
-          case "todo":
-            await createTodo({ titel, fach_id: fachId || null, prioritaet: "MITTEL" });
+          case "todo": {
+            const [, todoUnterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
+            await createTodo({
+              titel,
+              fach_id: fachId || null,
+              prioritaet: "MITTEL",
+              parentId: todoUnterId,
+            });
             break;
+          }
           case "note":
             if (!fachId) throw new Error("Bitte ein Fach wählen.");
             await createNote({
@@ -197,7 +204,13 @@ export function QuickAdd({
             <h3>Neu anlegen</h3>
             {error && <p className="auth-error">{error}</p>}
 
-            <select value={typ} onChange={(e) => setTyp(e.target.value as QuickAddTyp)}>
+            <select
+              value={typ}
+              onChange={(e) => {
+                setTyp(e.target.value as QuickAddTyp);
+                setUnterAuswahl("");
+              }}
+            >
               {Object.entries(TYP_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -233,6 +246,21 @@ export function QuickAdd({
               placeholder="Titel…"
               required
             />
+
+            {typ === "todo" && todos.filter((t) => !t.erledigt && !t.parent_id).length > 0 && (
+              <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
+                <option value="">Eigenständiges To-Do</option>
+                <optgroup label="Als Unterpunkt von To-Do">
+                  {todos
+                    .filter((t) => !t.erledigt && !t.parent_id)
+                    .map((t) => (
+                      <option key={t.id} value={`todo:${t.id}`}>
+                        {t.titel}
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+            )}
 
             {typ === "deadline" && (todos.length > 0 || pruefungen.length > 0) && (
               <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>

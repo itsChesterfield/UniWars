@@ -12,6 +12,7 @@ import {
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { Unteraufgaben } from "@/components/unteraufgaben";
+import { TodoUnterpunkte } from "@/components/todo-unterpunkte";
 
 type Todo = Tables<"todo">;
 type Deadline = Tables<"deadline">;
@@ -48,11 +49,13 @@ export function TodoManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const sortiert = [...todos].sort((a, b) => {
-    if (a.erledigt !== b.erledigt) return a.erledigt ? 1 : -1;
-    if (a.prioritaet !== b.prioritaet) return PRIO_ORDER[a.prioritaet] - PRIO_ORDER[b.prioritaet];
-    return new Date(a.erstellt_am).getTime() - new Date(b.erstellt_am).getTime();
-  });
+  const sortiert = [...todos]
+    .filter((t) => !t.parent_id)
+    .sort((a, b) => {
+      if (a.erledigt !== b.erledigt) return a.erledigt ? 1 : -1;
+      if (a.prioritaet !== b.prioritaet) return PRIO_ORDER[a.prioritaet] - PRIO_ORDER[b.prioritaet];
+      return new Date(a.erstellt_am).getTime() - new Date(b.erstellt_am).getTime();
+    });
 
   function openCreateForm() {
     setEditId(null);
@@ -160,6 +163,11 @@ export function TodoManager({
                 </div>
               </div>
               <div className="entry-row-unteraufgaben">
+                <TodoUnterpunkte
+                  parentId={t.id}
+                  fachId={t.fach_id}
+                  initial={todos.filter((x) => x.parent_id === t.id)}
+                />
                 <Unteraufgaben
                   parentTyp="todo"
                   parentId={t.id}

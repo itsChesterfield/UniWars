@@ -8,6 +8,8 @@ export type TodoInput = {
   titel: string;
   fach_id: string | null;
   prioritaet: Enums<"prioritaet">;
+  /** Gesetzt, wenn dies ein Unterpunkt eines anderen Todos ist. */
+  parentId?: string | null;
 };
 
 export async function createTodo(input: TodoInput) {
@@ -22,6 +24,7 @@ export async function createTodo(input: TodoInput) {
     fach_id: input.fach_id,
     titel: input.titel,
     prioritaet: input.prioritaet,
+    parent_id: input.parentId ?? null,
   };
 
   const { data, error } = await supabase.from("todo").insert(payload).select().single();

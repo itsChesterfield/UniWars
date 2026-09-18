@@ -415,6 +415,7 @@ export type Database = {
           erstellt_am: string
           fach_id: string | null
           id: string
+          parent_id: string | null
           prioritaet: Database["public"]["Enums"]["prioritaet"]
           titel: string
           user_id: string
@@ -424,6 +425,7 @@ export type Database = {
           erstellt_am?: string
           fach_id?: string | null
           id?: string
+          parent_id?: string | null
           prioritaet?: Database["public"]["Enums"]["prioritaet"]
           titel: string
           user_id: string
@@ -433,6 +435,7 @@ export type Database = {
           erstellt_am?: string
           fach_id?: string | null
           id?: string
+          parent_id?: string | null
           prioritaet?: Database["public"]["Enums"]["prioritaet"]
           titel?: string
           user_id?: string
@@ -443,6 +446,13 @@ export type Database = {
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todo_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "todo"
             referencedColumns: ["id"]
           },
         ]
