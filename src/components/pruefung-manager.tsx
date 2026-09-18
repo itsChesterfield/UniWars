@@ -10,8 +10,10 @@ import {
 } from "@/app/pruefung/actions";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
+import { Unteraufgaben } from "@/components/unteraufgaben";
 
 type Pruefung = Tables<"pruefung">;
+type Deadline = Tables<"deadline">;
 
 const STATUS_LABEL: Record<Enums<"pruefung_status">, string> = {
   ANSTEHEND: "Anstehend",
@@ -38,13 +40,17 @@ function leeresFormular(ersteFachId: string | null): PruefungInput {
 export function PruefungManager({
   initialPruefungen,
   faecher,
+  deadlines = [],
   embedded = false,
   versteckeErstellen = false,
+  userId,
 }: {
   initialPruefungen: Pruefung[];
   faecher: FachOption[];
+  deadlines?: Deadline[];
   embedded?: boolean;
   versteckeErstellen?: boolean;
+  userId?: string;
 }) {
   const [pruefungen, setPruefungen] = useState(initialPruefungen);
   const [formOpen, setFormOpen] = useState(false);
@@ -132,31 +138,41 @@ export function PruefungManager({
         {sortiert.map((p) => {
           const fach = faecher.find((f) => f.id === p.fach_id);
           return (
-            <li key={p.id} className="entry-row">
-              <span className={`status-marke status-${p.status.toLowerCase()}`} aria-hidden />
-              <div className="entry-info">
-                <span className="entry-title">{p.titel}</span>
-                <span className="entry-meta">
-                  {[
-                    fach?.name,
-                    new Date(p.datum).toLocaleString("de-DE", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }),
-                    p.raum,
-                    STATUS_LABEL[p.status],
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
+            <li key={p.id} className="entry-row entry-row-mit-unteraufgaben">
+              <div className="entry-row-main">
+                <span className={`status-marke status-${p.status.toLowerCase()}`} aria-hidden />
+                <div className="entry-info">
+                  <span className="entry-title">{p.titel}</span>
+                  <span className="entry-meta">
+                    {[
+                      fach?.name,
+                      new Date(p.datum).toLocaleString("de-DE", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }),
+                      p.raum,
+                      STATUS_LABEL[p.status],
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </div>
+                <div className="entry-actions">
+                  <button type="button" onClick={() => openEditForm(p)}>
+                    Bearbeiten
+                  </button>
+                  <button type="button" onClick={() => handleDelete(p.id)}>
+                    Löschen
+                  </button>
+                </div>
               </div>
-              <div className="entry-actions">
-                <button type="button" onClick={() => openEditForm(p)}>
-                  Bearbeiten
-                </button>
-                <button type="button" onClick={() => handleDelete(p.id)}>
-                  Löschen
-                </button>
+              <div className="entry-row-unteraufgaben">
+                <Unteraufgaben
+                  parentTyp="pruefung"
+                  parentId={p.id}
+                  initial={deadlines.filter((d) => d.pruefung_id === p.id)}
+                  userId={userId}
+                />
               </div>
             </li>
           );

@@ -12,6 +12,7 @@ import {
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
+import { DeadlineTeilen } from "@/components/deadline-teilen";
 
 type Deadline = Tables<"deadline">;
 
@@ -51,13 +52,21 @@ export function DeadlineManager({
   faecher,
   embedded = false,
   versteckeErstellen = false,
+  userId,
 }: {
   initialDeadlines: Deadline[];
   faecher: FachOption[];
   embedded?: boolean;
   versteckeErstellen?: boolean;
+  userId?: string;
 }) {
-  const [deadlines, setDeadlines] = useState(initialDeadlines);
+  // Unteraufgaben werden unter ihrem Todo/ihrer Prüfung angezeigt – außer man ist
+  // nur als eingeladenes Mitglied dabei und sieht das übergeordnete Todo gar nicht.
+  const [deadlines, setDeadlines] = useState(
+    initialDeadlines.filter(
+      (d) => (!d.todo_id && !d.pruefung_id) || d.user_id !== userId,
+    ),
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DeadlineInput>(LEERES_FORMULAR);
@@ -199,6 +208,7 @@ export function DeadlineManager({
                 );
               })()}
               <div className="entry-actions">
+                {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
                 <button type="button" onClick={() => openEditForm(d)}>
                   Bearbeiten
                 </button>

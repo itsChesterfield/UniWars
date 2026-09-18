@@ -31,6 +31,7 @@ export default async function DashboardPage() {
     { data: lernSessions, error: lernSessionError },
     { data: benachrichtigungen, error: benachrichtigungError },
     { data: settingsRoh, error: settingsError },
+    { data: einladungen, error: einladungenError },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -46,6 +47,12 @@ export default async function DashboardPage() {
       .order("erstellt_am", { ascending: false })
       .limit(20),
     supabase.from("settings").select("*").eq("user_id", user.id).single(),
+    supabase
+      .from("einladung")
+      .select("*")
+      .eq("an_user_id", user.id)
+      .eq("status", "OFFEN")
+      .order("erstellt_am", { ascending: false }),
   ]);
 
   const error =
@@ -58,15 +65,18 @@ export default async function DashboardPage() {
     notenschnittError ||
     lernSessionError ||
     benachrichtigungError ||
-    settingsError;
+    settingsError ||
+    einladungenError;
   if (error) throw new Error(error.message);
 
   const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
 
   const username =
-    typeof user.user_metadata?.username === "string" && user.user_metadata.username.trim() !== ""
-      ? user.user_metadata.username
-      : (user.email ?? "").split("@")[0];
+    typeof settings.username === "string" && settings.username.trim() !== ""
+      ? settings.username
+      : typeof user.user_metadata?.username === "string" && user.user_metadata.username.trim() !== ""
+        ? user.user_metadata.username
+        : (user.email ?? "").split("@")[0];
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
@@ -83,9 +93,11 @@ export default async function DashboardPage() {
             notenschnitt={notenschnitt}
             lernSessions={lernSessions ?? []}
             benachrichtigungen={benachrichtigungen ?? []}
+            einladungen={einladungen ?? []}
             sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
             settings={settings}
             username={username}
+            userId={user.id}
           />
         </Suspense>
       </main>

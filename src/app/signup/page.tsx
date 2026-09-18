@@ -27,10 +27,13 @@ export default async function SignupPage({
             id="username"
             name="username"
             type="text"
-            placeholder="Nutzername"
+            placeholder="Nutzername (3–20 Zeichen, a–z, 0–9, _)"
             required
             autoComplete="nickname"
-            maxLength={40}
+            minLength={3}
+            maxLength={20}
+            pattern="[a-zA-Z0-9_]{3,20}"
+            title="3–20 Zeichen: Buchstaben, Zahlen und Unterstriche"
           />
         </div>
 

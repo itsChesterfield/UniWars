@@ -11,8 +11,10 @@ import {
 } from "@/app/todo/actions";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
+import { Unteraufgaben } from "@/components/unteraufgaben";
 
 type Todo = Tables<"todo">;
+type Deadline = Tables<"deadline">;
 
 const PRIO_LABEL: Record<Enums<"prioritaet">, string> = {
   HOCH: "Hoch",
@@ -27,13 +29,17 @@ const LEERES_FORMULAR: TodoInput = { titel: "", fach_id: null, prioritaet: "MITT
 export function TodoManager({
   initialTodos,
   faecher,
+  deadlines = [],
   embedded = false,
   versteckeErstellen = false,
+  userId,
 }: {
   initialTodos: Todo[];
   faecher: FachOption[];
+  deadlines?: Deadline[];
   embedded?: boolean;
   versteckeErstellen?: boolean;
+  userId?: string;
 }) {
   const [todos, setTodos] = useState(initialTodos);
   const [formOpen, setFormOpen] = useState(false);
@@ -126,27 +132,40 @@ export function TodoManager({
         {sortiert.map((t) => {
           const fach = faecher.find((f) => f.id === t.fach_id);
           return (
-            <li key={t.id} className={`entry-row ${t.erledigt ? "entry-erledigt" : ""}`}>
-              <input
-                type="checkbox"
-                checked={t.erledigt}
-                onChange={() => handleToggleErledigt(t)}
-                aria-label="Erledigt"
-              />
-              <span className={`prio-marke prio-${t.prioritaet.toLowerCase()}`} aria-hidden />
-              <div className="entry-info">
-                <span className="entry-title">{t.titel}</span>
-                <span className="entry-meta">
-                  {[PRIO_LABEL[t.prioritaet], fach?.name].filter(Boolean).join(" · ")}
-                </span>
+            <li
+              key={t.id}
+              className={`entry-row entry-row-mit-unteraufgaben ${t.erledigt ? "entry-erledigt" : ""}`}
+            >
+              <div className="entry-row-main">
+                <input
+                  type="checkbox"
+                  checked={t.erledigt}
+                  onChange={() => handleToggleErledigt(t)}
+                  aria-label="Erledigt"
+                />
+                <span className={`prio-marke prio-${t.prioritaet.toLowerCase()}`} aria-hidden />
+                <div className="entry-info">
+                  <span className="entry-title">{t.titel}</span>
+                  <span className="entry-meta">
+                    {[PRIO_LABEL[t.prioritaet], fach?.name].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+                <div className="entry-actions">
+                  <button type="button" onClick={() => openEditForm(t)}>
+                    Bearbeiten
+                  </button>
+                  <button type="button" onClick={() => handleDelete(t.id)}>
+                    Löschen
+                  </button>
+                </div>
               </div>
-              <div className="entry-actions">
-                <button type="button" onClick={() => openEditForm(t)}>
-                  Bearbeiten
-                </button>
-                <button type="button" onClick={() => handleDelete(t.id)}>
-                  Löschen
-                </button>
+              <div className="entry-row-unteraufgaben">
+                <Unteraufgaben
+                  parentTyp="todo"
+                  parentId={t.id}
+                  initial={deadlines.filter((d) => d.todo_id === t.id)}
+                  userId={userId}
+                />
               </div>
             </li>
           );

@@ -2,20 +2,39 @@
 
 import { useState, useTransition } from "react";
 import { markiereBenachrichtigungGelesen } from "@/app/benachrichtigung/actions";
+import { einladungAnnehmen, einladungAblehnen } from "@/app/einladung/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Benachrichtigung = Tables<"benachrichtigung">;
+type Einladung = Tables<"einladung">;
 
-export function NotificationBell({ initial }: { initial: Benachrichtigung[] }) {
+export function NotificationBell({
+  initial,
+  initialEinladungen = [],
+}: {
+  initial: Benachrichtigung[];
+  initialEinladungen?: Einladung[];
+}) {
   const [items, setItems] = useState(initial);
+  const [einladungen, setEinladungen] = useState(initialEinladungen);
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
 
-  const ungelesen = items.filter((n) => !n.gelesen).length;
+  const ungelesen = items.filter((n) => !n.gelesen).length + einladungen.length;
 
   function markiereGelesen(id: string) {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, gelesen: true } : n)));
     startTransition(() => markiereBenachrichtigungGelesen(id));
+  }
+
+  function annehmen(id: string) {
+    setEinladungen((prev) => prev.filter((e) => e.id !== id));
+    startTransition(() => einladungAnnehmen(id));
+  }
+
+  function ablehnen(id: string) {
+    setEinladungen((prev) => prev.filter((e) => e.id !== id));
+    startTransition(() => einladungAblehnen(id));
   }
 
   return (
@@ -35,10 +54,45 @@ export function NotificationBell({ initial }: { initial: Benachrichtigung[] }) {
 
       {open && (
         <div className="notification-dropdown">
-          {items.length === 0 ? (
+          {einladungen.length === 0 && items.length === 0 ? (
             <p className="empty-state">Keine Benachrichtigungen.</p>
           ) : (
             <ul>
+              {einladungen.map((e) => (
+                <li key={e.id} className="notification-unread einladung-item">
+                  <span className="dot" style={{ marginTop: 6, background: "var(--accent-strong)" }} aria-hidden />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+                      <strong>{e.von_username ?? "Jemand"}</strong> hat dich zu{" "}
+                      <strong>„{e.deadline_titel}“</strong> eingeladen
+                    </div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>
+                      Fällig am{" "}
+                      {new Date(e.deadline_faellig_am).toLocaleString("de-DE", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </div>
+                    <div className="row" style={{ gap: 8, marginTop: 7 }}>
+                      <button
+                        type="button"
+                        className="btnp"
+                        style={{ padding: "4px 12px", fontSize: 12 }}
+                        onClick={() => annehmen(e.id)}
+                      >
+                        Annehmen
+                      </button>
+                      <button
+                        type="button"
+                        style={{ padding: "4px 12px", fontSize: 12 }}
+                        onClick={() => ablehnen(e.id)}
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
               {items.map((n) => (
                 <li
                   key={n.id}

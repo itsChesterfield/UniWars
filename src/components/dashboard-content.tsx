@@ -36,6 +36,7 @@ type Pruefung = Tables<"pruefung">;
 type Eintrag = Tables<"stundenplan_eintrag">;
 type LernSession = Tables<"lern_session">;
 type Benachrichtigung = Tables<"benachrichtigung">;
+type Einladung = Tables<"einladung">;
 type Settings = Tables<"settings">;
 
 function begruessung(): string {
@@ -63,9 +64,11 @@ export function DashboardContent({
   notenschnitt,
   lernSessions,
   benachrichtigungen,
+  einladungen,
   sichtbareWidgets,
   settings,
   username,
+  userId,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -76,9 +79,11 @@ export function DashboardContent({
   notenschnitt: number | null;
   lernSessions: LernSession[];
   benachrichtigungen: Benachrichtigung[];
+  einladungen: Einladung[];
   sichtbareWidgets: string[];
   settings: Settings;
   username: string;
+  userId: string;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -129,7 +134,7 @@ export function DashboardContent({
         <QuickAdd faecher={faecher} />
         <div className="dashboard-toolbar-rechts">
           <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} />
-          <NotificationBell initial={benachrichtigungen} />
+          <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
           <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
         </div>
       </div>
@@ -190,6 +195,7 @@ export function DashboardContent({
               faecher={faecher}
               embedded
               versteckeErstellen
+              userId={userId}
             />
 
             <h3 className="aufgaben-untertitel">To-Dos</h3>
@@ -197,8 +203,10 @@ export function DashboardContent({
               key={`todo-${filterKey}`}
               initialTodos={gefilterteTodos}
               faecher={faecher}
+              deadlines={gefilterteDeadlines}
               embedded
               versteckeErstellen
+              userId={userId}
             />
 
             <h3 className="aufgaben-untertitel">Prüfungen</h3>
@@ -206,8 +214,10 @@ export function DashboardContent({
               key={`pruefung-${filterKey}`}
               initialPruefungen={gefiltertePruefungen}
               faecher={faecher}
+              deadlines={gefilterteDeadlines}
               embedded
               versteckeErstellen
+              userId={userId}
             />
           </section>
         )}

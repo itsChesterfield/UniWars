@@ -1400,3 +1400,163 @@ input[type="checkbox"] {
   background: var(--card2);
   color: var(--text);
 }
+
+/* --- Unteraufgaben (Deadline/Prüfung als Sub-Item eines Todos) --- */
+
+.entry-row-mit-unteraufgaben {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.entry-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.entry-row-unteraufgaben {
+  padding-left: 30px;
+}
+
+.unteraufgaben {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unteraufgabe-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--card2);
+  font-size: 12px;
+}
+
+.unteraufgabe-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.unteraufgabe-row button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.unteraufgabe-add {
+  align-self: flex-start;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.unteraufgabe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--card2);
+}
+
+.unteraufgabe-form input {
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 12px;
+}
+
+/* --- Deadline teilen (Einladungen) --- */
+
+.deadline-teilen {
+  position: relative;
+}
+
+.deadline-teilen-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.deadline-teilen-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 240px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.deadline-teilen-input {
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.deadline-teilen-mitglieder,
+.deadline-teilen-treffer {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deadline-teilen-mitglieder li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deadline-teilen-treffer li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.deadline-teilen-treffer button {
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--accent-strong);
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.einladung-item {
+  cursor: default !important;
+}
