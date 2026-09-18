@@ -34,6 +34,28 @@ export async function createTodo(input: TodoInput) {
   return data;
 }
 
+export async function createUnterpunkte(parentId: string, fachId: string | null, titel: string[]) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Nicht angemeldet");
+
+  const payload: TablesInsert<"todo">[] = titel.map((t) => ({
+    user_id: user.id,
+    fach_id: fachId,
+    titel: t,
+    prioritaet: "MITTEL",
+    parent_id: parentId,
+  }));
+
+  const { data, error } = await supabase.from("todo").insert(payload).select();
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  return data;
+}
+
 export async function updateTodo(id: string, input: TodoInput) {
   const supabase = await createClient();
   const { data, error } = await supabase

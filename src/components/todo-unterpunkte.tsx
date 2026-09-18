@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createTodo, toggleTodoErledigt, deleteTodo } from "@/app/todo/actions";
+import { createUnterpunkte, toggleTodoErledigt, deleteTodo } from "@/app/todo/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Todo = Tables<"todo">;
@@ -17,7 +17,7 @@ export function TodoUnterpunkte({
 }) {
   const [unterpunkte, setUnterpunkte] = useState(initial);
   const [formOpen, setFormOpen] = useState(false);
-  const [titel, setTitel] = useState("");
+  const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -29,16 +29,22 @@ export function TodoUnterpunkte({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const zeilen = text
+      .split("\n")
+      .map((z) => z.trim())
+      .filter((z) => z.length > 0);
+
+    if (zeilen.length === 0) {
+      setFormOpen(false);
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const created = await createTodo({
-          titel,
-          fach_id: fachId,
-          prioritaet: "MITTEL",
-          parentId,
-        });
-        setUnterpunkte((prev) => [...prev, created]);
-        setTitel("");
+        const created = await createUnterpunkte(parentId, fachId, zeilen);
+        setUnterpunkte((prev) => [...prev, ...created]);
+        setText("");
         setFormOpen(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
@@ -60,7 +66,7 @@ export function TodoUnterpunkte({
   if (unterpunkte.length === 0 && !formOpen) {
     return (
       <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-        + Unterpunkt
+        + Unterpunkte
       </button>
     );
   }
@@ -87,16 +93,16 @@ export function TodoUnterpunkte({
       {formOpen ? (
         <form className="unteraufgabe-form" onSubmit={handleSubmit}>
           {error && <p className="auth-error" style={{ fontSize: 12 }}>{error}</p>}
-          <input
-            type="text"
-            placeholder="Titel des Unterpunkts"
-            value={titel}
-            onChange={(e) => setTitel(e.target.value)}
-            required
+          <textarea
+            autoFocus
+            rows={3}
+            placeholder={"Eine Aufgabe pro Zeile…\nAufgabe 1\nAufgabe 2\nAufgabe 3"}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
           />
           <div className="row" style={{ gap: 6 }}>
             <button type="submit" className="btnp" disabled={isPending} style={{ padding: "4px 12px", fontSize: 12 }}>
-              Anlegen
+              Bestätigen
             </button>
             <button type="button" onClick={() => setFormOpen(false)} style={{ padding: "4px 12px", fontSize: 12 }}>
               Abbrechen
@@ -105,7 +111,7 @@ export function TodoUnterpunkte({
         </form>
       ) : (
         <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-          + Unterpunkt
+          + Unterpunkte
         </button>
       )}
     </div>

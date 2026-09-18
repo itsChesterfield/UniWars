@@ -1474,13 +1474,16 @@ input[type="checkbox"] {
   background: var(--card2);
 }
 
-.unteraufgabe-form input {
+.unteraufgabe-form input,
+.unteraufgabe-form textarea {
   padding: 7px 10px;
   border-radius: 7px;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
   font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
 }
 
 /* --- Deadline teilen (Einladungen) --- */
