@@ -131,7 +131,7 @@ export function DashboardContent({
 
       <div className="dashboard-toolbar">
         <SearchBar />
-        <QuickAdd faecher={faecher} />
+        <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
         <div className="dashboard-toolbar-rechts">
           <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} />
           <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />

@@ -9,7 +9,12 @@ import { createDeadline } from "@/app/deadline/actions";
 import { createTodo } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
+import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import type { FachOption } from "@/lib/fach-option";
+import type { Tables } from "@/lib/supabase/types";
+
+type TodoOption = Pick<Tables<"todo">, "id" | "titel" | "erledigt">;
+type PruefungOption = Pick<Tables<"pruefung">, "id" | "titel">;
 
 type QuickAddTyp = "todo" | "deadline" | "fach" | "note" | "pruefung";
 
@@ -33,16 +38,42 @@ function morgenAbend(): string {
   return toDatetimeLocal(d);
 }
 
-export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
+export function QuickAdd({
+  faecher,
+  todos = [],
+  pruefungen = [],
+}: {
+  faecher: FachOption[];
+  todos?: TodoOption[];
+  pruefungen?: PruefungOption[];
+}) {
   const [open, setOpen] = useState(false);
   const [typ, setTyp] = useState<QuickAddTyp>("todo");
   const [titel, setTitel] = useState("");
   const [fachId, setFachId] = useState<string>(faecher[0]?.id ?? "");
   const [datumZeit, setDatumZeit] = useState(morgenAbend());
+  const [unterAuswahl, setUnterAuswahl] = useState("");
+  const [teilenMit, setTeilenMit] = useState("");
+  const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  function handleTeilenMitChange(value: string) {
+    setTeilenMit(value);
+    if (value.trim().length < 2) {
+      setNutzerVorschlaege([]);
+      return;
+    }
+    startTransition(async () => {
+      try {
+        setNutzerVorschlaege(await benutzerSuchen(value));
+      } catch {
+        setNutzerVorschlaege([]);
+      }
+    });
+  }
 
   useEffect(() => {
     function handleKeydown(e: KeyboardEvent) {
@@ -84,15 +115,22 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
               max_fehltage: null,
             });
             break;
-          case "deadline":
-            await createDeadline({
+          case "deadline": {
+            const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
+            const erstellt = await createDeadline({
               titel,
               fach_id: fachId || null,
               faellig_am: new Date(datumZeit).toISOString(),
               typ: "SONSTIGE",
               kategorie: "NORMAL",
+              todoId: unterTyp === "todo" ? unterId : undefined,
+              pruefungId: unterTyp === "pruefung" ? unterId : undefined,
             });
+            if (teilenMit.trim() && erstellt[0]) {
+              await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+            }
             break;
+          }
           case "todo":
             await createTodo({ titel, fach_id: fachId || null, prioritaet: "MITTEL" });
             break;
@@ -121,6 +159,9 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
         posthog.capture("quick_add_benutzt", { typ });
         setTitel("");
         setDatumZeit(morgenAbend());
+        setUnterAuswahl("");
+        setTeilenMit("");
+        setNutzerVorschlaege([]);
         setOpen(false);
         router.refresh();
       } catch (err) {
@@ -192,6 +233,49 @@ export function QuickAdd({ faecher }: { faecher: FachOption[] }) {
               placeholder="Titel…"
               required
             />
+
+            {typ === "deadline" && (todos.length > 0 || pruefungen.length > 0) && (
+              <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
+                <option value="">Eigenständige Deadline</option>
+                {todos.filter((t) => !t.erledigt).length > 0 && (
+                  <optgroup label="Als Unteraufgabe von To-Do">
+                    {todos
+                      .filter((t) => !t.erledigt)
+                      .map((t) => (
+                        <option key={t.id} value={`todo:${t.id}`}>
+                          {t.titel}
+                        </option>
+                      ))}
+                  </optgroup>
+                )}
+                {pruefungen.length > 0 && (
+                  <optgroup label="Als Unteraufgabe von Prüfung">
+                    {pruefungen.map((p) => (
+                      <option key={p.id} value={`pruefung:${p.id}`}>
+                        {p.titel}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            )}
+
+            {typ === "deadline" && (
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  value={teilenMit}
+                  onChange={(e) => handleTeilenMitChange(e.target.value)}
+                  placeholder="Mit Nutzername teilen (optional)"
+                  list="quick-add-nutzer-vorschlaege"
+                />
+                <datalist id="quick-add-nutzer-vorschlaege">
+                  {nutzerVorschlaege.map((n) => (
+                    <option key={n.user_id} value={n.username} />
+                  ))}
+                </datalist>
+              </div>
+            )}
 
             <div className="crud-form-actions">
               <button type="submit" className="btnp" disabled={isPending}>
