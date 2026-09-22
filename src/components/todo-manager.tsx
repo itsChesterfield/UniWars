@@ -13,6 +13,7 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { Unteraufgaben } from "@/components/unteraufgaben";
 import { TodoUnterpunkte } from "@/components/todo-unterpunkte";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 
 type Todo = Tables<"todo">;
 type Deadline = Tables<"deadline">;
@@ -42,6 +43,7 @@ export function TodoManager({
   versteckeErstellen?: boolean;
   userId?: string;
 }) {
+  const { oeffne } = useAufgabenDetail();
   const [todos, setTodos] = useState(initialTodos);
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -148,7 +150,13 @@ export function TodoManager({
                 />
                 <span className={`prio-marke prio-${t.prioritaet.toLowerCase()}`} aria-hidden />
                 <div className="entry-info">
-                  <span className="entry-title">{t.titel}</span>
+                  <button
+                    type="button"
+                    className="entry-title entry-title-link"
+                    onClick={() => oeffne("todo", t.id)}
+                  >
+                    {t.titel}
+                  </button>
                   <span className="entry-meta">
                     {[PRIO_LABEL[t.prioritaet], fach?.name].filter(Boolean).join(" · ")}
                   </span>

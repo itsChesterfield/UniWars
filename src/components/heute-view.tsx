@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import posthog from "posthog-js";
 import { toggleDeadlineErledigt } from "@/app/deadline/actions";
 import { toggleTodoErledigt } from "@/app/todo/actions";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 
@@ -28,6 +29,7 @@ type TimelineEintrag = {
   titel: string;
   erledigt: boolean;
   onToggle: (() => void) | null;
+  ziel: { zielTyp: "deadline" | "todo"; zielId: string } | null;
 };
 
 export function HeuteView({
@@ -49,6 +51,7 @@ export function HeuteView({
   );
   const [erledigteTodos, setErledigteTodos] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+  const { oeffne } = useAufgabenDetail();
 
   function deadlineUmschalten(id: string) {
     const neu = !erledigteDeadlines.has(id);
@@ -81,6 +84,7 @@ export function HeuteView({
       titel: faecher.find((f) => f.id === e.fach_id)?.name ?? "Unterricht",
       erledigt: false,
       onToggle: null,
+      ziel: null,
     }));
 
   const deadlinesHeute: TimelineEintrag[] = deadlines
@@ -92,6 +96,7 @@ export function HeuteView({
       titel: d.titel,
       erledigt: erledigteDeadlines.has(d.id),
       onToggle: () => deadlineUmschalten(d.id),
+      ziel: { zielTyp: "deadline" as const, zielId: d.id },
     }));
 
   const offeneTodosHeute: TimelineEintrag[] = todos
@@ -103,6 +108,7 @@ export function HeuteView({
       titel: t.titel,
       erledigt: false,
       onToggle: () => todoAbhaken(t.id),
+      ziel: { zielTyp: "todo" as const, zielId: t.id },
     }));
 
   const timeline = [...unterrichtHeute, ...deadlinesHeute, ...offeneTodosHeute].sort((a, b) => {
@@ -138,9 +144,20 @@ export function HeuteView({
                   </span>
                 )}
                 {item.zeit && <span className="heute-zeit">{item.zeit}</span>}
-                <span className="entry-title" style={{ flex: 1 }}>
-                  {item.titel}
-                </span>
+                {item.ziel ? (
+                  <button
+                    type="button"
+                    className="entry-title entry-title-link"
+                    style={{ flex: 1 }}
+                    onClick={() => item.ziel && oeffne(item.ziel.zielTyp, item.ziel.zielId)}
+                  >
+                    {item.titel}
+                  </button>
+                ) : (
+                  <span className="entry-title" style={{ flex: 1 }}>
+                    {item.titel}
+                  </span>
+                )}
                 <span className={`tag ${dringend ? "tag-danger" : ""}`}>{item.typ}</span>
               </li>
             );

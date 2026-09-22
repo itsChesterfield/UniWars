@@ -1396,8 +1396,14 @@ dialog.quick-add-modal {
   border: none;
 }
 
-dialog.quick-add-modal::backdrop {
+dialog.quick-add-modal::backdrop,
+dialog.card::backdrop {
   background: rgba(20, 24, 21, 0.5);
+}
+
+dialog.card {
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .quick-add-modal select,
@@ -1570,4 +1576,19 @@ dialog.quick-add-modal::backdrop {
 
 .einladung-item {
   cursor: default !important;
+}
+
+.entry-title-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.entry-title-link:hover {
+  text-decoration: underline;
 }

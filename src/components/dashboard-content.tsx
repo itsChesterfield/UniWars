@@ -26,6 +26,9 @@ import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
 import { NotificationBell } from "@/components/notification-bell";
 import { WidgetToggle, istWidgetSichtbar } from "@/components/widget-toggle";
+import { DetailAnsicht } from "@/components/detail-ansicht";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
+import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 
 type Fach = Tables<"fach">;
@@ -87,6 +90,13 @@ export function DashboardContent({
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
+  const detailParam = searchParams.get("detail");
+  const { schliesse: schliesseDetail } = useAufgabenDetail();
+  const [detailZielTypRoh, detailZielId] = detailParam ? detailParam.split(":") : [null, null];
+  const detailZielTyp: DetailZielTyp | null =
+    detailZielTypRoh === "todo" || detailZielTypRoh === "deadline" || detailZielTypRoh === "pruefung"
+      ? detailZielTypRoh
+      : null;
 
   useEffect(() => {
     posthog.capture("dashboard_geoeffnet");
@@ -326,6 +336,10 @@ export function DashboardContent({
           }
         />
       </div>
+
+      {detailZielTyp && detailZielId && (
+        <DetailAnsicht zielTyp={detailZielTyp} zielId={detailZielId} onClose={schliesseDetail} />
+      )}
     </>
   );
 }

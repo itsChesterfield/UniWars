@@ -526,6 +526,15 @@ export type Database = {
         Returns: boolean
       }
       notenschnitt: { Args: never; Returns: number }
+      pruefung_mitglieder: {
+        Args: { p_pruefung_id: string }
+        Returns: {
+          ist_ersteller: boolean
+          status: Database["public"]["Enums"]["einladung_status"]
+          user_id: string
+          username: string
+        }[]
+      }
       todo_mitglieder: {
         Args: { p_todo_id: string }
         Returns: {

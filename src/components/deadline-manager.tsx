@@ -13,6 +13,7 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 
 type Deadline = Tables<"deadline">;
 
@@ -62,6 +63,8 @@ export function DeadlineManager({
   versteckeErstellen?: boolean;
   userId?: string;
 }) {
+  const { oeffne } = useAufgabenDetail();
+
   // Unteraufgaben werden unter ihrem Todo/ihrer Prüfung angezeigt – außer man ist
   // nur als eingeladenes Mitglied dabei und sieht das übergeordnete Todo gar nicht.
   const [deadlines, setDeadlines] = useState(
@@ -184,7 +187,13 @@ export function DeadlineManager({
                 aria-label="Erledigt"
               />
               <div className="entry-info">
-                <span className="entry-title">{d.titel}</span>
+                <button
+                  type="button"
+                  className="entry-title entry-title-link"
+                  onClick={() => oeffne("deadline", d.id)}
+                >
+                  {d.titel}
+                </button>
                 <span className="entry-meta">
                   {[
                     fach?.name,

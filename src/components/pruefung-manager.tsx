@@ -11,6 +11,7 @@ import {
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { Unteraufgaben } from "@/components/unteraufgaben";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 
 type Pruefung = Tables<"pruefung">;
 type Deadline = Tables<"deadline">;
@@ -52,6 +53,7 @@ export function PruefungManager({
   versteckeErstellen?: boolean;
   userId?: string;
 }) {
+  const { oeffne } = useAufgabenDetail();
   const [pruefungen, setPruefungen] = useState(initialPruefungen);
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -142,7 +144,13 @@ export function PruefungManager({
               <div className="entry-row-main">
                 <span className={`status-marke status-${p.status.toLowerCase()}`} aria-hidden />
                 <div className="entry-info">
-                  <span className="entry-title">{p.titel}</span>
+                  <button
+                    type="button"
+                    className="entry-title entry-title-link"
+                    onClick={() => oeffne("pruefung", p.id)}
+                  >
+                    {p.titel}
+                  </button>
                   <span className="entry-meta">
                     {[
                       fach?.name,
