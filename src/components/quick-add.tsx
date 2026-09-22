@@ -10,6 +10,7 @@ import { createTodo } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
+import { createAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
@@ -176,6 +177,12 @@ export function QuickAdd({
     setAnhaenge((prev) => prev.filter((a) => a.url !== url));
   }
 
+  async function speichereAnhaenge(zielTyp: AnhangZielTyp, zielId: string) {
+    for (const a of anhaenge) {
+      await createAnhang(zielTyp, zielId, a.url);
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -203,22 +210,24 @@ export function QuickAdd({
         } else if (modus === "PRUEFUNG") {
           if (!fachId) throw new Error("Bitte ein Fach wählen.");
           if (!datumZeit) throw new Error("Bitte einen Termin angeben.");
-          await createPruefung({
+          const erstellt = await createPruefung({
             titel,
             fach_id: fachId,
             datum: new Date(datumZeit).toISOString(),
             raum: null,
             status: "ANSTEHEND",
           });
+          await speichereAnhaenge("pruefung", erstellt.id);
         } else if (!datumZeit) {
           // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
           const [, todoUnterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
-          await createTodo({
+          const erstellt = await createTodo({
             titel,
             fach_id: fachId || null,
             prioritaet: "MITTEL",
             parentId: todoUnterId,
           });
+          await speichereAnhaenge("todo", erstellt.id);
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
@@ -230,8 +239,9 @@ export function QuickAdd({
             todoId: unterTyp === "todo" ? unterId : undefined,
             pruefungId: unterTyp === "pruefung" ? unterId : undefined,
           });
-          if (teilenMit.trim() && erstellt[0]) {
-            await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+          if (erstellt[0]) {
+            if (teilenMit.trim()) await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+            await speichereAnhaenge("deadline", erstellt[0].id);
           }
         }
 
