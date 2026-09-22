@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   detailLaden,
   type DetailDaten,
   type DetailZielTyp,
 } from "@/app/aufgaben-detail/actions";
-import { toggleTodoErledigt } from "@/app/todo/actions";
-import { toggleDeadlineErledigt } from "@/app/deadline/actions";
+import { toggleTodoErledigt, createUnterpunkte } from "@/app/todo/actions";
+import { toggleDeadlineErledigt, createDeadline } from "@/app/deadline/actions";
+import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { AnhangListe } from "@/components/anhang-liste";
 import { farbeFuerMitglied } from "@/lib/mitglied-farbe";
 
@@ -36,6 +37,18 @@ export function DetailAnsicht({
   const [daten, setDaten] = useState<DetailDaten | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [mitgliedFormOffen, setMitgliedFormOffen] = useState(false);
+  const [mitgliedSuche, setMitgliedSuche] = useState("");
+  const [mitgliedVorschlaege, setMitgliedVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
+  const [mitgliedError, setMitgliedError] = useState<string | null>(null);
+  const [mitgliedPending, startMitgliedTransition] = useTransition();
+
+  const [unterFormOffen, setUnterFormOffen] = useState(false);
+  const [unterTitel, setUnterTitel] = useState("");
+  const [unterDatum, setUnterDatum] = useState("");
+  const [unterError, setUnterError] = useState<string | null>(null);
+  const [unterPending, startUnterTransition] = useTransition();
+
   useEffect(() => {
     dialogRef.current?.showModal();
     detailLaden(zielTyp, zielId)
@@ -48,6 +61,11 @@ export function DetailAnsicht({
     onClose();
   }
 
+  async function neuLaden() {
+    const frisch = await detailLaden(zielTyp, zielId);
+    setDaten(frisch);
+  }
+
   function handleUnteraufgabeToggle(id: string, erledigt: boolean) {
     if (!daten) return;
     setDaten({
@@ -56,6 +74,73 @@ export function DetailAnsicht({
     });
     const toggeln = daten.typ === "todo" ? toggleTodoErledigt : toggleDeadlineErledigt;
     toggeln(id, erledigt).then(() => router.refresh());
+  }
+
+  function handleMitgliedSucheChange(value: string) {
+    setMitgliedSuche(value);
+    setMitgliedError(null);
+    if (value.trim().length < 2) {
+      setMitgliedVorschlaege([]);
+      return;
+    }
+    startMitgliedTransition(async () => {
+      try {
+        setMitgliedVorschlaege(await benutzerSuchen(value));
+      } catch {
+        setMitgliedVorschlaege([]);
+      }
+    });
+  }
+
+  function mitgliedEinladen(username: string) {
+    setMitgliedError(null);
+    startMitgliedTransition(async () => {
+      try {
+        await deadlineEinladen(zielId, username, zielTyp);
+        setMitgliedSuche("");
+        setMitgliedVorschlaege([]);
+        setMitgliedFormOffen(false);
+        await neuLaden();
+      } catch (err) {
+        setMitgliedError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      }
+    });
+  }
+
+  function unteraufgabeHinzufuegen(e: React.FormEvent) {
+    e.preventDefault();
+    if (!daten || unterTitel.trim() === "") return;
+    setUnterError(null);
+    startUnterTransition(async () => {
+      try {
+        if (daten.typ === "todo") {
+          await createUnterpunkte(zielId, daten.fachId, [
+            {
+              titel: unterTitel.trim(),
+              faelligAm: unterDatum ? new Date(unterDatum).toISOString() : undefined,
+            },
+          ]);
+        } else {
+          if (!unterDatum) throw new Error("Bitte eine Frist angeben.");
+          await createDeadline({
+            titel: unterTitel.trim(),
+            fach_id: daten.fachId,
+            faellig_am: new Date(unterDatum).toISOString(),
+            typ: "ABGABE",
+            kategorie: "NORMAL",
+            pruefungId: daten.typ === "pruefung" ? zielId : undefined,
+            parentDeadlineId: daten.typ === "deadline" ? zielId : undefined,
+          });
+        }
+        setUnterTitel("");
+        setUnterDatum("");
+        setUnterFormOffen(false);
+        await neuLaden();
+        router.refresh();
+      } catch (err) {
+        setUnterError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      }
+    });
   }
 
   return (
@@ -109,7 +194,17 @@ export function DetailAnsicht({
           <hr className="sep" />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <span className="aufgaben-untertitel">Mitglieder</span>
+            <div className="rowb">
+              <span className="aufgaben-untertitel" style={{ margin: 0 }}>Mitglieder</span>
+              <button
+                type="button"
+                className="unteraufgabe-add"
+                onClick={() => setMitgliedFormOffen((v) => !v)}
+              >
+                + Mitglied
+              </button>
+            </div>
+
             {daten.mitglieder.length === 0 ? (
               <p className="faint" style={{ fontSize: 12 }}>Keine Mitglieder.</p>
             ) : (
@@ -139,13 +234,52 @@ export function DetailAnsicht({
                 ))}
               </div>
             )}
+
+            {mitgliedFormOffen && (
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  value={mitgliedSuche}
+                  onChange={(e) => handleMitgliedSucheChange(e.target.value)}
+                  placeholder="Nutzername suchen…"
+                  autoFocus
+                />
+                {mitgliedVorschlaege.length > 0 && (
+                  <ul className="deadline-teilen-treffer" style={{ marginTop: 6 }}>
+                    {mitgliedVorschlaege.map((n) => (
+                      <li key={n.user_id}>
+                        <span>{n.username}</span>
+                        <button type="button" disabled={mitgliedPending} onClick={() => mitgliedEinladen(n.username)}>
+                          Einladen
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {mitgliedError && (
+                  <p className="auth-error" style={{ fontSize: 12, marginTop: 4 }}>{mitgliedError}</p>
+                )}
+              </div>
+            )}
           </div>
 
           <hr className="sep" />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <span className="aufgaben-untertitel">Unteraufgaben ({daten.unteraufgaben.length})</span>
-            {daten.unteraufgaben.length === 0 ? (
+            <div className="rowb">
+              <span className="aufgaben-untertitel" style={{ margin: 0 }}>
+                Unteraufgaben ({daten.unteraufgaben.length})
+              </span>
+              <button
+                type="button"
+                className="unteraufgabe-add"
+                onClick={() => setUnterFormOffen((v) => !v)}
+              >
+                + Unteraufgabe
+              </button>
+            </div>
+
+            {daten.unteraufgaben.length === 0 && !unterFormOffen ? (
               <p className="faint" style={{ fontSize: 12 }}>Keine Unteraufgaben.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -169,6 +303,44 @@ export function DetailAnsicht({
                   </div>
                 ))}
               </div>
+            )}
+
+            {unterFormOffen && (
+              <form className="unteraufgabe-form" onSubmit={unteraufgabeHinzufuegen}>
+                {unterError && <p className="auth-error" style={{ fontSize: 12 }}>{unterError}</p>}
+                <input
+                  type="text"
+                  value={unterTitel}
+                  onChange={(e) => setUnterTitel(e.target.value)}
+                  placeholder="Titel der Unteraufgabe"
+                  autoFocus
+                  required
+                />
+                <input
+                  type="datetime-local"
+                  value={unterDatum}
+                  onChange={(e) => setUnterDatum(e.target.value)}
+                  aria-label="Frist"
+                  required={daten.typ !== "todo"}
+                />
+                <div className="row" style={{ gap: 6 }}>
+                  <button
+                    type="submit"
+                    className="btnp"
+                    disabled={unterPending}
+                    style={{ padding: "4px 12px", fontSize: 12 }}
+                  >
+                    Hinzufügen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUnterFormOffen(false)}
+                    style={{ padding: "4px 12px", fontSize: 12 }}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </form>
             )}
           </div>
 

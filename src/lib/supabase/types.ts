@@ -79,6 +79,7 @@ export type Database = {
           faellig_am: string
           id: string
           kategorie: Database["public"]["Enums"]["deadline_kategorie"]
+          parent_deadline_id: string | null
           pruefung_id: string | null
           quelle: Database["public"]["Enums"]["quelle"]
           titel: string
@@ -94,6 +95,7 @@ export type Database = {
           faellig_am: string
           id?: string
           kategorie?: Database["public"]["Enums"]["deadline_kategorie"]
+          parent_deadline_id?: string | null
           pruefung_id?: string | null
           quelle?: Database["public"]["Enums"]["quelle"]
           titel: string
@@ -109,6 +111,7 @@ export type Database = {
           faellig_am?: string
           id?: string
           kategorie?: Database["public"]["Enums"]["deadline_kategorie"]
+          parent_deadline_id?: string | null
           pruefung_id?: string | null
           quelle?: Database["public"]["Enums"]["quelle"]
           titel?: string
@@ -123,6 +126,13 @@ export type Database = {
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deadline_parent_deadline_id_fkey"
+            columns: ["parent_deadline_id"]
+            isOneToOne: false
+            referencedRelation: "deadline"
             referencedColumns: ["id"]
           },
           {

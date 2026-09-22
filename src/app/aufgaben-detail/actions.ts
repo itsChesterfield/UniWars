@@ -25,6 +25,7 @@ export type DetailAnhang = Tables<"anhang">;
 export type DetailDaten = {
   typ: DetailZielTyp;
   titel: string;
+  fachId: string | null;
   fach: { name: string; farbe: string | null } | null;
   faelligAm: string | null;
   countdownTage: number | null;
@@ -121,7 +122,7 @@ export async function detailLaden(zielTyp: DetailZielTyp, zielId: string): Promi
     const { data, error } = await supabase
       .from("deadline")
       .select("id, titel, erledigt, faellig_am")
-      .eq("todo_id", zielId)
+      .eq("parent_deadline_id", zielId)
       .order("faellig_am", { ascending: true });
     if (error) throw new Error(error.message);
     unteraufgaben = (data ?? []).map((d) => ({
@@ -158,6 +159,7 @@ export async function detailLaden(zielTyp: DetailZielTyp, zielId: string): Promi
   return {
     typ: zielTyp,
     titel,
+    fachId,
     fach,
     faelligAm: faelligAmRoh,
     countdownTage,

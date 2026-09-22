@@ -12,9 +12,10 @@ export type DeadlineInput = {
   kategorie: Enums<"deadline_kategorie">;
   /** ISO-Datum: wenn gesetzt, wöchentliche Einzel-Instanzen bis einschließlich diesem Datum anlegen. */
   wiederholenBisDatum?: string | null;
-  /** Gesetzt, wenn dies eine Unteraufgabe eines Todos oder einer Prüfung ist. */
+  /** Gesetzt, wenn dies eine Unteraufgabe eines Todos, einer Prüfung oder einer anderen Deadline ist. */
   todoId?: string | null;
   pruefungId?: string | null;
+  parentDeadlineId?: string | null;
 };
 
 function woechentlicheTermine(start: string, bisDatum: string): string[] {
@@ -60,6 +61,7 @@ export async function createDeadline(input: DeadlineInput) {
     wiederhol_regel,
     todo_id: input.todoId ?? null,
     pruefung_id: input.pruefungId ?? null,
+    parent_deadline_id: input.parentDeadlineId ?? null,
   }));
 
   const { data, error } = await supabase.from("deadline").insert(payload).select();

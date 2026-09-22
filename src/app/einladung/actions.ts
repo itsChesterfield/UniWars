@@ -14,7 +14,7 @@ export async function benutzerSuchen(suchtext: string) {
 export async function deadlineEinladen(
   deadlineId: string,
   username: string,
-  zielTyp: "deadline" | "todo" = "deadline",
+  zielTyp: "deadline" | "todo" | "pruefung" = "deadline",
 ) {
   const supabase = await createClient();
   const {
