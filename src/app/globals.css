@@ -870,6 +870,13 @@ input[type="checkbox"] {
 
 /* --- Unified Aufgaben/Fristen/Noten column --- */
 
+.aufgaben-scroll {
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
 .aufgaben-untertitel {
   font-size: 12px;
   font-weight: 700;

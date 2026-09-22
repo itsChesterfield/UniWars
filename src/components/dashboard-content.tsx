@@ -200,37 +200,39 @@ export function DashboardContent({
               <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
             </div>
 
-            <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
-            <DeadlineManager
-              key={`deadline-${filterKey}`}
-              initialDeadlines={gefilterteDeadlines}
-              faecher={faecher}
-              embedded
-              versteckeErstellen
-              userId={userId}
-            />
+            <div className="aufgaben-scroll">
+              <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
+              <DeadlineManager
+                key={`deadline-${filterKey}`}
+                initialDeadlines={gefilterteDeadlines}
+                faecher={faecher}
+                embedded
+                versteckeErstellen
+                userId={userId}
+              />
 
-            <h3 className="aufgaben-untertitel">To-Dos</h3>
-            <TodoManager
-              key={`todo-${filterKey}`}
-              initialTodos={gefilterteTodos}
-              faecher={faecher}
-              deadlines={gefilterteDeadlines}
-              embedded
-              versteckeErstellen
-              userId={userId}
-            />
+              <h3 className="aufgaben-untertitel">To-Dos</h3>
+              <TodoManager
+                key={`todo-${filterKey}`}
+                initialTodos={gefilterteTodos}
+                faecher={faecher}
+                deadlines={gefilterteDeadlines}
+                embedded
+                versteckeErstellen
+                userId={userId}
+              />
 
-            <h3 className="aufgaben-untertitel">Prüfungen</h3>
-            <PruefungManager
-              key={`pruefung-${filterKey}`}
-              initialPruefungen={gefiltertePruefungen}
-              faecher={faecher}
-              deadlines={gefilterteDeadlines}
-              embedded
-              versteckeErstellen
-              userId={userId}
-            />
+              <h3 className="aufgaben-untertitel">Prüfungen</h3>
+              <PruefungManager
+                key={`pruefung-${filterKey}`}
+                initialPruefungen={gefiltertePruefungen}
+                faecher={faecher}
+                deadlines={gefilterteDeadlines}
+                embedded
+                versteckeErstellen
+                userId={userId}
+              />
+            </div>
           </section>
         )}
 
