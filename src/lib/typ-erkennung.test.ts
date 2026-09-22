@@ -39,6 +39,24 @@ test("erkenneTyp: Priorität Prüfung vor Abgabe bei mehreren Treffern", () => {
   });
 });
 
+test("erkenneTyp: Komposita (deutsche Wörter ohne Leerzeichen) werden erkannt", () => {
+  assert.deepEqual(erkenneTyp("Statistikklausur vorbereiten"), { typ: "PRUEFUNG", sicher: true });
+  assert.deepEqual(erkenneTyp("Mathematikprüfung"), { typ: "PRUEFUNG", sicher: true });
+  assert.deepEqual(erkenneTyp("Abgabetermin für Projekt3"), { typ: "ABGABE", sicher: true });
+  assert.deepEqual(erkenneTyp("Projektgruppenarbeit"), { typ: "GRUPPENARBEIT", sicher: true });
+});
+
+test("erkenneTyp: Treffer mitten im Satz wird erkannt, nicht nur am Anfang", () => {
+  assert.deepEqual(erkenneTyp("Am Freitag steht die Klausur in Statistik an"), {
+    typ: "PRUEFUNG",
+    sicher: true,
+  });
+  assert.deepEqual(erkenneTyp("Bitte bis Montag die Hausarbeit fertig machen"), {
+    typ: "ABGABE",
+    sicher: true,
+  });
+});
+
 test("erkenneTyp: kein Treffer -> ABGABE unsicher", () => {
   assert.deepEqual(erkenneTyp("Wäsche waschen"), { typ: "ABGABE", sicher: false });
   assert.deepEqual(erkenneTyp(""), { typ: "ABGABE", sicher: false });

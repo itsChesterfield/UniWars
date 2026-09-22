@@ -8,16 +8,21 @@ import type { Enums } from "@/lib/supabase/types";
  */
 export type ErkannterTyp = Enums<"deadline_typ"> | "PRUEFUNG";
 
-const KEYWORDS: { pattern: RegExp; typ: ErkannterTyp }[] = [
-  { pattern: /\b(klausur|prüfung|test|examen)\b/i, typ: "PRUEFUNG" },
-  { pattern: /\b(abgabe|abzugeben|hausarbeit|protokoll|bericht|essay)\b/i, typ: "ABGABE" },
-  { pattern: /\b(treffen|meeting|termin|sprechstunde)\b/i, typ: "TERMIN" },
-  { pattern: /\b(gruppe|team|zusammen mit|gruppenarbeit)\b/i, typ: "GRUPPENARBEIT" },
+// Kein \b-Wortgrenzen-Matching: deutsche Komposita kleben Wörter ohne
+// Leerzeichen aneinander ("Statistikklausur", "Abgabetermin"), da würde ein
+// striktes \bklausur\b nichts finden. Stattdessen wird die gesamte
+// Texteingabe als Teilstring durchsucht.
+const KEYWORDS: { woerter: string[]; typ: ErkannterTyp }[] = [
+  { woerter: ["klausur", "prüfung", "pruefung", "test", "examen"], typ: "PRUEFUNG" },
+  { woerter: ["abgabe", "abzugeben", "hausarbeit", "protokoll", "bericht", "essay"], typ: "ABGABE" },
+  { woerter: ["treffen", "meeting", "termin", "sprechstunde"], typ: "TERMIN" },
+  { woerter: ["gruppenarbeit", "gruppe", "team", "zusammen mit"], typ: "GRUPPENARBEIT" },
 ];
 
 export function erkenneTyp(text: string): { typ: ErkannterTyp; sicher: boolean } {
-  for (const { pattern, typ } of KEYWORDS) {
-    if (pattern.test(text)) return { typ, sicher: true };
+  const t = text.toLowerCase();
+  for (const { woerter, typ } of KEYWORDS) {
+    if (woerter.some((wort) => t.includes(wort))) return { typ, sicher: true };
   }
   return { typ: "ABGABE", sicher: false };
 }

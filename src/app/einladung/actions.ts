@@ -11,7 +11,11 @@ export async function benutzerSuchen(suchtext: string) {
   return data ?? [];
 }
 
-export async function deadlineEinladen(deadlineId: string, username: string) {
+export async function deadlineEinladen(
+  deadlineId: string,
+  username: string,
+  zielTyp: "deadline" | "todo" = "deadline",
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,7 +30,7 @@ export async function deadlineEinladen(deadlineId: string, username: string) {
   if (anUserId === user.id) throw new Error("Du kannst dich nicht selbst einladen.");
 
   const { error } = await supabase.from("einladung").insert({
-    ziel_typ: "deadline",
+    ziel_typ: zielTyp,
     ziel_id: deadlineId,
     von_user_id: user.id,
     an_user_id: anUserId,

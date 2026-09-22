@@ -50,7 +50,14 @@ const ALLE_MODI: QuickAddModus[] = [
   "NOTE",
 ];
 
-const URL_REGEX = /https?:\/\/[^\s]+/i;
+// Erkennt sowohl vollständige URLs (https://…) als auch bloße Domains ohne
+// Protokoll (figma.com/x, docs.google.com), wie sie beim Tippen/Einfügen
+// häufig vorkommen.
+const URL_REGEX = /(https?:\/\/[^\s]+)|([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)+\.[a-z]{2,}(?:\/[^\s]*)?)/i;
+
+function normalisiereUrl(roh: string): string {
+  return /^https?:\/\//i.test(roh) ? roh : `https://${roh}`;
+}
 
 function hostname(url: string): string {
   try {
@@ -85,6 +92,7 @@ export function QuickAdd({
   const [teilenMit, setTeilenMit] = useState("");
   const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
   const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
+  const [linkEingabe, setLinkEingabe] = useState("");
   const [unterDialogFuer, setUnterDialogFuer] = useState<{
     parentId: string;
     parentTitel: string;
@@ -121,6 +129,10 @@ export function QuickAdd({
     setModus(naechster);
     setTypManuellGesetzt(true);
     setUnterAuswahl("");
+    if (naechster !== "GRUPPENARBEIT") {
+      setTeilenMit("");
+      setNutzerVorschlaege([]);
+    }
   }
 
   function handleChipKeydown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -160,8 +172,9 @@ export function QuickAdd({
     const timer = setTimeout(() => {
       const treffer = titel.match(URL_REGEX);
       if (treffer) {
-        const url = treffer[0];
-        const bereinigt = titel.replace(url, "").replace(/\s{2,}/g, " ").trim();
+        const roh = treffer[0];
+        const url = normalisiereUrl(roh);
+        const bereinigt = titel.replace(roh, "").replace(/\s{2,}/g, " ").trim();
         if (bereinigt !== titel) setTitel(bereinigt);
         setAnhaenge((prev) => (prev.some((a) => a.url === url) ? prev : [...prev, { url, titel: hostname(url) }]));
       }
@@ -181,6 +194,14 @@ export function QuickAdd({
 
   function entferneAnhang(url: string) {
     setAnhaenge((prev) => prev.filter((a) => a.url !== url));
+  }
+
+  function linkHinzufuegen() {
+    const roh = linkEingabe.trim();
+    if (!roh) return;
+    const url = normalisiereUrl(roh);
+    setAnhaenge((prev) => (prev.some((a) => a.url === url) ? prev : [...prev, { url, titel: hostname(url) }]));
+    setLinkEingabe("");
   }
 
   async function speichereAnhaenge(zielTyp: AnhangZielTyp, zielId: string) {
@@ -226,19 +247,16 @@ export function QuickAdd({
           await speichereAnhaenge("pruefung", erstellt.id);
         } else if (!datumZeit) {
           // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
-          const [, todoUnterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createTodo({
             titel,
             fach_id: fachId || null,
             prioritaet: "MITTEL",
-            parentId: todoUnterId,
           });
-          await speichereAnhaenge("todo", erstellt.id);
-          // Eigenständiges (kein Unterpunkt eines anderen Todos) neues Todo:
-          // direkt fragen, ob es in Unteraufgaben aufgeteilt werden soll.
-          if (!todoUnterId) {
-            setUnterDialogFuer({ parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
+          if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
+            await deadlineEinladen(erstellt.id, teilenMit.trim(), "todo");
           }
+          await speichereAnhaenge("todo", erstellt.id);
+          setUnterDialogFuer({ parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
@@ -251,7 +269,9 @@ export function QuickAdd({
             pruefungId: unterTyp === "pruefung" ? unterId : undefined,
           });
           if (erstellt[0]) {
-            if (teilenMit.trim()) await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+            if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
+              await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+            }
             await speichereAnhaenge("deadline", erstellt[0].id);
           }
         }
@@ -329,6 +349,25 @@ export function QuickAdd({
               </div>
             )}
 
+            <div className="row" style={{ gap: 6 }}>
+              <input
+                type="text"
+                value={linkEingabe}
+                onChange={(e) => setLinkEingabe(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    linkHinzufuegen();
+                  }
+                }}
+                placeholder="Link hinzufügen (optional)"
+                style={{ flex: 1 }}
+              />
+              <button type="button" className="unteraufgabe-add" onClick={linkHinzufuegen}>
+                + Link
+              </button>
+            </div>
+
             {zeigeDatumZeit && (
               <input
                 type="datetime-local"
@@ -379,19 +418,21 @@ export function QuickAdd({
               </p>
             )}
 
-            {istUnterstuetzterDeadlineTyp && !datumZeit && todos.filter((t) => !t.erledigt && !t.parent_id).length > 0 && (
-              <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
-                <option value="">Eigenständiges To-Do</option>
-                <optgroup label="Als Unterpunkt von To-Do">
-                  {todos
-                    .filter((t) => !t.erledigt && !t.parent_id)
-                    .map((t) => (
-                      <option key={t.id} value={`todo:${t.id}`}>
-                        {t.titel}
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
+            {modus === "GRUPPENARBEIT" && (
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  value={teilenMit}
+                  onChange={(e) => handleTeilenMitChange(e.target.value)}
+                  placeholder="Wer nimmt teil? Nutzername eingeben…"
+                  list="quick-add-nutzer-vorschlaege"
+                />
+                <datalist id="quick-add-nutzer-vorschlaege">
+                  {nutzerVorschlaege.map((n) => (
+                    <option key={n.user_id} value={n.username} />
+                  ))}
+                </datalist>
+              </div>
             )}
 
             {istUnterstuetzterDeadlineTyp && datumZeit && (todos.length > 0 || pruefungen.length > 0) && (
@@ -418,23 +459,6 @@ export function QuickAdd({
                   </optgroup>
                 )}
               </select>
-            )}
-
-            {istUnterstuetzterDeadlineTyp && datumZeit && (
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  value={teilenMit}
-                  onChange={(e) => handleTeilenMitChange(e.target.value)}
-                  placeholder="Mit Nutzername teilen (optional)"
-                  list="quick-add-nutzer-vorschlaege"
-                />
-                <datalist id="quick-add-nutzer-vorschlaege">
-                  {nutzerVorschlaege.map((n) => (
-                    <option key={n.user_id} value={n.username} />
-                  ))}
-                </datalist>
-              </div>
             )}
 
             <div className="crud-form-actions">
