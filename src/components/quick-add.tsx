@@ -10,32 +10,57 @@ import { createTodo } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
+import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
 
 type TodoOption = Pick<Tables<"todo">, "id" | "titel" | "erledigt" | "parent_id">;
 type PruefungOption = Pick<Tables<"pruefung">, "id" | "titel">;
 
-type QuickAddTyp = "todo" | "deadline" | "fach" | "note" | "pruefung";
+/**
+ * "Fach" und "Note" sind kein Teil der 5 Typ-Chips aus dem Design (die
+ * bilden nur deadline_typ + Prüfung ab), brauchen aber weiterhin einen
+ * Eingang in Schnell erfassen, da es dafür sonst keine andere Stelle im UI
+ * gibt. Deshalb als zwei zusätzliche Chips am Ende der Leiste angehängt.
+ */
+type QuickAddModus = ErkannterTyp | "FACH" | "NOTE";
 
-const TYP_LABEL: Record<QuickAddTyp, string> = {
-  todo: "To-Do",
-  deadline: "Deadline",
-  fach: "Fach",
-  note: "Note",
-  pruefung: "Prüfung",
+const CHIP_LABEL: Record<QuickAddModus, string> = {
+  PRUEFUNG: "Prüfung",
+  ABGABE: "Abgabe",
+  TERMIN: "Termin",
+  // FRIST ist Teil von deadline_typ (Altbestand), aber kein eigener Chip im
+  // neuen Design – taucht hier nur auf, damit der Record vollständig ist.
+  FRIST: "Frist",
+  GRUPPENARBEIT: "Gruppenarbeit",
+  SONSTIGE: "Sonstige",
+  FACH: "Fach",
+  NOTE: "Note",
 };
+
+const ALLE_MODI: QuickAddModus[] = [
+  "PRUEFUNG",
+  "ABGABE",
+  "TERMIN",
+  "GRUPPENARBEIT",
+  "SONSTIGE",
+  "FACH",
+  "NOTE",
+];
+
+const URL_REGEX = /https?:\/\/[^\s]+/i;
+
+function hostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function morgenAbend(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  d.setHours(23, 59, 0, 0);
-  return toDatetimeLocal(d);
 }
 
 export function QuickAdd({
@@ -48,17 +73,27 @@ export function QuickAdd({
   pruefungen?: PruefungOption[];
 }) {
   const [open, setOpen] = useState(false);
-  const [typ, setTyp] = useState<QuickAddTyp>("todo");
+  const [modus, setModus] = useState<QuickAddModus>("ABGABE");
+  const [typManuellGesetzt, setTypManuellGesetzt] = useState(false);
   const [titel, setTitel] = useState("");
   const [fachId, setFachId] = useState<string>(faecher[0]?.id ?? "");
-  const [datumZeit, setDatumZeit] = useState(morgenAbend());
+  const [datumZeit, setDatumZeit] = useState("");
+  const [datumManuellGesetzt, setDatumManuellGesetzt] = useState(false);
   const [unterAuswahl, setUnterAuswahl] = useState("");
   const [teilenMit, setTeilenMit] = useState("");
   const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
+  const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const router = useRouter();
+
+  function handleClose() {
+    setOpen(false);
+    setTypManuellGesetzt(false);
+    setDatumManuellGesetzt(false);
+  }
 
   function handleTeilenMitChange(value: string) {
     setTeilenMit(value);
@@ -75,6 +110,21 @@ export function QuickAdd({
     });
   }
 
+  function waehleModus(naechster: QuickAddModus) {
+    setModus(naechster);
+    setTypManuellGesetzt(true);
+    setUnterAuswahl("");
+  }
+
+  function handleChipKeydown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    const naechsterIndex = (index + delta + ALLE_MODI.length) % ALLE_MODI.length;
+    waehleModus(ALLE_MODI[naechsterIndex]);
+    chipRefs.current[naechsterIndex]?.focus();
+  }
+
   useEffect(() => {
     function handleKeydown(e: KeyboardEvent) {
       const ziel = e.target as HTMLElement | null;
@@ -87,7 +137,7 @@ export function QuickAdd({
         setOpen(true);
       } else if (open && e.key === "Escape") {
         e.preventDefault();
-        setOpen(false);
+        handleClose();
       }
     }
     window.addEventListener("keydown", handleKeydown);
@@ -98,78 +148,102 @@ export function QuickAdd({
     if (open) inputRef.current?.focus();
   }, [open]);
 
+  // Debounced: Typ- und Datumserkennung aus dem Titel, plus URL -> Anhang.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const treffer = titel.match(URL_REGEX);
+      if (treffer) {
+        const url = treffer[0];
+        const bereinigt = titel.replace(url, "").replace(/\s{2,}/g, " ").trim();
+        if (bereinigt !== titel) setTitel(bereinigt);
+        setAnhaenge((prev) => (prev.some((a) => a.url === url) ? prev : [...prev, { url, titel: hostname(url) }]));
+      }
+
+      if (!typManuellGesetzt && titel.trim() !== "") {
+        const erkannt = erkenneTyp(titel);
+        if (erkannt.sicher) setModus(erkannt.typ);
+      }
+
+      if (!datumManuellGesetzt) {
+        const datum = erkenneDatum(titel);
+        if (datum) setDatumZeit(toDatetimeLocal(datum));
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [titel, typManuellGesetzt, datumManuellGesetzt]);
+
+  function entferneAnhang(url: string) {
+    setAnhaenge((prev) => prev.filter((a) => a.url !== url));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     startTransition(async () => {
       try {
-        switch (typ) {
-          case "fach":
-            await createFach({
-              name: titel,
-              semester: null,
-              farbe: naechsteFarbe(faecher),
-              ects: null,
-              anwesenheitspflicht: false,
-              max_fehltage: null,
-            });
-            break;
-          case "deadline": {
-            const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
-            const erstellt = await createDeadline({
-              titel,
-              fach_id: fachId || null,
-              faellig_am: new Date(datumZeit).toISOString(),
-              typ: "SONSTIGE",
-              kategorie: "NORMAL",
-              todoId: unterTyp === "todo" ? unterId : undefined,
-              pruefungId: unterTyp === "pruefung" ? unterId : undefined,
-            });
-            if (teilenMit.trim() && erstellt[0]) {
-              await deadlineEinladen(erstellt[0].id, teilenMit.trim());
-            }
-            break;
+        if (modus === "FACH") {
+          await createFach({
+            name: titel,
+            semester: null,
+            farbe: naechsteFarbe(faecher),
+            ects: null,
+            anwesenheitspflicht: false,
+            max_fehltage: null,
+          });
+        } else if (modus === "NOTE") {
+          if (!fachId) throw new Error("Bitte ein Fach wählen.");
+          await createNote({
+            titel,
+            fach_id: fachId,
+            wert: 1,
+            gewicht: 1,
+            datum: new Date().toISOString().slice(0, 10),
+          });
+        } else if (modus === "PRUEFUNG") {
+          if (!fachId) throw new Error("Bitte ein Fach wählen.");
+          if (!datumZeit) throw new Error("Bitte einen Termin angeben.");
+          await createPruefung({
+            titel,
+            fach_id: fachId,
+            datum: new Date(datumZeit).toISOString(),
+            raum: null,
+            status: "ANSTEHEND",
+          });
+        } else if (!datumZeit) {
+          // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
+          const [, todoUnterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
+          await createTodo({
+            titel,
+            fach_id: fachId || null,
+            prioritaet: "MITTEL",
+            parentId: todoUnterId,
+          });
+        } else {
+          const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
+          const erstellt = await createDeadline({
+            titel,
+            fach_id: fachId || null,
+            faellig_am: new Date(datumZeit).toISOString(),
+            typ: modus,
+            kategorie: "NORMAL",
+            todoId: unterTyp === "todo" ? unterId : undefined,
+            pruefungId: unterTyp === "pruefung" ? unterId : undefined,
+          });
+          if (teilenMit.trim() && erstellt[0]) {
+            await deadlineEinladen(erstellt[0].id, teilenMit.trim());
           }
-          case "todo": {
-            const [, todoUnterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
-            await createTodo({
-              titel,
-              fach_id: fachId || null,
-              prioritaet: "MITTEL",
-              parentId: todoUnterId,
-            });
-            break;
-          }
-          case "note":
-            if (!fachId) throw new Error("Bitte ein Fach wählen.");
-            await createNote({
-              titel,
-              fach_id: fachId,
-              wert: 1,
-              gewicht: 1,
-              datum: new Date().toISOString().slice(0, 10),
-            });
-            break;
-          case "pruefung":
-            if (!fachId) throw new Error("Bitte ein Fach wählen.");
-            await createPruefung({
-              titel,
-              fach_id: fachId,
-              datum: new Date(datumZeit).toISOString(),
-              raum: null,
-              status: "ANSTEHEND",
-            });
-            break;
         }
 
-        posthog.capture("quick_add_benutzt", { typ });
+        posthog.capture("quick_add_benutzt", { typ: modus });
         setTitel("");
-        setDatumZeit(morgenAbend());
+        setFachId(faecher[0]?.id ?? "");
+        setDatumZeit("");
         setUnterAuswahl("");
         setTeilenMit("");
         setNutzerVorschlaege([]);
-        setOpen(false);
+        setAnhaenge([]);
+        handleClose();
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
@@ -177,8 +251,12 @@ export function QuickAdd({
     });
   }
 
-  const brauchtFach = typ === "note" || typ === "pruefung";
-  const brauchtDatumZeit = typ === "deadline" || typ === "pruefung";
+  const istEntitaetOhneFach = modus === "FACH";
+  const brauchtFach = modus === "NOTE" || modus === "PRUEFUNG";
+  const zeigeDatumZeit = modus !== "FACH" && modus !== "NOTE";
+  const istUnterstuetzterDeadlineTyp =
+    modus === "ABGABE" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
+  const wirdAlsTodoGespeichert = istUnterstuetzterDeadlineTyp && !datumZeit;
 
   return (
     <>
@@ -195,7 +273,7 @@ export function QuickAdd({
       </button>
 
       {open && (
-        <div className="quick-add-overlay" onClick={() => setOpen(false)}>
+        <div className="quick-add-overlay" onClick={handleClose}>
           <form
             className="quick-add-modal"
             onClick={(e) => e.stopPropagation()}
@@ -204,21 +282,46 @@ export function QuickAdd({
             <h3>Neu anlegen</h3>
             {error && <p className="auth-error">{error}</p>}
 
-            <select
-              value={typ}
-              onChange={(e) => {
-                setTyp(e.target.value as QuickAddTyp);
-                setUnterAuswahl("");
-              }}
-            >
-              {Object.entries(TYP_LABEL).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <input
+              ref={inputRef}
+              value={titel}
+              onChange={(e) => setTitel(e.target.value)}
+              placeholder="Titel…"
+              required
+            />
 
-            {typ !== "fach" && faecher.length > 0 && (
+            {anhaenge.length > 0 && (
+              <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+                {anhaenge.map((a) => (
+                  <span key={a.url} className="tag">
+                    {a.titel}
+                    <button
+                      type="button"
+                      aria-label={`Anhang ${a.titel} entfernen`}
+                      onClick={() => entferneAnhang(a.url)}
+                      style={{ marginLeft: 6, border: "none", background: "none", color: "inherit", cursor: "pointer" }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {zeigeDatumZeit && (
+              <input
+                type="datetime-local"
+                value={datumZeit}
+                onChange={(e) => {
+                  setDatumZeit(e.target.value);
+                  setDatumManuellGesetzt(true);
+                }}
+                aria-label={modus === "PRUEFUNG" ? "Termin am" : "Fällig am (leer lassen = To-Do ohne Termin)"}
+                required={modus === "PRUEFUNG"}
+              />
+            )}
+
+            {!istEntitaetOhneFach && faecher.length > 0 && (
               <select value={fachId} onChange={(e) => setFachId(e.target.value)}>
                 {!brauchtFach && <option value="">Kein Fach</option>}
                 {faecher.map((f) => (
@@ -229,25 +332,33 @@ export function QuickAdd({
               </select>
             )}
 
-            {brauchtDatumZeit && (
-              <input
-                type="datetime-local"
-                value={datumZeit}
-                onChange={(e) => setDatumZeit(e.target.value)}
-                aria-label={typ === "deadline" ? "Fällig am" : "Termin am"}
-                required
-              />
+            <div role="radiogroup" aria-label="Typ" className="row" style={{ gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+              {ALLE_MODI.map((key, index) => (
+                <button
+                  key={key}
+                  ref={(el) => {
+                    chipRefs.current[index] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={modus === key}
+                  tabIndex={modus === key ? 0 : -1}
+                  className={`chip ${modus === key ? "on" : ""}`}
+                  onClick={() => waehleModus(key)}
+                  onKeyDown={(e) => handleChipKeydown(e, index)}
+                >
+                  {CHIP_LABEL[key]}
+                </button>
+              ))}
+            </div>
+
+            {wirdAlsTodoGespeichert && (
+              <p className="muted" style={{ fontSize: 12 }}>
+                Ohne Termin wird daraus ein To-Do.
+              </p>
             )}
 
-            <input
-              ref={inputRef}
-              value={titel}
-              onChange={(e) => setTitel(e.target.value)}
-              placeholder="Titel…"
-              required
-            />
-
-            {typ === "todo" && todos.filter((t) => !t.erledigt && !t.parent_id).length > 0 && (
+            {istUnterstuetzterDeadlineTyp && !datumZeit && todos.filter((t) => !t.erledigt && !t.parent_id).length > 0 && (
               <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
                 <option value="">Eigenständiges To-Do</option>
                 <optgroup label="Als Unterpunkt von To-Do">
@@ -262,7 +373,7 @@ export function QuickAdd({
               </select>
             )}
 
-            {typ === "deadline" && (todos.length > 0 || pruefungen.length > 0) && (
+            {istUnterstuetzterDeadlineTyp && datumZeit && (todos.length > 0 || pruefungen.length > 0) && (
               <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
                 <option value="">Eigenständige Deadline</option>
                 {todos.filter((t) => !t.erledigt).length > 0 && (
@@ -288,7 +399,7 @@ export function QuickAdd({
               </select>
             )}
 
-            {typ === "deadline" && (
+            {istUnterstuetzterDeadlineTyp && datumZeit && (
               <div style={{ position: "relative" }}>
                 <input
                   type="text"
@@ -309,7 +420,7 @@ export function QuickAdd({
               <button type="submit" className="btnp" disabled={isPending}>
                 {isPending ? "Speichern…" : "Hinzufügen (Enter)"}
               </button>
-              <button type="button" onClick={() => setOpen(false)} disabled={isPending}>
+              <button type="button" onClick={handleClose} disabled={isPending}>
                 Abbrechen (Esc)
               </button>
             </div>
