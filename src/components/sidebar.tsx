@@ -92,9 +92,9 @@ export function Sidebar({
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="sidebar-brand-mark">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19V6l8-3 8 3v13" />
-            <path d="M9 19v-6h6v6" />
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
+            <path d="M9 12.5l2 2 4-4.5" />
           </svg>
         </div>
         <div className="sidebar-brand-name">UniWars</div>

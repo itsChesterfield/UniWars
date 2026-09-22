@@ -57,7 +57,7 @@ export function NotenDurchschnittProFach({
           <div className="fach-card-info">
             <span className="fach-card-name">{fach.name}</span>
           </div>
-          <span style={{ fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}>
+          <span style={{ fontWeight: 700, fontFamily: "var(--font-mono), monospace" }}>
             Ø {schnitt.toFixed(1)}
           </span>
         </li>
@@ -78,7 +78,7 @@ export function NotenPrognose({ notenschnitt, notes }: { notenschnitt: number | 
       <div className="row" style={{ gap: 18, alignItems: "flex-end", marginTop: 8 }}>
         <div>
           <div className="muted" style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Aktueller Schnitt</div>
-          <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 34, fontWeight: 700, lineHeight: 1 }}>
+          <div style={{ fontFamily: "var(--font-mono), monospace", color: "var(--accent-strong)", fontSize: 34, fontWeight: 700, lineHeight: 1 }}>
             Ø {notenschnitt.toFixed(1)}
           </div>
         </div>

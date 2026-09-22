@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
+import { Libre_Caslon_Display, Public_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+const librecaslon = Libre_Caslon_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400"],
 });
 
-const hanken = Hanken_Grotesk({
+const publicSans = Public_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -21,7 +27,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="de" className={`${bricolage.variable} ${hanken.variable}`}>
+    <html
+      lang="de"
+      className={`${librecaslon.variable} ${publicSans.variable} ${spaceMono.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

@@ -1,47 +1,59 @@
 :root {
-  --page-bg: #eef1ea;
-  --bg: #f5f7f3;
-  --card: #ffffff;
-  --card2: #fafbf8;
-  --border: #e6e9e1;
-  --text: #1e2420;
-  --muted: #5f6a61;
-  --faint: #8a9389;
-  --accent: #3b7a57;
-  --accent-strong: #2f6347;
-  --accent-soft: #e7f0ea;
-  --sidebar: #edf0e8;
-  --sidebar-border: #e1e5db;
-  --danger: #a94e44;
-  --danger-soft: #f5e7e3;
-  --warn: #8f6a1c;
-  --warn-soft: #f6eeda;
-  --btn-bg: #2f6347;
-  --btn-fg: #ffffff;
-  --shadow: 0 1px 2px rgba(30, 40, 32, 0.05), 0 3px 10px rgba(30, 40, 32, 0.05);
+  /* Helles Gegenstück zur dunklen Design-Palette: gleiche Akzentfarben
+     (Gold/Blau/Lila/Grün/Rot), aber warmes Creme statt Espresso-Braun. */
+  --page-bg: #f7f3ea;
+  --bg: #faf9f5;
+  --card: #fffdf8;
+  --card2: #f4efe2;
+  --border: #e6ddc7;
+  --border-soft: #efe8d8;
+  --text: #2a2318;
+  --muted: #7a6d51;
+  --faint: #a89a7a;
+  --accent: #b9822a;
+  --accent-strong: #96661d;
+  --accent-soft: #f2e4c4;
+  --sidebar: #faf9f5;
+  --sidebar-border: #e6ddc7;
+  --danger: #c14e34;
+  --danger-soft: #f6e1da;
+  --warn: #b9822a;
+  --warn-soft: #f2e4c4;
+  --btn-bg: #b9822a;
+  --btn-fg: #fffdf8;
+  --blue: #4f74b0;
+  --purple: #7c5ba8;
+  --success: #3f8a52;
+  --shadow: 0 1px 2px rgba(42, 35, 24, 0.05), 0 3px 10px rgba(42, 35, 24, 0.05);
   --radius: 16px;
+  color-scheme: light;
 }
 
 .dashboard[data-theme="dark"] {
-  --page-bg: #101410;
-  --bg: #141815;
-  --card: #1c221e;
-  --card2: #232a25;
-  --border: #2c332e;
-  --text: #e9eee8;
-  --muted: #9ca79c;
-  --faint: #6e786f;
-  --accent: #63a67e;
-  --accent-strong: #8fcba6;
-  --accent-soft: #20302a;
-  --sidebar: #171c18;
-  --sidebar-border: #242a25;
-  --danger: #d9776d;
-  --danger-soft: #33221f;
-  --warn: #d6a24a;
-  --warn-soft: #322a1b;
-  --btn-bg: #63a67e;
-  --btn-fg: #0e1a13;
+  /* 1:1 aus dem Zentraler-Hub-Design übernommen. */
+  --page-bg: #15120d;
+  --bg: #1c1811;
+  --card: #211c14;
+  --card2: #2a2318;
+  --border: #3a3020;
+  --border-soft: #2a2418;
+  --text: #f5f0e6;
+  --muted: #ab9d82;
+  --faint: #6f6650;
+  --accent: #d9a441;
+  --accent-strong: #d9a441;
+  --accent-soft: rgba(217, 164, 65, 0.16);
+  --sidebar: #15120d;
+  --sidebar-border: #2a2418;
+  --danger: #e0654a;
+  --danger-soft: rgba(224, 101, 74, 0.16);
+  --warn: #d9a441;
+  --warn-soft: rgba(217, 164, 65, 0.16);
+  --btn-bg: #d9a441;
+  --btn-fg: #1c1811;
+  --blue: #7c9fd8;
+  --purple: #a689d0;
+  --success: #6fae7c;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 3px 12px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
@@ -71,7 +83,7 @@ body {
   flex-direction: column;
   color: var(--text);
   background: var(--page-bg);
-  font-family: var(--font-body), "Hanken Grotesk", system-ui, sans-serif;
+  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -80,10 +92,15 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), "Bricolage Grotesque", system-ui, sans-serif;
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
   margin: 0;
   color: var(--text);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.mono {
+  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
 }
 
 a {
@@ -207,21 +224,19 @@ button {
 }
 
 .sidebar-brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: var(--accent-strong);
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  color: var(--accent-strong);
 }
 
 .sidebar-brand-name {
-  font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-weight: 400;
+  font-size: 17px;
 }
 
 .sidebar-nav {
@@ -287,12 +302,11 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--warn-soft);
+  padding: 0 4px;
   color: var(--warn);
+  font-family: var(--font-mono), "Space Mono", monospace;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .sidebar-theme-toggle,
@@ -324,19 +338,27 @@ button {
   gap: 20px;
 }
 
+.dashboard-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
 .dashboard-greeting {
-  text-align: center;
-  padding: 24px 0 10px;
+  text-align: left;
 }
 
 .dashboard-greeting h1 {
-  font-size: 42px;
-  line-height: 1.05;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 400;
 }
 
 .dashboard-greeting p {
-  margin: 16px 0 0;
-  font-size: 16px;
+  margin: 6px 0 0;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -398,9 +420,9 @@ button {
 }
 
 .ct {
-  font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
-  font-size: 17px;
-  font-weight: 600;
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-size: 19px;
+  font-weight: 400;
 }
 
 .tag {
@@ -573,14 +595,14 @@ input[type="checkbox"] {
 .avatar {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  border-radius: 50%;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-body), sans-serif;
   flex: none;
 }
 
@@ -809,8 +831,16 @@ input[type="checkbox"] {
 /* --- Locked / placeholder card --- */
 
 .locked-card {
-  border-style: dashed;
-  background: var(--card2);
+  position: relative;
+  border-style: solid;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--card2),
+    var(--card2) 10px,
+    var(--card) 10px,
+    var(--card) 20px
+  );
+  overflow: hidden;
 }
 
 .locked-icon {
@@ -878,10 +908,9 @@ input[type="checkbox"] {
 
 .naechster-termin-countdown {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
+  gap: 7px;
   flex-shrink: 0;
-  min-width: 60px;
   color: var(--accent-strong);
 }
 
@@ -938,29 +967,34 @@ input[type="checkbox"] {
 
 .entry-countdown {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
+  gap: 5px;
   flex-shrink: 0;
-  min-width: 72px;
-  color: var(--accent-strong);
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--muted);
 }
 
 .entry-countdown-dringend {
   color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .entry-countdown-wert {
-  font-family: var(--font-display), sans-serif;
-  font-size: 22px;
+  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
 }
 
 .entry-countdown-einheit {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
   text-align: center;
 }
 
@@ -1160,9 +1194,10 @@ input[type="checkbox"] {
 }
 
 .heute-zeit {
+  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
   width: 44px;
   color: var(--muted);
 }
@@ -1294,7 +1329,7 @@ input[type="checkbox"] {
   border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-mono), "Space Mono", monospace;
   font-size: 16px;
   font-weight: 700;
 }
@@ -1334,8 +1369,8 @@ input[type="checkbox"] {
 
 .lernzeit-saeule-wert {
   font-weight: 700;
-  font-family: var(--font-display), sans-serif;
-  font-size: 14px;
+  font-family: var(--font-mono), "Space Mono", monospace;
+  font-size: 13px;
 }
 
 .lernzeit-saeule-balken {

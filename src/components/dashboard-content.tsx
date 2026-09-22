@@ -128,24 +128,26 @@ export function DashboardContent({
 
   return (
     <>
-      <div className="dashboard-greeting">
-        <h1>
-          {begruessung()}, {name}
-        </h1>
-        <p>
-          {heutigesDatum()}
-          {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
-          {stats.offeneTodos > 0 && ` · ${stats.offeneTodos} offene To-Do${stats.offeneTodos === 1 ? "" : "s"}`}
-        </p>
-      </div>
+      <div className="dashboard-header-row">
+        <div className="dashboard-greeting">
+          <h1>
+            {begruessung()}, {name}
+          </h1>
+          <p>
+            {heutigesDatum()}
+            {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
+            {stats.offeneTodos > 0 && ` · ${stats.offeneTodos} offene To-Do${stats.offeneTodos === 1 ? "" : "s"}`}
+          </p>
+        </div>
 
-      <div className="dashboard-toolbar">
-        <SearchBar />
-        <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
-        <div className="dashboard-toolbar-rechts">
-          <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} />
-          <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
-          <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
+        <div className="dashboard-toolbar">
+          <SearchBar />
+          <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
+          <div className="dashboard-toolbar-rechts">
+            <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} />
+            <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
+            <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
+          </div>
         </div>
       </div>
 
