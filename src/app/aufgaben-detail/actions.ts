@@ -121,7 +121,7 @@ export async function detailLaden(zielTyp: DetailZielTyp, zielId: string): Promi
   } else if (zielTyp === "deadline") {
     const { data, error } = await supabase
       .from("deadline")
-      .select("id, titel, erledigt, faellig_am")
+      .select("id, titel, erledigt, faellig_am, zugewiesen_an")
       .eq("parent_deadline_id", zielId)
       .order("faellig_am", { ascending: true });
     if (error) throw new Error(error.message);
@@ -129,13 +129,13 @@ export async function detailLaden(zielTyp: DetailZielTyp, zielId: string): Promi
       id: d.id,
       titel: d.titel,
       erledigt: d.erledigt,
-      zugewiesenAn: null,
+      zugewiesenAn: d.zugewiesen_an,
       faelligAm: d.faellig_am,
     }));
   } else {
     const { data, error } = await supabase
       .from("deadline")
-      .select("id, titel, erledigt, faellig_am")
+      .select("id, titel, erledigt, faellig_am, zugewiesen_an")
       .eq("pruefung_id", zielId)
       .order("faellig_am", { ascending: true });
     if (error) throw new Error(error.message);
@@ -143,7 +143,7 @@ export async function detailLaden(zielTyp: DetailZielTyp, zielId: string): Promi
       id: d.id,
       titel: d.titel,
       erledigt: d.erledigt,
-      zugewiesenAn: null,
+      zugewiesenAn: d.zugewiesen_an,
       faelligAm: d.faellig_am,
     }));
   }

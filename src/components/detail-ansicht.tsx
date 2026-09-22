@@ -19,6 +19,13 @@ const TYP_LABEL: Record<DetailZielTyp, string> = {
   pruefung: "Prüfung",
 };
 
+type UnterZeile = {
+  tempId: string;
+  titel: string;
+  faelligAm: string;
+  zugewiesenAn: string;
+};
+
 function formatKurz(iso: string): string {
   return new Date(iso).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
 }
@@ -44,8 +51,8 @@ export function DetailAnsicht({
   const [mitgliedPending, startMitgliedTransition] = useTransition();
 
   const [unterFormOffen, setUnterFormOffen] = useState(false);
+  const [unterZeilen, setUnterZeilen] = useState<UnterZeile[]>([]);
   const [unterTitel, setUnterTitel] = useState("");
-  const [unterDatum, setUnterDatum] = useState("");
   const [unterError, setUnterError] = useState<string | null>(null);
   const [unterPending, startUnterTransition] = useTransition();
 
@@ -107,34 +114,75 @@ export function DetailAnsicht({
     });
   }
 
-  function unteraufgabeHinzufuegen(e: React.FormEvent) {
+  function unterZeileHinzufuegen() {
+    const wert = unterTitel.trim();
+    if (wert === "") return;
+    setUnterZeilen((prev) => [
+      ...prev,
+      { tempId: crypto.randomUUID(), titel: wert, faelligAm: "", zugewiesenAn: "" },
+    ]);
+    setUnterTitel("");
+  }
+
+  function handleUnterTitelKeydown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
     e.preventDefault();
-    if (!daten || unterTitel.trim() === "") return;
+    unterZeileHinzufuegen();
+  }
+
+  function entferneUnterZeile(tempId: string) {
+    setUnterZeilen((prev) => prev.filter((z) => z.tempId !== tempId));
+  }
+
+  function aendereUnterZeile(tempId: string, patch: Partial<UnterZeile>) {
+    setUnterZeilen((prev) => prev.map((z) => (z.tempId === tempId ? { ...z, ...patch } : z)));
+  }
+
+  function schliesseUnterForm() {
+    setUnterFormOffen(false);
+    setUnterZeilen([]);
+    setUnterTitel("");
+    setUnterError(null);
+  }
+
+  function unteraufgabenBestaetigen() {
+    if (!daten) return;
+    if (unterZeilen.length === 0) {
+      schliesseUnterForm();
+      return;
+    }
+    if (daten.typ !== "todo" && unterZeilen.some((z) => !z.faelligAm)) {
+      setUnterError("Bitte für jede Unteraufgabe einen Termin angeben.");
+      return;
+    }
     setUnterError(null);
     startUnterTransition(async () => {
       try {
         if (daten.typ === "todo") {
-          await createUnterpunkte(zielId, daten.fachId, [
-            {
-              titel: unterTitel.trim(),
-              faelligAm: unterDatum ? new Date(unterDatum).toISOString() : undefined,
-            },
-          ]);
+          await createUnterpunkte(
+            zielId,
+            daten.fachId,
+            unterZeilen.map((z) => ({
+              titel: z.titel,
+              faelligAm: z.faelligAm ? new Date(z.faelligAm).toISOString() : undefined,
+              zugewiesenAn: z.zugewiesenAn || undefined,
+            })),
+          );
         } else {
-          if (!unterDatum) throw new Error("Bitte eine Frist angeben.");
-          await createDeadline({
-            titel: unterTitel.trim(),
-            fach_id: daten.fachId,
-            faellig_am: new Date(unterDatum).toISOString(),
-            typ: "ABGABE",
-            kategorie: "NORMAL",
-            pruefungId: daten.typ === "pruefung" ? zielId : undefined,
-            parentDeadlineId: daten.typ === "deadline" ? zielId : undefined,
-          });
+          for (const z of unterZeilen) {
+            await createDeadline({
+              titel: z.titel,
+              fach_id: daten.fachId,
+              faellig_am: new Date(z.faelligAm).toISOString(),
+              typ: "ABGABE",
+              kategorie: "NORMAL",
+              pruefungId: daten.typ === "pruefung" ? zielId : undefined,
+              parentDeadlineId: daten.typ === "deadline" ? zielId : undefined,
+              zugewiesenAn: z.zugewiesenAn || undefined,
+            });
+          }
         }
-        setUnterTitel("");
-        setUnterDatum("");
-        setUnterFormOffen(false);
+        schliesseUnterForm();
         await neuLaden();
         router.refresh();
       } catch (err) {
@@ -297,6 +345,11 @@ export function DetailAnsicht({
                     >
                       <span>{u.titel}</span>
                     </div>
+                    {u.zugewiesenAn && (
+                      <span className="muted" style={{ fontSize: 11 }}>
+                        {daten.mitglieder.find((m) => m.user_id === u.zugewiesenAn)?.username ?? "?"}
+                      </span>
+                    )}
                     {u.faelligAm && (
                       <span className="muted" style={{ fontSize: 11 }}>{formatKurz(u.faelligAm)}</span>
                     )}
@@ -306,41 +359,73 @@ export function DetailAnsicht({
             )}
 
             {unterFormOffen && (
-              <form className="unteraufgabe-form" onSubmit={unteraufgabeHinzufuegen}>
+              <div className="unteraufgabe-form">
                 {unterError && <p className="auth-error" style={{ fontSize: 12 }}>{unterError}</p>}
+
+                {unterZeilen.map((z) => (
+                  <div key={z.tempId} className="unteraufgabe-zeile">
+                    <div className="unteraufgabe-zeile-kopf">
+                      <span className="unteraufgabe-zeile-titel">{z.titel}</span>
+                      <button
+                        type="button"
+                        onClick={() => entferneUnterZeile(z.tempId)}
+                        aria-label={`${z.titel} entfernen`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="unteraufgabe-zeile-felder">
+                      <select
+                        value={z.zugewiesenAn}
+                        onChange={(e) => aendereUnterZeile(z.tempId, { zugewiesenAn: e.target.value })}
+                        aria-label={`Zuständig für ${z.titel}`}
+                      >
+                        <option value="">Niemand</option>
+                        {daten.mitglieder.map((m) => (
+                          <option key={m.user_id} value={m.user_id}>
+                            {m.username ?? "?"}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="datetime-local"
+                        value={z.faelligAm}
+                        onChange={(e) => aendereUnterZeile(z.tempId, { faelligAm: e.target.value })}
+                        aria-label={`Frist für ${z.titel}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+
                 <input
                   type="text"
                   value={unterTitel}
                   onChange={(e) => setUnterTitel(e.target.value)}
-                  placeholder="Titel der Unteraufgabe"
+                  onKeyDown={handleUnterTitelKeydown}
+                  placeholder="Titel eingeben, Enter zum Hinzufügen…"
                   autoFocus
-                  required
                 />
-                <input
-                  type="datetime-local"
-                  value={unterDatum}
-                  onChange={(e) => setUnterDatum(e.target.value)}
-                  aria-label="Frist"
-                  required={daten.typ !== "todo"}
-                />
+
                 <div className="row" style={{ gap: 6 }}>
                   <button
-                    type="submit"
+                    type="button"
                     className="btnp"
                     disabled={unterPending}
+                    onClick={unteraufgabenBestaetigen}
                     style={{ padding: "4px 12px", fontSize: 12 }}
                   >
-                    Hinzufügen
+                    {unterPending ? "Speichern…" : "Bestätigen"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setUnterFormOffen(false)}
+                    onClick={schliesseUnterForm}
+                    disabled={unterPending}
                     style={{ padding: "4px 12px", fontSize: 12 }}
                   >
                     Abbrechen
                   </button>
                 </div>
-              </form>
+              </div>
             )}
           </div>
 

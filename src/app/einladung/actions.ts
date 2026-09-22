@@ -79,3 +79,10 @@ export async function todoMitgliederLaden(todoId: string) {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
+
+export async function pruefungMitgliederLaden(pruefungId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pruefung_mitglieder", { p_pruefung_id: pruefungId });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}

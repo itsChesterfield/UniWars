@@ -87,6 +87,7 @@ export type Database = {
           typ: Database["public"]["Enums"]["deadline_typ"]
           user_id: string
           wiederhol_regel: string | null
+          zugewiesen_an: string | null
         }
         Insert: {
           erledigt?: boolean
@@ -103,6 +104,7 @@ export type Database = {
           typ?: Database["public"]["Enums"]["deadline_typ"]
           user_id: string
           wiederhol_regel?: string | null
+          zugewiesen_an?: string | null
         }
         Update: {
           erledigt?: boolean
@@ -119,6 +121,7 @@ export type Database = {
           typ?: Database["public"]["Enums"]["deadline_typ"]
           user_id?: string
           wiederhol_regel?: string | null
+          zugewiesen_an?: string | null
         }
         Relationships: [
           {

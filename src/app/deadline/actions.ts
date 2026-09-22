@@ -16,6 +16,7 @@ export type DeadlineInput = {
   todoId?: string | null;
   pruefungId?: string | null;
   parentDeadlineId?: string | null;
+  zugewiesenAn?: string | null;
 };
 
 function woechentlicheTermine(start: string, bisDatum: string): string[] {
@@ -62,6 +63,7 @@ export async function createDeadline(input: DeadlineInput) {
     todo_id: input.todoId ?? null,
     pruefung_id: input.pruefungId ?? null,
     parent_deadline_id: input.parentDeadlineId ?? null,
+    zugewiesen_an: input.zugewiesenAn ?? null,
   }));
 
   const { data, error } = await supabase.from("deadline").insert(payload).select();
