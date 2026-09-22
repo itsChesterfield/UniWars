@@ -42,7 +42,11 @@ export function TodoUnterpunkte({
 
     startTransition(async () => {
       try {
-        const created = await createUnterpunkte(parentId, fachId, zeilen);
+        const created = await createUnterpunkte(
+          parentId,
+          fachId,
+          zeilen.map((titel) => ({ titel })),
+        );
         setUnterpunkte((prev) => [...prev, ...created]);
         setText("");
         setFormOpen(false);

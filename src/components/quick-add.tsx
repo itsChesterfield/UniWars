@@ -11,6 +11,7 @@ import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { createAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
+import { UnteraufgabenDialog } from "@/components/unteraufgaben-dialog";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
@@ -84,6 +85,11 @@ export function QuickAdd({
   const [teilenMit, setTeilenMit] = useState("");
   const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
   const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
+  const [unterDialogFuer, setUnterDialogFuer] = useState<{
+    parentId: string;
+    parentTitel: string;
+    fachId: string | null;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -228,6 +234,11 @@ export function QuickAdd({
             parentId: todoUnterId,
           });
           await speichereAnhaenge("todo", erstellt.id);
+          // Eigenständiges (kein Unterpunkt eines anderen Todos) neues Todo:
+          // direkt fragen, ob es in Unteraufgaben aufgeteilt werden soll.
+          if (!todoUnterId) {
+            setUnterDialogFuer({ parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
+          }
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
@@ -436,6 +447,15 @@ export function QuickAdd({
             </div>
           </form>
         </div>
+      )}
+
+      {unterDialogFuer && (
+        <UnteraufgabenDialog
+          parentId={unterDialogFuer.parentId}
+          parentTitel={unterDialogFuer.parentTitel}
+          fachId={unterDialogFuer.fachId}
+          onClose={() => setUnterDialogFuer(null)}
+        />
       )}
     </>
   );

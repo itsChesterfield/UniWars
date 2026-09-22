@@ -34,19 +34,31 @@ export async function createTodo(input: TodoInput) {
   return data;
 }
 
-export async function createUnterpunkte(parentId: string, fachId: string | null, titel: string[]) {
+export type UnterpunktEintrag = {
+  titel: string;
+  faelligAm?: string;
+  zugewiesenAn?: string;
+};
+
+export async function createUnterpunkte(
+  parentId: string,
+  fachId: string | null,
+  eintraege: UnterpunktEintrag[],
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht angemeldet");
 
-  const payload: TablesInsert<"todo">[] = titel.map((t) => ({
+  const payload: TablesInsert<"todo">[] = eintraege.map((e) => ({
     user_id: user.id,
     fach_id: fachId,
-    titel: t,
+    titel: e.titel,
     prioritaet: "MITTEL",
     parent_id: parentId,
+    faellig_am: e.faelligAm ?? null,
+    zugewiesen_an: e.zugewiesenAn ?? null,
   }));
 
   const { data, error } = await supabase.from("todo").insert(payload).select();
@@ -54,6 +66,20 @@ export async function createUnterpunkte(parentId: string, fachId: string | null,
 
   revalidatePath("/");
   return data;
+}
+
+export async function setzeUnterpunktZuweisung(
+  todoId: string,
+  zugewiesenAn: string | null,
+  faelligAm: string | null,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("todo")
+    .update({ zugewiesen_an: zugewiesenAn, faellig_am: faelligAm })
+    .eq("id", todoId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
 }
 
 export async function updateTodo(id: string, input: TodoInput) {

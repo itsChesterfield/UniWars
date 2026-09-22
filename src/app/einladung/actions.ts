@@ -68,3 +68,10 @@ export async function deadlineMitgliederLaden(deadlineId: string) {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
+
+export async function todoMitgliederLaden(todoId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("todo_mitglieder", { p_todo_id: todoId });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
