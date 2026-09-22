@@ -1542,6 +1542,7 @@ dialog.card {
 }
 
 .unteraufgabe-form input,
+.unteraufgabe-form select,
 .unteraufgabe-form textarea {
   padding: 7px 10px;
   border-radius: 7px;
@@ -1551,6 +1552,51 @@ dialog.card {
   font-size: 12px;
   font-family: inherit;
   resize: vertical;
+}
+
+.unteraufgabe-zeile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--card2);
+}
+
+.unteraufgabe-zeile-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.unteraufgabe-zeile-titel {
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unteraufgabe-zeile-kopf button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.unteraufgabe-zeile-felder {
+  display: flex;
+  gap: 6px;
+}
+
+.unteraufgabe-zeile-felder select,
+.unteraufgabe-zeile-felder input {
+  flex: 1;
+  min-width: 0;
 }
 
 /* --- Deadline teilen (Einladungen) --- */
