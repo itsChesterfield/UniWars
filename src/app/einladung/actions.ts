@@ -26,11 +26,11 @@ export async function deadlineEinladen(deadlineId: string, username: string) {
   if (anUserId === user.id) throw new Error("Du kannst dich nicht selbst einladen.");
 
   const { error } = await supabase.from("einladung").insert({
-    deadline_id: deadlineId,
+    ziel_typ: "deadline",
+    ziel_id: deadlineId,
     von_user_id: user.id,
     an_user_id: anUserId,
-    deadline_titel: "",
-    deadline_faellig_am: new Date().toISOString(),
+    ziel_titel: "",
   });
 
   if (error) {

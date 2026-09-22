@@ -20,6 +20,8 @@ const TYP_LABEL: Record<Enums<"deadline_typ">, string> = {
   ABGABE: "Abgabe",
   FRIST: "Frist",
   SONSTIGE: "Sonstige",
+  TERMIN: "Termin",
+  GRUPPENARBEIT: "Gruppenarbeit",
 };
 
 const KATEGORIE_LABEL: Record<Enums<"deadline_kategorie">, string> = {

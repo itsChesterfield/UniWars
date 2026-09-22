@@ -64,15 +64,17 @@ export function NotificationBell({
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, lineHeight: 1.4 }}>
                       <strong>{e.von_username ?? "Jemand"}</strong> hat dich zu{" "}
-                      <strong>„{e.deadline_titel}“</strong> eingeladen
+                      <strong>„{e.ziel_titel}“</strong> eingeladen
                     </div>
-                    <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>
-                      Fällig am{" "}
-                      {new Date(e.deadline_faellig_am).toLocaleString("de-DE", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </div>
+                    {e.ziel_faellig_am && (
+                      <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>
+                        Fällig am{" "}
+                        {new Date(e.ziel_faellig_am).toLocaleString("de-DE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </div>
+                    )}
                     <div className="row" style={{ gap: 8, marginTop: 7 }}>
                       <button
                         type="button"

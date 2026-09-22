@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      anhang: {
+        Row: {
+          erstellt_am: string
+          id: string
+          titel: string
+          url: string
+          user_id: string
+          ziel_id: string
+          ziel_typ: string
+        }
+        Insert: {
+          erstellt_am?: string
+          id?: string
+          titel: string
+          url: string
+          user_id?: string
+          ziel_id: string
+          ziel_typ: string
+        }
+        Update: {
+          erstellt_am?: string
+          id?: string
+          titel?: string
+          url?: string
+          user_id?: string
+          ziel_id?: string
+          ziel_typ?: string
+        }
+        Relationships: []
+      }
       benachrichtigung: {
         Row: {
           erstellt_am: string
@@ -115,48 +145,43 @@ export type Database = {
         Row: {
           an_user_id: string
           beantwortet_am: string | null
-          deadline_faellig_am: string
-          deadline_id: string
-          deadline_titel: string
           erstellt_am: string
           id: string
           status: Database["public"]["Enums"]["einladung_status"]
           von_user_id: string
           von_username: string | null
+          ziel_faellig_am: string | null
+          ziel_id: string
+          ziel_titel: string
+          ziel_typ: string
         }
         Insert: {
           an_user_id: string
           beantwortet_am?: string | null
-          deadline_faellig_am: string
-          deadline_id: string
-          deadline_titel: string
           erstellt_am?: string
           id?: string
           status?: Database["public"]["Enums"]["einladung_status"]
           von_user_id: string
           von_username?: string | null
+          ziel_faellig_am?: string | null
+          ziel_id: string
+          ziel_titel: string
+          ziel_typ?: string
         }
         Update: {
           an_user_id?: string
           beantwortet_am?: string | null
-          deadline_faellig_am?: string
-          deadline_id?: string
-          deadline_titel?: string
           erstellt_am?: string
           id?: string
           status?: Database["public"]["Enums"]["einladung_status"]
           von_user_id?: string
           von_username?: string | null
+          ziel_faellig_am?: string | null
+          ziel_id?: string
+          ziel_titel?: string
+          ziel_typ?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "einladung_deadline_id_fkey"
-            columns: ["deadline_id"]
-            isOneToOne: false
-            referencedRelation: "deadline"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       externer_feed: {
         Row: {
@@ -414,31 +439,37 @@ export type Database = {
           erledigt: boolean
           erstellt_am: string
           fach_id: string | null
+          faellig_am: string | null
           id: string
           parent_id: string | null
           prioritaet: Database["public"]["Enums"]["prioritaet"]
           titel: string
           user_id: string
+          zugewiesen_an: string | null
         }
         Insert: {
           erledigt?: boolean
           erstellt_am?: string
           fach_id?: string | null
+          faellig_am?: string | null
           id?: string
           parent_id?: string | null
           prioritaet?: Database["public"]["Enums"]["prioritaet"]
           titel: string
           user_id: string
+          zugewiesen_an?: string | null
         }
         Update: {
           erledigt?: boolean
           erstellt_am?: string
           fach_id?: string | null
+          faellig_am?: string | null
           id?: string
           parent_id?: string | null
           prioritaet?: Database["public"]["Enums"]["prioritaet"]
           titel?: string
           user_id?: string
+          zugewiesen_an?: string | null
         }
         Relationships: [
           {
@@ -482,6 +513,14 @@ export type Database = {
           username: string
         }[]
       }
+      ist_ersteller: {
+        Args: { p_user_id: string; p_ziel_id: string; p_ziel_typ: string }
+        Returns: boolean
+      }
+      ist_mitglied: {
+        Args: { p_ziel_id: string; p_ziel_typ: string }
+        Returns: boolean
+      }
       ist_username_verfuegbar: {
         Args: { p_username: string }
         Returns: boolean
@@ -491,7 +530,7 @@ export type Database = {
     }
     Enums: {
       deadline_kategorie: "NORMAL" | "BAFOEG" | "SEMESTERBEITRAG"
-      deadline_typ: "ABGABE" | "FRIST" | "SONSTIGE"
+      deadline_typ: "ABGABE" | "FRIST" | "SONSTIGE" | "TERMIN" | "GRUPPENARBEIT"
       einladung_status: "OFFEN" | "ANGENOMMEN" | "ABGELEHNT"
       prioritaet: "HOCH" | "MITTEL" | "NIEDRIG"
       pruefung_status: "ANSTEHEND" | "BESTANDEN" | "NICHT_BESTANDEN"
@@ -626,7 +665,7 @@ export const Constants = {
   public: {
     Enums: {
       deadline_kategorie: ["NORMAL", "BAFOEG", "SEMESTERBEITRAG"],
-      deadline_typ: ["ABGABE", "FRIST", "SONSTIGE"],
+      deadline_typ: ["ABGABE", "FRIST", "SONSTIGE", "TERMIN", "GRUPPENARBEIT"],
       einladung_status: ["OFFEN", "ANGENOMMEN", "ABGELEHNT"],
       prioritaet: ["HOCH", "MITTEL", "NIEDRIG"],
       pruefung_status: ["ANSTEHEND", "BESTANDEN", "NICHT_BESTANDEN"],
