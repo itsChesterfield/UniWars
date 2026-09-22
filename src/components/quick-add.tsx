@@ -91,6 +91,7 @@ export function QuickAdd({
   const [unterAuswahl, setUnterAuswahl] = useState("");
   const [teilenMit, setTeilenMit] = useState("");
   const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
+  const [teilenMitSuchLaeuft, setTeilenMitSuchLaeuft] = useState(false);
   const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
   const [linkEingabe, setLinkEingabe] = useState("");
   const [unterDialogFuer, setUnterDialogFuer] = useState<{
@@ -114,13 +115,17 @@ export function QuickAdd({
     setTeilenMit(value);
     if (value.trim().length < 2) {
       setNutzerVorschlaege([]);
+      setTeilenMitSuchLaeuft(false);
       return;
     }
+    setTeilenMitSuchLaeuft(true);
     startTransition(async () => {
       try {
         setNutzerVorschlaege(await benutzerSuchen(value));
       } catch {
         setNutzerVorschlaege([]);
+      } finally {
+        setTeilenMitSuchLaeuft(false);
       }
     });
   }
@@ -132,6 +137,7 @@ export function QuickAdd({
     if (naechster !== "GRUPPENARBEIT") {
       setTeilenMit("");
       setNutzerVorschlaege([]);
+      setTeilenMitSuchLaeuft(false);
     }
   }
 
@@ -213,6 +219,11 @@ export function QuickAdd({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (modus === "GRUPPENARBEIT" && teilenMit.trim() && !teilenMitGueltig) {
+      setError("Diesen Nutzernamen gibt es nicht. Bitte aus den Vorschlägen auswählen.");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -298,6 +309,14 @@ export function QuickAdd({
   const istUnterstuetzterDeadlineTyp =
     modus === "ABGABE" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
   const wirdAlsTodoGespeichert = istUnterstuetzterDeadlineTyp && !datumZeit;
+  const teilenMitGueltig = nutzerVorschlaege.some(
+    (n) => n.username.toLowerCase() === teilenMit.trim().toLowerCase(),
+  );
+  const teilenMitUnbekannt =
+    modus === "GRUPPENARBEIT" &&
+    teilenMit.trim().length >= 2 &&
+    !teilenMitSuchLaeuft &&
+    !teilenMitGueltig;
 
   return (
     <>
@@ -432,6 +451,16 @@ export function QuickAdd({
                     <option key={n.user_id} value={n.username} />
                   ))}
                 </datalist>
+                {teilenMitUnbekannt && (
+                  <p className="auth-error" style={{ fontSize: 12, marginTop: 4 }}>
+                    Diesen Nutzernamen gibt es nicht.
+                  </p>
+                )}
+                {teilenMitGueltig && (
+                  <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                    ✓ {teilenMit.trim()} gefunden
+                  </p>
+                )}
               </div>
             )}
 
