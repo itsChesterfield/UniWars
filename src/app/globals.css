@@ -932,7 +932,8 @@ input[type="checkbox"] {
 .entry-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   padding: 12px 4px;
   border-bottom: 1px solid var(--border);
 }
@@ -957,19 +958,28 @@ input[type="checkbox"] {
 .entry-info {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
 }
 
 .entry-title {
+  display: block;
+  max-width: 100%;
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .entry-meta {
+  max-width: 100%;
   font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .entry-countdown {
@@ -1468,7 +1478,8 @@ dialog.card {
 .entry-row-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   width: 100%;
 }
 
