@@ -1590,12 +1590,17 @@ dialog.card {
 
 .unteraufgabe-zeile-felder {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
-.unteraufgabe-zeile-felder select,
+.unteraufgabe-zeile-felder select {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
 .unteraufgabe-zeile-felder input {
-  flex: 1;
+  flex: 1 1 210px;
   min-width: 0;
 }
 

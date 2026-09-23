@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUnterpunkte } from "@/app/todo/actions";
-import { todoMitgliederLaden } from "@/app/einladung/actions";
+import { createDeadline } from "@/app/deadline/actions";
+import {
+  todoMitgliederLaden,
+  deadlineMitgliederLaden,
+  pruefungMitgliederLaden,
+} from "@/app/einladung/actions";
+
+export type UnteraufgabenParentTyp = "todo" | "deadline" | "pruefung";
 
 type Mitglied = { user_id: string; username: string | null };
 
@@ -14,12 +21,20 @@ type Zeile = {
   zugewiesenAn: string;
 };
 
+const MITGLIEDER_LADEN: Record<UnteraufgabenParentTyp, (id: string) => Promise<Mitglied[]>> = {
+  todo: todoMitgliederLaden,
+  deadline: deadlineMitgliederLaden,
+  pruefung: pruefungMitgliederLaden,
+};
+
 export function UnteraufgabenDialog({
+  parentTyp,
   parentId,
   parentTitel,
   fachId,
   onClose,
 }: {
+  parentTyp: UnteraufgabenParentTyp;
   parentId: string;
   parentTitel: string;
   fachId: string | null;
@@ -35,13 +50,16 @@ export function UnteraufgabenDialog({
   const [error, setError] = useState<string | null>(null);
   const [speichertGerade, setSpeichertGerade] = useState(false);
 
+  // Deadline-Unteraufgaben brauchen zwingend ein Datum (faellig_am ist NOT NULL).
+  const terminPflicht = parentTyp !== "todo";
+
   useEffect(() => {
     dialogRef.current?.showModal();
-    todoMitgliederLaden(parentId)
-      .then((data) => setMitglieder(data as Mitglied[]))
+    MITGLIEDER_LADEN[parentTyp](parentId)
+      .then(setMitglieder)
       .catch(() => setMitglieder([]));
     eingabeRef.current?.focus();
-  }, [parentId]);
+  }, [parentTyp, parentId]);
 
   function schliessen() {
     dialogRef.current?.close();
@@ -54,8 +72,8 @@ export function UnteraufgabenDialog({
     const titel = eingabe.trim();
     if (titel === "") return;
     setZeilen((prev) => [
-      { tempId: crypto.randomUUID(), titel, faelligAm: "", zugewiesenAn: "" },
       ...prev,
+      { tempId: crypto.randomUUID(), titel, faelligAm: "", zugewiesenAn: "" },
     ]);
     setEingabe("");
     eingabeRef.current?.focus();
@@ -74,18 +92,37 @@ export function UnteraufgabenDialog({
       schliessen();
       return;
     }
+    if (terminPflicht && zeilen.some((z) => !z.faelligAm)) {
+      setError("Bitte für jede Unteraufgabe einen Termin angeben.");
+      return;
+    }
     setSpeichertGerade(true);
     setError(null);
     try {
-      await createUnterpunkte(
-        parentId,
-        fachId,
-        zeilen.map((z) => ({
-          titel: z.titel,
-          faelligAm: z.faelligAm ? new Date(z.faelligAm).toISOString() : undefined,
-          zugewiesenAn: z.zugewiesenAn || undefined,
-        })),
-      );
+      if (parentTyp === "todo") {
+        await createUnterpunkte(
+          parentId,
+          fachId,
+          zeilen.map((z) => ({
+            titel: z.titel,
+            faelligAm: z.faelligAm ? new Date(z.faelligAm).toISOString() : undefined,
+            zugewiesenAn: z.zugewiesenAn || undefined,
+          })),
+        );
+      } else {
+        for (const z of zeilen) {
+          await createDeadline({
+            titel: z.titel,
+            fach_id: fachId,
+            faellig_am: new Date(z.faelligAm).toISOString(),
+            typ: "ABGABE",
+            kategorie: "NORMAL",
+            pruefungId: parentTyp === "pruefung" ? parentId : undefined,
+            parentDeadlineId: parentTyp === "deadline" ? parentId : undefined,
+            zugewiesenAn: z.zugewiesenAn || undefined,
+          });
+        }
+      }
       router.refresh();
       schliessen();
     } catch (err) {
@@ -105,7 +142,8 @@ export function UnteraufgabenDialog({
     >
       <h3>Unteraufgaben hinzufügen?</h3>
       <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-        Für „{parentTitel}“ — optional.
+        Für „{parentTitel}“ — optional. Titel eingeben und mit Enter hinzufügen, dann Termin und
+        Zuständigkeit festlegen.
       </p>
 
       {error && <p className="auth-error">{error}</p>}
@@ -117,37 +155,34 @@ export function UnteraufgabenDialog({
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {zeilen.map((z) => (
-            <div key={z.tempId} className="unteraufgabe-row">
-              <div className="unteraufgabe-info">
-                <span>{z.titel}</span>
+            <div key={z.tempId} className="unteraufgabe-zeile">
+              <div className="unteraufgabe-zeile-kopf">
+                <span className="unteraufgabe-zeile-titel">{z.titel}</span>
+                <button type="button" onClick={() => entferneZeile(z.tempId)} aria-label={`${z.titel} entfernen`}>
+                  ✕
+                </button>
               </div>
-              <select
-                value={z.zugewiesenAn}
-                onChange={(e) => aendereZeile(z.tempId, { zugewiesenAn: e.target.value })}
-                aria-label={`Zuständig für ${z.titel}`}
-                style={{ fontSize: 11 }}
-              >
-                <option value="">Niemand</option>
-                {mitglieder.map((m) => (
-                  <option key={m.user_id} value={m.user_id}>
-                    {m.username ?? "?"}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="datetime-local"
-                value={z.faelligAm}
-                onChange={(e) => aendereZeile(z.tempId, { faelligAm: e.target.value })}
-                aria-label={`Frist für ${z.titel}`}
-                style={{ fontSize: 11 }}
-              />
-              <button
-                type="button"
-                onClick={() => entferneZeile(z.tempId)}
-                aria-label={`${z.titel} entfernen`}
-              >
-                ✕
-              </button>
+              <div className="unteraufgabe-zeile-felder">
+                <select
+                  value={z.zugewiesenAn}
+                  onChange={(e) => aendereZeile(z.tempId, { zugewiesenAn: e.target.value })}
+                  aria-label={`Zuständig für ${z.titel}`}
+                >
+                  <option value="">Niemand</option>
+                  {mitglieder.map((m) => (
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.username ?? "?"}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="datetime-local"
+                  value={z.faelligAm}
+                  onChange={(e) => aendereZeile(z.tempId, { faelligAm: e.target.value })}
+                  aria-label={`Termin für ${z.titel}`}
+                  required={terminPflicht}
+                />
+              </div>
             </div>
           ))}
         </div>

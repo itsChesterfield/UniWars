@@ -11,7 +11,7 @@ import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { createAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
-import { UnteraufgabenDialog } from "@/components/unteraufgaben-dialog";
+import { UnteraufgabenDialog, type UnteraufgabenParentTyp } from "@/components/unteraufgaben-dialog";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
@@ -95,6 +95,7 @@ export function QuickAdd({
   const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
   const [linkEingabe, setLinkEingabe] = useState("");
   const [unterDialogFuer, setUnterDialogFuer] = useState<{
+    parentTyp: UnteraufgabenParentTyp;
     parentId: string;
     parentTitel: string;
     fachId: string | null;
@@ -256,6 +257,7 @@ export function QuickAdd({
             status: "ANSTEHEND",
           });
           await speichereAnhaenge("pruefung", erstellt.id);
+          setUnterDialogFuer({ parentTyp: "pruefung", parentId: erstellt.id, parentTitel: titel, fachId });
         } else if (!datumZeit) {
           // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
           const erstellt = await createTodo({
@@ -267,7 +269,7 @@ export function QuickAdd({
             await deadlineEinladen(erstellt.id, teilenMit.trim(), "todo");
           }
           await speichereAnhaenge("todo", erstellt.id);
-          setUnterDialogFuer({ parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
+          setUnterDialogFuer({ parentTyp: "todo", parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
@@ -284,6 +286,12 @@ export function QuickAdd({
               await deadlineEinladen(erstellt[0].id, teilenMit.trim());
             }
             await speichereAnhaenge("deadline", erstellt[0].id);
+            setUnterDialogFuer({
+              parentTyp: "deadline",
+              parentId: erstellt[0].id,
+              parentTitel: titel,
+              fachId: fachId || null,
+            });
           }
         }
 
@@ -504,6 +512,7 @@ export function QuickAdd({
 
       {unterDialogFuer && (
         <UnteraufgabenDialog
+          parentTyp={unterDialogFuer.parentTyp}
           parentId={unterDialogFuer.parentId}
           parentTitel={unterDialogFuer.parentTitel}
           fachId={unterDialogFuer.fachId}

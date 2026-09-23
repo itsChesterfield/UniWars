@@ -6,7 +6,11 @@ import {
   toggleDeadlineErledigt,
   deleteDeadline,
 } from "@/app/deadline/actions";
-import { todoMitgliederLaden, pruefungMitgliederLaden } from "@/app/einladung/actions";
+import {
+  todoMitgliederLaden,
+  deadlineMitgliederLaden,
+  pruefungMitgliederLaden,
+} from "@/app/einladung/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
@@ -33,7 +37,7 @@ export function Unteraufgaben({
   initial,
   userId,
 }: {
-  parentTyp: "todo" | "pruefung";
+  parentTyp: "todo" | "deadline" | "pruefung";
   parentId: string;
   initial: Deadline[];
   userId?: string;
@@ -54,7 +58,12 @@ export function Unteraufgaben({
 
   function oeffneForm() {
     setFormOpen(true);
-    const laden = parentTyp === "todo" ? todoMitgliederLaden : pruefungMitgliederLaden;
+    const laden =
+      parentTyp === "todo"
+        ? todoMitgliederLaden
+        : parentTyp === "deadline"
+          ? deadlineMitgliederLaden
+          : pruefungMitgliederLaden;
     laden(parentId)
       .then((data) => setMitglieder(data as Mitglied[]))
       .catch(() => setMitglieder([]));
@@ -114,6 +123,7 @@ export function Unteraufgaben({
             kategorie: "NORMAL",
             todoId: parentTyp === "todo" ? parentId : undefined,
             pruefungId: parentTyp === "pruefung" ? parentId : undefined,
+            parentDeadlineId: parentTyp === "deadline" ? parentId : undefined,
             zugewiesenAn: z.zugewiesenAn || undefined,
           });
           neu.push(...erstellt);

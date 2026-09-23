@@ -13,6 +13,7 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
+import { Unteraufgaben } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 
 type Deadline = Tables<"deadline">;
@@ -69,7 +70,7 @@ export function DeadlineManager({
   // nur als eingeladenes Mitglied dabei und sieht das übergeordnete Todo gar nicht.
   const [deadlines, setDeadlines] = useState(
     initialDeadlines.filter(
-      (d) => (!d.todo_id && !d.pruefung_id) || d.user_id !== userId,
+      (d) => (!d.todo_id && !d.pruefung_id && !d.parent_deadline_id) || d.user_id !== userId,
     ),
   );
   const [formOpen, setFormOpen] = useState(false);
@@ -178,54 +179,64 @@ export function DeadlineManager({
           return (
             <li
               key={d.id}
-              className={`entry-row ${d.erledigt ? "entry-erledigt" : ""} ${dringend ? "entry-dringend" : ""}`}
+              className={`entry-row entry-row-mit-unteraufgaben ${d.erledigt ? "entry-erledigt" : ""} ${dringend ? "entry-dringend" : ""}`}
             >
-              <input
-                type="checkbox"
-                checked={d.erledigt}
-                onChange={() => handleToggleErledigt(d)}
-                aria-label="Erledigt"
-              />
-              <div className="entry-info">
-                <button
-                  type="button"
-                  className="entry-title entry-title-link"
-                  onClick={() => oeffne("deadline", d.id)}
-                >
-                  {d.titel}
-                </button>
-                <span className="entry-meta">
-                  {[
-                    fach?.name,
-                    TYP_LABEL[d.typ],
-                    d.kategorie !== "NORMAL" ? KATEGORIE_LABEL[d.kategorie] : null,
-                    absolutesDatum(d.faellig_am),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
+              <div className="entry-row-main">
+                <input
+                  type="checkbox"
+                  checked={d.erledigt}
+                  onChange={() => handleToggleErledigt(d)}
+                  aria-label="Erledigt"
+                />
+                <div className="entry-info">
+                  <button
+                    type="button"
+                    className="entry-title entry-title-link"
+                    onClick={() => oeffne("deadline", d.id)}
+                  >
+                    {d.titel}
+                  </button>
+                  <span className="entry-meta">
+                    {[
+                      fach?.name,
+                      TYP_LABEL[d.typ],
+                      d.kategorie !== "NORMAL" ? KATEGORIE_LABEL[d.kategorie] : null,
+                      absolutesDatum(d.faellig_am),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </div>
+                {!d.erledigt && (() => {
+                  const { wert, einheit } = restzeitGross(d.faellig_am);
+                  const ueberfaellig = einheit === "überfällig";
+                  return (
+                    <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
+                      <span className="entry-countdown-wert">{wert}</span>
+                      <span className="entry-countdown-einheit">
+                        {einheit}
+                        {!ueberfaellig && " übrig"}
+                      </span>
+                    </div>
+                  );
+                })()}
+                <div className="entry-actions">
+                  {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
+                  <button type="button" onClick={() => openEditForm(d)}>
+                    Bearbeiten
+                  </button>
+                  <button type="button" onClick={() => handleDelete(d.id)}>
+                    Löschen
+                  </button>
+                </div>
               </div>
-              {!d.erledigt && (() => {
-                const { wert, einheit } = restzeitGross(d.faellig_am);
-                const ueberfaellig = einheit === "überfällig";
-                return (
-                  <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
-                    <span className="entry-countdown-wert">{wert}</span>
-                    <span className="entry-countdown-einheit">
-                      {einheit}
-                      {!ueberfaellig && " übrig"}
-                    </span>
-                  </div>
-                );
-              })()}
-              <div className="entry-actions">
-                {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
-                <button type="button" onClick={() => openEditForm(d)}>
-                  Bearbeiten
-                </button>
-                <button type="button" onClick={() => handleDelete(d.id)}>
-                  Löschen
-                </button>
+              <div className="entry-row-unteraufgaben">
+                <Unteraufgaben
+                  parentTyp="deadline"
+                  parentId={d.id}
+                  initial={initialDeadlines.filter((x) => x.parent_deadline_id === d.id)}
+                  userId={userId}
+                />
               </div>
             </li>
           );
