@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { track } from "@/lib/analytics";
 
 export type Segment = {
   key: string;
@@ -38,7 +39,10 @@ export function SegmentedCard({
                 key={s.key}
                 type="button"
                 className={`seg ${s.key === aktiv?.key ? "on" : ""}`}
-                onClick={() => setActive(s.key)}
+                onClick={() => {
+                  if (s.key !== aktiv?.key) track("segment_gewechselt", { karte: title, segment: s.key });
+                  setActive(s.key);
+                }}
               >
                 {s.label}
               </button>

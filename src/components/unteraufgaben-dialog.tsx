@@ -14,6 +14,7 @@ import {
   type EditorMitglied,
   type UnteraufgabeEingabe,
 } from "@/components/unteraufgaben-editor";
+import { track } from "@/lib/analytics";
 
 export type UnteraufgabenParentTyp = "todo" | "deadline" | "pruefung";
 
@@ -52,6 +53,11 @@ export function UnteraufgabenDialog({
     onClose();
   }
 
+  function ueberspringen() {
+    track("unteraufgaben_dialog_uebersprungen", { eltern_typ: parentTyp });
+    schliessen();
+  }
+
   async function speichern(eintraege: UnteraufgabeEingabe[]) {
     if (parentTyp === "todo") {
       await createUnterpunkte(
@@ -87,7 +93,7 @@ export function UnteraufgabenDialog({
       className="quick-add-modal"
       onCancel={(e) => {
         e.preventDefault();
-        schliessen();
+        ueberspringen();
       }}
     >
       <h3>Unteraufgaben hinzufügen?</h3>
@@ -96,12 +102,14 @@ export function UnteraufgabenDialog({
       </p>
 
       <UnteraufgabenEditor
+        elternTyp={parentTyp}
+        ort="schnell_erfassen"
         mitglieder={mitglieder}
         terminPflicht={parentTyp !== "todo"}
         speichernLabel="Fertig"
         abbrechenLabel="Überspringen"
         onSpeichern={speichern}
-        onAbbrechen={schliessen}
+        onAbbrechen={ueberspringen}
       />
     </dialog>
   );

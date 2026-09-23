@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createAnhang, deleteAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
 import type { Tables } from "@/lib/supabase/types";
+import { track } from "@/lib/analytics";
 
 type Anhang = Tables<"anhang">;
 
@@ -27,6 +28,7 @@ export function AnhangListe({
       try {
         const created = await createAnhang(zielTyp, zielId, url);
         setAnhaenge((prev) => [...prev, created]);
+        track("anhang_hinzugefuegt", { ziel_typ: zielTyp, ort: "detail" });
         setUrl("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
@@ -37,12 +39,20 @@ export function AnhangListe({
   function handleDelete(id: string) {
     setAnhaenge((prev) => prev.filter((a) => a.id !== id));
     startTransition(() => deleteAnhang(id));
+    track("anhang_geloescht", { ziel_typ: zielTyp });
   }
 
   return (
     <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
       {anhaenge.map((a) => (
-        <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" className="tag">
+        <a
+          key={a.id}
+          href={a.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="tag"
+          onClick={() => track("anhang_geoeffnet", { ziel_typ: zielTyp })}
+        >
           {a.titel}
           <button
             type="button"

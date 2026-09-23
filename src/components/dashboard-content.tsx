@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import posthog from "posthog-js";
+import { track } from "@/lib/analytics";
+import { AnalyticsNutzer } from "@/components/analytics-nutzer";
+import { NoteManager } from "@/components/note-manager";
 import { SearchBar } from "@/components/search-bar";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
@@ -99,7 +101,7 @@ export function DashboardContent({
       : null;
 
   useEffect(() => {
-    posthog.capture("dashboard_geoeffnet");
+    track("dashboard_geoeffnet");
   }, []);
 
   const gefilterteDeadlines = fachId ? deadlines.filter((d) => d.fach_id === fachId) : deadlines;
@@ -110,13 +112,14 @@ export function DashboardContent({
     : stundenplanEintraege;
 
   // Manager kopieren ihre Props in lokalen State; bei frischen Serverdaten neu aufbauen.
-  const [datenStand, setDatenStand] = useState({ deadlines, todos, pruefungen, version: 0 });
+  const [datenStand, setDatenStand] = useState({ deadlines, todos, pruefungen, notes, version: 0 });
   if (
     datenStand.deadlines !== deadlines ||
     datenStand.todos !== todos ||
-    datenStand.pruefungen !== pruefungen
+    datenStand.pruefungen !== pruefungen ||
+    datenStand.notes !== notes
   ) {
-    setDatenStand({ deadlines, todos, pruefungen, version: datenStand.version + 1 });
+    setDatenStand({ deadlines, todos, pruefungen, notes, version: datenStand.version + 1 });
   }
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
@@ -138,6 +141,7 @@ export function DashboardContent({
 
   return (
     <>
+      <AnalyticsNutzer userId={userId} username={username} />
       <div className="dashboard-header-row">
         <div className="dashboard-greeting">
           <h1>
@@ -264,6 +268,19 @@ export function DashboardContent({
                       <ZielnotenRechner notes={notes} />
                       <WasWaereWenn notes={notes} />
                     </div>
+                  ),
+                },
+                {
+                  key: "noten",
+                  label: "Noten",
+                  content: (
+                    <NoteManager
+                      key={`noten-${filterKey}`}
+                      initialNotes={notes}
+                      faecher={faecher}
+                      notenschnitt={notenschnitt}
+                      embedded
+                    />
                   ),
                 },
                 {

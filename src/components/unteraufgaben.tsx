@@ -19,6 +19,7 @@ import {
 import type { Tables } from "@/lib/supabase/types";
 import { restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
+import { track } from "@/lib/analytics";
 
 type Deadline = Tables<"deadline">;
 type ParentTyp = "todo" | "deadline" | "pruefung";
@@ -88,11 +89,13 @@ export function Unteraufgaben({
     const naechsterStatus = !d.erledigt;
     setAufgaben((prev) => prev.map((x) => (x.id === d.id ? { ...x, erledigt: naechsterStatus } : x)));
     startTransition(() => toggleDeadlineErledigt(d.id, naechsterStatus));
+    if (naechsterStatus) track("unteraufgabe_erledigt", { eltern_typ: parentTyp, ort: "liste" });
   }
 
   function handleDelete(id: string) {
     setAufgaben((prev) => prev.filter((x) => x.id !== id));
     startTransition(() => deleteDeadline(id));
+    track("unteraufgabe_geloescht", { eltern_typ: parentTyp, ort: "liste" });
   }
 
   function nameVon(id: string | null): string | null {
@@ -139,6 +142,8 @@ export function Unteraufgaben({
 
       {formOpen ? (
         <UnteraufgabenEditor
+          elternTyp={parentTyp}
+          ort="liste"
           mitglieder={mitglieder}
           terminPflicht
           standardTermin={toDatetimeLocal(new Date())}

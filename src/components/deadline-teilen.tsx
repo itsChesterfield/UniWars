@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { benutzerSuchen, deadlineEinladen, deadlineMitgliederLaden } from "@/app/einladung/actions";
+import { track } from "@/lib/analytics";
 
 type Mitglied = {
   user_id: string;
@@ -66,6 +67,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
     startTransition(async () => {
       try {
         await deadlineEinladen(deadlineId, username);
+        track("mitglied_eingeladen", { ziel_typ: "deadline", ort: "liste" });
         setErfolg(`${username} wurde eingeladen.`);
         setSuchtext("");
         setTreffer([]);

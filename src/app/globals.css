@@ -1711,3 +1711,26 @@ dialog.card {
 .entry-title-link:hover {
   text-decoration: underline;
 }
+
+/* --- Einwilligung Nutzungsanalyse --- */
+
+.analytics-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  font-size: 13px;
+  line-height: 1.5;
+}

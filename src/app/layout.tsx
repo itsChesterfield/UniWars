@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Libre_Caslon_Display, Public_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
+import { AnalyticsBanner } from "@/components/analytics-banner";
 
 const librecaslon = Libre_Caslon_Display({
   variable: "--font-display",
@@ -31,7 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="de"
       className={`${librecaslon.variable} ${publicSans.variable} ${spaceMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnalyticsBanner />
+      </body>
     </html>
   );
 }

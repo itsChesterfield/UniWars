@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signup } from "./actions";
+import { TrackEvent } from "@/components/track-event";
 
 export default async function SignupPage({
   searchParams,
@@ -14,6 +15,8 @@ export default async function SignupPage({
         <h1>Registrieren</h1>
 
         {error && <p className="auth-error">{error}</p>}
+        {error && <TrackEvent event="registrierung_fehlgeschlagen" properties={{ grund: error }} />}
+        {checkEmail && <TrackEvent event="registrierung_abgeschickt" properties={{ email_bestaetigung: true }} />}
         {checkEmail && (
           <p className="auth-info">
             Fast geschafft — bitte bestätige deine E-Mail-Adresse über den Link, den wir dir

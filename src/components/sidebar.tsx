@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { logout } from "@/app/logout/actions";
-import { setTheme } from "@/app/settings/actions";
+import { AbmeldenButton, ThemeUmschalter } from "@/components/sidebar-aktionen";
+import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
 import type { Enums } from "@/lib/supabase/types";
 
 const WEITERE_HUBS = [
@@ -86,8 +86,6 @@ export function Sidebar({
   theme: Enums<"theme">;
   streak: number;
 }) {
-  const naechstesTheme: Enums<"theme"> = theme === "DUNKEL" ? "HELL" : "DUNKEL";
-
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -122,30 +120,9 @@ export function Sidebar({
 
         <span className="sidebar-user">{email}</span>
 
-        <form action={setTheme.bind(null, naechstesTheme)}>
-          <button type="submit" className="sidebar-theme-toggle">
-            <span className="row" style={{ gap: 9 }}>
-              {theme === "DUNKEL" ? (
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" />
-                </svg>
-              ) : (
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 13A8.5 8.5 0 1 1 11 3a6.5 6.5 0 0 0 10 10Z" />
-                </svg>
-              )}
-              <span>Darstellung</span>
-            </span>
-            <span style={{ color: "var(--accent-strong)" }}>{theme === "DUNKEL" ? "Hell" : "Dunkel"}</span>
-          </button>
-        </form>
-
-        <form action={logout}>
-          <button type="submit" className="sidebar-logout">
-            Abmelden
-          </button>
-        </form>
+        <ThemeUmschalter theme={theme} />
+        <AnalyticsEinstellung />
+        <AbmeldenButton />
       </div>
     </aside>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 
@@ -13,6 +14,15 @@ const STATUS_LABEL: Record<Enums<"pruefung_status">, string> = {
   BESTANDEN: "Bestanden",
   NICHT_BESTANDEN: "Nicht bestanden",
 };
+
+function useEinmalMelden(rechner: string) {
+  const gemeldet = useRef(false);
+  return () => {
+    if (gemeldet.current) return;
+    gemeldet.current = true;
+    track("rechner_benutzt", { rechner });
+  };
+}
 
 function summeUndGewicht(notes: Note[]) {
   return notes.reduce(
@@ -97,6 +107,7 @@ export function NotenPrognose({ notenschnitt, notes }: { notenschnitt: number | 
 export function ZielnotenRechner({ notes }: { notes: Note[] }) {
   const [zielschnitt, setZielschnitt] = useState("2.0");
   const [verbleibendesGewicht, setVerbleibendesGewicht] = useState("1");
+  const melden = useEinmalMelden("zielnote");
 
   const { summe, gewicht } = summeUndGewicht(notes);
 
@@ -129,7 +140,10 @@ export function ZielnotenRechner({ notes }: { notes: Note[] }) {
         min="1"
         max="5"
         value={zielschnitt}
-        onChange={(e) => setZielschnitt(e.target.value)}
+        onChange={(e) => {
+          melden();
+          setZielschnitt(e.target.value);
+        }}
       />
       <label htmlFor="ziel-gewicht">Verbleibendes Gewicht</label>
       <input
@@ -139,7 +153,10 @@ export function ZielnotenRechner({ notes }: { notes: Note[] }) {
         step="0.1"
         min="0"
         value={verbleibendesGewicht}
-        onChange={(e) => setVerbleibendesGewicht(e.target.value)}
+        onChange={(e) => {
+          melden();
+          setVerbleibendesGewicht(e.target.value);
+        }}
       />
       <p className="rechner-ergebnis">{ergebnis}</p>
     </div>
@@ -149,6 +166,7 @@ export function ZielnotenRechner({ notes }: { notes: Note[] }) {
 export function WasWaereWenn({ notes }: { notes: Note[] }) {
   const [wert, setWert] = useState("2.0");
   const [gewichtNeu, setGewichtNeu] = useState("1");
+  const melden = useEinmalMelden("was_waere_wenn");
 
   const { summe, gewicht } = summeUndGewicht(notes);
 
@@ -173,7 +191,10 @@ export function WasWaereWenn({ notes }: { notes: Note[] }) {
         max="5"
         step="0.1"
         value={wert}
-        onChange={(e) => setWert(e.target.value)}
+        onChange={(e) => {
+          melden();
+          setWert(e.target.value);
+        }}
         style={{ width: "100%", accentColor: "var(--accent)", marginBottom: 4 }}
       />
       <label htmlFor="www-gewicht">Gewicht</label>
@@ -184,7 +205,10 @@ export function WasWaereWenn({ notes }: { notes: Note[] }) {
         step="0.1"
         min="0"
         value={gewichtNeu}
-        onChange={(e) => setGewichtNeu(e.target.value)}
+        onChange={(e) => {
+          melden();
+          setGewichtNeu(e.target.value);
+        }}
       />
       <p className="rechner-ergebnis">{ergebnis}</p>
     </div>

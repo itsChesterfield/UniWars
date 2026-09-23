@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 
 export type UnteraufgabeEingabe = {
   titel: string;
@@ -17,6 +18,8 @@ function neueZeile(faelligAm: string): Zeile {
 }
 
 export function UnteraufgabenEditor({
+  elternTyp,
+  ort,
   mitglieder,
   terminPflicht,
   standardTermin = "",
@@ -25,6 +28,8 @@ export function UnteraufgabenEditor({
   onSpeichern,
   onAbbrechen,
 }: {
+  elternTyp: "todo" | "deadline" | "pruefung";
+  ort: "schnell_erfassen" | "liste" | "detail";
   mitglieder: EditorMitglied[];
   terminPflicht: boolean;
   standardTermin?: string;
@@ -80,6 +85,13 @@ export function UnteraufgabenEditor({
           zugewiesenAn: z.zugewiesenAn,
         })),
       );
+      track("unteraufgaben_angelegt", {
+        eltern_typ: elternTyp,
+        ort,
+        anzahl: ausgefuellt.length,
+        mit_zuweisung: ausgefuellt.filter((z) => z.zugewiesenAn).length,
+        mit_termin: ausgefuellt.filter((z) => z.faelligAm).length,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
     } finally {

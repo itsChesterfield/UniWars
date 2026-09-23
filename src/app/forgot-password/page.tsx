@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requestPasswordReset } from "./actions";
+import { TrackEvent } from "@/components/track-event";
 
 export default async function ForgotPasswordPage({
   searchParams,
@@ -14,6 +15,8 @@ export default async function ForgotPasswordPage({
         <h1>Passwort vergessen</h1>
 
         {error && <p className="auth-error">{error}</p>}
+        {error && <TrackEvent event="passwort_reset_fehlgeschlagen" properties={{ grund: error }} />}
+        {sent && <TrackEvent event="passwort_reset_angefordert" />}
         {sent && (
           <p className="auth-info">
             Falls ein Konto mit dieser E-Mail existiert, haben wir dir einen Link zum

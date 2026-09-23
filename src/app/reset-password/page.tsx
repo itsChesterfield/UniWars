@@ -1,4 +1,5 @@
 import { updatePassword } from "./actions";
+import { TrackEvent } from "@/components/track-event";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -13,6 +14,7 @@ export default async function ResetPasswordPage({
         <h1>Neues Passwort</h1>
 
         {error && <p className="auth-error">{error}</p>}
+        {error && <TrackEvent event="neues_passwort_fehlgeschlagen" properties={{ grund: error }} />}
 
         <div className="auth-field">
           <label htmlFor="password" className="sr-only">Neues Passwort</label>

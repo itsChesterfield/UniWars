@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { fehltageAendern } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
+import { track } from "@/lib/analytics";
 
 type Fach = Tables<"fach">;
 type Settings = Tables<"settings">;
@@ -14,6 +15,7 @@ export function AnwesenheitUebersicht({ faecher: initialFaecher }: { faecher: Fa
   const relevante = faecher.filter((f) => f.anwesenheitspflicht);
 
   function handleFehltag(id: string, delta: number) {
+    track("fehltag_geaendert", { richtung: delta > 0 ? "hinzugefuegt" : "entfernt" });
     startTransition(async () => {
       const updated = await fehltageAendern(id, delta);
       setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));

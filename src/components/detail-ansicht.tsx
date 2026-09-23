@@ -13,6 +13,7 @@ import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { AnhangListe } from "@/components/anhang-liste";
 import { UnteraufgabenEditor, type UnteraufgabeEingabe } from "@/components/unteraufgaben-editor";
 import { farbeFuerMitglied } from "@/lib/mitglied-farbe";
+import { track } from "@/lib/analytics";
 
 const TYP_LABEL: Record<DetailZielTyp, string> = {
   todo: "To-Do",
@@ -48,6 +49,7 @@ export function DetailAnsicht({
 
   useEffect(() => {
     dialogRef.current?.showModal();
+    track("aufgabe_detail_geoeffnet", { typ: zielTyp });
     detailLaden(zielTyp, zielId)
       .then(setDaten)
       .catch((err) => setError(err instanceof Error ? err.message : "Unbekannter Fehler"));
@@ -70,6 +72,7 @@ export function DetailAnsicht({
       unteraufgaben: daten.unteraufgaben.map((u) => (u.id === id ? { ...u, erledigt } : u)),
     });
     const toggeln = daten.typ === "todo" ? toggleTodoErledigt : toggleDeadlineErledigt;
+    if (erledigt) track("unteraufgabe_erledigt", { eltern_typ: daten.typ, ort: "detail" });
     toggeln(id, erledigt).then(() => router.refresh());
   }
 
@@ -94,6 +97,7 @@ export function DetailAnsicht({
     startMitgliedTransition(async () => {
       try {
         await deadlineEinladen(zielId, username, zielTyp);
+        track("mitglied_eingeladen", { ziel_typ: zielTyp, ort: "detail" });
         setMitgliedSuche("");
         setMitgliedVorschlaege([]);
         setMitgliedFormOffen(false);
@@ -304,6 +308,8 @@ export function DetailAnsicht({
 
             {unterFormOffen && (
               <UnteraufgabenEditor
+                elternTyp={daten.typ}
+                ort="detail"
                 mitglieder={daten.mitglieder}
                 terminPflicht={daten.typ !== "todo"}
                 onSpeichern={unteraufgabenSpeichern}

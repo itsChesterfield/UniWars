@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { markiereBenachrichtigungGelesen } from "@/app/benachrichtigung/actions";
 import { einladungAnnehmen, einladungAblehnen } from "@/app/einladung/actions";
 import type { Tables } from "@/lib/supabase/types";
+import { track } from "@/lib/analytics";
 
 type Benachrichtigung = Tables<"benachrichtigung">;
 type Einladung = Tables<"einladung">;
@@ -25,23 +26,34 @@ export function NotificationBell({
   function markiereGelesen(id: string) {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, gelesen: true } : n)));
     startTransition(() => markiereBenachrichtigungGelesen(id));
+    track("benachrichtigung_gelesen");
   }
 
   function annehmen(id: string) {
     setEinladungen((prev) => prev.filter((e) => e.id !== id));
     startTransition(() => einladungAnnehmen(id));
+    track("einladung_angenommen");
   }
 
   function ablehnen(id: string) {
     setEinladungen((prev) => prev.filter((e) => e.id !== id));
     startTransition(() => einladungAblehnen(id));
+    track("einladung_abgelehnt");
   }
 
   return (
     <div className="notification-bell">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!open) {
+            track("benachrichtigungen_geoeffnet", {
+              ungelesen: items.filter((n) => !n.gelesen).length,
+              offene_einladungen: einladungen.length,
+            });
+          }
+          setOpen((o) => !o);
+        }}
         aria-label="Benachrichtigungen"
         className="icon-btn"
       >

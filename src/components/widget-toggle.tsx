@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setSichtbareWidgets } from "@/app/settings/actions";
+import { track } from "@/lib/analytics";
 
 export const ALLE_WIDGETS = [
   { key: "heute", label: "Termine" },
@@ -25,6 +26,7 @@ export function WidgetToggle({ initialSichtbareWidgets }: { initialSichtbareWidg
     const neu = basis.includes(key) ? basis.filter((k) => k !== key) : [...basis, key];
 
     setSichtbar(neu);
+    track("widget_umgeschaltet", { widget: key, sichtbar: neu.includes(key) });
     startTransition(() => setSichtbareWidgets(neu));
   }
 

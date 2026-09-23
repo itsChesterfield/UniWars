@@ -9,6 +9,7 @@ import {
   type UnteraufgabeEingabe,
 } from "@/components/unteraufgaben-editor";
 import { absolutesDatum } from "@/lib/countdown";
+import { track } from "@/lib/analytics";
 import type { Tables } from "@/lib/supabase/types";
 
 type Todo = Tables<"todo">;
@@ -59,11 +60,13 @@ export function TodoUnterpunkte({
     const naechsterStatus = !t.erledigt;
     setUnterpunkte((prev) => prev.map((x) => (x.id === t.id ? { ...x, erledigt: naechsterStatus } : x)));
     startTransition(() => toggleTodoErledigt(t.id, naechsterStatus));
+    if (naechsterStatus) track("unteraufgabe_erledigt", { eltern_typ: "todo", ort: "liste" });
   }
 
   function handleDelete(id: string) {
     setUnterpunkte((prev) => prev.filter((x) => x.id !== id));
     startTransition(() => deleteTodo(id));
+    track("unteraufgabe_geloescht", { eltern_typ: "todo", ort: "liste" });
   }
 
   function nameVon(userId: string | null): string | null {
@@ -107,6 +110,8 @@ export function TodoUnterpunkte({
 
       {formOpen ? (
         <UnteraufgabenEditor
+          elternTyp="todo"
+          ort="liste"
           mitglieder={mitglieder}
           terminPflicht={false}
           onSpeichern={speichern}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import posthog from "posthog-js";
+import { track } from "@/lib/analytics";
 import { createFach } from "@/app/fach/actions";
 import { naechsteFarbe } from "@/components/fach-manager";
 import { createDeadline } from "@/app/deadline/actions";
@@ -84,6 +84,8 @@ export function QuickAdd({
   const [open, setOpen] = useState(false);
   const [modus, setModus] = useState<QuickAddModus>("ABGABE");
   const [typManuellGesetzt, setTypManuellGesetzt] = useState(false);
+  const [notenWert, setNotenWert] = useState("");
+  const [notenGewicht, setNotenGewicht] = useState("1");
   const [titel, setTitel] = useState("");
   const [fachId, setFachId] = useState<string>(faecher[0]?.id ?? "");
   const [datumZeit, setDatumZeit] = useState("");
@@ -161,6 +163,7 @@ export function QuickAdd({
       if (!open && !editierbar && e.key.toLowerCase() === "q") {
         e.preventDefault();
         setOpen(true);
+        track("schnell_erfassen_geoeffnet", { quelle: "taste_q" });
       } else if (open && e.key === "Escape") {
         e.preventDefault();
         handleClose();
@@ -239,11 +242,19 @@ export function QuickAdd({
           });
         } else if (modus === "NOTE") {
           if (!fachId) throw new Error("Bitte ein Fach wählen.");
+          const wert = Number(notenWert.replace(",", "."));
+          const gewicht = Number(notenGewicht.replace(",", "."));
+          if (!Number.isFinite(wert) || wert < 1 || wert > 5) {
+            throw new Error("Bitte eine Note zwischen 1,0 und 5,0 angeben.");
+          }
+          if (!Number.isFinite(gewicht) || gewicht <= 0) {
+            throw new Error("Bitte ein Gewicht größer als 0 angeben.");
+          }
           await createNote({
             titel,
             fach_id: fachId,
-            wert: 1,
-            gewicht: 1,
+            wert,
+            gewicht,
             datum: new Date().toISOString().slice(0, 10),
           });
         } else if (modus === "PRUEFUNG") {
@@ -267,6 +278,7 @@ export function QuickAdd({
           });
           if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
             await deadlineEinladen(erstellt.id, teilenMit.trim(), "todo");
+            track("mitglied_eingeladen", { ziel_typ: "todo", ort: "schnell_erfassen" });
           }
           await speichereAnhaenge("todo", erstellt.id);
           setUnterDialogFuer({ parentTyp: "todo", parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
@@ -284,6 +296,7 @@ export function QuickAdd({
           if (erstellt[0]) {
             if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
               await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+              track("mitglied_eingeladen", { ziel_typ: "deadline", ort: "schnell_erfassen" });
             }
             await speichereAnhaenge("deadline", erstellt[0].id);
             setUnterDialogFuer({
@@ -295,7 +308,17 @@ export function QuickAdd({
           }
         }
 
-        posthog.capture("quick_add_benutzt", { typ: modus });
+        track("quick_add_benutzt", {
+          typ: modus,
+          typ_automatisch_erkannt: !typManuellGesetzt,
+          mit_termin: Boolean(datumZeit),
+          als_todo_gespeichert: istUnterstuetzterDeadlineTyp && !datumZeit,
+          geteilt: modus === "GRUPPENARBEIT" && teilenMit.trim() !== "",
+          anzahl_anhaenge: anhaenge.length,
+          als_unteraufgabe_von: unterAuswahl ? unterAuswahl.split(":")[0] : null,
+        });
+        setNotenWert("");
+        setNotenGewicht("1");
         setTitel("");
         setFachId(faecher[0]?.id ?? "");
         setDatumZeit("");
@@ -331,7 +354,10 @@ export function QuickAdd({
       <button
         type="button"
         className="btnp"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+          track("schnell_erfassen_geoeffnet", { quelle: "button" });
+        }}
         title="Schnell erfassen (Taste Q)"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -394,6 +420,35 @@ export function QuickAdd({
                 + Link
               </button>
             </div>
+
+            {modus === "NOTE" && (
+              <div className="row" style={{ gap: 6 }}>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={notenWert}
+                  onChange={(e) => setNotenWert(e.target.value)}
+                  placeholder="Note (1,0–5,0)"
+                  aria-label="Note"
+                  required
+                  style={{ flex: 1 }}
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0.1"
+                  step="0.1"
+                  value={notenGewicht}
+                  onChange={(e) => setNotenGewicht(e.target.value)}
+                  placeholder="Gewicht"
+                  aria-label="Gewicht"
+                  style={{ width: 110 }}
+                />
+              </div>
+            )}
 
             {zeigeDatumZeit && (
               <input

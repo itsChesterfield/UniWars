@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { track } from "@/lib/analytics";
 
 type Treffer = { id: string; typ: "Fach" | "Deadline" | "To-Do" | "Note"; titel: string };
 
@@ -29,12 +30,14 @@ export function SearchBar() {
           supabase.from("note").select("id, titel").ilike("titel", pattern).limit(5),
         ]);
 
-      setErgebnisse([
+      const treffer = [
         ...(faecher ?? []).map((f) => ({ id: f.id, typ: "Fach" as const, titel: f.name })),
         ...(deadlines ?? []).map((d) => ({ id: d.id, typ: "Deadline" as const, titel: d.titel })),
         ...(todos ?? []).map((t) => ({ id: t.id, typ: "To-Do" as const, titel: t.titel })),
         ...(notes ?? []).map((n) => ({ id: n.id, typ: "Note" as const, titel: n.titel })),
-      ]);
+      ];
+      setErgebnisse(treffer);
+      track("suche_ausgefuehrt", { suchlaenge: query.trim().length, treffer: treffer.length });
       setSuchtGerade(false);
     }, 250);
 

@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { FachOption } from "@/lib/fach-option";
+import { track } from "@/lib/analytics";
 
 export function FachFilterChips({ faecher }: { faecher: FachOption[] }) {
   const router = useRouter();
@@ -10,6 +11,7 @@ export function FachFilterChips({ faecher }: { faecher: FachOption[] }) {
   const aktivFachId = searchParams.get("fachId");
 
   function setFilter(fachId: string | null) {
+    track("fach_filter_gesetzt", { alle: fachId === null });
     const params = new URLSearchParams(searchParams.toString());
     if (fachId) {
       params.set("fachId", fachId);
