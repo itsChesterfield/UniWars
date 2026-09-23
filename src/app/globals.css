@@ -1594,13 +1594,28 @@ dialog.card {
   gap: 6px;
 }
 
-.unteraufgabe-zeile-felder select {
-  flex: 1 1 130px;
+.unteraufgabe-zeile-kopf input {
+  flex: 1;
   min-width: 0;
 }
 
-.unteraufgabe-zeile-felder input {
+.unteraufgabe-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 140px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.unteraufgabe-feld-termin {
   flex: 1 1 210px;
+}
+
+.unteraufgabe-feld select,
+.unteraufgabe-feld input {
+  width: 100%;
   min-width: 0;
 }
 

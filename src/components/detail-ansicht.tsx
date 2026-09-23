@@ -11,19 +11,13 @@ import { toggleTodoErledigt, createUnterpunkte } from "@/app/todo/actions";
 import { toggleDeadlineErledigt, createDeadline } from "@/app/deadline/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { AnhangListe } from "@/components/anhang-liste";
+import { UnteraufgabenEditor, type UnteraufgabeEingabe } from "@/components/unteraufgaben-editor";
 import { farbeFuerMitglied } from "@/lib/mitglied-farbe";
 
 const TYP_LABEL: Record<DetailZielTyp, string> = {
   todo: "To-Do",
   deadline: "Deadline",
   pruefung: "Prüfung",
-};
-
-type UnterZeile = {
-  tempId: string;
-  titel: string;
-  faelligAm: string;
-  zugewiesenAn: string;
 };
 
 function formatKurz(iso: string): string {
@@ -51,10 +45,6 @@ export function DetailAnsicht({
   const [mitgliedPending, startMitgliedTransition] = useTransition();
 
   const [unterFormOffen, setUnterFormOffen] = useState(false);
-  const [unterZeilen, setUnterZeilen] = useState<UnterZeile[]>([]);
-  const [unterTitel, setUnterTitel] = useState("");
-  const [unterError, setUnterError] = useState<string | null>(null);
-  const [unterPending, startUnterTransition] = useTransition();
 
   useEffect(() => {
     dialogRef.current?.showModal();
@@ -114,81 +104,35 @@ export function DetailAnsicht({
     });
   }
 
-  function unterZeileHinzufuegen() {
-    const wert = unterTitel.trim();
-    if (wert === "") return;
-    setUnterZeilen((prev) => [
-      ...prev,
-      { tempId: crypto.randomUUID(), titel: wert, faelligAm: "", zugewiesenAn: "" },
-    ]);
-    setUnterTitel("");
-  }
-
-  function handleUnterTitelKeydown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    unterZeileHinzufuegen();
-  }
-
-  function entferneUnterZeile(tempId: string) {
-    setUnterZeilen((prev) => prev.filter((z) => z.tempId !== tempId));
-  }
-
-  function aendereUnterZeile(tempId: string, patch: Partial<UnterZeile>) {
-    setUnterZeilen((prev) => prev.map((z) => (z.tempId === tempId ? { ...z, ...patch } : z)));
-  }
-
-  function schliesseUnterForm() {
-    setUnterFormOffen(false);
-    setUnterZeilen([]);
-    setUnterTitel("");
-    setUnterError(null);
-  }
-
-  function unteraufgabenBestaetigen() {
+  async function unteraufgabenSpeichern(eintraege: UnteraufgabeEingabe[]) {
     if (!daten) return;
-    if (unterZeilen.length === 0) {
-      schliesseUnterForm();
-      return;
-    }
-    if (daten.typ !== "todo" && unterZeilen.some((z) => !z.faelligAm)) {
-      setUnterError("Bitte für jede Unteraufgabe einen Termin angeben.");
-      return;
-    }
-    setUnterError(null);
-    startUnterTransition(async () => {
-      try {
-        if (daten.typ === "todo") {
-          await createUnterpunkte(
-            zielId,
-            daten.fachId,
-            unterZeilen.map((z) => ({
-              titel: z.titel,
-              faelligAm: z.faelligAm ? new Date(z.faelligAm).toISOString() : undefined,
-              zugewiesenAn: z.zugewiesenAn || undefined,
-            })),
-          );
-        } else {
-          for (const z of unterZeilen) {
-            await createDeadline({
-              titel: z.titel,
-              fach_id: daten.fachId,
-              faellig_am: new Date(z.faelligAm).toISOString(),
-              typ: "ABGABE",
-              kategorie: "NORMAL",
-              pruefungId: daten.typ === "pruefung" ? zielId : undefined,
-              parentDeadlineId: daten.typ === "deadline" ? zielId : undefined,
-              zugewiesenAn: z.zugewiesenAn || undefined,
-            });
-          }
-        }
-        schliesseUnterForm();
-        await neuLaden();
-        router.refresh();
-      } catch (err) {
-        setUnterError(err instanceof Error ? err.message : "Unbekannter Fehler");
+    if (daten.typ === "todo") {
+      await createUnterpunkte(
+        zielId,
+        daten.fachId,
+        eintraege.map((e) => ({
+          titel: e.titel,
+          faelligAm: e.faelligAm ? new Date(e.faelligAm).toISOString() : undefined,
+          zugewiesenAn: e.zugewiesenAn || undefined,
+        })),
+      );
+    } else {
+      for (const e of eintraege) {
+        await createDeadline({
+          titel: e.titel,
+          fach_id: daten.fachId,
+          faellig_am: new Date(e.faelligAm).toISOString(),
+          typ: "ABGABE",
+          kategorie: "NORMAL",
+          pruefungId: daten.typ === "pruefung" ? zielId : undefined,
+          parentDeadlineId: daten.typ === "deadline" ? zielId : undefined,
+          zugewiesenAn: e.zugewiesenAn || undefined,
+        });
       }
-    });
+    }
+    setUnterFormOffen(false);
+    await neuLaden();
+    router.refresh();
   }
 
   return (
@@ -359,73 +303,12 @@ export function DetailAnsicht({
             )}
 
             {unterFormOffen && (
-              <div className="unteraufgabe-form">
-                {unterError && <p className="auth-error" style={{ fontSize: 12 }}>{unterError}</p>}
-
-                {unterZeilen.map((z) => (
-                  <div key={z.tempId} className="unteraufgabe-zeile">
-                    <div className="unteraufgabe-zeile-kopf">
-                      <span className="unteraufgabe-zeile-titel">{z.titel}</span>
-                      <button
-                        type="button"
-                        onClick={() => entferneUnterZeile(z.tempId)}
-                        aria-label={`${z.titel} entfernen`}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="unteraufgabe-zeile-felder">
-                      <select
-                        value={z.zugewiesenAn}
-                        onChange={(e) => aendereUnterZeile(z.tempId, { zugewiesenAn: e.target.value })}
-                        aria-label={`Zuständig für ${z.titel}`}
-                      >
-                        <option value="">Niemand</option>
-                        {daten.mitglieder.map((m) => (
-                          <option key={m.user_id} value={m.user_id}>
-                            {m.username ?? "?"}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="datetime-local"
-                        value={z.faelligAm}
-                        onChange={(e) => aendereUnterZeile(z.tempId, { faelligAm: e.target.value })}
-                        aria-label={`Frist für ${z.titel}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <input
-                  type="text"
-                  value={unterTitel}
-                  onChange={(e) => setUnterTitel(e.target.value)}
-                  onKeyDown={handleUnterTitelKeydown}
-                  placeholder="Titel eingeben, Enter zum Hinzufügen…"
-                  autoFocus
-                />
-
-                <div className="row" style={{ gap: 6 }}>
-                  <button
-                    type="button"
-                    className="btnp"
-                    disabled={unterPending}
-                    onClick={unteraufgabenBestaetigen}
-                    style={{ padding: "4px 12px", fontSize: 12 }}
-                  >
-                    {unterPending ? "Speichern…" : "Bestätigen"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={schliesseUnterForm}
-                    disabled={unterPending}
-                    style={{ padding: "4px 12px", fontSize: 12 }}
-                  >
-                    Abbrechen
-                  </button>
-                </div>
-              </div>
+              <UnteraufgabenEditor
+                mitglieder={daten.mitglieder}
+                terminPflicht={daten.typ !== "todo"}
+                onSpeichern={unteraufgabenSpeichern}
+                onAbbrechen={() => setUnterFormOffen(false)}
+              />
             )}
           </div>
 

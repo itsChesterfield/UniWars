@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { SearchBar } from "@/components/search-bar";
@@ -109,7 +109,17 @@ export function DashboardContent({
     ? stundenplanEintraege.filter((e) => e.fach_id === fachId)
     : stundenplanEintraege;
 
-  const filterKey = fachId ?? "alle";
+  // Manager kopieren ihre Props in lokalen State; bei frischen Serverdaten neu aufbauen.
+  const [datenStand, setDatenStand] = useState({ deadlines, todos, pruefungen, version: 0 });
+  if (
+    datenStand.deadlines !== deadlines ||
+    datenStand.todos !== todos ||
+    datenStand.pruefungen !== pruefungen
+  ) {
+    setDatenStand({ deadlines, todos, pruefungen, version: datenStand.version + 1 });
+  }
+
+  const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
   const sichtbar = (key: string) => istWidgetSichtbar(sichtbareWidgets, key);
 
   const name = username;
