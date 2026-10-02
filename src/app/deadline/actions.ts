@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 import type { Enums, TablesInsert } from "@/lib/supabase/types";
 
 export type DeadlineInput = {
@@ -17,6 +18,7 @@ export type DeadlineInput = {
   pruefungId?: string | null;
   parentDeadlineId?: string | null;
   zugewiesenAn?: string | null;
+  dauerMinuten?: number | null;
 };
 
 function woechentlicheTermine(start: string, bisDatum: string): string[] {
@@ -64,12 +66,14 @@ export async function createDeadline(input: DeadlineInput) {
     pruefung_id: input.pruefungId ?? null,
     parent_deadline_id: input.parentDeadlineId ?? null,
     zugewiesen_an: input.zugewiesenAn ?? null,
+    dauer_minuten: input.dauerMinuten ?? null,
   }));
 
   const { data, error } = await supabase.from("deadline").insert(payload).select();
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -90,6 +94,7 @@ export async function updateDeadline(id: string, input: DeadlineInput) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -98,6 +103,7 @@ export async function toggleDeadlineErledigt(id: string, erledigt: boolean) {
   const { error } = await supabase.from("deadline").update({ erledigt }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }
 
 export async function deleteDeadline(id: string) {
@@ -105,4 +111,5 @@ export async function deleteDeadline(id: string) {
   const { error } = await supabase.from("deadline").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }

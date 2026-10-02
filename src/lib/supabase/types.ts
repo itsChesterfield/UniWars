@@ -73,6 +73,7 @@ export type Database = {
       }
       deadline: {
         Row: {
+          dauer_minuten: number | null
           erledigt: boolean
           extern_uid: string | null
           fach_id: string | null
@@ -90,6 +91,7 @@ export type Database = {
           zugewiesen_an: string | null
         }
         Insert: {
+          dauer_minuten?: number | null
           erledigt?: boolean
           extern_uid?: string | null
           fach_id?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           zugewiesen_an?: string | null
         }
         Update: {
+          dauer_minuten?: number | null
           erledigt?: boolean
           extern_uid?: string | null
           fach_id?: string | null
@@ -265,6 +268,63 @@ export type Database = {
         }
         Relationships: []
       }
+      kalender_eintrag: {
+        Row: {
+          google_event_id: string
+          inhalt_hash: string
+          quelle_id: string
+          quelle_typ: string
+          user_id: string
+        }
+        Insert: {
+          google_event_id: string
+          inhalt_hash: string
+          quelle_id: string
+          quelle_typ: string
+          user_id?: string
+        }
+        Update: {
+          google_event_id?: string
+          inhalt_hash?: string
+          quelle_id?: string
+          quelle_typ?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kalender_verbindung: {
+        Row: {
+          access_token: string | null
+          access_token_ablauf: string | null
+          anbieter: string
+          erstellt_am: string
+          kalender_id: string | null
+          refresh_token: string
+          user_id: string
+          zuletzt_abgeglichen: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          access_token_ablauf?: string | null
+          anbieter?: string
+          erstellt_am?: string
+          kalender_id?: string | null
+          refresh_token: string
+          user_id?: string
+          zuletzt_abgeglichen?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          access_token_ablauf?: string | null
+          anbieter?: string
+          erstellt_am?: string
+          kalender_id?: string | null
+          refresh_token?: string
+          user_id?: string
+          zuletzt_abgeglichen?: string | null
+        }
+        Relationships: []
+      }
       lern_session: {
         Row: {
           dauer_minuten: number
@@ -341,6 +401,7 @@ export type Database = {
       pruefung: {
         Row: {
           datum: string
+          dauer_minuten: number | null
           fach_id: string
           id: string
           raum: string | null
@@ -350,6 +411,7 @@ export type Database = {
         }
         Insert: {
           datum: string
+          dauer_minuten?: number | null
           fach_id: string
           id?: string
           raum?: string | null
@@ -359,6 +421,7 @@ export type Database = {
         }
         Update: {
           datum?: string
+          dauer_minuten?: number | null
           fach_id?: string
           id?: string
           raum?: string | null

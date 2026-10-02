@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { AnalyticsNutzer } from "@/components/analytics-nutzer";
 import { NoteManager } from "@/components/note-manager";
+import { KalenderButton } from "@/components/kalender-button";
 import { SearchBar } from "@/components/search-bar";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
@@ -74,6 +75,7 @@ export function DashboardContent({
   settings,
   username,
   userId,
+  kalender,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -89,6 +91,7 @@ export function DashboardContent({
   settings: Settings;
   username: string;
   userId: string;
+  kalender: { konfiguriert: boolean; verbunden: boolean };
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -173,6 +176,7 @@ export function DashboardContent({
             title="Termine"
             subtitle={heutigesDatum()}
             className="span-12"
+            aktion={<KalenderButton konfiguriert={kalender.konfiguriert} verbunden={kalender.verbunden} />}
             banner={
               <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
             }
@@ -199,6 +203,7 @@ export function DashboardContent({
                     deadlines={gefilterteDeadlines}
                     pruefungen={gefiltertePruefungen}
                     faecher={faecher}
+                    kalenderVerbunden={kalender.verbunden}
                     embedded
                   />
                 ),

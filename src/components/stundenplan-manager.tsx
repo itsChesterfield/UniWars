@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import posthog from "posthog-js";
 import {
   createStundenplanEintrag,
@@ -8,6 +8,8 @@ import {
   deleteStundenplanEintrag,
   type StundenplanInput,
 } from "@/app/stundenplan/actions";
+import { belegtZeitenLaden } from "@/app/kalender/actions";
+import type { BelegtBlock } from "@/lib/kalender/google";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 
@@ -85,12 +87,14 @@ export function StundenplanManager({
   faecher,
   deadlines = [],
   pruefungen = [],
+  kalenderVerbunden = false,
   embedded = false,
 }: {
   initialEintraege: Eintrag[];
   faecher: FachOption[];
   deadlines?: Deadline[];
   pruefungen?: Pruefung[];
+  kalenderVerbunden?: boolean;
   embedded?: boolean;
 }) {
   const [eintraege, setEintraege] = useState(initialEintraege);
@@ -100,6 +104,46 @@ export function StundenplanManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [wochenOffset, setWochenOffset] = useState(0);
+  const [belegt, setBelegt] = useState<{ woche: number; bloecke: BelegtBlock[] }>({ woche: NaN, bloecke: [] });
+
+  useEffect(() => {
+    if (!kalenderVerbunden) return;
+    let abgebrochen = false;
+    const von = montagDieserWoche(new Date());
+    von.setDate(von.getDate() + wochenOffset * 7);
+    const bis = new Date(von);
+    bis.setDate(von.getDate() + 7);
+    belegtZeitenLaden(von.toISOString(), bis.toISOString())
+      .then((antwort) => {
+        if (!abgebrochen) setBelegt({ woche: wochenOffset, bloecke: antwort.bloecke });
+      })
+      .catch(() => undefined);
+    return () => {
+      abgebrochen = true;
+    };
+  }, [kalenderVerbunden, wochenOffset]);
+
+  const belegtDieseWoche = kalenderVerbunden && belegt.woche === wochenOffset ? belegt.bloecke : [];
+
+  function belegtFuerTag(tagIndex: number) {
+    const tagStart = new Date(montag);
+    tagStart.setDate(montag.getDate() + tagIndex);
+    tagStart.setHours(BASIS_STUNDE, 0, 0, 0);
+    const tagEnde = new Date(tagStart);
+    tagEnde.setHours(END_STUNDE, 0, 0, 0);
+    return belegtDieseWoche.flatMap((b, i) => {
+      const start = Math.max(new Date(b.start).getTime(), tagStart.getTime());
+      const ende = Math.min(new Date(b.end).getTime(), tagEnde.getTime());
+      if (ende <= start) return [];
+      return [
+        {
+          key: `${tagIndex}-${i}`,
+          top: ((start - tagStart.getTime()) / 60_000) * PX_PRO_MINUTE,
+          hoehe: Math.max(((ende - start) / 60_000) * PX_PRO_MINUTE, 8),
+        },
+      ];
+    });
+  }
 
   function openCreateForm() {
     if (faecher.length === 0) {
@@ -222,10 +266,20 @@ export function StundenplanManager({
           ))}
         </div>
 
-        {TAGE.map((tag) => (
+        {TAGE.map((tag, tagIndex) => (
           <div key={tag} className="stundenplan-tag-spalte">
             <div className="stundenplan-tag-label">{TAG_LABEL[tag]}</div>
             <div className="stundenplan-tag-body" style={{ height: RASTER_HOEHE }}>
+              {belegtFuerTag(tagIndex).map((b) => (
+                <div
+                  key={b.key}
+                  className="stundenplan-belegt"
+                  style={{ top: b.top, height: b.hoehe }}
+                  title="Belegt (Google Kalender)"
+                >
+                  Belegt
+                </div>
+              ))}
               {eintraege
                 .filter((e) => e.tag === tag)
                 .map((e) => {

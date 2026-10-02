@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 import type { Enums, TablesInsert } from "@/lib/supabase/types";
 
 export type TodoInput = {
@@ -31,6 +32,7 @@ export async function createTodo(input: TodoInput) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -65,6 +67,7 @@ export async function createUnterpunkte(
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -80,6 +83,7 @@ export async function setzeUnterpunktZuweisung(
     .eq("id", todoId);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }
 
 export async function updateTodo(id: string, input: TodoInput) {
@@ -93,6 +97,7 @@ export async function updateTodo(id: string, input: TodoInput) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -101,6 +106,7 @@ export async function toggleTodoErledigt(id: string, erledigt: boolean) {
   const { error } = await supabase.from("todo").update({ erledigt }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }
 
 export async function deleteTodo(id: string) {
@@ -108,4 +114,5 @@ export async function deleteTodo(id: string) {
   const { error } = await supabase.from("todo").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }

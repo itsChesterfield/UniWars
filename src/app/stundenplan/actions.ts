@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 import type { Enums, TablesInsert } from "@/lib/supabase/types";
 
 export type StundenplanInput = {
@@ -38,6 +39,7 @@ export async function createStundenplanEintrag(input: StundenplanInput) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -59,6 +61,7 @@ export async function updateStundenplanEintrag(id: string, input: StundenplanInp
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -67,4 +70,5 @@ export async function deleteStundenplanEintrag(id: string) {
   const { error } = await supabase.from("stundenplan_eintrag").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }

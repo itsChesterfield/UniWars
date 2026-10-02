@@ -11,6 +11,8 @@ import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { createAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
+import { konfliktePruefen, type Konflikt } from "@/app/kalender/actions";
+import { DAUER_OPTIONEN, STANDARD_DAUER } from "@/lib/kalender/dauer";
 import { UnteraufgabenDialog, type UnteraufgabenParentTyp } from "@/components/unteraufgaben-dialog";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import type { FachOption } from "@/lib/fach-option";
@@ -67,6 +69,14 @@ function hostname(url: string): string {
   }
 }
 
+function zeitspanne(start: string, ende: string): string {
+  const format = (wert: string) =>
+    /^\d{2}:\d{2}$/.test(wert)
+      ? wert
+      : new Date(wert).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  return `${format(start)}–${format(ende)}`;
+}
+
 function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -90,6 +100,8 @@ export function QuickAdd({
   const [fachId, setFachId] = useState<string>(faecher[0]?.id ?? "");
   const [datumZeit, setDatumZeit] = useState("");
   const [datumManuellGesetzt, setDatumManuellGesetzt] = useState(false);
+  const [dauer, setDauer] = useState("");
+  const [konflikte, setKonflikte] = useState<{ fuer: string; liste: Konflikt[] }>({ fuer: "", liste: [] });
   const [unterAuswahl, setUnterAuswahl] = useState("");
   const [teilenMit, setTeilenMit] = useState("");
   const [nutzerVorschlaege, setNutzerVorschlaege] = useState<{ user_id: string; username: string }[]>([]);
@@ -266,6 +278,7 @@ export function QuickAdd({
             datum: new Date(datumZeit).toISOString(),
             raum: null,
             status: "ANSTEHEND",
+            dauer_minuten: dauer ? Number(dauer) : null,
           });
           await speichereAnhaenge("pruefung", erstellt.id);
           setUnterDialogFuer({ parentTyp: "pruefung", parentId: erstellt.id, parentTitel: titel, fachId });
@@ -292,6 +305,7 @@ export function QuickAdd({
             kategorie: "NORMAL",
             todoId: unterTyp === "todo" ? unterId : undefined,
             pruefungId: unterTyp === "pruefung" ? unterId : undefined,
+            dauerMinuten: hatDauer && dauer ? Number(dauer) : null,
           });
           if (erstellt[0]) {
             if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
@@ -322,6 +336,7 @@ export function QuickAdd({
         setTitel("");
         setFachId(faecher[0]?.id ?? "");
         setDatumZeit("");
+        setDauer("");
         setUnterAuswahl("");
         setTeilenMit("");
         setNutzerVorschlaege([]);
@@ -340,6 +355,26 @@ export function QuickAdd({
   const istUnterstuetzterDeadlineTyp =
     modus === "ABGABE" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
   const wirdAlsTodoGespeichert = istUnterstuetzterDeadlineTyp && !datumZeit;
+  const hatDauer = modus === "PRUEFUNG" || modus === "TERMIN" || modus === "GRUPPENARBEIT";
+  const standardDauer =
+    modus === "PRUEFUNG" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "ABGABE" || modus === "SONSTIGE" || modus === "FRIST"
+      ? STANDARD_DAUER[modus]
+      : 15;
+  const effektiveDauer = hatDauer && dauer ? Number(dauer) : standardDauer;
+  const konfliktSchluessel = open && zeigeDatumZeit && datumZeit ? `${datumZeit}|${effektiveDauer}` : "";
+  const sichtbareKonflikte = konflikte.fuer === konfliktSchluessel ? konflikte.liste : [];
+
+  useEffect(() => {
+    if (!konfliktSchluessel) return;
+    const timer = setTimeout(() => {
+      const start = new Date(datumZeit);
+      const ende = new Date(start.getTime() + effektiveDauer * 60_000);
+      konfliktePruefen(start.toISOString(), ende.toISOString())
+        .then((liste) => setKonflikte({ fuer: konfliktSchluessel, liste }))
+        .catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [konfliktSchluessel, datumZeit, effektiveDauer]);
   const teilenMitGueltig = nutzerVorschlaege.some(
     (n) => n.username.toLowerCase() === teilenMit.trim().toLowerCase(),
   );
@@ -461,6 +496,33 @@ export function QuickAdd({
                 aria-label={modus === "PRUEFUNG" ? "Termin am" : "Fällig am (leer lassen = To-Do ohne Termin)"}
                 required={modus === "PRUEFUNG"}
               />
+            )}
+
+            {hatDauer && datumZeit && (
+              <select value={dauer} onChange={(e) => setDauer(e.target.value)} aria-label="Dauer">
+                <option value="">Dauer: {standardDauer} Min. (Standard)</option>
+                {DAUER_OPTIONEN.filter((m) => m !== standardDauer).map((m) => (
+                  <option key={m} value={m}>
+                    Dauer: {m >= 60 && m % 60 === 0 ? `${m / 60} Std.` : `${m} Min.`}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {sichtbareKonflikte.length > 0 && (
+              <div className="konflikt-hinweis" role="status">
+                <strong>Überschneidung:</strong>
+                <ul>
+                  {sichtbareKonflikte.map((k, i) => (
+                    <li key={i}>
+                      {k.quelle === "google"
+                        ? `In deinem Google Kalender ist schon etwas geplant (${zeitspanne(k.start, k.ende)})`
+                        : `${k.titel} (${zeitspanne(k.start, k.ende)})`}
+                    </li>
+                  ))}
+                </ul>
+                <span className="muted" style={{ fontSize: 11 }}>Speichern ist trotzdem möglich.</span>
+              </div>
             )}
 
             {!istEntitaetOhneFach && faecher.length > 0 && (

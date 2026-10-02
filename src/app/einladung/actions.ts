@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 
 export async function benutzerSuchen(suchtext: string) {
   if (suchtext.trim().length < 2) return [];
@@ -50,6 +51,7 @@ export async function einladungAnnehmen(id: string) {
   const { error } = await supabase.from("einladung").update({ status: "ANGENOMMEN" }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }
 
 export async function einladungAblehnen(id: string) {

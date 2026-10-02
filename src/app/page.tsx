@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { googleKonfiguriert } from "@/lib/kalender/google";
+import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { DashboardContent } from "@/components/dashboard-content";
@@ -32,6 +34,7 @@ export default async function DashboardPage() {
     { data: benachrichtigungen, error: benachrichtigungError },
     { data: settingsRoh, error: settingsError },
     { data: einladungen, error: einladungenError },
+    { data: kalenderVerbindung },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -53,6 +56,11 @@ export default async function DashboardPage() {
       .eq("an_user_id", user.id)
       .eq("status", "OFFEN")
       .order("erstellt_am", { ascending: false }),
+    supabase
+      .from("kalender_verbindung")
+      .select("zuletzt_abgeglichen")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   const error =
@@ -70,6 +78,11 @@ export default async function DashboardPage() {
   if (error) throw new Error(error.message);
 
   const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
+
+  const kalenderKonfiguriert = googleKonfiguriert();
+  if (kalenderKonfiguriert && kalenderVerbindung && session) {
+    abgleichNachLadenPlanen(session.access_token, user.id, kalenderVerbindung.zuletzt_abgeglichen);
+  }
 
   const username =
     typeof settings.username === "string" && settings.username.trim() !== ""
@@ -98,6 +111,7 @@ export default async function DashboardPage() {
             settings={settings}
             username={username}
             userId={user.id}
+            kalender={{ konfiguriert: kalenderKonfiguriert, verbunden: Boolean(kalenderVerbindung) }}
           />
         </Suspense>
       </main>

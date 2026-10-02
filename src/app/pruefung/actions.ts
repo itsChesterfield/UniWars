@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 import type { Enums, TablesInsert } from "@/lib/supabase/types";
 
 export type PruefungInput = {
@@ -10,6 +11,7 @@ export type PruefungInput = {
   datum: string;
   raum: string | null;
   status: Enums<"pruefung_status">;
+  dauer_minuten?: number | null;
 };
 
 export async function createPruefung(input: PruefungInput) {
@@ -26,12 +28,14 @@ export async function createPruefung(input: PruefungInput) {
     datum: input.datum,
     raum: input.raum,
     status: input.status,
+    dauer_minuten: input.dauer_minuten ?? null,
   };
 
   const { data, error } = await supabase.from("pruefung").insert(payload).select().single();
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -52,6 +56,7 @@ export async function updatePruefung(id: string, input: PruefungInput) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
   return data;
 }
 
@@ -60,4 +65,5 @@ export async function deletePruefung(id: string) {
   const { error } = await supabase.from("pruefung").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/");
+  await kalenderAbgleichAnstossen(supabase);
 }
