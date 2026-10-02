@@ -91,7 +91,7 @@ export function DashboardContent({
   settings: Settings;
   username: string;
   userId: string;
-  kalender: { konfiguriert: boolean; verbunden: boolean };
+  kalender: { konfiguriert: boolean; verbunden: boolean; probleme: string[] };
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -176,7 +176,13 @@ export function DashboardContent({
             title="Termine"
             subtitle={heutigesDatum()}
             className="span-12"
-            aktion={<KalenderButton konfiguriert={kalender.konfiguriert} verbunden={kalender.verbunden} />}
+            aktion={
+              <KalenderButton
+                konfiguriert={kalender.konfiguriert}
+                verbunden={kalender.verbunden}
+                probleme={kalender.probleme}
+              />
+            }
             banner={
               <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
             }

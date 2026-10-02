@@ -24,7 +24,15 @@ function GoogleIcon() {
   );
 }
 
-export function KalenderButton({ konfiguriert, verbunden }: { konfiguriert: boolean; verbunden: boolean }) {
+export function KalenderButton({
+  konfiguriert,
+  verbunden,
+  probleme = [],
+}: {
+  konfiguriert: boolean;
+  verbunden: boolean;
+  probleme?: string[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [menueOffen, setMenueOffen] = useState(false);
@@ -79,7 +87,9 @@ export function KalenderButton({ konfiguriert, verbunden }: { konfiguriert: bool
           onClick={(e) => {
             if (!konfiguriert) {
               e.preventDefault();
-              setHinweis("Die Google-Verbindung ist noch nicht eingerichtet.");
+              setHinweis(
+                `Die Google-Verbindung ist noch nicht eingerichtet${probleme.length ? `: ${probleme.join(", ")}` : "."}`,
+              );
               return;
             }
             track("kalender_verbinden_geklickt", { anbieter: "google" });

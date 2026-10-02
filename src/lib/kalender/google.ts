@@ -22,17 +22,32 @@ export class GoogleFehler extends Error {
   }
 }
 
+// Beim Einfügen in Vercel rutschen leicht Leerzeichen oder Anführungszeichen mit.
+export function umgebung(name: string): string | undefined {
+  const wert = process.env[name]?.trim().replace(/^["']|["']$/g, "").trim();
+  return wert || undefined;
+}
+
+// Nur Variablennamen, nie Werte – damit man sieht, was in Vercel fehlt.
+export function googleEinrichtungsProbleme(): string[] {
+  const probleme: string[] = [];
+  for (const name of ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "KALENDER_TOKEN_SCHLUESSEL"]) {
+    if (!umgebung(name)) probleme.push(`${name} fehlt`);
+  }
+  const schluessel = umgebung("KALENDER_TOKEN_SCHLUESSEL");
+  if (schluessel && Buffer.from(schluessel, "base64").length !== 32) {
+    probleme.push("KALENDER_TOKEN_SCHLUESSEL hat nicht 32 Byte (base64)");
+  }
+  return probleme;
+}
+
 export function googleKonfiguriert(): boolean {
-  return Boolean(
-    process.env.GOOGLE_CLIENT_ID &&
-      process.env.GOOGLE_CLIENT_SECRET &&
-      process.env.KALENDER_TOKEN_SCHLUESSEL,
-  );
+  return googleEinrichtungsProbleme().length === 0;
 }
 
 export function autorisierungsUrl(redirectUri: string, state: string): string {
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
+    client_id: umgebung("GOOGLE_CLIENT_ID")!,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: GOOGLE_SCOPES.join(" "),
@@ -56,8 +71,8 @@ async function tokenAnfrage(body: Record<string, string>): Promise<TokenAntwort>
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      client_id: umgebung("GOOGLE_CLIENT_ID")!,
+      client_secret: umgebung("GOOGLE_CLIENT_SECRET")!,
       ...body,
     }),
     cache: "no-store",

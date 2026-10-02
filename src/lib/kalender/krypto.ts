@@ -1,7 +1,8 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { umgebung } from "@/lib/kalender/google";
 
 function schluessel(): Buffer {
-  const roh = process.env.KALENDER_TOKEN_SCHLUESSEL;
+  const roh = umgebung("KALENDER_TOKEN_SCHLUESSEL");
   if (!roh) throw new Error("KALENDER_TOKEN_SCHLUESSEL ist nicht gesetzt.");
   const key = Buffer.from(roh, "base64");
   if (key.length !== 32) throw new Error("KALENDER_TOKEN_SCHLUESSEL muss 32 Byte (base64) lang sein.");

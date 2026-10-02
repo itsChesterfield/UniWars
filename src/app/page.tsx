@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { googleKonfiguriert } from "@/lib/kalender/google";
+import { googleEinrichtungsProbleme } from "@/lib/kalender/google";
 import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
@@ -79,7 +79,8 @@ export default async function DashboardPage() {
 
   const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
 
-  const kalenderKonfiguriert = googleKonfiguriert();
+  const kalenderProbleme = googleEinrichtungsProbleme();
+  const kalenderKonfiguriert = kalenderProbleme.length === 0;
   if (kalenderKonfiguriert && kalenderVerbindung && session) {
     abgleichNachLadenPlanen(session.access_token, user.id, kalenderVerbindung.zuletzt_abgeglichen);
   }
@@ -111,7 +112,11 @@ export default async function DashboardPage() {
             settings={settings}
             username={username}
             userId={user.id}
-            kalender={{ konfiguriert: kalenderKonfiguriert, verbunden: Boolean(kalenderVerbindung) }}
+            kalender={{
+              konfiguriert: kalenderKonfiguriert,
+              verbunden: Boolean(kalenderVerbindung),
+              probleme: kalenderProbleme,
+            }}
           />
         </Suspense>
       </main>
