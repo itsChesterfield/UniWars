@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UniWars
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-16-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E) ![Vercel](https://img.shields.io/badge/Deploy-Vercel-black)
 
-First, run the development server:
+UniWars ist ein Studien-Organizer für Studierende. Deadlines, Prüfungen, To-dos, Stundenplan und Noten liegen an einem Ort, und Gruppenarbeiten lassen sich mit Kommiliton:innen teilen.
+
+## Funktionen
+
+- **Dashboard „Heute“** – was heute ansteht: Vorlesungen, fällige Deadlines und offene To-dos
+- **Deadlines, Prüfungen und To-dos** – mit Unteraufgaben, Anhängen und Detailansicht
+- **Quick-Add** – Einträge in natürlicher Sprache anlegen, z. B. „Abgabe Übungsblatt 3 nächsten Freitag“. Typ (Prüfung, Abgabe, Termin, Gruppenarbeit) und Datum werden automatisch erkannt
+- **Fächer und Stundenplan** – mit Filter nach Fach und Übersicht über Fehltage
+- **Noten** – Noten erfassen und Durchschnitt berechnen
+- **Teilen** – Deadlines und Prüfungen per Einladung mit anderen teilen und Aufgaben zuweisen
+- **Google-Kalender-Sync** – Einträge landen automatisch in einem eigenen Kalender „UniWars“
+- **Streaks** – tägliche Lern-Serie mit „Freeze“-Tagen
+- **Benachrichtigungen** und eine Suche über alle Einträge
+- **Analytics nur mit Einwilligung** (PostHog, EU-Server)
+
+## Technik
+
+| Bereich | Umsetzung |
+| --- | --- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript |
+| Backend | Next.js Server Actions und Route Handler |
+| Datenbank & Auth | Supabase (PostgreSQL, Supabase Auth) |
+| Datenzugriff | Row Level Security: jede Tabelle hat Policies, sodass Nutzer nur eigene oder geteilte Einträge sehen |
+| Kalender | Google Calendar API über OAuth; Tokens werden mit AES-256-GCM verschlüsselt gespeichert |
+| Datumserkennung | `chrono-node` plus eigene Schlüsselwort-Erkennung |
+| Tests | Node Test Runner (`node --test`) |
+| Hosting | Vercel (Region Frankfurt) |
+
+## Lokal starten
+
+Voraussetzungen: Node.js 20+, ein Supabase-Projekt
 
 ```bash
+git clone https://github.com/itsChesterfield/UniWars.git
+cd UniWars
+npm install
+cp .env.example .env.local   # Werte eintragen
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Danach läuft die App unter http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Das Datenbankschema liegt als Migrationen in `supabase/migrations/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tests
 
-## Learn More
+```bash
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Projektstruktur
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/          Seiten, Server Actions und Route Handler (je Bereich ein Ordner)
+├── components/   UI-Komponenten (Dashboard, Manager, Dialoge)
+└── lib/          Logik: Supabase-Clients, Kalender-Sync, Streaks, Typ-Erkennung
+supabase/
+└── migrations/   SQL-Schema inkl. Row-Level-Security-Policies
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Autor
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Max Danigel – Student Angewandte Informatik, HTW Berlin
