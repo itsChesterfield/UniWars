@@ -9,7 +9,7 @@ export const metadata = { title: "Literaturverwaltung · UniWars" };
 export default async function LiteraturSeite() {
   const supabase = await createClient();
   const [{ data: quellen, error }, { data: faecher }, { data: pdfs }] = await Promise.all([
-    supabase.from("quelle").select("*").order("geaendert_am", { ascending: false }),
+    supabase.from("literatur_quelle").select("*").order("geaendert_am", { ascending: false }),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf").order("name", { ascending: true }),
   ]);

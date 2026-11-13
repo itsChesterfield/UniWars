@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { QuellenTyp } from "@/lib/literatur/apa";
 import type { Tables } from "@/lib/supabase/types";
 
-export type Quelle = Tables<"quelle">;
+export type Quelle = Tables<"literatur_quelle">;
 
 export type QuelleEingabe = {
   typ: QuellenTyp;
@@ -76,9 +76,9 @@ export async function quelleSpeichern(id: string | null, eingabe: QuelleEingabe)
   const daten = pruefen(eingabe);
 
   const antwort = id
-    ? await supabase.from("quelle").update(daten).eq("id", id).select().single()
+    ? await supabase.from("literatur_quelle").update(daten).eq("id", id).select().single()
     : await supabase
-        .from("quelle")
+        .from("literatur_quelle")
         .insert({ ...daten, user_id: user.id })
         .select()
         .single();
@@ -89,7 +89,7 @@ export async function quelleSpeichern(id: string | null, eingabe: QuelleEingabe)
 
 export async function quelleLoeschen(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("quelle").delete().eq("id", id);
+  const { error } = await supabase.from("literatur_quelle").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/literaturverwaltung");
 }

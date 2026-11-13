@@ -157,7 +157,7 @@ export async function dateiVerwendung(id: string): Promise<{ anhaenge: number; q
   const { supabase } = await nutzer();
   const [{ count: anhaenge }, { count: quellen }] = await Promise.all([
     supabase.from("anhang").select("id", { count: "exact", head: true }).eq("datei_id", id),
-    supabase.from("quelle").select("id", { count: "exact", head: true }).eq("datei_id", id),
+    supabase.from("literatur_quelle").select("id", { count: "exact", head: true }).eq("datei_id", id),
   ]);
   return { anhaenge: anhaenge ?? 0, quellen: quellen ?? 0 };
 }

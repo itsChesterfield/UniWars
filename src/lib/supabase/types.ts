@@ -451,6 +451,75 @@ export type Database = {
           },
         ]
       }
+      literatur_quelle: {
+        Row: {
+          abgerufen_am: string | null
+          autoren: string
+          datei_id: string | null
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          jahr: number
+          notiz: string | null
+          seiten: string | null
+          titel: string
+          typ: string
+          url: string | null
+          user_id: string
+          verlag: string | null
+        }
+        Insert: {
+          abgerufen_am?: string | null
+          autoren: string
+          datei_id?: string | null
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          jahr: number
+          notiz?: string | null
+          seiten?: string | null
+          titel: string
+          typ: string
+          url?: string | null
+          user_id?: string
+          verlag?: string | null
+        }
+        Update: {
+          abgerufen_am?: string | null
+          autoren?: string
+          datei_id?: string | null
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          jahr?: number
+          notiz?: string | null
+          seiten?: string | null
+          titel?: string
+          typ?: string
+          url?: string | null
+          user_id?: string
+          verlag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "literatur_quelle_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "literatur_quelle_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lern_session: {
         Row: {
           dauer_minuten: number
@@ -644,75 +713,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pruefung_fach_id_fkey"
-            columns: ["fach_id"]
-            isOneToOne: false
-            referencedRelation: "fach"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quelle: {
-        Row: {
-          abgerufen_am: string | null
-          autoren: string
-          datei_id: string | null
-          erstellt_am: string
-          fach_id: string | null
-          geaendert_am: string
-          id: string
-          jahr: number
-          notiz: string | null
-          seiten: string | null
-          titel: string
-          typ: string
-          url: string | null
-          user_id: string
-          verlag: string | null
-        }
-        Insert: {
-          abgerufen_am?: string | null
-          autoren: string
-          datei_id?: string | null
-          erstellt_am?: string
-          fach_id?: string | null
-          geaendert_am?: string
-          id?: string
-          jahr: number
-          notiz?: string | null
-          seiten?: string | null
-          titel: string
-          typ: string
-          url?: string | null
-          user_id?: string
-          verlag?: string | null
-        }
-        Update: {
-          abgerufen_am?: string | null
-          autoren?: string
-          datei_id?: string | null
-          erstellt_am?: string
-          fach_id?: string | null
-          geaendert_am?: string
-          id?: string
-          jahr?: number
-          notiz?: string | null
-          seiten?: string | null
-          titel?: string
-          typ?: string
-          url?: string | null
-          user_id?: string
-          verlag?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quelle_datei_id_fkey"
-            columns: ["datei_id"]
-            isOneToOne: false
-            referencedRelation: "datei"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quelle_fach_id_fkey"
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"

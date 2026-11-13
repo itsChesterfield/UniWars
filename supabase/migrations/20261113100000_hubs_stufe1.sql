@@ -33,6 +33,7 @@ create table public.notiz (
 
 create index notiz_user_sortierung_idx on public.notiz (user_id, angepinnt desc, geaendert_am desc);
 create index notiz_fach_idx on public.notiz (fach_id);
+create index notiz_stundenplan_idx on public.notiz (stundenplan_eintrag_id);
 
 create trigger notiz_geaendert_am
   before update on public.notiz
@@ -122,14 +123,4 @@ create policy "kk_karte_delete_eigene" on public.kk_karte
 alter table public.settings
   add column work_station jsonb not null default '{}'::jsonb;
 
--- WS-03: Sitzungen landen in lern_session. Die App schreibt dort jetzt erstmals,
--- daher eigene Policies sicherstellen (idempotent, zusätzlich zu evtl. vorhandenen).
-alter table public.lern_session enable row level security;
-
-drop policy if exists "lern_session_select_eigene" on public.lern_session;
-create policy "lern_session_select_eigene" on public.lern_session
-  for select to authenticated using ((select auth.uid()) = user_id);
-
-drop policy if exists "lern_session_insert_eigene" on public.lern_session;
-create policy "lern_session_insert_eigene" on public.lern_session
-  for insert to authenticated with check ((select auth.uid()) = user_id);
+-- WS-03: Sitzungen landen in lern_session (vorhandene Policies "eigene Zeilen …" decken das ab).

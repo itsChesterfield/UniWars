@@ -66,6 +66,7 @@ create table public.datei (
 create unique index datei_name_pro_ordner_idx
   on public.datei (user_id, coalesce(fach_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(name));
 create index datei_user_idx on public.datei (user_id, erstellt_am desc);
+create index datei_fach_idx on public.datei (fach_id);
 
 create trigger datei_geaendert_am
   before update on public.datei
@@ -122,6 +123,8 @@ create table public.pdf_stand (
   geaendert_am timestamptz not null default now()
 );
 
+create index pdf_stand_user_idx on public.pdf_stand (user_id);
+
 create trigger pdf_stand_geaendert_am
   before update on public.pdf_stand
   for each row execute function public.setze_geaendert_am();
@@ -141,9 +144,9 @@ create policy "pdf_stand_delete_eigene" on public.pdf_stand
   for delete to authenticated using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
--- Literaturverwaltung (LIT-01 … LIT-06)
+-- Literaturverwaltung (LIT-01 … LIT-06) – "quelle" ist schon ein Enum-Typ, daher literatur_quelle
 -- ---------------------------------------------------------------------------
-create table public.quelle (
+create table public.literatur_quelle (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   typ text not null check (typ in ('BUCH', 'ARTIKEL', 'WEBSEITE')),
@@ -160,22 +163,24 @@ create table public.quelle (
   erstellt_am timestamptz not null default now(),
   geaendert_am timestamptz not null default now(),
   -- Webseiten brauchen URL und Abrufdatum
-  constraint quelle_webseite_pflicht check (typ <> 'WEBSEITE' or (url is not null and abgerufen_am is not null))
+  constraint literatur_quelle_webseite_pflicht check (typ <> 'WEBSEITE' or (url is not null and abgerufen_am is not null))
 );
 
-create index quelle_user_idx on public.quelle (user_id, geaendert_am desc);
+create index literatur_quelle_user_idx on public.literatur_quelle (user_id, geaendert_am desc);
+create index literatur_quelle_fach_idx on public.literatur_quelle (fach_id);
+create index literatur_quelle_datei_idx on public.literatur_quelle (datei_id);
 
-create trigger quelle_geaendert_am
-  before update on public.quelle
+create trigger literatur_quelle_geaendert_am
+  before update on public.literatur_quelle
   for each row execute function public.setze_geaendert_am();
 
-alter table public.quelle enable row level security;
+alter table public.literatur_quelle enable row level security;
 
-create policy "quelle_select_eigene" on public.quelle
+create policy "literatur_quelle_select_eigene" on public.literatur_quelle
   for select to authenticated using ((select auth.uid()) = user_id);
-create policy "quelle_insert_eigene" on public.quelle
+create policy "literatur_quelle_insert_eigene" on public.literatur_quelle
   for insert to authenticated with check ((select auth.uid()) = user_id);
-create policy "quelle_update_eigene" on public.quelle
+create policy "literatur_quelle_update_eigene" on public.literatur_quelle
   for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
-create policy "quelle_delete_eigene" on public.quelle
+create policy "literatur_quelle_delete_eigene" on public.literatur_quelle
   for delete to authenticated using ((select auth.uid()) = user_id);

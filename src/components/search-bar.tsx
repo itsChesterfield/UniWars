@@ -54,7 +54,7 @@ export function SearchBar() {
           .or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`)
           .limit(3),
         supabase.from("datei").select("id, name, fach_id, mime_typ").ilike("name", pattern).limit(5),
-        supabase.from("quelle").select("id, titel, jahr").or(`titel.ilike.${sicher},autoren.ilike.${sicher}`).limit(5),
+        supabase.from("literatur_quelle").select("id, titel, jahr").or(`titel.ilike.${sicher},autoren.ilike.${sicher}`).limit(5),
       ]);
 
       const treffer = [
