@@ -61,3 +61,38 @@ export async function anhaengeLaden(zielTyp: AnhangZielTyp, zielId: string) {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
+
+/** DAT-08: Datei aus der Dateiablage anhängen. */
+export async function dateiAnhaengen(zielTyp: AnhangZielTyp, zielId: string, dateiId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Nicht angemeldet");
+
+  const { data: datei, error: dateiFehler } = await supabase.from("datei").select("id, name").eq("id", dateiId).single();
+  if (dateiFehler) throw new Error("Datei nicht gefunden.");
+
+  const { data, error } = await supabase
+    .from("anhang")
+    .insert({
+      user_id: user.id,
+      ziel_typ: zielTyp,
+      ziel_id: zielId,
+      url: `/dateiablage/oeffnen/${datei.id}`,
+      titel: datei.name,
+      datei_id: datei.id,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  return data;
+}
+
+/** Auswahlliste für "Datei anhängen" – leer, solange die Dateiablage noch nicht eingerichtet ist. */
+export async function dateienZumAnhaengen(): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("datei").select("id, name").order("erstellt_am", { ascending: false }).limit(200);
+  return data ?? [];
+}

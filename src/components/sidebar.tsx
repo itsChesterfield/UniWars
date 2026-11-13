@@ -13,6 +13,7 @@ import { alsUhr, restzeit } from "@/lib/work-station/timer";
 const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   {
     name: "Dateiablage",
+    href: "/dateiablage",
     icon: "M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z",
   },
   {
@@ -27,6 +28,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "PDF Reader",
+    href: "/pdf-reader",
     icon: "M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z|M14 3v5h5|M8.5 15.5h2v3M13 13.5h2v5M8.5 12.5h1.5",
   },
   {
@@ -44,6 +46,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Literaturverwaltung",
+    href: "/literaturverwaltung",
     icon: "M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 0 4 21.5Z|M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 1 1.5 1.5Z",
   },
   {

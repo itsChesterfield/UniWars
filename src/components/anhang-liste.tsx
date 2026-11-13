@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createAnhang, deleteAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
+import { createAnhang, dateiAnhaengen, dateienZumAnhaengen, deleteAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { track } from "@/lib/analytics";
 
@@ -20,6 +20,28 @@ export function AnhangListe({
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [dateien, setDateien] = useState<{ id: string; name: string }[] | null>(null);
+
+  function dateiAuswahlOeffnen() {
+    setError(null);
+    dateienZumAnhaengen()
+      .then(setDateien)
+      .catch(() => setDateien([]));
+  }
+
+  function dateiWaehlen(dateiId: string) {
+    if (!dateiId) return;
+    setDateien(null);
+    startTransition(async () => {
+      try {
+        const created = await dateiAnhaengen(zielTyp, zielId, dateiId);
+        setAnhaenge((prev) => [...prev, created]);
+        track("anhang_hinzugefuegt", { ziel_typ: zielTyp, ort: "detail", art: "datei" });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      }
+    });
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,11 +70,12 @@ export function AnhangListe({
         <a
           key={a.id}
           href={a.url}
-          target="_blank"
-          rel="noopener noreferrer"
+          target={a.datei_id ? undefined : "_blank"}
+          rel={a.datei_id ? undefined : "noopener noreferrer"}
           className="tag"
           onClick={() => track("anhang_geoeffnet", { ziel_typ: zielTyp })}
         >
+          {a.datei_id ? "📎 " : ""}
           {a.titel}
           <button
             type="button"
@@ -80,6 +103,38 @@ export function AnhangListe({
           + Link
         </button>
       </form>
+
+      {dateien === null ? (
+        <button type="button" className="unteraufgabe-add" onClick={dateiAuswahlOeffnen} disabled={isPending}>
+          📎 Datei aus Ablage
+        </button>
+      ) : dateien.length === 0 ? (
+        <span className="muted" style={{ fontSize: 12 }}>
+          Noch keine Dateien in der <a href="/dateiablage">Dateiablage</a>.{" "}
+          <button type="button" className="unteraufgabe-add" onClick={() => setDateien(null)}>
+            OK
+          </button>
+        </span>
+      ) : (
+        <select
+          className="field"
+          style={{ width: "auto", fontSize: 12, padding: "5px 8px" }}
+          autoFocus
+          defaultValue=""
+          aria-label="Datei aus der Dateiablage anhängen"
+          onChange={(e) => dateiWaehlen(e.target.value)}
+          onBlur={() => setDateien(null)}
+        >
+          <option value="" disabled>
+            Datei wählen …
+          </option>
+          {dateien.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       {error && <p className="auth-error" style={{ fontSize: 12, width: "100%" }}>{error}</p>}
     </div>

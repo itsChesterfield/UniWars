@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       anhang: {
         Row: {
+          datei_id: string | null
           erstellt_am: string
           id: string
           titel: string
@@ -25,6 +26,7 @@ export type Database = {
           ziel_typ: string
         }
         Insert: {
+          datei_id?: string | null
           erstellt_am?: string
           id?: string
           titel: string
@@ -34,6 +36,7 @@ export type Database = {
           ziel_typ: string
         }
         Update: {
+          datei_id?: string | null
           erstellt_am?: string
           id?: string
           titel?: string
@@ -70,6 +73,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      datei: {
+        Row: {
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          groesse: number
+          id: string
+          mime_typ: string
+          name: string
+          speicher_pfad: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          groesse: number
+          id?: string
+          mime_typ: string
+          name: string
+          speicher_pfad: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          groesse?: number
+          id?: string
+          mime_typ?: string
+          name?: string
+          speicher_pfad?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "datei_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deadline: {
         Row: {
@@ -531,6 +578,38 @@ export type Database = {
           },
         ]
       }
+      pdf_stand: {
+        Row: {
+          datei_id: string
+          geaendert_am: string
+          lesezeichen: number[]
+          letzte_seite: number
+          user_id: string
+        }
+        Insert: {
+          datei_id: string
+          geaendert_am?: string
+          lesezeichen?: number[]
+          letzte_seite?: number
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string
+          geaendert_am?: string
+          lesezeichen?: number[]
+          letzte_seite?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_stand_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: true
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pruefung: {
         Row: {
           datum: string
@@ -565,6 +644,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pruefung_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quelle: {
+        Row: {
+          abgerufen_am: string | null
+          autoren: string
+          datei_id: string | null
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          jahr: number
+          notiz: string | null
+          seiten: string | null
+          titel: string
+          typ: string
+          url: string | null
+          user_id: string
+          verlag: string | null
+        }
+        Insert: {
+          abgerufen_am?: string | null
+          autoren: string
+          datei_id?: string | null
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          jahr: number
+          notiz?: string | null
+          seiten?: string | null
+          titel: string
+          typ: string
+          url?: string | null
+          user_id?: string
+          verlag?: string | null
+        }
+        Update: {
+          abgerufen_am?: string | null
+          autoren?: string
+          datei_id?: string | null
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          jahr?: number
+          notiz?: string | null
+          seiten?: string | null
+          titel?: string
+          typ?: string
+          url?: string | null
+          user_id?: string
+          verlag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quelle_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quelle_fach_id_fkey"
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"

@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 
 type Treffer = {
   id: string;
-  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten";
+  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten" | "Datei" | "Quelle";
   titel: string;
   href?: string;
 };
@@ -39,6 +39,8 @@ export function SearchBar() {
         { data: notizen },
         { data: stapel },
         { data: karten },
+        { data: dateien },
+        { data: quellen },
       ] = await Promise.all([
         supabase.from("fach").select("id, name").ilike("name", pattern).limit(5),
         supabase.from("deadline").select("id, titel").ilike("titel", pattern).limit(5),
@@ -51,6 +53,8 @@ export function SearchBar() {
           .select("id, stapel_id, vorderseite")
           .or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`)
           .limit(3),
+        supabase.from("datei").select("id, name, fach_id, mime_typ").ilike("name", pattern).limit(5),
+        supabase.from("quelle").select("id, titel, jahr").or(`titel.ilike.${sicher},autoren.ilike.${sicher}`).limit(5),
       ]);
 
       const treffer = [
@@ -75,6 +79,18 @@ export function SearchBar() {
           typ: "Karteikarten" as const,
           titel: k.vorderseite.replace(/[#*_`>\[\]-]/g, "").trim().slice(0, 80),
           href: `/karteikarten/${k.stapel_id}`,
+        })),
+        ...(dateien ?? []).map((d) => ({
+          id: d.id,
+          typ: "Datei" as const,
+          titel: d.name,
+          href: d.mime_typ === "application/pdf" ? `/pdf-reader/${d.id}` : `/dateiablage${d.fach_id ? `?ordner=${d.fach_id}` : ""}`,
+        })),
+        ...(quellen ?? []).map((q) => ({
+          id: q.id,
+          typ: "Quelle" as const,
+          titel: `${q.titel} (${q.jahr})`,
+          href: "/literaturverwaltung",
         })),
       ];
       setErgebnisse(treffer);

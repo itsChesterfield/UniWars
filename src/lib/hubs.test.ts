@@ -103,3 +103,46 @@ test("Fehlende Tabelle wird erkannt", () => {
   assert.equal(tabelleFehlt({ code: "42501", message: "permission denied" }), false);
   assert.equal(tabelleFehlt(null), false);
 });
+
+import { freierName, groesseText, speicherName, umbenannt, uploadPruefen, SPEICHER_LIMIT_BYTES } from "./dateiablage/dateien.ts";
+import { autorenLesen, literaturverzeichnis, verzeichnisEintrag, zitatImText } from "./literatur/apa.ts";
+
+test("Dateiablage: freier Name, Umbenennen behält Endung", () => {
+  assert.equal(freierName("Skript.pdf", []), "Skript.pdf");
+  assert.equal(freierName("Skript.pdf", ["skript.PDF"]), "Skript (2).pdf");
+  assert.equal(freierName("Skript.pdf", ["Skript.pdf", "Skript (2).pdf"]), "Skript (3).pdf");
+  assert.equal(freierName("Skript (2).pdf", ["Skript (2).pdf"]), "Skript (3).pdf");
+  assert.equal(umbenannt("Folien.pptx", "Vorlesung 3"), "Vorlesung 3.pptx");
+  assert.equal(umbenannt("Folien.pptx", "Vorlesung 3.pptx"), "Vorlesung 3.pptx");
+  assert.equal(umbenannt("Folien.pptx", "  "), null);
+  assert.equal(umbenannt("Folien.pptx", ".pptx"), null);
+});
+
+test("Dateiablage: Prüfung von Typ, Größe, Speicherlimit", () => {
+  assert.deepEqual(uploadPruefen("a.pdf", 1000, 0), { ok: true, mime: "application/pdf" });
+  assert.equal(uploadPruefen("a.exe", 1000, 0).ok, false);
+  assert.equal(uploadPruefen("a.pdf", 26 * 1024 * 1024, 0).ok, false);
+  assert.equal(uploadPruefen("a.pdf", 1000, SPEICHER_LIMIT_BYTES - 10).ok, false);
+  assert.equal(uploadPruefen("Aufnahme.M4A", 1000, 0).ok, true);
+});
+
+test("Dateiablage: Anzeige und Speicherpfad", () => {
+  assert.equal(groesseText(1288490189), "1,2 GB");
+  assert.equal(groesseText(2 * 1024 * 1024 * 1024), "2,0 GB");
+  assert.equal(groesseText(512), "512 B");
+  assert.equal(speicherName("Übung Nr. 3 (Lösung).pdf"), "Ubung_Nr._3_Losung_.pdf");
+});
+
+test("APA: Zitat im Text und Verzeichnis", () => {
+  const buch = { typ: "BUCH" as const, autoren: "Müller, Anna; Schmidt, Ben", titel: "Grundlagen der Informatik", jahr: 2023, verlag: "Springer" };
+  assert.equal(zitatImText(buch), "(Müller & Schmidt, 2023)");
+  assert.equal(verzeichnisEintrag(buch), "Müller, A., & Schmidt, B. (2023). Grundlagen der Informatik. Springer.");
+  assert.equal(zitatImText({ autoren: "Müller, Anna", jahr: 2023, seiten: "45–60" }, true), "(Müller, 2023, S. 45–60)");
+  assert.equal(zitatImText({ autoren: "A, B; C, D; E, F", jahr: 2020 }), "(A et al., 2020)");
+  assert.deepEqual(autorenLesen("Anna Müller"), [{ nachname: "Müller", vornamen: "Anna" }]);
+  const web = { typ: "WEBSEITE" as const, autoren: "Meier, Karl-Heinz", titel: "Was ist ein Automat?", jahr: 2024, url: "https://example.org/a", abgerufen_am: "2026-11-13" };
+  assert.equal(verzeichnisEintrag(web), "Meier, K.-H. (2024). Was ist ein Automat? Abgerufen am 13. November 2026, von https://example.org/a");
+  const artikel = { typ: "ARTIKEL" as const, autoren: "Zander, Lea", titel: "Neue Ansätze", jahr: 2021, verlag: "Informatik Spektrum, 44(2)", seiten: "10–20" };
+  assert.equal(verzeichnisEintrag(artikel), "Zander, L. (2021). Neue Ansätze. Informatik Spektrum, 44(2), 10–20.");
+  assert.deepEqual(literaturverzeichnis([artikel, buch]).map((e) => e.slice(0, 6)), ["Müller", "Zander"]);
+});

@@ -2954,3 +2954,744 @@ label.ws-ton {
 .kk-seite .md-inhalt {
   text-align: left;
 }
+
+/* =========================================================================
+   Hubs Stufe 2: Dateiablage, PDF Reader, Literaturverwaltung
+   ========================================================================= */
+
+/* --- Dateiablage --- */
+
+.dat-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.dat-ordner {
+  padding: 12px;
+  gap: 14px;
+  position: sticky;
+  top: 16px;
+}
+
+.dat-ordner ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.dat-ordner-knopf {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px dashed transparent;
+  border-radius: 9px;
+  background: none;
+  color: var(--text);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dat-ordner-knopf:hover {
+  background: var(--card2);
+}
+
+.dat-ordner-knopf.aktiv {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.dat-ordner-knopf.ziel {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.dat-ordner-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dat-speicher {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  padding: 10px 4px 2px;
+  border-top: 1px solid var(--border);
+}
+
+.dat-speicher-voll {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.dat-inhalt {
+  position: relative;
+  min-height: 360px;
+  gap: 14px;
+}
+
+.dat-titel {
+  margin: 0;
+}
+
+.dat-ablegen {
+  outline: 2px dashed var(--accent);
+  outline-offset: -8px;
+}
+
+.dat-ablegen-hinweis {
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent-soft) 85%, transparent);
+  color: var(--accent-strong);
+  font-weight: 700;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.dat-uploads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dat-uploads li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 200px) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card2);
+}
+
+.dat-uploads li.fehler {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  background: var(--danger-soft);
+}
+
+.dat-upload-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dat-upload-fehler {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.dat-tabelle-wrap {
+  overflow-x: auto;
+}
+
+.dat-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.dat-tabelle th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.dat-tabelle th button {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dat-tabelle td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+}
+
+.dat-tabelle tbody tr:hover {
+  background: var(--card2);
+}
+
+.dat-tabelle tbody tr[draggable="true"] {
+  cursor: grab;
+}
+
+.dat-spalte-typ {
+  width: 34px;
+  font-size: 17px;
+  text-align: center;
+}
+
+.dat-spalte-groesse,
+.dat-spalte-datum {
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.dat-spalte-groesse {
+  text-align: right;
+}
+
+.dat-tabelle th.dat-spalte-groesse {
+  text-align: right;
+}
+
+.dat-spalte-aktion {
+  position: relative;
+  width: 40px;
+}
+
+.dat-spalte-name {
+  max-width: 0;
+  width: 100%;
+}
+
+.dat-name-knopf {
+  max-width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.dat-name-knopf:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+.dat-umbenennen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dat-umbenennen .field {
+  padding: 5px 8px;
+  max-width: 320px;
+}
+
+.dat-verschieben {
+  min-width: 220px;
+}
+
+.dat-verschieben-titel {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+dialog.dat-vorschau {
+  max-width: min(92vw, 1000px);
+  width: auto;
+  gap: 12px;
+  border: none;
+}
+
+.dat-vorschau-titel {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.dat-vorschau img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 10px;
+  align-self: center;
+}
+
+.dat-vorschau audio {
+  width: min(520px, 80vw);
+}
+
+.dat-transkribieren {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* --- PDF Reader --- */
+
+.pdf-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdf-liste-zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px 6px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+}
+
+.pdf-liste li:last-child .pdf-liste-zeile {
+  border-bottom: none;
+}
+
+.pdf-liste-zeile:hover {
+  background: var(--card2);
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.pdf-liste-name {
+  flex: 1 1 200px;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pdf-liste-fach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.pdf-reader {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 68px);
+  min-height: 420px;
+  gap: 10px;
+}
+
+.pdf-leiste {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.pdf-zurueck {
+  padding: 6px 10px;
+}
+
+.pdf-name {
+  flex: 1 1 140px;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-gruppe {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pdf-seitenzahl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pdf-seitenzahl .field {
+  width: 52px;
+  padding: 5px 6px;
+  text-align: center;
+}
+
+.pdf-zoom {
+  width: auto;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+.icon-knopf:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.icon-knopf.an,
+.pdf-lesezeichen-an {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.pdf-suche {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pdf-suche .field {
+  flex: 1 1 200px;
+  max-width: 360px;
+  padding: 7px 10px;
+}
+
+.pdf-treffer {
+  font-size: 12.5px;
+  min-width: 110px;
+}
+
+.pdf-koerper {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.pdf-koerper.mit-leiste {
+  grid-template-columns: 190px minmax(0, 1fr);
+}
+
+.pdf-seitenleiste {
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.pdf-seitenleiste h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.pdf-seitenleiste ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pdf-seitenleiste button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 7px 8px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pdf-seitenleiste button:hover,
+.pdf-seitenleiste button.aktiv {
+  background: var(--accent-soft);
+}
+
+.pdf-flaeche {
+  position: relative;
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  outline: none;
+}
+
+.pdf-laden {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.pdf-seite {
+  position: relative;
+  margin: 8px auto;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.pdf-seite canvas {
+  display: block;
+}
+
+/* Textebene aus pdf.js (Auswahl + Suchtreffer) */
+.pdf-seite .textLayer {
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-seite .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.pdf-seite .textLayer > :not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-seite .textLayer ::selection {
+  background: rgba(0, 0, 255, 0.25);
+}
+
+.pdf-seite .textLayer .highlight {
+  position: initial;
+  margin: -1px;
+  padding: 1px;
+  border-radius: 4px;
+  background-color: rgba(217, 164, 65, 0.4);
+}
+
+.pdf-seite .textLayer .highlight.selected {
+  background-color: rgba(193, 78, 52, 0.45);
+}
+
+/* --- Literaturverwaltung --- */
+
+.lit-karte {
+  gap: 14px;
+}
+
+.lit-werkzeuge {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lit-werkzeuge .field {
+  flex: 1 1 220px;
+  max-width: 420px;
+  padding: 8px 11px;
+}
+
+.lit-verzeichnis {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.lit-verzeichnis ol {
+  margin: 10px 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  user-select: text;
+}
+
+.lit-verzeichnis li {
+  padding-left: 2em;
+  text-indent: -2em;
+}
+
+.lit-tabelle td {
+  vertical-align: top;
+}
+
+.lit-spalte-wahl {
+  width: 30px;
+}
+
+.lit-spalte-autor,
+.lit-spalte-jahr,
+.lit-spalte-typ,
+.lit-spalte-fach {
+  white-space: nowrap;
+}
+
+.lit-spalte-titel {
+  min-width: 200px;
+}
+
+.lit-spalte-titel .dat-name-knopf {
+  white-space: normal;
+  display: inline;
+}
+
+.lit-pdf {
+  margin-left: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.lit-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+}
+
+.lit-zitieren {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.lit-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+.lit-felder {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lit-breit {
+  grid-column: span 2;
+}
+
+.lit-voll {
+  grid-column: 1 / -1;
+}
+
+.lit-felder textarea.field {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.lit-vorschau {
+  margin: 0;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--card2);
+}
+
+@media (max-width: 760px) {
+  .dat-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dat-ordner {
+    position: static;
+  }
+
+  .dat-ordner ul {
+    flex-direction: row;
+    overflow-x: auto;
+    max-height: none;
+    padding-bottom: 4px;
+  }
+
+  .dat-ordner-knopf {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .dat-ordner-name {
+    overflow: visible;
+  }
+
+  .dat-spalte-datum {
+    display: none;
+  }
+
+  .dat-uploads li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dat-uploads li .progress-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .pdf-reader {
+    height: calc(100dvh - 110px);
+  }
+
+  .pdf-koerper.mit-leiste {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .pdf-seitenleiste {
+    max-height: 140px;
+  }
+
+  .pdf-flaeche {
+    padding: 4px 6px;
+  }
+
+  .lit-felder {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lit-breit {
+    grid-column: auto;
+  }
+
+  .lit-spalte-typ,
+  .lit-spalte-fach {
+    display: none;
+  }
+}
