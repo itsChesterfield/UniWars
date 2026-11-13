@@ -93,3 +93,10 @@ export class KiAbgebrochen extends KiFehler {
     super("Die Antwort wurde unterbrochen. Bitte versuch es noch einmal.", "abgebrochen", intern);
   }
 }
+
+/** Das Material gibt für diese Funktion nichts her (KI-ALL-11: nichts erfinden) */
+export class KiKeineDaten extends KiFehler {
+  constructor(nutzerMeldung: string) {
+    super(nutzerMeldung, "keine_daten");
+  }
+}

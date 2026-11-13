@@ -34,6 +34,7 @@ export function ObjektListe({
   anlegen,
   loeschen,
   nameAbfragen,
+  zusatzAktion,
 }: {
   hub: string;
   untertitel: string;
@@ -49,6 +50,8 @@ export function ObjektListe({
   loeschen: (id: string) => Promise<void>;
   /** Vor dem Anlegen Name + Fach abfragen (z. B. MM-01). */
   nameAbfragen?: string;
+  /** Zusätzlicher Knopf neben "Neu" (z. B. KI-08 "✨ Aus Notiz oder Dokument") */
+  zusatzAktion?: React.ReactNode;
 }) {
   const router = useRouter();
   const fachFilter = useSearchParams().get("fachId");
@@ -99,7 +102,20 @@ export function ObjektListe({
 
   return (
     <>
-      <HubKopf titel={hub} untertitel={untertitel} aktionen={neuKnopf} />
+      <HubKopf
+        titel={hub}
+        untertitel={untertitel}
+        aktionen={
+          zusatzAktion ? (
+            <>
+              {zusatzAktion}
+              {neuKnopf}
+            </>
+          ) : (
+            neuKnopf
+          )
+        }
+      />
       <FachFilterChips faecher={faecher} />
       {fehler && <p className="auth-error">{fehler}</p>}
 

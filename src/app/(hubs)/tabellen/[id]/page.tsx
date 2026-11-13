@@ -4,6 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { datenLesen } from "@/lib/tabellen/formeln";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { TabellenEditor } from "@/components/tabellen/tabellen-editor";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export default async function TabelleSeite({
   params,
@@ -40,6 +41,7 @@ export default async function TabelleSeite({
       startDaten={datenLesen(tabelle.daten)}
       faecher={faecher ?? []}
       istNeu={neu === "1"}
+      kiVerfuegbar={kiKonfiguriert()}
     />
   );
 }

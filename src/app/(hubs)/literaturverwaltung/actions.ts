@@ -19,6 +19,8 @@ export type QuelleEingabe = {
   fachId: string | null;
   notiz: string;
   dateiId: string | null;
+  /** KI-ALL-04: Felder wurden per KI-09 ausgefüllt */
+  kiErzeugt?: boolean;
 };
 
 const TYPEN: QuellenTyp[] = ["BUCH", "ARTIKEL", "WEBSEITE"];
@@ -73,7 +75,7 @@ export async function quelleSpeichern(id: string | null, eingabe: QuelleEingabe)
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht angemeldet");
-  const daten = pruefen(eingabe);
+  const daten = { ...pruefen(eingabe), ...(eingabe.kiErzeugt ? { ki_erzeugt: true } : {}) };
 
   const antwort = id
     ? await supabase.from("literatur_quelle").update(daten).eq("id", id).select().single()

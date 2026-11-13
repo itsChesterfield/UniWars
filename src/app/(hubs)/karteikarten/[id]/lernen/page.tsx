@@ -4,6 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { istFaellig } from "@/lib/karteikarten/wiederholung";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { Lernmodus } from "@/components/karteikarten/lernmodus";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export default async function LernSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,5 +28,5 @@ export default async function LernSeite({ params }: { params: Promise<{ id: stri
 
   const alle = karten ?? [];
   const faellige = alle.filter((k) => istFaellig(k.naechste_abfrage));
-  return <Lernmodus key={stapel.id} stapel={stapel} karten={alle} faellige={faellige} />;
+  return <Lernmodus key={stapel.id} stapel={stapel} karten={alle} faellige={faellige} kiVerfuegbar={kiKonfiguriert()} />;
 }

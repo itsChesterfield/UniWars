@@ -7,6 +7,7 @@ import { tabelleFachSetzen, tabelleLoeschen, tabelleSpeichern } from "@/app/(hub
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { OHNE_TITEL_TABELLE } from "@/components/tabellen/tabellen-liste";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { KiFormelDialog } from "@/components/tabellen/ki-formel-dialog";
 import {
   FEHLER,
   MAX_SPALTEN,
@@ -22,6 +23,7 @@ import {
   type TabellenDaten,
   type Zahlenformat,
   type Zelle,
+  zerlegen,
 } from "@/lib/tabellen/formeln";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
@@ -51,6 +53,7 @@ export function TabellenEditor({
   startDaten,
   faecher,
   istNeu,
+  kiVerfuegbar = false,
 }: {
   id: string;
   startTitel: string;
@@ -58,6 +61,8 @@ export function TabellenEditor({
   startDaten: TabellenDaten;
   faecher: FachOption[];
   istNeu: boolean;
+  /** KI-10 Formel-Helfer */
+  kiVerfuegbar?: boolean;
 }) {
   const router = useRouter();
   const [titel, setTitel] = useState(startTitel);
@@ -69,7 +74,8 @@ export function TabellenEditor({
   const [kontext, setKontext] = useState<Kontext | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const rasterRef = useRef<HTMLDivElement>(null);
-  const { status, aendern } = useAutoSpeichern<{ titel: string; daten: TabellenDaten }>((a) => tabelleSpeichern(id, a));
+  const { status, aendern, jetztSpeichern } = useAutoSpeichern<{ titel: string; daten: TabellenDaten }>((a) => tabelleSpeichern(id, a));
+  const [kiFormel, setKiFormel] = useState<string | null>(null);
 
   const werte = useMemo(() => auswerten(daten), [daten]);
   const sel = bereich(anker, ende);
@@ -393,6 +399,24 @@ export function TabellenEditor({
         {hinweis && <span className="tab-hinweis">{hinweis}</span>}
       </div>
 
+      {kiFormel && (
+        <KiFormelDialog
+          tabelleId={id}
+          zielZelle={kiFormel}
+          vorher={jetztSpeichern}
+          onSchliessen={() => setKiFormel(null)}
+          onEinfuegen={(formel) => {
+            const ziel = zerlegen(kiFormel);
+            setKiFormel(null);
+            if (!ziel) return;
+            const zellen = { ...daten.zellen, [kiFormel]: { ...(daten.zellen[kiFormel] ?? {}), w: formel } };
+            datenAendern({ ...daten, zellen });
+            track("tabelle_formel", { gueltig: true, ki: true });
+            rasterRef.current?.focus({ preventScroll: true });
+          }}
+        />
+      )}
+
       {/* TAB-04: Formelzeile */}
       <div className="tab-formelzeile">
         <span className="tab-adresse mono" aria-label="Ausgewählte Zelle">
@@ -401,6 +425,20 @@ export function TabellenEditor({
         <span className="tab-fx" aria-hidden>
           fx
         </span>
+        {kiVerfuegbar && (
+          <button
+            type="button"
+            className="icon-knopf ki-formel-knopf"
+            aria-label={`Formel-Helfer für Zelle ${ankerRef}`}
+            title="✨ Formel-Helfer: beschreib, was du berechnen willst"
+            onClick={() => {
+              setBearbeitung(null);
+              setKiFormel(ankerRef);
+            }}
+          >
+            ✨
+          </button>
+        )}
         <input
           className="field mono"
           aria-label="Inhalt bzw. Formel der Zelle"

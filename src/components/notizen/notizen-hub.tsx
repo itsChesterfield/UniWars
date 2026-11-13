@@ -19,6 +19,12 @@ import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { KiKartenDialog } from "@/components/notizen/ki-karten-dialog";
+import { KiZusammenfassungDialog } from "@/components/notizen/ki-zusammenfassung-dialog";
+import { KiMindmapDialog } from "@/components/notizen/ki-mindmap-dialog";
+import { KiMenue } from "@/components/ki/ki-menue";
+import { KiMarkierung } from "@/components/ki/ki-markierung";
+import { MIN_MINDMAP_ZEICHEN, mindmapMoeglich } from "@/lib/ki/mindmap";
+import { MIN_ZUSAMMENFASSUNG_ZEICHEN, zusammenfassungMoeglich } from "@/lib/ki/zusammenfassung";
 import { MIN_NOTIZ_ZEICHEN, notizLangGenug } from "@/lib/ki/karten";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
@@ -224,7 +230,9 @@ export function NotizenHub({
                     >
                       <div className="notiz-zeile-kopf">
                         {fach && <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} title={fach.name} />}
-                        <span className={`notiz-zeile-titel ${n.titel ? "" : "faint"}`}>{n.titel || OHNE_TITEL}</span>
+                        <span className={`notiz-zeile-titel ${n.titel ? "" : "faint"}`}>
+                          {n.titel || OHNE_TITEL} <KiMarkierung an={n.ki_erzeugt} />
+                        </span>
                         <button
                           type="button"
                           className={`icon-knopf pin ${n.angepinnt ? "an" : ""}`}
@@ -259,6 +267,10 @@ export function NotizenHub({
                 onLokal={(teil) => aktualisieren(auswahl.id, teil)}
                 onAnpinnen={() => anpinnen(auswahl)}
                 onLoeschen={() => loeschen(auswahl)}
+                onNeueNotiz={(n) => {
+                  setNotizen((liste) => sortieren([n, ...liste]));
+                  oeffnen(n.id);
+                }}
               />
             ) : (
               <p className="empty-state hub-inhalt-leer">Wähle links eine Notiz aus oder lege eine neue an.</p>
@@ -279,6 +291,7 @@ function NotizEditor({
   onLokal,
   onAnpinnen,
   onLoeschen,
+  onNeueNotiz,
 }: {
   notiz: Notiz;
   faecher: FachOption[];
@@ -288,9 +301,12 @@ function NotizEditor({
   onLokal: (teil: Partial<Notiz>) => void;
   onAnpinnen: () => void;
   onLoeschen: () => void;
+  onNeueNotiz: (n: Notiz) => void;
 }) {
   const [titel, setTitel] = useState(notiz.titel);
-  const [kiOffen, setKiOffen] = useState(false);
+  const [kiDialog, setKiDialog] = useState<"karten" | "zusammenfassung" | "mindmap" | null>(null);
+  // Nach "Zusammenfassung oben einfügen" den Editor mit dem neuen Inhalt neu aufbauen
+  const [editorVersion, setEditorVersion] = useState(0);
   const { status, aendern, jetztSpeichern } = useAutoSpeichern<{ titel: string; inhalt: string }>(async (aenderung) => {
     const geaendertAm = await notizSpeichern(notiz.id, aenderung);
     onLokal({ geaendert_am: geaendertAm });
@@ -334,31 +350,58 @@ function NotizEditor({
         >
           <PinIcon an={notiz.angepinnt} />
         </button>
-        <button
-          type="button"
-          className="btng ki-knopf"
-          disabled={!kiVerfuegbar || !notizLangGenug(notiz.inhalt)}
-          title={
-            !kiVerfuegbar
-              ? "KI gerade nicht verfügbar"
-              : notizLangGenug(notiz.inhalt)
-                ? "Die KI schlägt Karteikarten aus dieser Notiz vor – du prüfst sie vor dem Speichern."
-                : `Die Notiz ist zu kurz für Karteikarten (mindestens ${MIN_NOTIZ_ZEICHEN} Zeichen).`
-          }
-          onClick={() => setKiOffen(true)}
-        >
-          ✨ <span className="ki-knopf-text">{kiVerfuegbar ? "Karteikarten erstellen" : "KI gerade nicht verfügbar"}</span>
-        </button>
+        <KiMenue
+          verfuegbar={kiVerfuegbar}
+          punkte={[
+            {
+              label: "Karteikarten erstellen",
+              beschreibung: "Vorschläge prüfen, dann in einen Stapel übernehmen",
+              gesperrt: notizLangGenug(notiz.inhalt) ? null : `Die Notiz ist zu kurz (mindestens ${MIN_NOTIZ_ZEICHEN} Zeichen).`,
+              onClick: () => setKiDialog("karten"),
+            },
+            {
+              label: "Zusammenfassen",
+              beschreibung: "Stichpunkte und offene Punkte",
+              gesperrt: zusammenfassungMoeglich(notiz.inhalt) ? null : `Die Notiz ist zu kurz (mindestens ${MIN_ZUSAMMENFASSUNG_ZEICHEN} Zeichen).`,
+              onClick: () => setKiDialog("zusammenfassung"),
+            },
+            {
+              label: "Als MindMap",
+              beschreibung: "Struktur prüfen, dann als neue MindMap anlegen",
+              gesperrt: mindmapMoeglich(notiz.inhalt) ? null : `Die Notiz ist zu kurz (mindestens ${MIN_MINDMAP_ZEICHEN} Zeichen).`,
+              onClick: () => setKiDialog("mindmap"),
+            },
+          ]}
+        />
         <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: onLoeschen, gefahr: true }]} />
       </div>
 
-      {kiOffen && (
+      {kiDialog === "karten" && (
         <KiKartenDialog
           notiz={{ id: notiz.id, titel: titel || notiz.titel, fach_id: notiz.fach_id }}
           faecher={faecher}
           vorher={jetztSpeichern}
-          onSchliessen={() => setKiOffen(false)}
+          onSchliessen={() => setKiDialog(null)}
         />
+      )}
+      {kiDialog === "zusammenfassung" && (
+        <KiZusammenfassungDialog
+          notizId={notiz.id}
+          vorher={jetztSpeichern}
+          onSchliessen={() => setKiDialog(null)}
+          onUebernommen={(n, modus) => {
+            setKiDialog(null);
+            if (modus === "oben") {
+              onLokal({ inhalt: n.inhalt, geaendert_am: n.geaendert_am });
+              setEditorVersion((v) => v + 1);
+            } else {
+              onNeueNotiz(n);
+            }
+          }}
+        />
+      )}
+      {kiDialog === "mindmap" && (
+        <KiMindmapDialog notizId={notiz.id} fachId={notiz.fach_id} vorher={jetztSpeichern} onSchliessen={() => setKiDialog(null)} />
       )}
 
       <input
@@ -376,6 +419,7 @@ function NotizEditor({
       />
 
       <MarkdownEditor
+        key={editorVersion}
         wert={notiz.inhalt}
         platzhalter="Losschreiben … (# Überschrift, - Liste, [ ] Checkbox)"
         label="Notiztext"

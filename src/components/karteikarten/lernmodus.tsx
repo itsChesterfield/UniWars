@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { karteBeantworten, lernrundeAbschliessen } from "@/app/(hubs)/karteikarten/actions";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
+import { KiErklaerung } from "@/components/karteikarten/ki-erklaerung";
 import {
   BEWERTUNGEN,
   bewerten,
@@ -55,11 +56,14 @@ export function Lernmodus({
   stapel,
   karten,
   faellige,
+  kiVerfuegbar = false,
 }: {
   stapel: { id: string; name: string };
   karten: LernKarte[];
   /** KK-04: abgefragt werden nur fällige Karten. */
   faellige: LernKarte[];
+  /** KI-11 "Erklär mir das" */
+  kiVerfuegbar?: boolean;
 }) {
   const [runde, setRunde] = useState<Runde | null>(() => (faellige.length > 0 ? neueRunde(faellige) : null));
   const [speicherFehler, setSpeicherFehler] = useState(false);
@@ -252,6 +256,8 @@ export function Lernmodus({
           </div>
         </div>
       </div>
+
+      {runde.umgedreht && kiVerfuegbar && <KiErklaerung key={`${karte.id}-${runde.index}`} karteId={karte.id} />}
 
       {runde.umgedreht ? (
         <div className="kk-antworten kk-antworten-4" role="group" aria-label="Wie gut wusstest du es?">

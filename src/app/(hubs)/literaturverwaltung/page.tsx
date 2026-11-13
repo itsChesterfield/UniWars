@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { Literaturverwaltung } from "@/components/literatur/literaturverwaltung";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const metadata = { title: "Literaturverwaltung · UniWars" };
 
@@ -26,7 +27,7 @@ export default async function LiteraturSeite() {
 
   return (
     <Suspense fallback={null}>
-      <Literaturverwaltung initialQuellen={quellen ?? []} faecher={faecher ?? []} pdfs={pdfs ?? []} />
+      <Literaturverwaltung initialQuellen={quellen ?? []} faecher={faecher ?? []} pdfs={pdfs ?? []} kiVerfuegbar={kiKonfiguriert()} />
     </Suspense>
   );
 }

@@ -16,6 +16,9 @@ import {
   type QuellenTyp,
 } from "@/lib/literatur/apa";
 import type { FachOption } from "@/lib/fach-option";
+import { KiQuelleDialog } from "@/components/literatur/ki-quelle-dialog";
+import type { QuellenErkennung } from "@/lib/ki/quelle";
+import { kiVorschauUebernommen } from "@/lib/ki/tracking";
 import { berlinDatum } from "@/lib/zeit";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -39,10 +42,12 @@ export function Literaturverwaltung({
   initialQuellen,
   faecher,
   pdfs,
+  kiVerfuegbar = false,
 }: {
   initialQuellen: Quelle[];
   faecher: FachOption[];
   pdfs: { id: string; name: string }[];
+  kiVerfuegbar?: boolean;
 }) {
   const fachFilter = useSearchParams().get("fachId");
   const [quellen, setQuellen] = useState(initialQuellen);
@@ -147,6 +152,7 @@ export function Literaturverwaltung({
           quelle={formular.quelle}
           faecher={faecher}
           pdfs={pdfs}
+          kiVerfuegbar={kiVerfuegbar}
           startFachId={fachFilter}
           onAbbrechen={() => setFormular(null)}
           onGespeichert={(q, neu) => {
@@ -361,6 +367,7 @@ function QuellenFormular({
   quelle,
   faecher,
   pdfs,
+  kiVerfuegbar,
   startFachId,
   onAbbrechen,
   onGespeichert,
@@ -368,6 +375,7 @@ function QuellenFormular({
   quelle: Quelle | null;
   faecher: FachOption[];
   pdfs: { id: string; name: string }[];
+  kiVerfuegbar: boolean;
   startFachId: string | null;
   onAbbrechen: () => void;
   onGespeichert: (q: Quelle, neu: boolean) => void;
@@ -387,15 +395,51 @@ function QuellenFormular({
   }));
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
+  // KI-09: von der KI gefüllte Felder bleiben gelb, bis man sie anfasst oder bestätigt
+  const [kiDialog, setKiDialog] = useState(false);
+  const [kiFelder, setKiFelder] = useState<Set<keyof QuelleEingabe>>(new Set());
+  const [kiVerworfen, setKiVerworfen] = useState<string[]>([]);
+  const [kiGenutzt, setKiGenutzt] = useState(false);
   const web = werte.typ === "WEBSEITE";
-  const setze = <K extends keyof QuelleEingabe>(k: K, v: QuelleEingabe[K]) => setWerte((w) => ({ ...w, [k]: v }));
+  const setze = <K extends keyof QuelleEingabe>(k: K, v: QuelleEingabe[K]) => {
+    setWerte((w) => ({ ...w, [k]: v }));
+    angefasst(k);
+  };
+  const angefasst = (k: keyof QuelleEingabe) =>
+    setKiFelder((s) => {
+      if (!s.has(k)) return s;
+      const neu = new Set(s);
+      neu.delete(k);
+      return neu;
+    });
+  const ki = (k: keyof QuelleEingabe) => (kiFelder.has(k) ? "ki-gefuellt" : "");
+  const FELD_NAMEN: Record<string, string> = { titel: "Titel", autoren: "Autor(en)", jahr: "Jahr", verlag: "Verlag", url: "URL", abgerufenAm: "Abrufdatum", seiten: "Seiten" };
+
+  function kiUebernehmen({ felder, verworfen }: QuellenErkennung) {
+    setWerte((w) => ({
+      ...w,
+      ...(felder.typ ? { typ: felder.typ } : {}),
+      ...(felder.autoren ? { autoren: felder.autoren } : {}),
+      ...(felder.titel ? { titel: felder.titel } : {}),
+      ...(felder.jahr ? { jahr: felder.jahr } : {}),
+      ...(felder.verlag ? { verlag: felder.verlag } : {}),
+      ...(felder.url ? { url: felder.url } : {}),
+      ...(felder.abgerufenAm ? { abgerufenAm: felder.abgerufenAm } : {}),
+      ...(felder.seiten ? { seiten: felder.seiten } : {}),
+    }));
+    setKiFelder(new Set(Object.keys(felder) as (keyof QuelleEingabe)[]));
+    setKiVerworfen(verworfen.map((v) => FELD_NAMEN[v] ?? v));
+    setKiGenutzt(true);
+    setKiDialog(false);
+  }
 
   async function absenden(e: React.FormEvent) {
     e.preventDefault();
     setLaeuft(true);
     setFehler(null);
     try {
-      const gespeichert = await quelleSpeichern(quelle?.id ?? null, werte);
+      const gespeichert = await quelleSpeichern(quelle?.id ?? null, { ...werte, kiErzeugt: kiGenutzt });
+      if (kiGenutzt) kiVorschauUebernommen("ki09", 1, kiFelder.size === 0 ? 1 : 0);
       onGespeichert(gespeichert, !quelle);
     } catch (err) {
       setFehler(err instanceof Error ? err.message : "Speichern hat nicht geklappt.");
@@ -406,109 +450,132 @@ function QuellenFormular({
   const vorschau = werte.autoren.trim() && werte.titel.trim() ? verzeichnisEintrag({ ...werte, abgerufen_am: werte.abgerufenAm }) : null;
 
   return (
-    <form className="card hub-formular lit-formular" onSubmit={absenden}>
-      <h2 className="ct">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h2>
-      <div className="lit-felder">
-        <label>
-          <span>Typ *</span>
-          <select
-            className="field"
-            value={werte.typ}
-            onChange={(e) => {
-              const typ = e.target.value as QuellenTyp;
-              setWerte((w) => ({ ...w, typ, abgerufenAm: typ === "WEBSEITE" && !w.abgerufenAm ? berlinDatum() : w.abgerufenAm }));
-            }}
-          >
-            <option value="BUCH">Buch</option>
-            <option value="ARTIKEL">Artikel</option>
-            <option value="WEBSEITE">Webseite</option>
-          </select>
-        </label>
-        <label className="lit-breit">
-          <span>Autor(en) *</span>
-          <input
-            className="field"
-            required
-            value={werte.autoren}
-            placeholder="Müller, Anna; Schmidt, Ben"
-            onChange={(e) => setze("autoren", e.target.value)}
-            autoFocus
-          />
-        </label>
-        <label className="lit-breit">
-          <span>Titel *</span>
-          <input className="field" required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
-        </label>
-        <label>
-          <span>Jahr *</span>
-          <input
-            className="field"
-            type="number"
-            required
-            min={1000}
-            max={2200}
-            value={werte.jahr}
-            onChange={(e) => setze("jahr", Number(e.target.value))}
-          />
-        </label>
-        <label>
-          <span>{werte.typ === "ARTIKEL" ? "Zeitschrift" : web ? "Website-Name" : "Verlag"}</span>
-          <input className="field" value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
-        </label>
-        <label className={web ? "lit-breit" : ""}>
-          <span>URL{web ? " *" : ""}</span>
-          <input className="field" type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
-        </label>
-        <label>
-          <span>Abgerufen am{web ? " *" : ""}</span>
-          <input className="field" type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
-        </label>
-        <label>
-          <span>Seiten</span>
-          <input className="field" value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
-        </label>
-        <label>
-          <span>Fach</span>
-          <select className="field" value={werte.fachId ?? ""} onChange={(e) => setze("fachId", e.target.value || null)}>
-            <option value="">Ohne Fach</option>
-            {faecher.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>PDF aus der Dateiablage</span>
-          <select className="field" value={werte.dateiId ?? ""} onChange={(e) => setze("dateiId", e.target.value || null)}>
-            <option value="">Keine</option>
-            {pdfs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="lit-voll">
-          <span>Notiz</span>
-          <textarea className="field" rows={2} value={werte.notiz} placeholder="gutes Kapitel zu Automaten" onChange={(e) => setze("notiz", e.target.value)} />
-        </label>
-      </div>
-      {vorschau && (
-        <p className="lit-vorschau">
-          <span className="faint">Vorschau: </span>
-          {vorschau}
-        </p>
-      )}
-      {fehler && <p className="auth-error">{fehler}</p>}
-      <div className="hub-formular-knoepfe">
-        <button type="button" className="btng" onClick={onAbbrechen}>
-          Abbrechen
-        </button>
-        <button type="submit" className="btnp" disabled={laeuft}>
-          {laeuft ? "…" : "Speichern"}
-        </button>
-      </div>
-    </form>
+    <>
+      {/* außerhalb des <form>: der Dialog hat ein eigenes Formular (verschachtelte Formulare sind ungültig) */}
+      {kiDialog && <KiQuelleDialog onErkannt={kiUebernehmen} onSchliessen={() => setKiDialog(false)} />}
+      <form className="card hub-formular lit-formular" onSubmit={absenden}>
+        <div className="rowb">
+          <h2 className="ct">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h2>
+          {!quelle && kiVerfuegbar && (
+            <button type="button" className="btng ki-knopf" onClick={() => setKiDialog(true)}>
+              ✨ <span className="ki-knopf-text">Quellenangabe einfügen</span>
+            </button>
+          )}
+        </div>
+        {kiFelder.size > 0 && (
+          <p className="ki-hinweis lit-ki-hinweis">
+            ✨ Gelb markierte Felder hat die KI ausgefüllt – bitte prüfen.{" "}
+            <button type="button" className="link-knopf" onClick={() => setKiFelder(new Set())}>
+              Alles geprüft
+            </button>
+            {kiVerworfen.length > 0 && <span className="muted"> Nicht im Text gefunden, daher leer: {kiVerworfen.join(", ")}.</span>}
+          </p>
+        )}
+        <div className="lit-felder">
+          <label>
+            <span>Typ *</span>
+            <select
+              className={`field ${ki("typ")}`}
+              value={werte.typ}
+              onFocus={() => angefasst("typ")}
+              onChange={(e) => {
+                const typ = e.target.value as QuellenTyp;
+                setWerte((w) => ({ ...w, typ, abgerufenAm: typ === "WEBSEITE" && !w.abgerufenAm ? berlinDatum() : w.abgerufenAm }));
+              }}
+            >
+              <option value="BUCH">Buch</option>
+              <option value="ARTIKEL">Artikel</option>
+              <option value="WEBSEITE">Webseite</option>
+            </select>
+          </label>
+          <label className="lit-breit">
+            <span>Autor(en) *</span>
+            <input
+              className={`field ${ki("autoren")}`}
+              onFocus={() => angefasst("autoren")}
+              required
+              value={werte.autoren}
+              placeholder="Müller, Anna; Schmidt, Ben"
+              onChange={(e) => setze("autoren", e.target.value)}
+              autoFocus
+            />
+          </label>
+          <label className="lit-breit">
+            <span>Titel *</span>
+            <input className={`field ${ki("titel")}`} onFocus={() => angefasst("titel")} required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
+          </label>
+          <label>
+            <span>Jahr *</span>
+            <input
+              className={`field ${ki("jahr")}`}
+              onFocus={() => angefasst("jahr")}
+              type="number"
+              required
+              min={1000}
+              max={2200}
+              value={werte.jahr}
+              onChange={(e) => setze("jahr", Number(e.target.value))}
+            />
+          </label>
+          <label>
+            <span>{werte.typ === "ARTIKEL" ? "Zeitschrift" : web ? "Website-Name" : "Verlag"}</span>
+            <input className={`field ${ki("verlag")}`} onFocus={() => angefasst("verlag")} value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
+          </label>
+          <label className={web ? "lit-breit" : ""}>
+            <span>URL{web ? " *" : ""}</span>
+            <input className={`field ${ki("url")}`} onFocus={() => angefasst("url")} type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
+          </label>
+          <label>
+            <span>Abgerufen am{web ? " *" : ""}</span>
+            <input className={`field ${ki("abgerufenAm")}`} onFocus={() => angefasst("abgerufenAm")} type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
+          </label>
+          <label>
+            <span>Seiten</span>
+            <input className={`field ${ki("seiten")}`} onFocus={() => angefasst("seiten")} value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
+          </label>
+          <label>
+            <span>Fach</span>
+            <select className="field" value={werte.fachId ?? ""} onChange={(e) => setze("fachId", e.target.value || null)}>
+              <option value="">Ohne Fach</option>
+              {faecher.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>PDF aus der Dateiablage</span>
+            <select className="field" value={werte.dateiId ?? ""} onChange={(e) => setze("dateiId", e.target.value || null)}>
+              <option value="">Keine</option>
+              {pdfs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="lit-voll">
+            <span>Notiz</span>
+            <textarea className="field" rows={2} value={werte.notiz} placeholder="gutes Kapitel zu Automaten" onChange={(e) => setze("notiz", e.target.value)} />
+          </label>
+        </div>
+        {vorschau && (
+          <p className="lit-vorschau">
+            <span className="faint">Vorschau: </span>
+            {vorschau}
+          </p>
+        )}
+        {fehler && <p className="auth-error">{fehler}</p>}
+        <div className="hub-formular-knoepfe">
+          <button type="button" className="btng" onClick={onAbbrechen}>
+            Abbrechen
+          </button>
+          <button type="submit" className="btnp" disabled={laeuft}>
+            {laeuft ? "…" : "Speichern"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }

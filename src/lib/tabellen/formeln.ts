@@ -207,6 +207,19 @@ function parsen(tokens: Token[]): Knoten | null {
   }
 }
 
+/** KI-10: Ist das eine Formel, die unser Parser versteht (nur unterstützte Funktionen)? */
+export function formelGueltig(formel: string): boolean {
+  if (!formel.startsWith("=")) return false;
+  const tokens = tokenisieren(formel.slice(1));
+  return Boolean(tokens && tokens.length && parsen(tokens));
+}
+
+/** Alle Zellbezüge einer Formel (Bereiche aufgelöst in Anfang/Ende). */
+export function formelBezuege(formel: string): { von: string; bis: string }[] {
+  const tokens = tokenisieren(formel.replace(/^=/, "")) ?? [];
+  return tokens.flatMap((t) => (t.t === "ref" ? [{ von: t.v, bis: t.v }] : t.t === "bereich" ? [{ von: t.von, bis: t.bis }] : []));
+}
+
 // --- Auswertung -----------------------------------------------------------------
 
 function bereichZellen(von: string, bis: string): string[] | null {

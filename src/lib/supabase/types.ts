@@ -606,6 +606,7 @@ export type Database = {
           ki_erzeugt: boolean
           leichtigkeit: number
           naechste_abfrage: string
+          quelle_notiz_id: string | null
           rueckseite: string
           stapel_id: string
           user_id: string
@@ -623,6 +624,7 @@ export type Database = {
           ki_erzeugt?: boolean
           leichtigkeit?: number
           naechste_abfrage?: string
+          quelle_notiz_id?: string | null
           rueckseite: string
           stapel_id: string
           user_id?: string
@@ -640,6 +642,7 @@ export type Database = {
           ki_erzeugt?: boolean
           leichtigkeit?: number
           naechste_abfrage?: string
+          quelle_notiz_id?: string | null
           rueckseite?: string
           stapel_id?: string
           user_id?: string
@@ -648,6 +651,13 @@ export type Database = {
           zuletzt_gelernt?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "kk_karte_quelle_notiz_id_fkey"
+            columns: ["quelle_notiz_id"]
+            isOneToOne: false
+            referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kk_karte_stapel_id_fkey"
             columns: ["stapel_id"]

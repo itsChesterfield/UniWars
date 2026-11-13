@@ -133,6 +133,7 @@ export function KiKartenDialog({
     const antwort = await vorschlaegeUebernehmen(
       zielAngabe,
       ausgewaehlt.map((e) => ({ vorderseite: e.vorderseite, rueckseite: e.rueckseite })),
+      { notizId: notiz.id },
     ).catch(() => null);
     setSpeichert(false);
     if (!antwort?.ok) {

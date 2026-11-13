@@ -6064,3 +6064,231 @@ dialog.ki-dialog-klein {
 .ki-limit.leer {
   color: var(--danger);
 }
+
+/* KI-Menü und gemeinsame KI-Dialog-Teile (Phase 8) */
+.ki-menue-liste {
+  min-width: 250px;
+}
+
+.ki-menue-liste button {
+  display: grid;
+  gap: 2px;
+}
+
+.ki-menue-liste button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ki-menue-label {
+  font-weight: 600;
+}
+
+.ki-menue-info {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ki-abschnitt {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.ki-liste-bearbeiten,
+.ki-luecken,
+.ki-baum {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.ki-liste-bearbeiten li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+}
+
+.ki-liste-bearbeiten textarea {
+  width: 100%;
+  resize: vertical;
+  font-size: 13px;
+}
+
+.ki-luecken li {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: var(--card2);
+  border-left: 3px solid var(--warn);
+}
+
+.ki-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ki-baum .ki-baum {
+  margin: 6px 0 0 22px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+}
+
+.ki-baum-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.ki-baum-zeile .field {
+  width: 100%;
+  font-size: 13px;
+}
+
+.ki-knopf-gruppe {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* KI-08 Folien-Vorschau */
+.ki-folien {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.ki-folien li {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card2);
+}
+
+.ki-folie-kopf {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.ki-folie-kopf select.field {
+  width: auto;
+}
+
+.ki-folien textarea,
+.ki-folien input.field {
+  width: 100%;
+  font-size: 13px;
+}
+
+.ki-folie-spalten {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ki-folie-bild {
+  margin: 0;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .ki-folie-kopf {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .ki-folie-kopf select.field {
+    grid-column: 1 / -1;
+  }
+
+  .ki-folie-spalten {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* KI-09: von der KI ausgefüllte Felder */
+.field.ki-gefuellt {
+  background: color-mix(in srgb, #facc15 22%, var(--card2));
+  border-color: color-mix(in srgb, #ca8a04 55%, transparent);
+}
+
+.lit-ki-hinweis {
+  display: block;
+}
+
+.link-knopf {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent-strong);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ki-klein {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* KI-10 Formel-Helfer */
+.ki-formel-knopf {
+  font-size: 14px;
+}
+
+.ki-formel-vorschlag {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+}
+
+.ki-formel-vorschlag code {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.ki-formel-vorschlag p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+/* KI-11 Erklär mir das */
+.kk-erklaerung {
+  display: grid;
+  gap: 6px;
+}
+
+.kk-erklaer-knopf {
+  justify-self: center;
+}
+
+.kk-erklaerung-text {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--card));
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.kk-erklaerung-roh {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.kk-erklaerung-hinweis {
+  margin: 6px 0 0;
+  font-size: 11px;
+}

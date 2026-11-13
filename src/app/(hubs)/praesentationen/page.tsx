@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PraesentationsListe } from "@/components/praesentationen/praesentations-liste";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const metadata = { title: "Präsentationen · UniWars" };
 
@@ -30,7 +31,7 @@ export default async function PraesentationenSeite() {
 
   return (
     <Suspense fallback={null}>
-      <PraesentationsListe eintraege={eintraege} faecher={faecher ?? []} />
+      <PraesentationsListe eintraege={eintraege} faecher={faecher ?? []} kiVerfuegbar={kiKonfiguriert()} />
     </Suspense>
   );
 }

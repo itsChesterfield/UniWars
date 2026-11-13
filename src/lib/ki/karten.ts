@@ -3,6 +3,7 @@
  * und Antwort prüfen. Reine Logik ohne Netzwerk, damit sie vollständig testbar ist.
  */
 import { KiEingabe, KiKeineKarten } from "./fehler.ts";
+import { jsonLesen } from "./json.ts";
 import { einbetten, kuerzen, MATERIAL_REGEL, materialName, markerEntschaerfen, tagFuer, type MaterialQuelle } from "./material.ts";
 
 export const ERLAUBTE_ANZAHL = [5, 10, 15] as const;
@@ -57,22 +58,6 @@ export function kartenPromptBauen(material: Material, anzahl: KartenAnzahl): { s
   const art = material.quelle === "notiz" ? "der Notiz" : material.quelle === "pdf" ? "des Dokuments" : "der Aufnahme";
   const nutzer = `Titel ${art}: ${titel}\n\n${einbetten(text, tag)}`;
   return { system, nutzer, gekuerzt };
-}
-
-function jsonLesen(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    // z. B. ```json … ``` oder erklärender Text drumherum: erstes { bis letztes }
-    const start = text.indexOf("{");
-    const ende = text.lastIndexOf("}");
-    if (start === -1 || ende <= start) return null;
-    try {
-      return JSON.parse(text.slice(start, ende + 1));
-    } catch {
-      return null;
-    }
-  }
 }
 
 const seite = (wert: unknown) => (typeof wert === "string" ? wert.trim().slice(0, MAX_SEITE_ZEICHEN).trim() : "");

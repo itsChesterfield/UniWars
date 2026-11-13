@@ -116,3 +116,90 @@ export function loeschen(daten: MindmapDaten, id: string): MindmapDaten | null {
 export function aendern(daten: MindmapDaten, id: string, teil: Partial<Pick<Knoten, "text" | "farbe">>): MindmapDaten {
   return { knoten: daten.knoten.map((k) => (k.id === id ? { ...k, ...teil } : k)) };
 }
+
+// ---------------------------------------------------------------------------
+// KI-07: Positionen für eine erzeugte Struktur berechnen (radial um die Wurzel)
+// ---------------------------------------------------------------------------
+
+export type BaumKnoten = { text: string; kinder: BaumKnoten[] };
+
+/** Geschätzte Knotengröße wie im Editor (Breite 90–360 px, Wurzel größer). */
+export function knotenGroesse(text: string, istWurzel: boolean): { b: number; h: number } {
+  const proZeichen = istWurzel ? 10.5 : 8.4;
+  const b = Math.max(istWurzel ? 140 : 90, Math.min(360, Math.round(text.length * proZeichen + 32)));
+  return { b, h: istWurzel ? 54 : 40 };
+}
+
+/** Mindestabstand zwischen zwei Knoten-Rechtecken */
+export const LAYOUT_LUECKE = 16;
+
+function ueberlappen(a: Knoten, b: Knoten, luecke = LAYOUT_LUECKE): boolean {
+  const ga = knotenGroesse(a.text, a.parent_id === null);
+  const gb = knotenGroesse(b.text, b.parent_id === null);
+  return Math.abs(a.x - b.x) < (ga.b + gb.b) / 2 + luecke && Math.abs(a.y - b.y) < (ga.h + gb.h) / 2 + luecke;
+}
+
+/** Prüft, ob sich irgendwelche Knoten überlappen (für Tests und als Sicherheitsnetz). */
+export function hatUeberlappung(daten: MindmapDaten, luecke = LAYOUT_LUECKE): boolean {
+  const k = daten.knoten;
+  for (let i = 0; i < k.length; i++) for (let j = i + 1; j < k.length; j++) if (ueberlappen(k[i], k[j], luecke)) return true;
+  return false;
+}
+
+/**
+ * Legt eine MindMap aus einem Baum an: Wurzel in der Mitte, Hauptäste im Kreis,
+ * jeder Ast bekommt einen Winkelbereich passend zu seiner Größe. Danach werden
+ * überlappende Knoten entlang ihres Strahls nach außen geschoben.
+ */
+export function radialLayout(wurzelText: string, baum: BaumKnoten[], id: () => string = neueId): MindmapDaten {
+  const wurzelKnoten: Knoten = { id: id(), text: wurzelText, x: 0, y: 0, farbe: KNOTEN_FARBEN[0].wert, parent_id: null };
+  const knoten: Knoten[] = [wurzelKnoten];
+  const winkel = new Map<string, number>();
+  const ebene = new Map<string, number>([[wurzelKnoten.id, 0]]);
+  const blaetter = (k: BaumKnoten): number => Math.max(1, k.kinder.reduce((n, c) => n + blaetter(c), 0));
+  const RADIUS = [0, 280, 520, 760];
+
+  function platzieren(liste: BaumKnoten[], parent: Knoten, von: number, bis: number, stufe: number, farbe: string | null) {
+    const gesamt = liste.reduce((n, k) => n + blaetter(k), 0) || 1;
+    let start = von;
+    liste.forEach((k, i) => {
+      const anteil = ((bis - von) * blaetter(k)) / gesamt;
+      const w = start + anteil / 2;
+      // Hauptäste bekommen eigene Farben, Unteräste erben sie
+      const astFarbe = farbe ?? KNOTEN_FARBEN[1 + (i % (KNOTEN_FARBEN.length - 1))].wert;
+      const r = RADIUS[Math.min(stufe, RADIUS.length - 1)] + (stufe >= RADIUS.length ? (stufe - RADIUS.length + 1) * 240 : 0);
+      const neu: Knoten = { id: id(), text: k.text, x: Math.cos(w) * r, y: Math.sin(w) * r, farbe: astFarbe, parent_id: parent.id };
+      knoten.push(neu);
+      winkel.set(neu.id, w);
+      ebene.set(neu.id, stufe);
+      platzieren(k.kinder, neu, start, start + anteil, stufe + 1, astFarbe);
+      start += anteil;
+    });
+  }
+  // Start oben (−90°), im Uhrzeigersinn
+  platzieren(baum, wurzelKnoten, -Math.PI / 2, (3 * Math.PI) / 2, 1, null);
+
+  // Überlappungen auflösen: den äußeren Knoten (höhere Ebene) nach außen schieben
+  for (let runde = 0; runde < 400; runde++) {
+    let verschoben = false;
+    for (let i = 0; i < knoten.length; i++) {
+      for (let j = i + 1; j < knoten.length; j++) {
+        if (!ueberlappen(knoten[i], knoten[j])) continue;
+        const [a, b] = [knoten[i], knoten[j]];
+        const aussen = (ebene.get(b.id) ?? 0) >= (ebene.get(a.id) ?? 0) ? b : a;
+        const w = winkel.get(aussen.id);
+        if (w === undefined) continue; // Wurzel bleibt in der Mitte
+        aussen.x += Math.cos(w) * 24;
+        aussen.y += Math.sin(w) * 24;
+        verschoben = true;
+      }
+    }
+    if (!verschoben) break;
+  }
+
+  for (const k of knoten) {
+    k.x = Math.round(k.x);
+    k.y = Math.round(k.y);
+  }
+  return { knoten };
+}
