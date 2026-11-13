@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 
-type Treffer = { id: string; typ: "Fach" | "Deadline" | "To-Do" | "Note"; titel: string };
+type Treffer = {
+  id: string;
+  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten";
+  titel: string;
+  href?: string;
+};
 
 export function SearchBar() {
   const [query, setQuery] = useState("");
@@ -22,19 +28,54 @@ export function SearchBar() {
       const supabase = createClient();
       const pattern = `%${query.trim()}%`;
 
-      const [{ data: faecher }, { data: deadlines }, { data: todos }, { data: notes }] =
-        await Promise.all([
-          supabase.from("fach").select("id, name").ilike("name", pattern).limit(5),
-          supabase.from("deadline").select("id, titel").ilike("titel", pattern).limit(5),
-          supabase.from("todo").select("id, titel").ilike("titel", pattern).limit(5),
-          supabase.from("note").select("id, titel").ilike("titel", pattern).limit(5),
-        ]);
+      // ALL-09: auch Einträge aus den Hubs (Titel und Text). PostgREST-Filter-Syntax
+      // verträgt keine Kommas/Klammern im Suchbegriff -> diese entfernen.
+      const sicher = `%${query.trim().replace(/[,()]/g, " ")}%`;
+      const [
+        { data: faecher },
+        { data: deadlines },
+        { data: todos },
+        { data: notes },
+        { data: notizen },
+        { data: stapel },
+        { data: karten },
+      ] = await Promise.all([
+        supabase.from("fach").select("id, name").ilike("name", pattern).limit(5),
+        supabase.from("deadline").select("id, titel").ilike("titel", pattern).limit(5),
+        supabase.from("todo").select("id, titel").ilike("titel", pattern).limit(5),
+        supabase.from("note").select("id, titel").ilike("titel", pattern).limit(5),
+        supabase.from("notiz").select("id, titel").or(`titel.ilike.${sicher},inhalt.ilike.${sicher}`).limit(5),
+        supabase.from("kk_stapel").select("id, name").ilike("name", pattern).limit(3),
+        supabase
+          .from("kk_karte")
+          .select("id, stapel_id, vorderseite")
+          .or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`)
+          .limit(3),
+      ]);
 
       const treffer = [
         ...(faecher ?? []).map((f) => ({ id: f.id, typ: "Fach" as const, titel: f.name })),
         ...(deadlines ?? []).map((d) => ({ id: d.id, typ: "Deadline" as const, titel: d.titel })),
         ...(todos ?? []).map((t) => ({ id: t.id, typ: "To-Do" as const, titel: t.titel })),
         ...(notes ?? []).map((n) => ({ id: n.id, typ: "Note" as const, titel: n.titel })),
+        ...(notizen ?? []).map((n) => ({
+          id: n.id,
+          typ: "Notiz" as const,
+          titel: n.titel || "Unbenannte Notiz",
+          href: `/notizen?id=${n.id}`,
+        })),
+        ...(stapel ?? []).map((s) => ({
+          id: s.id,
+          typ: "Karteikarten" as const,
+          titel: `Stapel: ${s.name}`,
+          href: `/karteikarten/${s.id}`,
+        })),
+        ...(karten ?? []).map((k) => ({
+          id: k.id,
+          typ: "Karteikarten" as const,
+          titel: k.vorderseite.replace(/[#*_`>\[\]-]/g, "").trim().slice(0, 80),
+          href: `/karteikarten/${k.stapel_id}`,
+        })),
       ];
       setErgebnisse(treffer);
       track("suche_ausgefuehrt", { suchlaenge: query.trim().length, treffer: treffer.length });
@@ -59,7 +100,7 @@ export function SearchBar() {
       </span>
       <input
         type="search"
-        placeholder="Alles durchsuchen — Fach, Deadline, To-Do, Note …"
+        placeholder="Alles durchsuchen — Fach, Deadline, To-Do, Notiz …"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -81,7 +122,7 @@ export function SearchBar() {
               <h4>{typ}</h4>
               <ul>
                 {treffer.map((t) => (
-                  <li key={t.id}>{t.titel}</li>
+                  <li key={t.id}>{t.href ? <Link href={t.href}>{t.titel}</Link> : t.titel}</li>
                 ))}
               </ul>
             </div>

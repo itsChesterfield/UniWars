@@ -325,6 +325,85 @@ export type Database = {
         }
         Relationships: []
       }
+      kk_karte: {
+        Row: {
+          box: number
+          erstellt_am: string
+          geaendert_am: string
+          id: string
+          naechste_abfrage: string
+          rueckseite: string
+          stapel_id: string
+          user_id: string
+          vorderseite: string
+        }
+        Insert: {
+          box?: number
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          naechste_abfrage?: string
+          rueckseite: string
+          stapel_id: string
+          user_id?: string
+          vorderseite: string
+        }
+        Update: {
+          box?: number
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          naechste_abfrage?: string
+          rueckseite?: string
+          stapel_id?: string
+          user_id?: string
+          vorderseite?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kk_karte_stapel_id_fkey"
+            columns: ["stapel_id"]
+            isOneToOne: false
+            referencedRelation: "kk_stapel"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kk_stapel: {
+        Row: {
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kk_stapel_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lern_session: {
         Row: {
           dauer_minuten: number
@@ -398,6 +477,60 @@ export type Database = {
           },
         ]
       }
+      notiz: {
+        Row: {
+          angepinnt: boolean
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          inhalt: string
+          stundenplan_eintrag_id: string | null
+          titel: string
+          user_id: string
+          vorlesung_datum: string | null
+        }
+        Insert: {
+          angepinnt?: boolean
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: string
+          stundenplan_eintrag_id?: string | null
+          titel?: string
+          user_id?: string
+          vorlesung_datum?: string | null
+        }
+        Update: {
+          angepinnt?: boolean
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: string
+          stundenplan_eintrag_id?: string | null
+          titel?: string
+          user_id?: string
+          vorlesung_datum?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notiz_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notiz_stundenplan_eintrag_id_fkey"
+            columns: ["stundenplan_eintrag_id"]
+            isOneToOne: false
+            referencedRelation: "stundenplan_eintrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pruefung: {
         Row: {
           datum: string
@@ -448,6 +581,7 @@ export type Database = {
           theme: Database["public"]["Enums"]["theme"]
           user_id: string
           username: string | null
+          work_station: Json
         }
         Insert: {
           sichtbare_widgets?: Json
@@ -457,6 +591,7 @@ export type Database = {
           theme?: Database["public"]["Enums"]["theme"]
           user_id: string
           username?: string | null
+          work_station?: Json
         }
         Update: {
           sichtbare_widgets?: Json
@@ -466,6 +601,7 @@ export type Database = {
           theme?: Database["public"]["Enums"]["theme"]
           user_id?: string
           username?: string | null
+          work_station?: Json
         }
         Relationships: []
       }

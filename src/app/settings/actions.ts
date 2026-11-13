@@ -13,7 +13,8 @@ export async function setTheme(theme: Enums<"theme">) {
 
   const { error } = await supabase.from("settings").update({ theme }).eq("user_id", user.id);
   if (error) throw new Error(error.message);
-  revalidatePath("/");
+  // Auch die Hubs nutzen das Theme -> ganzes Layout neu rendern.
+  revalidatePath("/", "layout");
 }
 
 export async function setSichtbareWidgets(widgets: string[]) {

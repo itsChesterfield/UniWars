@@ -1839,3 +1839,1118 @@ dialog.card {
   margin: 0;
   padding-left: 18px;
 }
+
+/* =========================================================================
+   Hubs (Notizen, Karteikarten, Work Station) – gemeinsame Bausteine
+   ========================================================================= */
+
+.hub-main {
+  gap: 18px;
+}
+
+.hub-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hub-kopf h1 {
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.hub-kopf p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.hub-kopf-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hub-kopf-aktionen a.btng,
+.hub-kopf-aktionen a.btnp,
+.kk-kachel-knoepfe a,
+.kk-zusammenfassung a.btng {
+  text-decoration: none;
+}
+
+.hub-zurueck-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  align-self: flex-start;
+}
+
+.hub-leer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 56px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.hub-leer p {
+  margin: 0;
+  max-width: 420px;
+  color: var(--muted);
+}
+
+.hub-leer-icon {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.hub-leer-knopf {
+  padding: 13px 22px;
+  font-size: 15px;
+}
+
+.hub-einrichtung p {
+  margin: 8px 0 0;
+}
+
+.hub-vorschlag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: left;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hub-vorschlag strong {
+  color: var(--accent-strong);
+}
+
+.hub-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hub-formular label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hub-formular-knoepfe {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btnp:disabled,
+.btng:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+a.btnp:hover,
+a.btng:hover {
+  text-decoration: none;
+}
+
+.icon-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.icon-knopf:hover {
+  background: var(--card2);
+  color: var(--text);
+}
+
+.icon-knopf.pin.an {
+  color: var(--accent-strong);
+}
+
+.drei-punkte {
+  position: relative;
+  flex: none;
+}
+
+.drei-punkte-menue {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.drei-punkte-menue button {
+  text-align: left;
+  border: none;
+  background: none;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.drei-punkte-menue button:hover {
+  background: var(--card2);
+}
+
+.drei-punkte-menue button.gefahr {
+  color: var(--danger);
+}
+
+.speicher-status {
+  font-size: 12px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.speicher-status.speichert {
+  color: var(--muted);
+}
+
+.speicher-status.fehler {
+  color: var(--danger);
+}
+
+kbd {
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--muted);
+}
+
+/* --- Zweispaltig: Liste links, Inhalt rechts (ALL-10) --- */
+
+.hub-zweispaltig {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.hub-liste {
+  padding: 14px;
+  gap: 10px;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+}
+
+.hub-liste .field {
+  padding: 8px 11px;
+}
+
+.hub-inhalt {
+  min-height: 420px;
+  padding: 18px 22px;
+}
+
+.hub-inhalt-leer {
+  margin: auto;
+}
+
+.hub-zurueck {
+  display: none;
+}
+
+/* --- Notizen --- */
+
+.notiz-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hub-liste-leer {
+  padding: 12px 4px;
+}
+
+.notiz-zeile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.notiz-zeile:hover {
+  background: var(--card2);
+}
+
+.notiz-zeile.aktiv {
+  background: var(--accent-soft);
+}
+
+.notiz-zeile-kopf {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.notiz-zeile-titel {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notiz-zeile .icon-knopf {
+  width: 24px;
+  height: 24px;
+}
+
+.notiz-zeile-vorschau {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notiz-zeile-datum {
+  font-size: 11px;
+}
+
+.notiz-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.notiz-editor-leiste {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notiz-fach {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-right: auto;
+}
+
+.notiz-fach .field {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.notiz-titel {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-size: 26px;
+  padding: 2px 0;
+  width: 100%;
+  outline: none;
+}
+
+.notiz-titel::placeholder {
+  color: var(--faint);
+}
+
+/* --- Markdown-Editor (TipTap) --- */
+
+.md-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.md-werkzeuge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card2);
+  align-self: flex-start;
+}
+
+.md-knopf {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.md-knopf:hover {
+  color: var(--text);
+  background: var(--card);
+}
+
+.md-knopf.an {
+  background: var(--card);
+  color: var(--accent-strong);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.md-fett {
+  font-weight: 800;
+}
+
+.md-kursiv {
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+
+.md-flaeche {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.md-inhalt {
+  flex: 1;
+  min-height: 300px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.md-kompakt .md-inhalt {
+  min-height: 90px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card2);
+}
+
+.md-kompakt .md-inhalt:focus-within,
+.md-kompakt .md-inhalt.ProseMirror-focused {
+  border-color: var(--accent);
+}
+
+.md-inhalt > :first-child {
+  margin-top: 0;
+}
+
+.md-inhalt p {
+  margin: 0 0 0.6em;
+}
+
+.md-inhalt h1,
+.md-inhalt h2,
+.md-inhalt h3 {
+  margin: 0.9em 0 0.4em;
+  line-height: 1.25;
+}
+
+.md-inhalt h1 {
+  font-size: 1.6em;
+}
+
+.md-inhalt h2 {
+  font-size: 1.35em;
+}
+
+.md-inhalt h3 {
+  font-size: 1.15em;
+}
+
+.md-inhalt ul,
+.md-inhalt ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.4em;
+}
+
+.md-inhalt li > p {
+  margin: 0;
+}
+
+.md-inhalt ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.2em;
+}
+
+.md-inhalt ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.md-inhalt ul[data-type="taskList"] li > label {
+  margin-top: 0.25em;
+  flex: none;
+}
+
+.md-inhalt ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+.md-inhalt ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+.md-inhalt code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.88em;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.05em 0.35em;
+}
+
+.md-inhalt pre {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 0 0 0.8em;
+}
+
+.md-inhalt pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.md-inhalt a {
+  text-decoration: underline;
+}
+
+.md-inhalt p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--faint);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.md-anzeige .md-inhalt {
+  min-height: 0;
+}
+
+/* --- Karteikarten --- */
+
+.kk-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.kk-kachel {
+  padding: 18px;
+  gap: 10px;
+}
+
+.kk-kachel-kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kk-kachel-name {
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-size: 19px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.kk-kachel-fach {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.kk-kachel-zahlen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.kk-kachel-knoepfe {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.kk-kartenliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.kk-karte-zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kk-karte-zeile:last-child,
+.kk-karte-bearbeiten:last-child {
+  border-bottom: none;
+}
+
+.kk-karte-bearbeiten {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kk-karte-vorschau {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kk-karte-vorschau:hover {
+  background: var(--card2);
+}
+
+.kk-karte-vorne {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.kk-karte-vorne,
+.kk-karte-hinten {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kk-karte-hinten {
+  font-size: 12.5px;
+}
+
+.kk-formular {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kk-formular-seiten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.kk-formular-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.kk-lernen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.kk-lernen-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kk-fortschritt-text {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kk-lernkarte {
+  perspective: 1400px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  outline-offset: 4px;
+}
+
+.kk-lernkarte-innen {
+  position: relative;
+  display: grid;
+  min-height: 320px;
+  transition: transform 0.45s ease;
+  transform-style: preserve-3d;
+}
+
+.kk-lernkarte.umgedreht .kk-lernkarte-innen {
+  transform: rotateY(180deg);
+}
+
+.kk-seite {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 36px 32px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  color: var(--text);
+}
+
+.kk-hinten {
+  transform: rotateY(180deg);
+  background: var(--card2);
+}
+
+.kk-seite .md-inhalt {
+  font-size: 20px;
+  min-height: 0;
+}
+
+.kk-seite-label {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.kk-antworten {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kk-antwort {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.kk-antwort.nein {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.kk-antwort.ja {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+
+.kk-antwort kbd {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  border-color: currentColor;
+}
+
+.kk-tipp {
+  text-align: center;
+  font-size: 13px;
+  margin: 0;
+}
+
+.kk-lernen-leer,
+.kk-zusammenfassung {
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.kk-lernen-leer p,
+.kk-zusammenfassung p {
+  margin: 0;
+}
+
+.kk-ergebnis {
+  font-size: 17px;
+}
+
+/* --- Work Station --- */
+
+.ws-raster {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ws-timer-karte {
+  align-items: center;
+  gap: 14px;
+  padding: 24px;
+}
+
+.ws-fach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ws-fach .field {
+  width: auto;
+  min-width: 180px;
+}
+
+.ws-vorschlag {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.ws-kreis {
+  position: relative;
+  width: min(280px, 72vw);
+  aspect-ratio: 1;
+}
+
+.ws-kreis svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ws-kreis-spur {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 10;
+}
+
+.ws-kreis-fortschritt {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s linear;
+}
+
+.ws-timer-karte[data-modus="kurz"] .ws-kreis-fortschritt,
+.ws-timer-karte[data-modus="lang"] .ws-kreis-fortschritt {
+  stroke: var(--success);
+}
+
+.ws-kreis-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ws-modus {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.ws-timer-karte[data-modus="kurz"] .ws-modus,
+.ws-timer-karte[data-modus="lang"] .ws-modus {
+  color: var(--success);
+}
+
+.ws-zeit {
+  font-size: clamp(40px, 12vw, 56px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ws-runde {
+  font-size: 12px;
+}
+
+.ws-knoepfe {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ws-haupt {
+  min-width: 110px;
+  justify-content: center;
+}
+
+.ws-hinweis {
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
+.ws-heute {
+  gap: 14px;
+}
+
+.ws-balken {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.ws-balken .progress-track {
+  margin-top: 6px;
+}
+
+.ws-einstellungen {
+  gap: 14px;
+}
+
+.ws-einstellungen-felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.ws-einstellungen-felder label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ws-einstellungen-felder .field {
+  max-width: 100px;
+}
+
+.ws-grenze {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+label.ws-ton {
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+/* --- Sidebar: Timer-Restzeit (WS-06) und Mobil-Menü --- */
+
+.navitem-timer {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.navitem-timer-pausiert {
+  opacity: 0.6;
+}
+
+.sidebar-menue-knopf {
+  display: none;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 1000px) {
+  .ws-raster {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  /* ALL-10: Sidebar wird oben zur Leiste mit Menü-Knopf */
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 10px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--sidebar-border);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .sidebar-brand {
+    padding: 2px 0;
+  }
+
+  .sidebar-menue-knopf {
+    display: inline-flex;
+  }
+
+  .sidebar[data-menue-offen="false"] .sidebar-nav,
+  .sidebar[data-menue-offen="false"] .sidebar-footer {
+    display: none;
+  }
+
+  .sidebar[data-menue-offen="true"] {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar[data-menue-offen="true"] .sidebar-nav {
+    padding-top: 10px;
+  }
+
+  .dashboard-main {
+    padding: 18px 16px 32px;
+  }
+
+  /* Zweispaltige Hubs: erst Liste, nach Antippen der Inhalt mit Zurück */
+  .hub-zweispaltig {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hub-zweispaltig[data-ansicht="liste"] .hub-inhalt,
+  .hub-zweispaltig[data-ansicht="inhalt"] .hub-liste {
+    display: none;
+  }
+
+  .hub-liste {
+    position: static;
+    max-height: none;
+  }
+
+  .hub-zurueck {
+    display: inline-flex;
+  }
+
+  .hub-inhalt {
+    padding: 14px;
+  }
+
+  .kk-formular-seiten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kk-seite {
+    padding: 36px 18px 24px;
+  }
+
+  .kk-seite .md-inhalt {
+    font-size: 17px;
+  }
+
+  .kk-lernkarte-innen {
+    min-height: 260px;
+  }
+}
+
+/* Karteikarte: Block mittig, Text darin linksbündig (Listen bleiben lesbar) */
+.kk-seite .md-anzeige {
+  max-width: 100%;
+}
+
+.kk-seite .md-inhalt {
+  text-align: left;
+}

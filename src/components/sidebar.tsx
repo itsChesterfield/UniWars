@@ -1,19 +1,28 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AbmeldenButton, ThemeUmschalter } from "@/components/sidebar-aktionen";
 import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
 import type { Enums } from "@/lib/supabase/types";
+import { TimerWaechter } from "@/components/work-station/timer-waechter";
+import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
+import { alsUhr, restzeit } from "@/lib/work-station/timer";
 
-const WEITERE_HUBS = [
+const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   {
     name: "Dateiablage",
     icon: "M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z",
   },
   {
     name: "Notizen",
+    href: "/notizen",
     icon: "M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z|M14 3v5h5|M9 13h6M9 16.5h4",
   },
   {
     name: "Karteikarten",
+    href: "/karteikarten",
     icon: "rect:4,6,13,14,2|M8 3h9a2 2 0 0 1 2 2v11",
   },
   {
@@ -22,6 +31,7 @@ const WEITERE_HUBS = [
   },
   {
     name: "Work Station",
+    href: "/work-station",
     icon: "circle:12,13,7|M12 13V9.5M9.5 3.5h5M12 3.5V6",
   },
   {
@@ -77,6 +87,17 @@ function NavIcon({ path }: { path: string }) {
   );
 }
 
+function TimerRest() {
+  const zustand = useTimerZustand();
+  const jetzt = useJetzt(Boolean(zustand?.laeuft));
+  if (!zustand || (!zustand.laeuft && zustand.restMs === zustand.dauerMs)) return null;
+  return (
+    <span className={`navitem-timer mono ${zustand.laeuft ? "" : "navitem-timer-pausiert"}`} title={zustand.laeuft ? "Timer läuft" : "Timer pausiert"}>
+      {alsUhr(restzeit(zustand, jetzt))}
+    </span>
+  );
+}
+
 export function Sidebar({
   email,
   theme,
@@ -86,8 +107,13 @@ export function Sidebar({
   theme: Enums<"theme">;
   streak: number;
 }) {
+  const pfad = usePathname();
+  const [menueOffen, setMenueOffen] = useState(false);
+  const istAktiv = (href: string) => (href === "/" ? pfad === "/" : pfad === href || pfad.startsWith(`${href}/`));
+
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" data-menue-offen={menueOffen}>
+      <TimerWaechter />
       <div className="sidebar-brand">
         <div className="sidebar-brand-mark">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -96,19 +122,38 @@ export function Sidebar({
           </svg>
         </div>
         <div className="sidebar-brand-name">UniWars</div>
+        <button
+          type="button"
+          className="sidebar-menue-knopf"
+          aria-expanded={menueOffen}
+          aria-label={menueOffen ? "Menü schließen" : "Menü öffnen"}
+          onClick={() => setMenueOffen((o) => !o)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            {menueOffen ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
+        </button>
       </div>
 
-      <nav className="sidebar-nav">
-        <Link href="/" className="navitem active">
+      <nav className="sidebar-nav" onClick={() => setMenueOffen(false)}>
+        <Link href="/" className={`navitem ${istAktiv("/") ? "active" : ""}`}>
           <NavIcon path="M3 10.5 12 3l9 7.5|M5 9.5V21h14V9.5|M9.5 21v-6h5v6" />
           Zentraler Hub
         </Link>
-        {WEITERE_HUBS.map((hub) => (
-          <span key={hub.name} className="navitem disabled" title="Demnächst verfügbar">
-            <NavIcon path={hub.icon} />
-            {hub.name}
-          </span>
-        ))}
+        {WEITERE_HUBS.map((hub) =>
+          hub.href ? (
+            <Link key={hub.name} href={hub.href} className={`navitem ${istAktiv(hub.href) ? "active" : ""}`}>
+              <NavIcon path={hub.icon} />
+              {hub.name}
+              {hub.href === "/work-station" && <TimerRest />}
+            </Link>
+          ) : (
+            <span key={hub.name} className="navitem disabled" title="Demnächst verfügbar">
+              <NavIcon path={hub.icon} />
+              {hub.name}
+            </span>
+          ),
+        )}
       </nav>
 
       <div className="sidebar-footer">

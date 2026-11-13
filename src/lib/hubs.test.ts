@@ -1,0 +1,105 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag } from "./zeit.ts";
+import { naechsteWiederholung, istFaellig } from "./karteikarten/leitner.ts";
+import {
+  WS_STANDARD,
+  abschliessen,
+  einstellungenLesen,
+  pausieren,
+  restzeit,
+  startZustand,
+  starten,
+  ueberspringen,
+  zuruecksetzen,
+  alsUhr,
+  dauerText,
+} from "./work-station/timer.ts";
+import { tabelleFehlt } from "./hubs/datenbank.ts";
+
+test("Berlin-Zeit: Datum, Uhrzeit, Wochentag", () => {
+  const d = new Date("2026-11-13T23:30:00Z"); // 14.11. 00:30 in Berlin (Winterzeit)
+  assert.equal(berlinDatum(d), "2026-11-14");
+  assert.equal(berlinUhrzeit(d), "00:30");
+  assert.equal(berlinWochentag(d), "SA");
+});
+
+test("Berlin-Mitternacht auch über Zeitumstellung", () => {
+  assert.equal(berlinMitternacht("2026-11-13").toISOString(), "2026-11-12T23:00:00.000Z");
+  assert.equal(berlinMitternacht("2026-07-01").toISOString(), "2026-06-30T22:00:00.000Z");
+  // 28.03.2026 + 1 Tag = 29.03. (Umstellung auf Sommerzeit in der Nacht)
+  assert.equal(berlinMitternacht("2026-03-28", 1).toISOString(), "2026-03-28T23:00:00.000Z");
+  assert.equal(berlinMitternacht("2026-03-29", 1).toISOString(), "2026-03-29T22:00:00.000Z");
+  assert.equal(berlinMitternacht("2026-12-31", 1).toISOString(), "2026-12-31T23:00:00.000Z");
+});
+
+test("Leitner: gewusst eine Box höher, max 5; nicht gewusst zurück auf 1", () => {
+  assert.deepEqual(naechsteWiederholung(1, "gewusst"), { box: 2, tage: 2 });
+  assert.deepEqual(naechsteWiederholung(4, "gewusst"), { box: 5, tage: 16 });
+  assert.deepEqual(naechsteWiederholung(5, "gewusst"), { box: 5, tage: 16 });
+  assert.deepEqual(naechsteWiederholung(5, "nicht_gewusst"), { box: 1, tage: 1 });
+  assert.deepEqual(naechsteWiederholung(2, "nicht_gewusst"), { box: 1, tage: 1 });
+  // morgen 0 Uhr Berlin, gesehen am 13.11. um 11 Uhr
+  assert.equal(berlinMitternacht(berlinDatum(new Date("2026-11-13T10:00:00Z")), 1).toISOString(), "2026-11-13T23:00:00.000Z");
+  const jetzt = new Date("2026-11-13T10:00:00Z");
+  assert.equal(istFaellig("2026-11-13T09:00:00Z", jetzt), true);
+  assert.equal(istFaellig("2026-11-13T23:00:00Z", jetzt), false);
+});
+
+test("Work Station: Einstellungen werden begrenzt", () => {
+  assert.deepEqual(einstellungenLesen(null), WS_STANDARD);
+  assert.deepEqual(einstellungenLesen({ fokus: 200, kurzePause: 0, langePause: "20", runden: 9, ton: false }), {
+    fokus: 90,
+    kurzePause: 1,
+    langePause: 20,
+    runden: 8,
+    ton: false,
+  });
+});
+
+test("Work Station: Zyklus Fokus -> kurze Pause … -> lange Pause nach 4 Runden", () => {
+  let z = startZustand(WS_STANDARD, "fach-1");
+  const modi: string[] = [];
+  const sitzungen: number[] = [];
+  for (let i = 0; i < 9; i++) {
+    z = starten(z, 1_000);
+    const r = abschliessen(z);
+    if (r.sitzung) sitzungen.push(r.sitzung.minuten);
+    z = r.zustand;
+    modi.push(z.modus);
+  }
+  assert.deepEqual(modi, ["kurz", "fokus", "kurz", "fokus", "kurz", "fokus", "lang", "fokus", "kurz"]);
+  assert.deepEqual(sitzungen, [25, 25, 25, 25, 25]);
+  assert.equal(z.fachId, "fach-1");
+});
+
+test("Work Station: Pause hält die Zeit an, Abbruch zählt erst ab 5 Minuten", () => {
+  let z = startZustand();
+  z = starten(z, 0);
+  z = pausieren(z, 3 * 60_000);
+  assert.equal(restzeit(z, 999_999_999), 22 * 60_000);
+  assert.equal(zuruecksetzen(z, 0).sitzung, null);
+
+  z = starten(z, 10 * 60_000); // Fortsetzen nach Pause
+  const r = zuruecksetzen(z, 13 * 60_000); // 3 + 3 = 6 Minuten gelaufen
+  assert.deepEqual(r.sitzung, { start: 0, minuten: 6, abgeschlossen: false });
+  assert.equal(r.zustand.restMs, 25 * 60_000);
+  assert.equal(r.zustand.laeuft, false);
+
+  const s = ueberspringen(starten(startZustand(), 0), 60_000);
+  assert.equal(s.sitzung, null);
+  assert.equal(s.zustand.modus, "kurz");
+});
+
+test("Formatierung", () => {
+  assert.equal(alsUhr(24 * 60_000 + 13_000), "24:13");
+  assert.equal(alsUhr(0), "00:00");
+  assert.equal(dauerText(100), "1 h 40 min");
+  assert.equal(dauerText(45), "45 min");
+});
+
+test("Fehlende Tabelle wird erkannt", () => {
+  assert.equal(tabelleFehlt({ code: "PGRST205", message: "Could not find the table" }), true);
+  assert.equal(tabelleFehlt({ code: "42501", message: "permission denied" }), false);
+  assert.equal(tabelleFehlt(null), false);
+});
