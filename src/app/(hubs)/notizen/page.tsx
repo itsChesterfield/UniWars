@@ -4,6 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { berlinDatum, berlinUhrzeit, berlinWochentag } from "@/lib/zeit";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { NotizenHub, type LaufendeVorlesung } from "@/components/notizen/notizen-hub";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const metadata = { title: "Notizen · UniWars" };
 
@@ -48,7 +49,12 @@ export default async function NotizenSeite() {
 
   return (
     <Suspense fallback={null}>
-      <NotizenHub initialNotizen={notizen ?? []} faecher={faecher ?? []} laufendeVorlesung={laufendeVorlesung} />
+      <NotizenHub
+        initialNotizen={notizen ?? []}
+        faecher={faecher ?? []}
+        laufendeVorlesung={laufendeVorlesung}
+        kiVerfuegbar={kiKonfiguriert()}
+      />
     </Suspense>
   );
 }

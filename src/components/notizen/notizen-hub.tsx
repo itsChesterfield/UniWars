@@ -18,6 +18,8 @@ import { MarkdownEditor, markdownAlsText } from "@/components/hubs/markdown-edit
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { KiKartenDialog } from "@/components/notizen/ki-karten-dialog";
+import { MIN_NOTIZ_ZEICHEN, notizLangGenug } from "@/lib/ki/karten";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
 
@@ -56,10 +58,13 @@ export function NotizenHub({
   initialNotizen,
   faecher,
   laufendeVorlesung,
+  kiVerfuegbar,
 }: {
   initialNotizen: Notiz[];
   faecher: FachOption[];
   laufendeVorlesung: LaufendeVorlesung | null;
+  /** KI-01: ist ein KI-Schlüssel hinterlegt? */
+  kiVerfuegbar: boolean;
 }) {
   const router = useRouter();
   const pfad = usePathname();
@@ -248,6 +253,7 @@ export function NotizenHub({
                 key={auswahl.id}
                 notiz={auswahl}
                 faecher={faecher}
+                kiVerfuegbar={kiVerfuegbar}
                 autoFokusTitel={auswahl.id === neuId}
                 onZurueck={() => oeffnen(null)}
                 onLokal={(teil) => aktualisieren(auswahl.id, teil)}
@@ -267,6 +273,7 @@ export function NotizenHub({
 function NotizEditor({
   notiz,
   faecher,
+  kiVerfuegbar,
   autoFokusTitel,
   onZurueck,
   onLokal,
@@ -275,6 +282,7 @@ function NotizEditor({
 }: {
   notiz: Notiz;
   faecher: FachOption[];
+  kiVerfuegbar: boolean;
   autoFokusTitel: boolean;
   onZurueck: () => void;
   onLokal: (teil: Partial<Notiz>) => void;
@@ -282,7 +290,8 @@ function NotizEditor({
   onLoeschen: () => void;
 }) {
   const [titel, setTitel] = useState(notiz.titel);
-  const { status, aendern } = useAutoSpeichern<{ titel: string; inhalt: string }>(async (aenderung) => {
+  const [kiOffen, setKiOffen] = useState(false);
+  const { status, aendern, jetztSpeichern } = useAutoSpeichern<{ titel: string; inhalt: string }>(async (aenderung) => {
     const geaendertAm = await notizSpeichern(notiz.id, aenderung);
     onLokal({ geaendert_am: geaendertAm });
   });
@@ -325,8 +334,32 @@ function NotizEditor({
         >
           <PinIcon an={notiz.angepinnt} />
         </button>
+        <button
+          type="button"
+          className="btng ki-knopf"
+          disabled={!kiVerfuegbar || !notizLangGenug(notiz.inhalt)}
+          title={
+            !kiVerfuegbar
+              ? "KI gerade nicht verfügbar"
+              : notizLangGenug(notiz.inhalt)
+                ? "Die KI schlägt Karteikarten aus dieser Notiz vor – du prüfst sie vor dem Speichern."
+                : `Die Notiz ist zu kurz für Karteikarten (mindestens ${MIN_NOTIZ_ZEICHEN} Zeichen).`
+          }
+          onClick={() => setKiOffen(true)}
+        >
+          ✨ <span className="ki-knopf-text">{kiVerfuegbar ? "Karteikarten erstellen" : "KI gerade nicht verfügbar"}</span>
+        </button>
         <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: onLoeschen, gefahr: true }]} />
       </div>
+
+      {kiOffen && (
+        <KiKartenDialog
+          notiz={{ id: notiz.id, titel: titel || notiz.titel, fach_id: notiz.fach_id }}
+          faecher={faecher}
+          vorher={jetztSpeichern}
+          onSchliessen={() => setKiOffen(false)}
+        />
+      )}
 
       <input
         className="notiz-titel"

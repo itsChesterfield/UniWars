@@ -18,7 +18,12 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "dark" : "light"}>
-      <Sidebar email={user.email ?? ""} theme={settings?.theme ?? "HELL"} streak={settings?.streak_count ?? 0} />
+      <Sidebar
+        email={user.email ?? ""}
+        theme={settings?.theme ?? "HELL"}
+        streak={settings?.streak_count ?? 0}
+        kiEingewilligt={Boolean(settings?.ki_einwilligung)}
+      />
       <main className="dashboard-main hub-main">{children}</main>
     </div>
   );

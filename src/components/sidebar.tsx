@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AbmeldenButton, ThemeUmschalter } from "@/components/sidebar-aktionen";
 import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
+import { KiEinstellung } from "@/components/ki/ki-einstellung";
 import type { Enums } from "@/lib/supabase/types";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
@@ -112,10 +113,13 @@ export function Sidebar({
   email,
   theme,
   streak,
+  kiEingewilligt = false,
 }: {
   email: string;
   theme: Enums<"theme">;
   streak: number;
+  /** KI-D1: settings.ki_einwilligung gesetzt? */
+  kiEingewilligt?: boolean;
 }) {
   const pfad = usePathname();
   const [menueOffen, setMenueOffen] = useState(false);
@@ -178,6 +182,7 @@ export function Sidebar({
 
         <ThemeUmschalter theme={theme} />
         <AnalyticsEinstellung />
+        <KiEinstellung startEingewilligt={kiEingewilligt} />
         <AbmeldenButton />
       </div>
     </aside>

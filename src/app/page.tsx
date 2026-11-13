@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
-      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} />
+      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} kiEingewilligt={Boolean(settings.ki_einwilligung)} />
       <main className="dashboard-main">
         <Suspense fallback={null}>
           <DashboardContent
