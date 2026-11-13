@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 
 type Treffer = {
   id: string;
-  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten" | "Datei" | "Quelle" | "Dokument" | "Tabelle" | "Präsentation";
+  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten" | "Datei" | "Quelle" | "Dokument" | "Tabelle" | "Präsentation" | "MindMap" | "Whiteboard";
   titel: string;
   href?: string;
 };
@@ -44,6 +44,8 @@ export function SearchBar() {
         { data: dokumente },
         { data: tabellen },
         { data: praesentationen },
+        { data: mindmaps },
+        { data: whiteboards },
       ] = await Promise.all([
         supabase.from("fach").select("id, name").ilike("name", pattern).limit(5),
         supabase.from("deadline").select("id, titel").ilike("titel", pattern).limit(5),
@@ -61,6 +63,8 @@ export function SearchBar() {
         supabase.from("dokument").select("id, titel").or(`titel.ilike.${sicher},klartext.ilike.${sicher}`).limit(5),
         supabase.from("tabelle").select("id, titel").ilike("titel", pattern).limit(5),
         supabase.from("praesentation").select("id, titel").ilike("titel", pattern).limit(5),
+        supabase.from("mindmap").select("id, name").ilike("name", pattern).limit(5),
+        supabase.from("whiteboard").select("id, name").ilike("name", pattern).limit(5),
       ]);
 
       const treffer = [
@@ -116,6 +120,8 @@ export function SearchBar() {
           titel: p.titel,
           href: `/praesentationen/${p.id}`,
         })),
+        ...(mindmaps ?? []).map((m) => ({ id: m.id, typ: "MindMap" as const, titel: m.name, href: `/mindmap/${m.id}` })),
+        ...(whiteboards ?? []).map((w) => ({ id: w.id, typ: "Whiteboard" as const, titel: w.name, href: `/whiteboard/${w.id}` })),
       ];
       setErgebnisse(treffer);
       track("suche_ausgefuehrt", { suchlaenge: query.trim().length, treffer: treffer.length });

@@ -4726,3 +4726,278 @@ textarea.folie-punkte {
     flex: 0 0 140px;
   }
 }
+
+/* =========================================================================
+   Hubs Stufe 4: MindMap und Whiteboard (gemeinsame Zeichenfläche)
+   ========================================================================= */
+
+.zf-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  height: calc(100vh - 68px);
+  min-height: 460px;
+}
+
+.zf-titel {
+  flex: 1 1 200px;
+  min-width: 0;
+  font-size: 26px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zf-leiste {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.zf-leiste .md-knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zf-leiste .md-knopf:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zf-leiste kbd {
+  font-size: 10px;
+  padding: 0 4px;
+}
+
+.zf-farben {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.zf-farben .tab-farbe:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.zf-farbmenue {
+  gap: 6px;
+  padding: 8px;
+}
+
+.zf-zoom {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.zf-flaeche {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.zf-flaeche:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.zf-svg {
+  display: block;
+}
+
+.zf-knoten {
+  cursor: grab;
+}
+
+.zf-knoten:active {
+  cursor: grabbing;
+}
+
+.zf-plus {
+  cursor: pointer;
+}
+
+.zf-knoten-eingabe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 0 8px;
+  font: 600 15px var(--font-body), "Public Sans", system-ui, sans-serif;
+  text-align: center;
+  background: #fffdf8;
+  color: #2a2318;
+  outline: 2px solid #2a2318;
+}
+
+.zf-hilfe {
+  position: absolute;
+  left: 12px;
+  bottom: 8px;
+  margin: 0;
+  font-size: 11.5px;
+  pointer-events: none;
+}
+
+/* --- Whiteboard --- */
+
+.wb-arbeitsbereich {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 10px;
+}
+
+.wb-werkzeuge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  overflow-y: auto;
+}
+
+.wb-werkzeug {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.wb-werkzeug:hover {
+  background: var(--card2);
+  color: var(--text);
+}
+
+.wb-werkzeug.an {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.wb-werkzeug:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.wb-farbe {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.wb-farbe.an {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.wb-staerke {
+  display: block;
+  width: 18px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+.wb-trenner {
+  width: 24px;
+  height: 1px;
+  flex: none;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.wb-zoom {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.wb-flaeche {
+  background: #fffdf8;
+}
+
+.dashboard[data-theme="dark"] .wb-flaeche {
+  background: #fffdf8;
+}
+
+.wb-texteingabe {
+  position: absolute;
+  min-width: 160px;
+  min-height: 1.6em;
+  padding: 0;
+  margin: 0;
+  border: 1px dashed #b9822a;
+  background: rgba(255, 253, 248, 0.9);
+  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
+  line-height: 1.25;
+  resize: both;
+  outline: none;
+  z-index: 5;
+  field-sizing: content;
+}
+
+.wb-leer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  margin: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .zf-seite {
+    height: calc(100dvh - 110px);
+  }
+
+  .wb-arbeitsbereich {
+    flex-direction: column;
+  }
+
+  .wb-werkzeuge {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .wb-trenner {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+  }
+
+  .zf-hilfe {
+    display: none;
+  }
+}

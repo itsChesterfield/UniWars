@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -32,6 +33,7 @@ export function ObjektListe({
   faecher,
   anlegen,
   loeschen,
+  nameAbfragen,
 }: {
   hub: string;
   untertitel: string;
@@ -43,21 +45,32 @@ export function ObjektListe({
   eventName: string;
   eintraege: ObjektEintrag[];
   faecher: FachOption[];
-  anlegen: (fachId: string | null) => Promise<string>;
+  anlegen: (fachId: string | null, name?: string) => Promise<string>;
   loeschen: (id: string) => Promise<void>;
+  /** Vor dem Anlegen Name + Fach abfragen (z. B. MM-01). */
+  nameAbfragen?: string;
 }) {
   const router = useRouter();
   const fachFilter = useSearchParams().get("fachId");
   const [isPending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
+  const [dialog, setDialog] = useState(false);
   const sichtbar = eintraege.filter((d) => !fachFilter || d.fach_id === fachFilter);
 
   function neu() {
+    if (nameAbfragen) {
+      setDialog(true);
+      return;
+    }
+    neuAnlegen(fachFilter);
+  }
+
+  function neuAnlegen(fachId: string | null, name?: string) {
     setFehler(null);
     startTransition(async () => {
       try {
-        const id = await anlegen(fachFilter);
-        track(`${eventName}_angelegt`, { mit_fach: Boolean(fachFilter) });
+        const id = await anlegen(fachId, name);
+        track(`${eventName}_angelegt`, { mit_fach: Boolean(fachId) });
         router.push(`${basisPfad}/${id}?neu=1`);
       } catch (err) {
         setFehler("Anlegen hat nicht geklappt.");
@@ -130,6 +143,20 @@ export function ObjektListe({
             })}
           </ul>
         </section>
+      )}
+
+      {dialog && nameAbfragen && (
+        <StapelDialog
+          titel={nameAbfragen}
+          knopf="Anlegen"
+          faecher={faecher}
+          startFachId={fachFilter}
+          onSchliessen={() => setDialog(false)}
+          onSpeichern={async (name, fachId) => {
+            setDialog(false);
+            neuAnlegen(fachId, name);
+          }}
+        />
       )}
     </>
   );

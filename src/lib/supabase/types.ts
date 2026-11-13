@@ -596,6 +596,44 @@ export type Database = {
           },
         ]
       }
+      mindmap: {
+        Row: {
+          daten: Json
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mindmap_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note: {
         Row: {
           bestanden: boolean | null
@@ -967,6 +1005,44 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "todo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whiteboard: {
+        Row: {
+          daten: Json
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whiteboard_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
             referencedColumns: ["id"]
           },
         ]

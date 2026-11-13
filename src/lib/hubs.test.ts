@@ -245,3 +245,66 @@ test("Präsentationen: Folien einlesen, Aufzählung, Reihenfolge", () => {
   assert.equal(designLesen("GOLD"), "GOLD");
   assert.equal(designLesen("x"), "HELL");
 });
+
+import * as mm from "./mindmap/knoten.ts";
+
+test("MindMap: Start, Kinder, Geschwister, Verschieben, Löschen", () => {
+  let d = mm.startDaten("Automaten");
+  const root = mm.wurzel(d)!;
+  assert.equal(root.text, "Automaten");
+  const a = mm.kindHinzufuegen(d, root.id)!;
+  d = a.daten;
+  assert.equal(a.neu.x, mm.ABSTAND_X);
+  const b = mm.kindHinzufuegen(d, root.id)!;
+  d = b.daten;
+  assert.equal(b.neu.y, a.neu.y + mm.ABSTAND_Y);
+  const c = mm.geschwisterHinzufuegen(d, a.neu.id)!; // Enter am Kind -> weiteres Kind der Wurzel
+  d = c.daten;
+  assert.equal(c.neu.parent_id, root.id);
+  const enkel = mm.kindHinzufuegen(d, a.neu.id)!;
+  d = enkel.daten;
+  assert.equal(enkel.neu.x, 2 * mm.ABSTAND_X);
+  // Verschieben nimmt Kinder mit
+  d = mm.verschieben(d, a.neu.id, 10, 20);
+  assert.equal(d.knoten.find((k) => k.id === enkel.neu.id)!.x, 2 * mm.ABSTAND_X + 10);
+  assert.equal(d.knoten.find((k) => k.id === b.neu.id)!.x, mm.ABSTAND_X);
+  // Löschen nimmt Kinder mit, Wurzel nicht löschbar
+  assert.equal(mm.nachkommen(d, a.neu.id).size, 1);
+  assert.equal(mm.loeschen(d, root.id), null);
+  d = mm.loeschen(d, a.neu.id)!;
+  assert.equal(d.knoten.length, 3);
+  // Einlesen repariert verwaiste Knoten
+  const r = mm.datenLesen({ knoten: [{ id: "w", text: "W", x: 0, y: 0, farbe: "#d9a441", parent_id: null }, { id: "x", text: "X", x: 1, y: 1, farbe: "rot", parent_id: "weg" }] }, "N");
+  assert.equal(r.knoten[1].parent_id, "w");
+  assert.equal(r.knoten[1].farbe, "#d9a441");
+  assert.equal(mm.datenLesen(null, "Neu").knoten[0].text, "Neu");
+});
+
+import * as wb from "./whiteboard/elemente.ts";
+
+test("Whiteboard: Rahmen, Verschieben, Größe, Einlesen, Verlauf", () => {
+  const stift: wb.Element = { id: "s", typ: "stift", farbe: "#2a2318", staerke: 2, punkte: [0, 0, 10, 5, 20, -5] };
+  assert.deepEqual(wb.rahmen(stift), { x1: 0, y1: -5, x2: 20, y2: 5 });
+  assert.deepEqual(wb.rahmen(wb.verschieben(stift, 5, 5)), { x1: 5, y1: 0, x2: 25, y2: 10 });
+  const rect = wb.normalisieren({ id: "r", typ: "rechteck", farbe: "#2a2318", staerke: 4, x: 100, y: 100, b: -50, h: -20 });
+  assert.deepEqual(wb.rahmen(rect), { x1: 50, y1: 80, x2: 100, y2: 100 });
+  const groesser = wb.groesseAendern(rect, 150, 180) as wb.Form;
+  assert.equal(groesser.b, 100);
+  assert.equal(groesser.h, 100);
+  const bild = wb.groesseAendern({ id: "b", typ: "bild", farbe: "#2a2318", staerke: 4, x: 0, y: 0, b: 200, h: 100, datei_id: "x" }, 400, 10, true) as wb.Bild;
+  assert.equal(bild.b, 400);
+  assert.equal(bild.h, 200);
+  const linie = wb.groesseAendern({ id: "l", typ: "linie", farbe: "#2a2318", staerke: 2, x1: 0, y1: 0, x2: 1, y2: 1, pfeil: true }, 30, 40) as wb.Linie;
+  assert.equal(linie.x2, 30);
+  assert.equal(wb.punkteAusduennen([0, 0, 0.5, 0.5, 1, 1, 5, 5]).length, 4);
+  assert.match(wb.stiftPfad([0, 0, 10, 10, 20, 0, 30, 10]), /^M 0 0 Q/);
+  // Einlesen verwirft Kaputtes
+  const e = wb.elementeLesen({ elemente: [stift, { typ: "boese" }, { typ: "text", text: "  " }, { typ: "bild", datei_id: "../x" }, { typ: "kreis", x: "1", farbe: "red" }] });
+  assert.equal(e.length, 2);
+  assert.equal(e[1].farbe, "#2a2318");
+  // Verlauf auf 50 begrenzt
+  let v: wb.Verlauf = { zurueck: [], vor: [[stift]] };
+  for (let i = 0; i < 60; i++) v = wb.merken(v, []);
+  assert.equal(v.zurueck.length, 50);
+  assert.equal(v.vor.length, 0);
+});

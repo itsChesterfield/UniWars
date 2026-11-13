@@ -38,10 +38,12 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "MindMap",
+    href: "/mindmap",
     icon: "circle:6,6,2.5|circle:18,7,2.5|circle:10,18,2.5|M8 7.5 15.5 8M8 16 9 9.5",
   },
   {
     name: "Whiteboard",
+    href: "/whiteboard",
     icon: "rect:3,4,18,14,2|m8 21 4-3 4 3|M7 9h6M7 13h9",
   },
   {
