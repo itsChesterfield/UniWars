@@ -556,6 +556,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ki_nutzung: {
+        Row: {
+          erfolgreich: boolean
+          erstellt_am: string
+          funktion: string
+          id: string
+          tokens_aus: number | null
+          tokens_ein: number | null
+          user_id: string
+        }
+        Insert: {
+          erfolgreich?: boolean
+          erstellt_am?: string
+          funktion: string
+          id?: string
+          tokens_aus?: number | null
+          tokens_ein?: number | null
+          user_id: string
+        }
+        Update: {
+          erfolgreich?: boolean
+          erstellt_am?: string
+          funktion?: string
+          id?: string
+          tokens_aus?: number | null
+          tokens_ein?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       kk_karte: {
         Row: {
           box: number
@@ -1065,6 +1095,7 @@ export type Database = {
       }
       settings: {
         Row: {
+          ki_einwilligung: string | null
           sichtbare_widgets: Json
           streak_count: number
           streak_freezes: number
@@ -1075,6 +1106,7 @@ export type Database = {
           work_station: Json
         }
         Insert: {
+          ki_einwilligung?: string | null
           sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
@@ -1085,6 +1117,7 @@ export type Database = {
           work_station?: Json
         }
         Update: {
+          ki_einwilligung?: string | null
           sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
@@ -1302,6 +1335,11 @@ export type Database = {
         }[]
       }
       chat_ungelesen_gesamt: { Args: never; Returns: number }
+      ki_nutzung_abschliessen: {
+        Args: { p_erfolgreich: boolean; p_id: string; p_tokens_aus: number; p_tokens_ein: number }
+        Returns: undefined
+      }
+      ki_nutzung_buchen: { Args: { p_funktion: string; p_limit: number }; Returns: string }
       ist_blockiert: { Args: { p_a: string; p_b: string }; Returns: boolean }
       ist_chat_mitglied: { Args: { p_chat_id: string }; Returns: boolean }
       nachricht_loeschen: { Args: { p_id: string }; Returns: undefined }
