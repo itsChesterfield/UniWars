@@ -74,6 +74,146 @@ export type Database = {
         }
         Relationships: []
       }
+      chat: {
+        Row: {
+          deadline_id: string | null
+          erstellt_am: string
+          erstellt_von: string | null
+          id: string
+          letzte_nachricht_am: string
+          name: string | null
+          typ: string
+        }
+        Insert: {
+          deadline_id?: string | null
+          erstellt_am?: string
+          erstellt_von?: string | null
+          id?: string
+          letzte_nachricht_am?: string
+          name?: string | null
+          typ: string
+        }
+        Update: {
+          deadline_id?: string | null
+          erstellt_am?: string
+          erstellt_von?: string | null
+          id?: string
+          letzte_nachricht_am?: string
+          name?: string | null
+          typ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_deadline_id_fkey"
+            columns: ["deadline_id"]
+            isOneToOne: false
+            referencedRelation: "deadline"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_meldung: {
+        Row: {
+          chat_id: string | null
+          erstellt_am: string
+          gemeldet_user_id: string
+          grund: string
+          id: string
+          von_user_id: string
+        }
+        Insert: {
+          chat_id?: string | null
+          erstellt_am?: string
+          gemeldet_user_id: string
+          grund: string
+          id?: string
+          von_user_id?: string
+        }
+        Update: {
+          chat_id?: string | null
+          erstellt_am?: string
+          gemeldet_user_id?: string
+          grund?: string
+          id?: string
+          von_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_meldung_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_mitglied: {
+        Row: {
+          beigetreten_am: string
+          chat_id: string
+          user_id: string
+          zuletzt_gelesen: string
+        }
+        Insert: {
+          beigetreten_am?: string
+          chat_id: string
+          user_id: string
+          zuletzt_gelesen?: string
+        }
+        Update: {
+          beigetreten_am?: string
+          chat_id?: string
+          user_id?: string
+          zuletzt_gelesen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_mitglied_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_nachricht: {
+        Row: {
+          anhang: Json | null
+          chat_id: string
+          erstellt_am: string
+          geloescht: boolean
+          id: string
+          text: string
+          user_id: string | null
+        }
+        Insert: {
+          anhang?: Json | null
+          chat_id: string
+          erstellt_am?: string
+          geloescht?: boolean
+          id?: string
+          text?: string
+          user_id?: string | null
+        }
+        Update: {
+          anhang?: Json | null
+          chat_id?: string
+          erstellt_am?: string
+          geloescht?: boolean
+          id?: string
+          text?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_nachricht_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chat"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       datei: {
         Row: {
           erstellt_am: string
@@ -675,6 +815,24 @@ export type Database = {
           },
         ]
       }
+      nutzer_blockiert: {
+        Row: {
+          blockiert_id: string
+          erstellt_am: string
+          user_id: string
+        }
+        Insert: {
+          blockiert_id: string
+          erstellt_am?: string
+          user_id?: string
+        }
+        Update: {
+          blockiert_id?: string
+          erstellt_am?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notiz: {
         Row: {
           angepinnt: boolean
@@ -1052,6 +1210,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      benutzer_per_email: {
+        Args: { p_email: string }
+        Returns: { user_id: string; username: string }[]
+      }
+      chat_direkt_starten: { Args: { p_user_id: string }; Returns: string }
+      chat_fuer_deadline: { Args: { p_deadline_id: string }; Returns: string }
+      chat_gelesen: { Args: { p_chat_id: string }; Returns: undefined }
+      chat_gruppe_erstellen: {
+        Args: { p_name: string; p_user_ids: string[] }
+        Returns: string
+      }
+      chat_mitglieder: {
+        Args: { p_chat_id: string }
+        Returns: { user_id: string; username: string }[]
+      }
+      chat_uebersicht: {
+        Args: never
+        Returns: {
+          chat_id: string
+          deadline_id: string | null
+          letzte_nachricht: string | null
+          letzte_nachricht_am: string
+          mitglieder: number
+          name: string | null
+          partner_id: string | null
+          typ: string
+          ungelesen: number
+        }[]
+      }
+      chat_ungelesen_gesamt: { Args: never; Returns: number }
+      ist_blockiert: { Args: { p_a: string; p_b: string }; Returns: boolean }
+      ist_chat_mitglied: { Args: { p_chat_id: string }; Returns: boolean }
+      nachricht_loeschen: { Args: { p_id: string }; Returns: undefined }
+      nachricht_senden: {
+        Args: {
+          p_anhang_id?: string
+          p_anhang_typ?: string
+          p_chat_id: string
+          p_text: string
+        }
+        Returns: {
+          anhang: Json | null
+          chat_id: string
+          erstellt_am: string
+          geloescht: boolean
+          id: string
+          text: string
+          user_id: string | null
+        }
+      }
       benachrichtigungen_fuer_faellige_deadlines: {
         Args: never
         Returns: undefined

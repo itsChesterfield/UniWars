@@ -7,6 +7,7 @@ import { AbmeldenButton, ThemeUmschalter } from "@/components/sidebar-aktionen";
 import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
 import type { Enums } from "@/lib/supabase/types";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
+import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 
@@ -72,6 +73,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Chat",
+    href: "/chat",
     icon: "M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9A1.5 1.5 0 0 1 18.5 16H9l-5 4Z",
   },
 ];
@@ -154,6 +156,7 @@ export function Sidebar({
               <NavIcon path={hub.icon} />
               {hub.name}
               {hub.href === "/work-station" && <TimerRest />}
+              {hub.href === "/chat" && <ChatPunkt />}
             </Link>
           ) : (
             <span key={hub.name} className="navitem disabled" title="Demnächst verfügbar">
