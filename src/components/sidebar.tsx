@@ -51,6 +51,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Textverarbeitung",
+    href: "/textverarbeitung",
     icon: "M5 7V5h14v2M12 5v14M9.5 19h5",
   },
   {

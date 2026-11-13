@@ -204,6 +204,50 @@ export type Database = {
           },
         ]
       }
+      dokument: {
+        Row: {
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          inhalt: Json
+          klartext: string
+          titel: string
+          user_id: string
+          woerter: number
+        }
+        Insert: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: Json
+          klartext?: string
+          titel?: string
+          user_id?: string
+          woerter?: number
+        }
+        Update: {
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: Json
+          klartext?: string
+          titel?: string
+          user_id?: string
+          woerter?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dokument_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       einladung: {
         Row: {
           an_user_id: string
@@ -679,6 +723,47 @@ export type Database = {
           },
         ]
       }
+      praesentation: {
+        Row: {
+          design: string
+          erstellt_am: string
+          fach_id: string | null
+          folien: Json
+          geaendert_am: string
+          id: string
+          titel: string
+          user_id: string
+        }
+        Insert: {
+          design?: string
+          erstellt_am?: string
+          fach_id?: string | null
+          folien?: Json
+          geaendert_am?: string
+          id?: string
+          titel: string
+          user_id?: string
+        }
+        Update: {
+          design?: string
+          erstellt_am?: string
+          fach_id?: string | null
+          folien?: Json
+          geaendert_am?: string
+          id?: string
+          titel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "praesentation_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pruefung: {
         Row: {
           datum: string
@@ -787,6 +872,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "stundenplan_eintrag_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tabelle: {
+        Row: {
+          daten: Json
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          titel: string
+          user_id: string
+        }
+        Insert: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          titel?: string
+          user_id?: string
+        }
+        Update: {
+          daten?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          titel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tabelle_fach_id_fkey"
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"
