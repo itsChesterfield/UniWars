@@ -3530,23 +3530,23 @@ dialog.dat-vorschau {
   top: 0;
 }
 
+/* Wie ein echter Textmarker: Farbe wird mit der Seite multipliziert –
+   Papier wird farbig, schwarze Schrift bleibt schwarz. Kein z-index hier,
+   sonst mischt sich die Ebene nur mit sich selbst statt mit der Seite. */
 .pdf-markierungen {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  mix-blend-mode: multiply;
 }
 
 .pdf-marker {
   position: absolute;
   border-radius: 2px;
-  opacity: 0.5;
-  mix-blend-mode: multiply;
 }
 
 .pdf-marker.aktiv {
-  opacity: 0.75;
-  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline: 2px solid rgba(0, 0, 0, 0.45);
   outline-offset: 1px;
 }
 
