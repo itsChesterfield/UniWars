@@ -887,6 +887,53 @@ export type Database = {
           },
         ]
       }
+      pdf_markierung: {
+        Row: {
+          datei_id: string
+          erstellt_am: string
+          farbe: string
+          geaendert_am: string
+          id: string
+          notiz: string | null
+          rechtecke: Json
+          seite: number
+          text: string
+          user_id: string
+        }
+        Insert: {
+          datei_id: string
+          erstellt_am?: string
+          farbe?: string
+          geaendert_am?: string
+          id?: string
+          notiz?: string | null
+          rechtecke: Json
+          seite: number
+          text?: string
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string
+          erstellt_am?: string
+          farbe?: string
+          geaendert_am?: string
+          id?: string
+          notiz?: string | null
+          rechtecke?: Json
+          seite?: number
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_markierung_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdf_stand: {
         Row: {
           datei_id: string

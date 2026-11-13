@@ -3,13 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfReader } from "@/components/pdf-reader/pdf-reader";
+import { alsRechtecke, istFarbe } from "@/lib/pdf-reader/markierungen";
 
 export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: datei, error }, { data: stand }] = await Promise.all([
+  const [{ data: datei, error }, { data: stand }, { data: markierungen }] = await Promise.all([
     supabase.from("datei").select("id, name, mime_typ, speicher_pfad").eq("id", id).maybeSingle(),
     supabase.from("pdf_stand").select("letzte_seite, lesezeichen").eq("datei_id", id).maybeSingle(),
+    // Fehlt die Tabelle noch, bleibt die Liste einfach leer
+    supabase.from("pdf_markierung").select("id, seite, farbe, rechtecke, text, notiz").eq("datei_id", id).order("seite").order("erstellt_am"),
   ]);
 
   if (tabelleFehlt(error)) {
@@ -34,6 +37,11 @@ export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id
       url={link.signedUrl}
       startSeite={stand?.letzte_seite ?? 1}
       startLesezeichen={stand?.lesezeichen ?? []}
+      startMarkierungen={(markierungen ?? []).map((m) => ({
+        ...m,
+        farbe: istFarbe(m.farbe) ? m.farbe : "GELB",
+        rechtecke: alsRechtecke(m.rechtecke),
+      }))}
     />
   );
 }

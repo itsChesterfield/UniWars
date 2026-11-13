@@ -3401,7 +3401,7 @@ dialog.dat-vorschau {
 }
 
 .pdf-koerper.mit-leiste {
-  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
 }
 
 .pdf-seitenleiste {
@@ -3423,7 +3423,7 @@ dialog.dat-vorschau {
   padding: 0;
 }
 
-.pdf-seitenleiste button {
+.pdf-seitenleiste li > button {
   width: 100%;
   text-align: left;
   border: none;
@@ -3435,8 +3435,8 @@ dialog.dat-vorschau {
   cursor: pointer;
 }
 
-.pdf-seitenleiste button:hover,
-.pdf-seitenleiste button.aktiv {
+.pdf-seitenleiste li > button:hover,
+.pdf-seitenleiste li > button.aktiv {
   background: var(--accent-soft);
 }
 
@@ -3514,6 +3514,235 @@ dialog.dat-vorschau {
 
 .pdf-seite .textLayer .highlight.selected {
   background-color: rgba(193, 78, 52, 0.45);
+}
+
+/* Textmarker */
+.pdf-seite .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+.pdf-seite .textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+.pdf-markierungen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pdf-marker {
+  position: absolute;
+  border-radius: 2px;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
+.pdf-marker.aktiv {
+  opacity: 0.75;
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 1px;
+}
+
+.pdf-marker.mit-notiz {
+  border-bottom: 2px dotted rgba(0, 0, 0, 0.45);
+}
+
+.pdf-flaeche.stift-an .textLayer :is(span, br) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='m9 15 6.5-11.2a1.6 1.6 0 0 1 2.2-.6l1.9 1.1a1.6 1.6 0 0 1 .6 2.2L13.7 17.7Z' fill='%23fff'/%3E%3Cpath d='m9 15-1.4 2.4 1.2 2.6 3.6.3 1.3-2.6' fill='%23fff'/%3E%3C/svg%3E") 3 21, text;
+}
+
+.pdf-flaeche.stift-an .textLayer ::selection {
+  background: rgba(250, 204, 21, 0.45);
+}
+
+.pdf-stift-gruppe {
+  gap: 6px;
+}
+
+.icon-knopf.pdf-stift.an {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--marker);
+}
+
+.pdf-farben {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pdf-farbpunkt {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--marker);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+}
+
+.pdf-farbpunkt:hover {
+  transform: scale(1.12);
+}
+
+.pdf-farbpunkt.an {
+  border-color: var(--text);
+}
+
+.pdf-farben.klein .pdf-farbpunkt {
+  width: 16px;
+  height: 16px;
+}
+
+.pdf-markier-menue {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.pdf-markier-menue.unten {
+  transform: translate(-50%, 0);
+}
+
+.pdf-markier-menue.gross {
+  flex-direction: column;
+  align-items: stretch;
+  width: min(300px, calc(100vw - 24px));
+}
+
+.pdf-menue-label {
+  font-size: 15px;
+}
+
+.pdf-menue-knoepfe {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.pdf-menue-knopf {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pdf-menue-knopf:hover,
+.pdf-menue-knopf.an {
+  background: var(--accent-soft);
+}
+
+.pdf-menue-knopf.gefahr:hover {
+  background: rgba(193, 78, 52, 0.15);
+}
+
+.pdf-notiz {
+  width: 100%;
+  resize: vertical;
+  font-size: 13px;
+}
+
+.pdf-leisten-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.pdf-leisten-tabs .seg {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.pdf-liste-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pdf-markier-liste {
+  display: grid;
+  gap: 6px;
+}
+
+.pdf-markier-liste li {
+  position: relative;
+  border-left: 4px solid var(--marker);
+  border-radius: 6px;
+  background: var(--card2);
+}
+
+.pdf-seitenleiste .pdf-markier-liste li > button:first-child {
+  display: grid;
+  gap: 3px;
+  padding: 7px 26px 7px 9px;
+}
+
+.pdf-markier-seite {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pdf-markier-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.pdf-markier-notiz {
+  font-size: 12px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pdf-seitenleiste .pdf-markier-weg {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: auto;
+  padding: 3px 6px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0;
+}
+
+.pdf-markier-liste li:hover .pdf-markier-weg,
+.pdf-markier-weg:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .pdf-seitenleiste .pdf-markier-weg {
+    opacity: 1;
+  }
 }
 
 /* --- Literaturverwaltung --- */
@@ -3689,7 +3918,11 @@ dialog.dat-vorschau {
   }
 
   .pdf-seitenleiste {
-    max-height: 140px;
+    max-height: 220px;
+  }
+
+  .pdf-stift-gruppe .pdf-farben {
+    gap: 3px;
   }
 
   .pdf-flaeche {
