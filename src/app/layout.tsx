@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AnalyticsBanner } from "@/components/analytics-banner";
 
-const ueberschrift = Bricolage_Grotesque({
-  variable: "--font-display",
-  subsets: ["latin", "latin-ext"],
-});
-
-const fliesstext = Plus_Jakarta_Sans({
+// Eine schlichte Schrift für alles – Überschriften nutzen sie über --font-display (globals.css)
+const schrift = Inter({
   variable: "--font-body",
   subsets: ["latin", "latin-ext"],
 });
@@ -27,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="de"
-      className={`${ueberschrift.variable} ${fliesstext.variable} ${zahlen.variable}`}
+      className={`${schrift.variable} ${zahlen.variable}`}
     >
       <body>
         {children}
