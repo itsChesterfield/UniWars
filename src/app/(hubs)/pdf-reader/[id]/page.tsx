@@ -4,6 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfReader } from "@/components/pdf-reader/pdf-reader";
 import { alsRechtecke, istFarbe } from "@/lib/pdf-reader/markierungen";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,6 +38,7 @@ export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id
       url={link.signedUrl}
       startSeite={stand?.letzte_seite ?? 1}
       startLesezeichen={stand?.lesezeichen ?? []}
+      kiVerfuegbar={kiKonfiguriert()}
       startMarkierungen={(markierungen ?? []).map((m) => ({
         ...m,
         farbe: istFarbe(m.farbe) ? m.farbe : "GELB",

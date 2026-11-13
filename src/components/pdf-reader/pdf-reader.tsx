@@ -20,6 +20,7 @@ import {
   type Farbe,
   type Rechteck,
 } from "@/lib/pdf-reader/markierungen";
+import { KiPdfLeiste } from "@/components/pdf-reader/ki-pdf-leiste";
 import { AuswahlMenue, FarbPunkte, MarkierungMenue, MarkierungsListe, type MenuePosition } from "@/components/pdf-reader/markier-menue";
 
 type Zoom = "breite" | "seite" | number;
@@ -75,12 +76,15 @@ export function PdfReader({
   startSeite,
   startLesezeichen,
   startMarkierungen,
+  kiVerfuegbar = false,
 }: {
   datei: { id: string; name: string };
   url: string;
   startSeite: number;
   startLesezeichen: number[];
   startMarkierungen: Markierung[];
+  /** KI-03: Mistral-Key gesetzt → "✨ KI"-Knopf anzeigen */
+  kiVerfuegbar?: boolean;
 }) {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [masse, setMasse] = useState<Masse[]>([]);
@@ -101,6 +105,7 @@ export function PdfReader({
   const [gefundeneTreffer, setTreffer] = useState<{ suche: string; liste: Treffer[] }>({ suche: "", liste: [] });
   const [trefferIndex, setTrefferIndex] = useState(0);
   const [sucht, setSucht] = useState(false);
+  const [kiOffen, setKiOffen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const seitenRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -674,6 +679,18 @@ export function PdfReader({
           >
             🔍
           </button>
+          {kiVerfuegbar && (
+            <button
+              type="button"
+              className={`btng pdf-ki-knopf ${kiOffen ? "an" : ""}`}
+              aria-expanded={kiOffen}
+              title="Fragen zum Skript, Seiten zusammenfassen, Karteikarten"
+              onClick={() => setKiOffen((o) => !o)}
+              disabled={!doc}
+            >
+              ✨ KI
+            </button>
+          )}
         </div>
       </div>
 
@@ -712,7 +729,7 @@ export function PdfReader({
         </div>
       )}
 
-      <div className={`pdf-koerper ${seitenleiste ? "mit-leiste" : ""}`}>
+      <div className={`pdf-koerper ${seitenleiste ? "mit-leiste" : ""} ${kiOffen && doc ? "mit-ki" : ""}`}>
         {seitenleiste && (
           <aside className="pdf-seitenleiste" aria-label="Markierungen und Lesezeichen">
             <div className="segwrap pdf-leisten-tabs" role="tablist">
@@ -794,6 +811,17 @@ export function PdfReader({
               />
             ))}
         </div>
+
+        {kiOffen && doc && (
+          <KiPdfLeiste
+            doc={doc}
+            datei={datei}
+            seite={seite}
+            seitenText={seitenText}
+            onSeite={(nr) => zuSeite(nr, "smooth")}
+            onSchliessen={() => setKiOffen(false)}
+          />
+        )}
       </div>
 
       {auswahlMenue && <AuswahlMenue pos={auswahlMenue} onMarkieren={markieren} onKopieren={() => {

@@ -15,6 +15,8 @@ import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { ERLAUBTE_ANZAHL, MAX_SEITE_ZEICHEN, type KartenAnzahl } from "@/lib/ki/karten";
 import type { KiFehlerTyp } from "@/lib/ki/fehler";
+import type { KiErgebnis } from "@/lib/ki/ergebnis";
+import type { Vorschlag } from "@/lib/ki/karten";
 import type { FachOption } from "@/lib/fach-option";
 import { track } from "@/lib/analytics";
 
@@ -28,20 +30,30 @@ function fehlerTracken(typ: KiFehlerTyp) {
   if (typ === "limit" || typ === "ausgelastet" || typ === "keine_karten" || typ === "technisch") track("ki_fehler", { typ });
 }
 
+export type KartenVorschlagen = (anzahl: KartenAnzahl) => Promise<KiErgebnis<{ karten: Vorschlag[]; gekuerzt: boolean; verbleibendHeute: number }>>;
+
 /**
- * KI-01: Karteikarten aus einer Notiz erstellen.
+ * KI-01: Karteikarten aus einer Notiz erstellen – oder aus anderem Material (KI-03 PDF-Seiten,
+ * KI-04 Transkript), dann mit eigener `vorschlagen`-Funktion.
  * Nichts wird gespeichert, bevor der Nutzer die Vorschläge bestätigt.
  */
 export function KiKartenDialog({
   notiz,
   faecher,
-  vorher,
+  vorher = async () => undefined,
+  vorschlagen,
+  ladeText = "Die KI liest deine Notiz …",
+  kuerzungsText = "Nur der Anfang der Notiz wurde verwendet.",
   onSchliessen,
 }: {
-  notiz: { id: string; titel: string; fach_id: string | null };
+  /** Herkunft: bei Notizen mit id (wird an der Karte vermerkt) */
+  notiz: { id?: string | null; titel: string; fach_id: string | null };
   faecher: FachOption[];
   /** Ausstehende Änderungen der Notiz speichern, damit die KI den aktuellen Stand liest */
-  vorher: () => Promise<void>;
+  vorher?: () => Promise<void>;
+  vorschlagen?: KartenVorschlagen;
+  ladeText?: string;
+  kuerzungsText?: string;
   onSchliessen: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -97,7 +109,7 @@ export function KiKartenDialog({
     } catch {
       // Speichern läuft im Hintergrund weiter – die KI liest dann den letzten gespeicherten Stand
     }
-    const antwort = await karteikartenVorschlagen(notiz.id, anzahl).catch(() => null);
+    const antwort = await (vorschlagen ? vorschlagen(anzahl) : karteikartenVorschlagen(notiz.id ?? "", anzahl)).catch(() => null);
     if (!antwort) {
       setFehler("Da ist etwas schiefgelaufen. Bitte versuch es noch einmal.");
       fehlerTracken("technisch");
@@ -133,7 +145,7 @@ export function KiKartenDialog({
     const antwort = await vorschlaegeUebernehmen(
       zielAngabe,
       ausgewaehlt.map((e) => ({ vorderseite: e.vorderseite, rueckseite: e.rueckseite })),
-      { notizId: notiz.id },
+      { notizId: notiz.id ?? null },
     ).catch(() => null);
     setSpeichert(false);
     if (!antwort?.ok) {
@@ -261,13 +273,13 @@ export function KiKartenDialog({
       )}
 
       {schritt === "erstellt" && (
-        <KiLadeZustand text="Die KI liest deine Notiz …" untertext="Das dauert meist ein paar Sekunden." />
+        <KiLadeZustand text={ladeText} untertext="Das dauert meist ein paar Sekunden." />
       )}
 
       {schritt === "vorschau" && (
         <>
           <p className="ki-hinweis">⚠️ Prüf die Karten, die KI kann sich irren.</p>
-          {gekuerzt && <p className="ki-hinweis">✂️ Nur der Anfang der Notiz wurde verwendet.</p>}
+          {gekuerzt && <p className="ki-hinweis">✂️ {kuerzungsText}</p>}
           <ul className="ki-vorschau">
             {entwuerfe.map((e, i) => (
               <li key={e.id} className={e.an ? "" : "aus"}>
