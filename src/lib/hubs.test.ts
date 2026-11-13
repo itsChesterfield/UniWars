@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag } from "./zeit.ts";
-import { naechsteWiederholung, istFaellig } from "./karteikarten/leitner.ts";
+import { bewerten, boxAusIntervall, intervallText, istFaellig, reife, type KartenStand } from "./karteikarten/wiederholung.ts";
 import {
   WS_STANDARD,
   abschliessen,
@@ -33,12 +33,57 @@ test("Berlin-Mitternacht auch über Zeitumstellung", () => {
   assert.equal(berlinMitternacht("2026-12-31", 1).toISOString(), "2026-12-31T23:00:00.000Z");
 });
 
-test("Leitner: gewusst eine Box höher, max 5; nicht gewusst zurück auf 1", () => {
-  assert.deepEqual(naechsteWiederholung(1, "gewusst"), { box: 2, tage: 2 });
-  assert.deepEqual(naechsteWiederholung(4, "gewusst"), { box: 5, tage: 16 });
-  assert.deepEqual(naechsteWiederholung(5, "gewusst"), { box: 5, tage: 16 });
-  assert.deepEqual(naechsteWiederholung(5, "nicht_gewusst"), { box: 1, tage: 1 });
-  assert.deepEqual(naechsteWiederholung(2, "nicht_gewusst"), { box: 1, tage: 1 });
+const NEU: KartenStand = { intervall_tage: 0, leichtigkeit: 2.5, wiederholungen: 0, fehler: 0 };
+
+test("Spaced Repetition: neue Karte – Nochmal < Schwer < Gut < Einfach", () => {
+  assert.deepEqual(bewerten(NEU, 1), { intervall_tage: 0, leichtigkeit: 2.3, wiederholungen: 0, fehler: 0 });
+  assert.equal(bewerten(NEU, 2).intervall_tage, 1);
+  assert.equal(bewerten(NEU, 3).intervall_tage, 2);
+  assert.equal(bewerten(NEU, 4).intervall_tage, 4);
+  assert.equal(bewerten(NEU, 4).leichtigkeit, 2.65);
+});
+
+test("Spaced Repetition: Intervalle wachsen mit 'Gut' immer weiter", () => {
+  let k = NEU;
+  const folge: number[] = [];
+  for (let i = 0; i < 5; i++) {
+    k = bewerten(k, 3);
+    folge.push(k.intervall_tage);
+  }
+  assert.deepEqual(folge, [2, 4, 10, 25, 63]);
+  // Reihenfolge bleibt bei jedem Stand erhalten
+  for (const stand of [k, { ...k, leichtigkeit: 1.3 }, { ...NEU, wiederholungen: 1, intervall_tage: 2 }]) {
+    const [s, g, e] = [2, 3, 4].map((b) => bewerten(stand, b as 2 | 3 | 4).intervall_tage);
+    assert.ok(s < g && g < e, `${s} < ${g} < ${e}`);
+  }
+});
+
+test("Spaced Repetition: Vergessen setzt zurück, zählt Fehler, Leichtigkeit hat Grenzen", () => {
+  const gelernt: KartenStand = { intervall_tage: 30, leichtigkeit: 2.5, wiederholungen: 4, fehler: 0 };
+  assert.deepEqual(bewerten(gelernt, 1), { intervall_tage: 0, leichtigkeit: 2.3, wiederholungen: 0, fehler: 1 });
+  let schwer = gelernt;
+  for (let i = 0; i < 20; i++) schwer = bewerten(schwer, 2);
+  assert.equal(schwer.leichtigkeit, 1.3);
+  let leicht = NEU;
+  for (let i = 0; i < 30; i++) leicht = bewerten(leicht, 4);
+  assert.equal(leicht.leichtigkeit, 5);
+  assert.equal(leicht.intervall_tage, 3650);
+});
+
+test("Spaced Repetition: Anzeige-Texte, Reife und alte Box", () => {
+  assert.equal(intervallText(0), "10 Min.");
+  assert.equal(intervallText(3), "3 T.");
+  assert.equal(intervallText(21), "3 Wo.");
+  assert.equal(intervallText(90), "3 Mon.");
+  assert.equal(intervallText(540), "1,5 J.");
+  assert.equal(reife({ intervall_tage: 0, zuletzt_gelernt: null }), "neu");
+  assert.equal(reife({ intervall_tage: 0, zuletzt_gelernt: "2026-11-13T10:00:00Z" }), "lernen");
+  assert.equal(reife({ intervall_tage: 5, zuletzt_gelernt: null }), "jung");
+  assert.equal(reife({ intervall_tage: 40, zuletzt_gelernt: "2026-11-13T10:00:00Z" }), "sicher");
+  assert.deepEqual([0, 1, 4, 10, 30].map(boxAusIntervall), [1, 2, 3, 4, 5]);
+});
+
+test("Fälligkeit und Berlin-Mitternacht", () => {
   // morgen 0 Uhr Berlin, gesehen am 13.11. um 11 Uhr
   assert.equal(berlinMitternacht(berlinDatum(new Date("2026-11-13T10:00:00Z")), 1).toISOString(), "2026-11-13T23:00:00.000Z");
   const jetzt = new Date("2026-11-13T10:00:00Z");

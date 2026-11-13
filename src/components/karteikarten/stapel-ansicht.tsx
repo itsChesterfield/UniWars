@@ -19,6 +19,20 @@ import { KartenFormular } from "@/components/karteikarten/karten-formular";
 import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { intervallText, reife, REIFE_TEXT, type Reife } from "@/lib/karteikarten/wiederholung";
+import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
+
+const TAG_MS = 86_400_000;
+
+/** "fällig", "gleich", "morgen", "in 5 T." – relativ zu heute (Berlin). */
+function wannWieder(naechste: string, jetzt: Date, heute0: Date): string {
+  const zeit = new Date(naechste).getTime();
+  if (zeit <= jetzt.getTime()) return "fällig";
+  const tage = Math.round((zeit - heute0.getTime()) / TAG_MS);
+  if (tage <= 0) return "gleich";
+  if (tage === 1) return "morgen";
+  return `in ${intervallText(tage)}`;
+}
 
 export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stapel; karten: Karte[]; faecher: FachOption[] }) {
   const router = useRouter();
@@ -28,8 +42,19 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
   const [stapelDialog, setStapelDialog] = useState(false);
 
   const fach = faecher.find((f) => f.id === stapel.fach_id) ?? null;
-  const jetzt = new Date().toISOString();
+  const jetztDatum = new Date();
+  const jetzt = jetztDatum.toISOString();
   const faellig = karten.filter((k) => k.naechste_abfrage <= jetzt).length;
+  const heute = berlinDatum(jetztDatum);
+  const heute0 = berlinMitternacht(heute, 0);
+  const bisMorgen = berlinMitternacht(heute, 2).toISOString();
+  const bisWoche = berlinMitternacht(heute, 8).toISOString();
+  const reifeZahl = karten.reduce<Record<Reife, number>>(
+    (z, k) => ({ ...z, [reife(k)]: z[reife(k)] + 1 }),
+    { neu: 0, lernen: 0, jung: 0, sicher: 0 },
+  );
+  const morgen = karten.filter((k) => k.naechste_abfrage > jetzt && k.naechste_abfrage < bisMorgen).length;
+  const woche = karten.filter((k) => k.naechste_abfrage < bisWoche).length;
 
   async function stapelEntfernen() {
     if (!window.confirm(`Stapel „${stapel.name}“ mit allen Karten wirklich löschen?`)) return;
@@ -95,6 +120,27 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
         }
       />
 
+      {karten.length > 0 && (
+        <section className="card kk-lernstand" aria-label="Lernstand">
+          <ul className="kk-reife-zahlen">
+            {(Object.keys(REIFE_TEXT) as Reife[]).map((r) => (
+              <li key={r} className={`kk-reife-${r}`}>
+                <strong className="mono">{reifeZahl[r]}</strong>
+                <span>{REIFE_TEXT[r]}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="kk-reife-balken" aria-hidden>
+            {(Object.keys(REIFE_TEXT) as Reife[]).map((r) =>
+              reifeZahl[r] > 0 ? <span key={r} className={`kk-reife-${r}`} style={{ flexGrow: reifeZahl[r] }} /> : null,
+            )}
+          </div>
+          <p className="muted kk-vorschau-zeile">
+            Fällig: <strong>{faellig}</strong> jetzt · <strong>{morgen}</strong> morgen · <strong>{woche}</strong> in den nächsten 7 Tagen
+          </p>
+        </section>
+      )}
+
       {neuOffen && (
         <div className="card">
           <h2 className="ct" style={{ marginBottom: 12 }}>
@@ -156,8 +202,11 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
                       <span className="kk-karte-vorne">{markdownAlsText(k.vorderseite) || "—"}</span>
                       <span className="kk-karte-hinten muted">{markdownAlsText(k.rueckseite)}</span>
                     </button>
-                    <span className="tag" title={`Box ${k.box} von 5`}>
-                      Box {k.box}
+                    <span
+                      className={`tag kk-reife-tag kk-reife-${reife(k)}`}
+                      title={`${REIFE_TEXT[reife(k)]} · Intervall ${k.intervall_tage} Tage · ${k.wiederholungen}× in Folge gewusst · ${k.fehler}× vergessen`}
+                    >
+                      {REIFE_TEXT[reife(k)]} · {wannWieder(k.naechste_abfrage, jetztDatum, heute0)}
                     </span>
                     <DreiPunkteMenue
                       punkte={[

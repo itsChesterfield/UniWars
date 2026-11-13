@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { istFaellig } from "@/lib/karteikarten/leitner";
+import { istFaellig } from "@/lib/karteikarten/wiederholung";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { Lernmodus } from "@/components/karteikarten/lernmodus";
 
@@ -10,7 +10,7 @@ export default async function LernSeite({ params }: { params: Promise<{ id: stri
   const supabase = await createClient();
   const [{ data: stapel, error }, { data: karten }] = await Promise.all([
     supabase.from("kk_stapel").select("id, name").eq("id", id).maybeSingle(),
-    supabase.from("kk_karte").select("id, vorderseite, rueckseite, box, naechste_abfrage").eq("stapel_id", id),
+    supabase.from("kk_karte").select("id, vorderseite, rueckseite, naechste_abfrage, intervall_tage, leichtigkeit, wiederholungen, fehler").eq("stapel_id", id),
   ]);
 
   if (tabelleFehlt(error)) {

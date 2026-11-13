@@ -560,35 +560,50 @@ export type Database = {
         Row: {
           box: number
           erstellt_am: string
+          fehler: number
           geaendert_am: string
           id: string
+          intervall_tage: number
+          leichtigkeit: number
           naechste_abfrage: string
           rueckseite: string
           stapel_id: string
           user_id: string
           vorderseite: string
+          wiederholungen: number
+          zuletzt_gelernt: string | null
         }
         Insert: {
           box?: number
           erstellt_am?: string
+          fehler?: number
           geaendert_am?: string
           id?: string
+          intervall_tage?: number
+          leichtigkeit?: number
           naechste_abfrage?: string
           rueckseite: string
           stapel_id: string
           user_id?: string
           vorderseite: string
+          wiederholungen?: number
+          zuletzt_gelernt?: string | null
         }
         Update: {
           box?: number
           erstellt_am?: string
+          fehler?: number
           geaendert_am?: string
           id?: string
+          intervall_tage?: number
+          leichtigkeit?: number
           naechste_abfrage?: string
           rueckseite?: string
           stapel_id?: string
           user_id?: string
           vorderseite?: string
+          wiederholungen?: number
+          zuletzt_gelernt?: string | null
         }
         Relationships: [
           {

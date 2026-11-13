@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { anzahlFaellig } from "@/lib/karteikarten/leitner";
+import { anzahlFaellig } from "@/lib/karteikarten/wiederholung";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { StapelUebersicht, type StapelKachel } from "@/components/karteikarten/stapel-uebersicht";
 

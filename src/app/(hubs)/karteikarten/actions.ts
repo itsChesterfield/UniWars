@@ -2,7 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { naechsteWiederholung, STREAK_MIN_KARTEN, type Antwort } from "@/lib/karteikarten/leitner";
+import {
+  bewerten,
+  boxAusIntervall,
+  istBewertung,
+  NOCHMAL_MINUTEN,
+  STREAK_MIN_KARTEN,
+  type Bewertung,
+  type KartenStand,
+} from "@/lib/karteikarten/wiederholung";
 import { lernaktivitaetVermerken } from "@/lib/hubs/lernaktivitaet";
 import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
 import type { Tables } from "@/lib/supabase/types";
@@ -103,17 +111,36 @@ export async function karteLoeschen(id: string) {
   if (data) revalidatePath(`/karteikarten/${data.stapel_id}`);
 }
 
-/** KK-04/KK-05: Antwort sofort speichern, damit ein Abbruch nichts verliert. */
-export async function karteBeantworten(id: string, antwort: Antwort) {
+/**
+ * KK-04/KK-05: Bewertung sofort speichern, damit ein Abbruch nichts verliert.
+ * Gibt den neuen Stand zurück (für die Anzeige im Lernmodus).
+ */
+export async function karteBeantworten(id: string, bewertung: Bewertung): Promise<KartenStand & { naechste_abfrage: string }> {
+  if (!istBewertung(bewertung)) throw new Error("Ungültige Bewertung");
   const { supabase } = await nutzer();
-  const { data: karte, error: ladeFehler } = await supabase.from("kk_karte").select("box").eq("id", id).single();
+  const { data: karte, error: ladeFehler } = await supabase
+    .from("kk_karte")
+    .select("intervall_tage, leichtigkeit, wiederholungen, fehler")
+    .eq("id", id)
+    .single();
   if (ladeFehler) throw new Error(ladeFehler.message);
-  const { box, tage } = naechsteWiederholung(karte.box, antwort);
+  const stand = bewerten(karte, bewertung);
+  const jetzt = new Date();
+  const naechste =
+    stand.intervall_tage === 0
+      ? new Date(jetzt.getTime() + NOCHMAL_MINUTEN * 60_000)
+      : berlinMitternacht(berlinDatum(), stand.intervall_tage);
   const { error } = await supabase
     .from("kk_karte")
-    .update({ box, naechste_abfrage: berlinMitternacht(berlinDatum(), tage).toISOString() })
+    .update({
+      ...stand,
+      box: boxAusIntervall(stand.intervall_tage),
+      naechste_abfrage: naechste.toISOString(),
+      zuletzt_gelernt: jetzt.toISOString(),
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  return { ...stand, naechste_abfrage: naechste.toISOString() };
 }
 
 /** KK-06: Lernrunde abgeschlossen – ab 10 Karten zählt sie für den Streak. */

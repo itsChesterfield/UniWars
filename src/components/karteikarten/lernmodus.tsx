@@ -1,27 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { karteBeantworten, lernrundeAbschliessen } from "@/app/(hubs)/karteikarten/actions";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
-import { STREAK_MIN_KARTEN, type Antwort } from "@/lib/karteikarten/leitner";
+import {
+  BEWERTUNGEN,
+  bewerten,
+  intervallText,
+  STREAK_MIN_KARTEN,
+  type Bewertung,
+  type KartenStand,
+} from "@/lib/karteikarten/wiederholung";
 import { fehlerMelden, track } from "@/lib/analytics";
 
-type LernKarte = { id: string; vorderseite: string; rueckseite: string; box: number; naechste_abfrage: string };
+type LernKarte = KartenStand & { id: string; vorderseite: string; rueckseite: string; naechste_abfrage: string };
 
-// Niedrige Boxen (schwierige Karten) zuerst, innerhalb einer Box gemischt.
+// Kurze Intervalle (schwierige/neue Karten) zuerst, sonst gemischt.
 function reihenfolge(karten: LernKarte[]) {
   return karten
     .map((k) => ({ k, zufall: Math.random() }))
-    .sort((a, b) => a.k.box - b.k.box || a.zufall - b.zufall)
+    .sort((a, b) => Math.min(a.k.intervall_tage, 3) - Math.min(b.k.intervall_tage, 3) || a.zufall - b.zufall)
     .map(({ k }) => k);
 }
 
-type Runde = { karten: LernKarte[]; index: number; umgedreht: boolean; gewusst: number; nichtGewusst: number; fertig: boolean };
+/** "Nochmal"-Karten kommen nach so vielen anderen Karten in derselben Runde wieder. */
+const NOCHMAL_ABSTAND = 3;
+
+type Zaehler = Record<Bewertung, number>;
+type Runde = { karten: LernKarte[]; index: number; umgedreht: boolean; zaehler: Zaehler; fertig: boolean };
+
+const LEER: Zaehler = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
 function neueRunde(karten: LernKarte[]): Runde {
-  return { karten: reihenfolge(karten), index: 0, umgedreht: false, gewusst: 0, nichtGewusst: 0, fertig: false };
+  return { karten: reihenfolge(karten), index: 0, umgedreht: false, zaehler: { ...LEER }, fertig: false };
 }
+
+const summe = (z: Zaehler) => z[1] + z[2] + z[3] + z[4];
 
 export function Lernmodus({
   stapel,
@@ -35,6 +50,8 @@ export function Lernmodus({
 }) {
   const [runde, setRunde] = useState<Runde | null>(() => (faellige.length > 0 ? neueRunde(faellige) : null));
   const [speicherFehler, setSpeicherFehler] = useState(false);
+  // Antworten pro Karte nacheinander speichern ("Nochmal" + spätere Antwort derselben Karte)
+  const speicherKette = useRef(new Map<string, Promise<unknown>>());
 
   useEffect(() => {
     if (faellige.length > 0) track("kk_lernen_gestartet", { karten: faellige.length, alle: false });
@@ -42,11 +59,18 @@ export function Lernmodus({
 
   const beenden = useCallback(
     (r: Runde) => {
-      const beantwortet = r.gewusst + r.nichtGewusst;
+      const beantwortet = summe(r.zaehler);
       setRunde({ ...r, fertig: true });
       if (beantwortet > 0) {
-        track("kk_lernrunde_beendet", { gewusst: r.gewusst, nicht_gewusst: r.nichtGewusst, vollstaendig: r.index >= r.karten.length });
-        lernrundeAbschliessen(stapel.id, beantwortet).catch((err) => fehlerMelden(err, { ort: "kk_lernrunde" }));
+        track("kk_lernrunde_beendet", {
+          nochmal: r.zaehler[1],
+          schwer: r.zaehler[2],
+          gut: r.zaehler[3],
+          einfach: r.zaehler[4],
+          vollstaendig: r.index >= r.karten.length,
+        });
+        const karten = new Set(r.karten.slice(0, r.index).map((k) => k.id)).size;
+        lernrundeAbschliessen(stapel.id, karten).catch((err) => fehlerMelden(err, { ort: "kk_lernrunde" }));
       }
     },
     [stapel.id],
@@ -57,35 +81,47 @@ export function Lernmodus({
   }, []);
 
   const antworten = useCallback(
-    (antwort: Antwort) => {
+    (bewertung: Bewertung) => {
       if (!runde || runde.fertig || !runde.umgedreht) return;
       const karte = runde.karten[runde.index];
-      karteBeantworten(karte.id, antwort).catch((err) => {
-        setSpeicherFehler(true);
-        fehlerMelden(err, { ort: "kk_beantworten" });
-      });
+      const kette = speicherKette.current;
+      const speichern = (kette.get(karte.id) ?? Promise.resolve())
+        .then(() => karteBeantworten(karte.id, bewertung))
+        .catch((err) => {
+          setSpeicherFehler(true);
+          fehlerMelden(err, { ort: "kk_beantworten" });
+        });
+      kette.set(karte.id, speichern);
+
+      let karten = runde.karten;
+      if (bewertung === 1) {
+        // Nicht gewusst: gleich nochmal üben – mit zurückgesetztem Stand
+        const wieder = { ...karte, ...bewerten(karte, 1) };
+        const ziel = Math.min(runde.index + 1 + NOCHMAL_ABSTAND, karten.length);
+        karten = [...karten.slice(0, ziel), wieder, ...karten.slice(ziel)];
+      }
       const naechste: Runde = {
         ...runde,
+        karten,
         index: runde.index + 1,
         umgedreht: false,
-        gewusst: runde.gewusst + (antwort === "gewusst" ? 1 : 0),
-        nichtGewusst: runde.nichtGewusst + (antwort === "nicht_gewusst" ? 1 : 0),
+        zaehler: { ...runde.zaehler, [bewertung]: runde.zaehler[bewertung] + 1 },
       };
       if (naechste.index >= naechste.karten.length) beenden(naechste);
       else setRunde(naechste);
+      track("kk_bewertet", { bewertung });
     },
     [runde, beenden],
   );
 
-  // Leertaste = umdrehen, 1 = nicht gewusst, 2 = gewusst
+  // Leertaste = umdrehen, 1–4 = Nochmal / Schwer / Gut / Einfach
   useEffect(() => {
     const taste = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable=true]")) return;
       if (e.key === " ") {
         e.preventDefault();
         umdrehen();
-      } else if (e.key === "1") antworten("nicht_gewusst");
-      else if (e.key === "2") antworten("gewusst");
+      } else if (["1", "2", "3", "4"].includes(e.key)) antworten(Number(e.key) as Bewertung);
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
@@ -123,7 +159,8 @@ export function Lernmodus({
   }
 
   if (runde.fertig) {
-    const beantwortet = runde.gewusst + runde.nichtGewusst;
+    const beantwortet = summe(runde.zaehler);
+    const karten = new Set(runde.karten.slice(0, runde.index).map((k) => k.id)).size;
     return (
       <>
         {zurueck}
@@ -133,9 +170,22 @@ export function Lernmodus({
           </div>
           <h2 className="ct">Runde beendet</h2>
           <p className="kk-ergebnis">
-            <strong>{runde.gewusst}</strong> gewusst, <strong>{runde.nichtGewusst}</strong> nicht gewusst
+            <strong>{karten}</strong> {karten === 1 ? "Karte" : "Karten"} in <strong>{beantwortet}</strong> Antworten
           </p>
-          {beantwortet >= STREAK_MIN_KARTEN && <p className="muted">🔥 Zählt für deinen Streak.</p>}
+          {beantwortet > 0 && (
+            <ul className="kk-auswertung" aria-label="Bewertungen">
+              {BEWERTUNGEN.map((b) => (
+                <li key={b.wert} className={b.klasse}>
+                  <span>{b.name}</span>
+                  <span className="kk-auswertung-balken" aria-hidden>
+                    <span style={{ width: `${(runde.zaehler[b.wert] / beantwortet) * 100}%` }} />
+                  </span>
+                  <strong className="mono">{runde.zaehler[b.wert]}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+          {karten >= STREAK_MIN_KARTEN && <p className="muted">🔥 Zählt für deinen Streak.</p>}
           {speicherFehler && <p className="auth-error">Einige Antworten konnten nicht gespeichert werden.</p>}
           <div className="hub-formular-knoepfe">
             <Link href={`/karteikarten/${stapel.id}`} className="btng">
@@ -191,13 +241,14 @@ export function Lernmodus({
       </div>
 
       {runde.umgedreht ? (
-        <div className="kk-antworten">
-          <button type="button" className="kk-antwort nein" onClick={() => antworten("nicht_gewusst")}>
-            Nicht gewusst <kbd>1</kbd>
-          </button>
-          <button type="button" className="kk-antwort ja" onClick={() => antworten("gewusst")}>
-            Gewusst <kbd>2</kbd>
-          </button>
+        <div className="kk-antworten kk-antworten-4" role="group" aria-label="Wie gut wusstest du es?">
+          {BEWERTUNGEN.map((b) => (
+            <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
+              <span className="kk-antwort-zeit">{intervallText(bewerten(karte, b.wert).intervall_tage)}</span>
+              <span className="kk-antwort-name">{b.name}</span>
+              <kbd>{b.wert}</kbd>
+            </button>
+          ))}
         </div>
       ) : (
         <p className="muted kk-tipp">
