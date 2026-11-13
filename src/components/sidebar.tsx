@@ -56,6 +56,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Präsentationen",
+    href: "/praesentationen",
     icon: "rect:3,4,18,12,2|M12 16v3M8.5 21h7",
   },
   {

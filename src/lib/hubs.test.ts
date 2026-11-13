@@ -223,3 +223,25 @@ test("Tabellen: Export CSV und Excel-Formeln (TAB-06)", () => {
   assert.equal(csv, '﻿Name;Note\r\n"Max; Mustermann";1,7\r\n;1,7');
   assert.equal(excelFormel("=SUMME(A1:A3; 2,5)*mittelwert(B1:B2)"), "SUM(A1:A3, 2.5)*AVERAGE(B1:B2)");
 });
+
+import { folienLesen, punkte, verschieben, designLesen } from "./praesentationen/folien.ts";
+
+test("Präsentationen: Folien einlesen, Aufzählung, Reihenfolge", () => {
+  const f = folienLesen([
+    { id: "a", layout: "TITEL", titel: "Hallo", text: "Untertitel" },
+    { layout: "QUATSCH", titel: 5, bild: "../../etc" },
+    "kaputt",
+  ]);
+  assert.equal(f.length, 2);
+  assert.equal(f[0].layout, "TITEL");
+  assert.equal(f[1].layout, "TEXT");
+  assert.equal(f[1].titel, "");
+  assert.equal(f[1].bild, null);
+  assert.equal(typeof f[1].id, "string");
+  assert.deepEqual(folienLesen("nein"), []);
+  assert.deepEqual(punkte("- Erstens\n\n• Zweitens\n  Drittens  "), ["Erstens", "Zweitens", "Drittens"]);
+  assert.deepEqual(verschieben([1, 2, 3, 4], 0, 2), [2, 3, 1, 4]);
+  assert.deepEqual(verschieben([1, 2, 3], 2, 0), [3, 1, 2]);
+  assert.equal(designLesen("GOLD"), "GOLD");
+  assert.equal(designLesen("x"), "HELL");
+});

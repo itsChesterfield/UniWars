@@ -3746,7 +3746,8 @@ dialog.dat-vorschau {
   flex-wrap: wrap;
 }
 
-.txt-fach {
+.txt-fach,
+select.field.txt-fach {
   width: auto;
   padding: 6px 10px;
   font-size: 13px;
@@ -3767,7 +3768,8 @@ dialog.dat-vorschau {
   box-shadow: var(--shadow);
 }
 
-.txt-block {
+.txt-block,
+select.field.txt-block {
   width: auto;
   padding: 5px 8px;
   font-size: 13px;
@@ -4041,6 +4043,7 @@ dialog.bild-auswahl {
 /* TXT-06: PDF-Export über den Druckdialog */
 @media print {
   @page {
+    size: A4;
     margin: 2cm;
   }
 
@@ -4310,5 +4313,416 @@ dialog.bild-auswahl {
     width: 86px;
     min-width: 86px;
     max-width: 86px;
+  }
+}
+
+/* =========================================================================
+   Hubs Stufe 3: Präsentationen
+   ========================================================================= */
+
+.prae-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.prae-koerper {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.prae-miniaturen {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.prae-miniaturen ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prae-miniaturen li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  border-radius: 8px;
+  border-top: 3px solid transparent;
+}
+
+.prae-miniaturen li.ziel {
+  border-top-color: var(--accent);
+}
+
+.prae-nummer {
+  width: 16px;
+  font-size: 11px;
+  color: var(--faint);
+  text-align: right;
+  padding-top: 2px;
+}
+
+.prae-miniatur {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.prae-miniaturen li.aktiv .prae-miniatur {
+  border-color: var(--accent);
+}
+
+.prae-miniatur .folie {
+  pointer-events: none;
+}
+
+.prae-neu {
+  position: relative;
+  margin-top: 12px;
+}
+
+.prae-neu > .btng {
+  width: 100%;
+  justify-content: center;
+}
+
+.prae-layouts {
+  left: 0;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 4px);
+  width: 230px;
+}
+
+.prae-layouts button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.prae-layouts span {
+  font-size: 11.5px;
+}
+
+.prae-buehne {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.prae-buehne > .folie {
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.prae-buehne-leiste {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+/* --- Folie (16:9, skaliert über Container-Einheiten) --- */
+
+.folie {
+  --f-bg: #ffffff;
+  --f-text: #2a2318;
+  --f-akzent: #b9822a;
+  --f-leise: #7a6d51;
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--f-bg);
+  color: var(--f-text);
+  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  /* Prozent bezieht sich auf die Breite – skaliert also mit (cqw ginge nur für Kinder) */
+  padding: 5.5% 6.5%;
+  text-align: left;
+}
+
+.folie > * + * {
+  margin-top: 2.5cqw;
+}
+
+.folie[data-design="DUNKEL"] {
+  --f-bg: #1c1811;
+  --f-text: #f5f0e6;
+  --f-akzent: #d9a441;
+  --f-leise: #ab9d82;
+}
+
+.folie[data-design="GOLD"] {
+  --f-bg: linear-gradient(135deg, #d9a441 0%, #b9822a 100%);
+  --f-text: #1c1811;
+  --f-akzent: #fffdf8;
+  --f-leise: #3a3020;
+  background: var(--f-bg);
+}
+
+.folie-feld {
+  width: 100%;
+  border: 1px dashed transparent;
+  border-radius: 0.6cqw;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  resize: none;
+  padding: 0.3cqw 0.6cqw;
+  margin: -0.3cqw -0.6cqw;
+  outline: none;
+}
+
+.folie-feld:hover,
+.folie-feld:focus {
+  border-color: var(--f-leise);
+}
+
+.folie-feld::placeholder,
+.folie-leer {
+  color: var(--f-leise);
+  opacity: 0.7;
+}
+
+.folie-titelfolie {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2.4cqw;
+}
+
+.folie-grosstitel {
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-size: 6.4cqw;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+textarea.folie-grosstitel {
+  height: 15cqw;
+}
+
+.folie-linie {
+  width: 12cqw;
+  height: 0.5cqw;
+  border-radius: 1cqw;
+  background: var(--f-akzent);
+}
+
+.folie-untertitel {
+  font-size: 2.6cqw;
+  color: var(--f-leise);
+  white-space: pre-line;
+}
+
+textarea.folie-untertitel {
+  height: 9cqw;
+}
+
+.folie-ueberschrift {
+  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-size: 4.2cqw;
+  line-height: 1.15;
+  padding-bottom: 1.4cqw;
+  border-bottom: 0.3cqw solid var(--f-akzent);
+  overflow-wrap: anywhere;
+}
+
+textarea.folie-ueberschrift {
+  height: 7cqw;
+  margin-bottom: 0;
+}
+
+.folie-inhalt {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.folie-punkte {
+  flex: 1;
+  font-size: 2.6cqw;
+  line-height: 1.45;
+  margin: 0;
+  padding-left: 3cqw;
+  overflow: hidden;
+}
+
+textarea.folie-punkte {
+  padding-left: 0.6cqw;
+  height: 100%;
+}
+
+.folie-punkte li::marker {
+  color: var(--f-akzent);
+}
+
+.folie-spalten {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4cqw;
+}
+
+.folie-bild {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.folie-bild img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.8cqw;
+}
+
+.folie-bild-knopf {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 12px;
+  background: var(--card);
+}
+
+.folie-bild-leer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.3cqw dashed var(--f-leise);
+  border-radius: 1cqw;
+  background: transparent;
+  color: var(--f-leise);
+  font: inherit;
+  font-size: 2cqw;
+  cursor: pointer;
+}
+
+/* --- PRÄ-06: Vollbild --- */
+
+.prae-vollbild {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  cursor: pointer;
+}
+
+.prae-vollbild-folie {
+  width: min(100vw, calc(100vh * 16 / 9));
+}
+
+.prae-vollbild-info {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.prae-vollbild-info:hover {
+  opacity: 1;
+}
+
+.prae-vollbild-info button {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+/* --- PRÄ-07: PDF-Export --- */
+
+.prae-druck {
+  display: none;
+}
+
+@page folien {
+  size: 297mm 167mm;
+  margin: 0;
+}
+
+@media print {
+  body:has(.prae-druck) .prae-seite > :not(.prae-druck) {
+    display: none !important;
+  }
+
+  .prae-druck {
+    display: block;
+  }
+
+  .prae-druck-folie {
+    page: folien;
+    break-after: page;
+    width: 297mm;
+    height: 167mm;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .prae-druck-folie .folie {
+    width: 297mm;
+    height: 167mm;
+  }
+}
+
+@media (max-width: 900px) {
+  .prae-koerper {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .prae-miniaturen {
+    position: static;
+    max-height: none;
+    order: 2;
+  }
+
+  .prae-miniaturen ol {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .prae-miniaturen li {
+    flex: 0 0 140px;
   }
 }
