@@ -52,6 +52,15 @@ function berlinVersatz(datum: Date): number {
 }
 
 /** Zeitpunkt von 00:00 Uhr Berliner Zeit am angegebenen Tag (+ optional Tage). */
+/** Kalendertage (Berlin) zwischen zwei Zeitpunkten, z. B. 23:50 → 00:10 = 1. */
+export function berlinTageZwischen(von: Date, bis: Date): number {
+  const tag = (d: Date) => {
+    const [j, m, t] = berlinDatum(d).split("-").map(Number);
+    return Date.UTC(j, m - 1, t) / 86_400_000;
+  };
+  return Math.round(tag(bis) - tag(von));
+}
+
 export function berlinMitternacht(datumIso: string, plusTage = 0): Date {
   const [j, m, t] = datumIso.split("-").map(Number);
   const naiv = Date.UTC(j, m - 1, t + plusTage, 0, 0, 0);

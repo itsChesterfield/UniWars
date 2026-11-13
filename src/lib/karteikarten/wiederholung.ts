@@ -40,8 +40,15 @@ export const NOCHMAL_MINUTEN = 10;
 
 const begrenzen = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-/** Neuer Stand der Karte nach einer Bewertung. intervall_tage = 0 heißt: in wenigen Minuten wieder. */
-export function bewerten(stand: KartenStand, bewertung: Bewertung): KartenStand {
+/**
+ * Neuer Stand der Karte nach einer Bewertung. intervall_tage = 0 heißt: in wenigen Minuten wieder.
+ *
+ * `tageSeit` = Kalendertage seit der letzten Wiederholung (null = unbekannt → pünktlich angenommen).
+ * Damit stimmt die Rechnung auch, wenn nicht genau am Fälligkeitstag gelernt wird:
+ *  - zu früh (z. B. "Trotzdem alle lernen"): nur anteilige Verlängerung – am selben Tag fast keine
+ *  - zu spät, aber noch gewusst: Bonus, weil die Karte offensichtlich länger hält
+ */
+export function bewerten(stand: KartenStand, bewertung: Bewertung, tageSeit: number | null = null): KartenStand {
   const ef = begrenzen(stand.leichtigkeit || START_LEICHTIGKEIT, MIN_LEICHTIGKEIT, MAX_LEICHTIGKEIT);
   const alt = Math.max(0, stand.intervall_tage);
   const neu = stand.wiederholungen === 0;
@@ -56,13 +63,26 @@ export function bewerten(stand: KartenStand, bewertung: Bewertung): KartenStand 
     };
   }
 
-  // Alle drei Intervalle berechnen, damit Schwer ≤ Gut < Einfach immer gilt
-  const schwer = neu ? 1 : Math.max(alt + 1, Math.round(alt * 1.2));
-  const gut = Math.max(schwer + 1, neu ? 2 : stand.wiederholungen === 1 ? 4 : Math.round(alt * ef));
-  const einfach = Math.max(gut + 1, neu ? 4 : Math.round(alt * ef * 1.3));
+  const vergangen = tageSeit === null || neu || alt === 0 ? alt : Math.max(0, tageSeit);
+  // Anteil des Intervalls, der wirklich vergangen ist (1 = pünktlich oder später)
+  const anteil = alt > 0 ? Math.min(1, vergangen / alt) : 1;
+  const verspaetung = Math.max(0, vergangen - alt);
+
+  // Ziel-Intervalle bei pünktlicher bzw. später Wiederholung
+  const zielSchwer = Math.max(alt + 1, alt * 1.2);
+  const zielGut = (alt + verspaetung / 2) * ef;
+  const zielEinfach = (alt + verspaetung) * ef * 1.3;
+  // Zu früh: nur der vergangene Anteil des Zuwachses zählt
+  const anteilig = (ziel: number) => alt + (ziel - alt) * anteil;
+
+  // Alle drei berechnen, damit Schwer < Gut < Einfach immer gilt
+  const schwer = neu ? 1 : Math.max(1, Math.round(anteilig(zielSchwer)));
+  const gut = Math.max(schwer + 1, neu ? 2 : Math.round(anteilig(zielGut)));
+  const einfach = Math.max(gut + 1, neu ? 4 : Math.round(anteilig(zielEinfach)));
 
   const intervall = bewertung === 2 ? schwer : bewertung === 3 ? gut : einfach;
-  const leichtigkeit = bewertung === 2 ? ef - 0.15 : bewertung === 4 ? ef + 0.15 : ef;
+  // Frühe Wiederholungen verändern die Leichtigkeit nur anteilig (sonst treibt tägliches Üben sie hoch)
+  const leichtigkeit = ef + (bewertung === 2 ? -0.15 : bewertung === 4 ? 0.15 : 0) * (neu ? 1 : anteil);
 
   return {
     intervall_tage: Math.min(intervall, MAX_INTERVALL),

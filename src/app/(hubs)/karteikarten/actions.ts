@@ -12,7 +12,7 @@ import {
   type KartenStand,
 } from "@/lib/karteikarten/wiederholung";
 import { lernaktivitaetVermerken } from "@/lib/hubs/lernaktivitaet";
-import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
+import { berlinDatum, berlinMitternacht, berlinTageZwischen } from "@/lib/zeit";
 import type { Tables } from "@/lib/supabase/types";
 
 export type Stapel = Tables<"kk_stapel">;
@@ -120,12 +120,13 @@ export async function karteBeantworten(id: string, bewertung: Bewertung): Promis
   const { supabase } = await nutzer();
   const { data: karte, error: ladeFehler } = await supabase
     .from("kk_karte")
-    .select("intervall_tage, leichtigkeit, wiederholungen, fehler")
+    .select("intervall_tage, leichtigkeit, wiederholungen, fehler, zuletzt_gelernt")
     .eq("id", id)
     .single();
   if (ladeFehler) throw new Error(ladeFehler.message);
-  const stand = bewerten(karte, bewertung);
   const jetzt = new Date();
+  const tageSeit = karte.zuletzt_gelernt ? berlinTageZwischen(new Date(karte.zuletzt_gelernt), jetzt) : null;
+  const stand = bewerten(karte, bewertung, tageSeit);
   const naechste =
     stand.intervall_tage === 0
       ? new Date(jetzt.getTime() + NOCHMAL_MINUTEN * 60_000)

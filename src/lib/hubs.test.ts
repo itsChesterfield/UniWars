@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag } from "./zeit.ts";
+import { berlinDatum, berlinMitternacht, berlinTageZwischen, berlinUhrzeit, berlinWochentag } from "./zeit.ts";
 import { bewerten, boxAusIntervall, intervallText, istFaellig, reife, type KartenStand } from "./karteikarten/wiederholung.ts";
 import {
   WS_STANDARD,
@@ -50,7 +50,7 @@ test("Spaced Repetition: Intervalle wachsen mit 'Gut' immer weiter", () => {
     k = bewerten(k, 3);
     folge.push(k.intervall_tage);
   }
-  assert.deepEqual(folge, [2, 4, 10, 25, 63]);
+  assert.deepEqual(folge, [2, 5, 13, 33, 83]);
   // Reihenfolge bleibt bei jedem Stand erhalten
   for (const stand of [k, { ...k, leichtigkeit: 1.3 }, { ...NEU, wiederholungen: 1, intervall_tage: 2 }]) {
     const [s, g, e] = [2, 3, 4].map((b) => bewerten(stand, b as 2 | 3 | 4).intervall_tage);
@@ -68,6 +68,76 @@ test("Spaced Repetition: Vergessen setzt zurück, zählt Fehler, Leichtigkeit ha
   for (let i = 0; i < 30; i++) leicht = bewerten(leicht, 4);
   assert.equal(leicht.leichtigkeit, 5);
   assert.equal(leicht.intervall_tage, 3650);
+});
+
+test("Spaced Repetition: zu früh, am selben Tag und zu spät wiederholt", () => {
+  const k: KartenStand = { intervall_tage: 10, leichtigkeit: 2.5, wiederholungen: 3, fehler: 0 };
+  // pünktlich (nach 10 Tagen) = wie ohne Angabe
+  assert.equal(bewerten(k, 3, 10).intervall_tage, 25);
+  assert.equal(bewerten(k, 3, null).intervall_tage, 25);
+  // nach der Hälfte der Zeit: nur der halbe Zuwachs (10 → 17,5)
+  assert.equal(bewerten(k, 3, 5).intervall_tage, 18);
+  // am selben Tag nochmal: kaum Veränderung, Leichtigkeit bleibt
+  assert.deepEqual(bewerten(k, 3, 0), { intervall_tage: 11, leichtigkeit: 2.5, wiederholungen: 4, fehler: 0 });
+  assert.equal(bewerten(k, 4, 0).leichtigkeit, 2.5);
+  // 10 Tage zu spät und trotzdem gewusst: Bonus (10 + 5) × 2,5
+  assert.equal(bewerten(k, 3, 20).intervall_tage, 38);
+  // Reihenfolge Schwer < Gut < Einfach gilt in allen Fällen
+  for (const t of [0, 1, 5, 10, 30, null]) {
+    const [s2, g, e] = [2, 3, 4].map((b) => bewerten(k, b as 2 | 3 | 4, t).intervall_tage);
+    assert.ok(s2 < g && g < e, `tageSeit ${t}: ${s2} < ${g} < ${e}`);
+  }
+});
+
+/** Simuliert Tag für Tag: lernt eine Karte, wann immer sie fällig ist (oder jeden Tag). */
+function simulieren(tage: number, antwort: (tag: number) => 2 | 3 | 4 | 1, jedenTag = false) {
+  let k = NEU;
+  let faellig = 0;
+  let zuletzt: number | null = null;
+  const lerntage: number[] = [];
+  for (let tag = 0; tag < tage; tag++) {
+    if (!jedenTag && tag < faellig) continue;
+    k = bewerten(k, antwort(tag), zuletzt === null ? null : tag - zuletzt);
+    zuletzt = tag;
+    faellig = tag + Math.max(k.intervall_tage, 0);
+    lerntage.push(tag);
+  }
+  return { k, lerntage };
+}
+
+test("Spaced Repetition: tägliche Nutzung über Wochen", () => {
+  // Immer "Gut", nur fällige Karten: Abstände 2, 5, 13, 33 Tage
+  const normal = simulieren(120, () => 3);
+  assert.deepEqual(normal.lerntage, [0, 2, 7, 20, 53]);
+  assert.equal(normal.k.leichtigkeit, 2.5);
+
+  // Jeden Tag "Trotzdem alle lernen" mit "Gut": darf NICHT explodieren
+  const taeglich = simulieren(30, () => 3, true);
+  assert.equal(taeglich.lerntage.length, 30);
+  // Wächst nur noch um 1–2 Tage pro Tag (ohne Korrektur wären es 2,5× pro Tag → 10 Jahre)
+  assert.ok(taeglich.k.intervall_tage <= 60, `nach 30 Tagen täglich: ${taeglich.k.intervall_tage} Tage`);
+  assert.equal(taeglich.k.leichtigkeit, 2.5);
+
+  // Jeden Tag "Einfach": Leichtigkeit steigt nur langsam, Intervall bleibt im Rahmen
+  const einfach = simulieren(30, () => 4, true);
+  assert.ok(einfach.k.leichtigkeit < 3, `Leichtigkeit ${einfach.k.leichtigkeit}`);
+  // ~3 Tage Zuwachs pro Tag statt Vervielfachung
+  assert.ok(einfach.k.intervall_tage <= 100, `Intervall ${einfach.k.intervall_tage}`);
+
+  // Einmal vergessen (an Tag 20), dann wieder "Gut": fängt kurz an und wächst wieder
+  const vergessen = simulieren(150, (tag) => (tag === 20 ? 1 : 3));
+  assert.equal(vergessen.k.fehler, 1);
+  assert.deepEqual(vergessen.lerntage.slice(0, 6), [0, 2, 7, 20, 21, 23]);
+  assert.ok(vergessen.k.leichtigkeit < 2.5);
+});
+
+test("Berlin-Kalendertage zwischen zwei Zeitpunkten", () => {
+  // 23:50 → 00:10 Berlin (Winterzeit, UTC+1) = 1 Tag
+  assert.equal(berlinTageZwischen(new Date("2026-11-13T22:50:00Z"), new Date("2026-11-13T23:10:00Z")), 1);
+  assert.equal(berlinTageZwischen(new Date("2026-11-13T08:00:00Z"), new Date("2026-11-13T20:00:00Z")), 0);
+  // über die Zeitumstellung (29.03.2026) hinweg
+  assert.equal(berlinTageZwischen(new Date("2026-03-28T12:00:00Z"), new Date("2026-03-30T12:00:00Z")), 2);
+  assert.equal(berlinTageZwischen(new Date("2026-11-01T12:00:00Z"), new Date("2026-12-01T12:00:00Z")), 30);
 });
 
 test("Spaced Repetition: Anzeige-Texte, Reife und alte Box", () => {

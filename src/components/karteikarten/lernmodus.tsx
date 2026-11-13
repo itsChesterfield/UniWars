@@ -13,8 +13,21 @@ import {
   type KartenStand,
 } from "@/lib/karteikarten/wiederholung";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { berlinTageZwischen } from "@/lib/zeit";
 
-type LernKarte = KartenStand & { id: string; vorderseite: string; rueckseite: string; naechste_abfrage: string };
+type LernKarte = KartenStand & {
+  id: string;
+  vorderseite: string;
+  rueckseite: string;
+  naechste_abfrage: string;
+  zuletzt_gelernt: string | null;
+};
+
+/** Gleiche Rechnung wie auf dem Server – für die Vorschau auf den Knöpfen. */
+function vorschau(karte: LernKarte, bewertung: Bewertung): number {
+  const tageSeit = karte.zuletzt_gelernt ? berlinTageZwischen(new Date(karte.zuletzt_gelernt), new Date()) : null;
+  return bewerten(karte, bewertung, tageSeit).intervall_tage;
+}
 
 // Kurze Intervalle (schwierige/neue Karten) zuerst, sonst gemischt.
 function reihenfolge(karten: LernKarte[]) {
@@ -96,7 +109,7 @@ export function Lernmodus({
       let karten = runde.karten;
       if (bewertung === 1) {
         // Nicht gewusst: gleich nochmal üben – mit zurückgesetztem Stand
-        const wieder = { ...karte, ...bewerten(karte, 1) };
+        const wieder = { ...karte, ...bewerten(karte, 1), zuletzt_gelernt: new Date().toISOString() };
         const ziel = Math.min(runde.index + 1 + NOCHMAL_ABSTAND, karten.length);
         karten = [...karten.slice(0, ziel), wieder, ...karten.slice(ziel)];
       }
@@ -244,7 +257,7 @@ export function Lernmodus({
         <div className="kk-antworten kk-antworten-4" role="group" aria-label="Wie gut wusstest du es?">
           {BEWERTUNGEN.map((b) => (
             <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
-              <span className="kk-antwort-zeit">{intervallText(bewerten(karte, b.wert).intervall_tage)}</span>
+              <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
               <span className="kk-antwort-name">{b.name}</span>
               <kbd>{b.wert}</kbd>
             </button>
