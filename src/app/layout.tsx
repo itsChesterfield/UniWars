@@ -1,24 +1,21 @@
 import type { Metadata } from "next";
-import { Libre_Caslon_Display, Public_Sans, Space_Mono } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AnalyticsBanner } from "@/components/analytics-banner";
 
-const librecaslon = Libre_Caslon_Display({
+const ueberschrift = Bricolage_Grotesque({
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400"],
+  subsets: ["latin", "latin-ext"],
 });
 
-const publicSans = Public_Sans({
+const fliesstext = Plus_Jakarta_Sans({
   variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  subsets: ["latin", "latin-ext"],
 });
 
-const spaceMono = Space_Mono({
+const zahlen = JetBrains_Mono({
   variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "700"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="de"
-      className={`${librecaslon.variable} ${publicSans.variable} ${spaceMono.variable}`}
+      className={`${ueberschrift.variable} ${fliesstext.variable} ${zahlen.variable}`}
     >
       <body>
         {children}

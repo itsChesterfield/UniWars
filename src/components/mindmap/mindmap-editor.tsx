@@ -7,13 +7,13 @@ import { mindmapFachSetzen, mindmapLoeschen, mindmapSpeichern } from "@/app/(hub
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as mm from "@/lib/mindmap/knoten";
-import { svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
+import { SVG_SCHRIFT, svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 
-const SCHRIFT = "600 15px 'Public Sans', system-ui, sans-serif";
-const SCHRIFT_WURZEL = "700 18px 'Public Sans', system-ui, sans-serif";
+const SCHRIFT = "600 15px";
+const SCHRIFT_WURZEL = "700 18px";
 
 function masse(k: mm.Knoten) {
   const istWurzel = k.parent_id === null;
@@ -431,7 +431,7 @@ export function MindmapEditor({
                       textAnchor="middle"
                       dominantBaseline="central"
                       fill={textFarbe(k.farbe)}
-                      fontFamily="Public Sans, system-ui, sans-serif"
+                      style={{ fontFamily: SVG_SCHRIFT }}
                       fontWeight={istWurzel ? 700 : 600}
                       fontSize={istWurzel ? 18 : 15}
                     >

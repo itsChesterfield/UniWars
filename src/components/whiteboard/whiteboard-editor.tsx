@@ -14,7 +14,7 @@ import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { bildUrl } from "@/components/hubs/bild-auswahl";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as wb from "@/lib/whiteboard/elemente";
-import { svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
+import { SVG_SCHRIFT, svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
 import { dateiTyp } from "@/lib/dateiablage/dateien";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
@@ -34,7 +34,7 @@ const WERKZEUGE: { wert: Werkzeug; name: string; taste: string; icon: string }[]
   { wert: "radierer", name: "Radierer", taste: "E", icon: "M8 20h12|M4 15l9-9 6 6-6 6H9Z" },
 ];
 
-const tb = (t: string, px: number) => textBreite(t, `${px}px 'Public Sans', system-ui, sans-serif`);
+const tb = (t: string, px: number) => textBreite(t, `${px}px`);
 
 function Icon({ d }: { d: string }) {
   return (
@@ -82,7 +82,7 @@ function ElementZeichnen({ e }: { e: wb.Element }) {
       return <ellipse cx={e.x + e.b / 2} cy={e.y + e.h / 2} rx={Math.abs(e.b / 2)} ry={Math.abs(e.h / 2)} {...strich} fill="transparent" />;
     case "text":
       return (
-        <text x={e.x} y={e.y} fill={e.farbe} fontSize={e.groesse} fontFamily="Public Sans, system-ui, sans-serif" dominantBaseline="hanging">
+        <text x={e.x} y={e.y} fill={e.farbe} fontSize={e.groesse} style={{ fontFamily: SVG_SCHRIFT }} dominantBaseline="hanging">
           {e.text.split("\n").map((z, i) => (
             <tspan key={i} x={e.x} dy={i === 0 ? 0 : e.groesse * 1.25}>
               {z || " "}

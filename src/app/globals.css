@@ -83,7 +83,7 @@ body {
   flex-direction: column;
   color: var(--text);
   background: var(--page-bg);
-  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -92,15 +92,15 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   margin: 0;
   color: var(--text);
   letter-spacing: -0.01em;
-  font-weight: 400;
+  font-weight: 650;
 }
 
 .mono {
-  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 a {
@@ -111,7 +111,10 @@ a:hover {
   text-decoration: underline;
 }
 
-button {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -234,8 +237,8 @@ button {
 }
 
 .sidebar-brand-name {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
-  font-weight: 400;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 650;
   font-size: 17px;
 }
 
@@ -304,7 +307,7 @@ button {
   gap: 6px;
   padding: 0 4px;
   color: var(--warn);
-  font-family: var(--font-mono), "Space Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -420,9 +423,9 @@ button {
 }
 
 .ct {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 19px;
-  font-weight: 400;
+  font-weight: 650;
 }
 
 .tag {
@@ -1001,14 +1004,14 @@ input[type="checkbox"] {
 }
 
 .entry-countdown-wert {
-  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
 }
 
 .entry-countdown-einheit {
-  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0;
@@ -1211,7 +1214,7 @@ input[type="checkbox"] {
 }
 
 .heute-zeit {
-  font-family: var(--font-mono), "Space Mono", "Courier New", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 13px;
@@ -1346,7 +1349,7 @@ input[type="checkbox"] {
   border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  font-family: var(--font-mono), "Space Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 16px;
   font-weight: 700;
 }
@@ -1386,7 +1389,7 @@ input[type="checkbox"] {
 
 .lernzeit-saeule-wert {
   font-weight: 700;
-  font-family: var(--font-mono), "Space Mono", monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 13px;
 }
 
@@ -2191,7 +2194,7 @@ kbd {
   border: none;
   background: transparent;
   color: var(--text);
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 26px;
   padding: 2px 0;
   width: 100%;
@@ -2252,7 +2255,7 @@ kbd {
 
 .md-kursiv {
   font-style: italic;
-  font-family: Georgia, serif;
+  font-family: inherit;
 }
 
 .md-flaeche {
@@ -2407,7 +2410,7 @@ kbd {
 }
 
 .kk-kachel-name {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 19px;
   color: var(--text);
   overflow-wrap: anywhere;
@@ -4160,7 +4163,7 @@ dialog.bild-auswahl {
 
 .tab-fx {
   font-style: italic;
-  font-family: Georgia, serif;
+  font-family: inherit;
   color: var(--muted);
 }
 
@@ -4456,7 +4459,7 @@ dialog.bild-auswahl {
   overflow: hidden;
   background: var(--f-bg);
   color: var(--f-text);
-  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   display: flex;
   flex-direction: column;
   /* Prozent bezieht sich auf die Breite – skaliert also mit (cqw ginge nur für Kinder) */
@@ -4516,7 +4519,7 @@ dialog.bild-auswahl {
 }
 
 .folie-grosstitel {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 6.4cqw;
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -4544,7 +4547,7 @@ textarea.folie-untertitel {
 }
 
 .folie-ueberschrift {
-  font-family: var(--font-display), "Libre Caslon Display", Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 4.2cqw;
   line-height: 1.15;
   padding-bottom: 1.4cqw;
@@ -4838,7 +4841,7 @@ textarea.folie-punkte {
   border: none;
   border-radius: 8px;
   padding: 0 8px;
-  font: 600 15px var(--font-body), "Public Sans", system-ui, sans-serif;
+  font: 600 15px var(--font-body), system-ui, sans-serif;
   text-align: center;
   background: #fffdf8;
   color: #2a2318;
@@ -4956,7 +4959,7 @@ textarea.folie-punkte {
   margin: 0;
   border: 1px dashed #b9822a;
   background: rgba(255, 253, 248, 0.9);
-  font-family: var(--font-body), "Public Sans", system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.25;
   resize: both;
   outline: none;

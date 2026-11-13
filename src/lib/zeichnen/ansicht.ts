@@ -139,6 +139,10 @@ export async function svgAlsPng(
     if (data) bild.setAttribute("href", data);
     else bild.remove();
   }
+  // Im exportierten Bild gibt es keine CSS-Variablen – Schrift-Variable auflösen
+  for (const t of Array.from(kopie.querySelectorAll<SVGElement>("[style*='--font-body']"))) {
+    t.style.fontFamily = "system-ui, sans-serif";
+  }
   svg.appendChild(kopie);
   const text = new XMLSerializer().serializeToString(svg);
   const url = URL.createObjectURL(new Blob([text], { type: "image/svg+xml;charset=utf-8" }));
@@ -167,11 +171,18 @@ export async function svgAlsPng(
 let messKontext: CanvasRenderingContext2D | null = null;
 
 /** Textbreite für Knoten/Text-Elemente (ohne DOM-Layout). */
+/** Schrift für SVG-Texte – dieselbe wie auf der restlichen Seite. */
+export const SVG_SCHRIFT = "var(--font-body), system-ui, sans-serif";
+
+let koerperSchrift: string | null = null;
+
+/** Misst Text in der Seitenschrift. `schrift` z. B. "600 15px" (Gewicht + Größe). */
 export function textBreite(text: string, schrift: string): number {
   if (typeof document === "undefined") return text.length * 8;
   messKontext ??= document.createElement("canvas").getContext("2d");
   if (!messKontext) return text.length * 8;
-  messKontext.font = schrift;
+  koerperSchrift ??= getComputedStyle(document.documentElement).getPropertyValue("--font-body").trim() || "system-ui";
+  messKontext.font = `${schrift} ${koerperSchrift}, system-ui, sans-serif`;
   return messKontext.measureText(text).width;
 }
 
