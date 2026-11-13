@@ -9,7 +9,10 @@ import {
   type KiStatus,
   type UebernahmeZiel,
 } from "@/app/(hubs)/notizen/ki-actions";
-import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung";
+import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
+import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
+import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
+import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { ERLAUBTE_ANZAHL, MAX_SEITE_ZEICHEN, type KartenAnzahl } from "@/lib/ki/karten";
 import type { KiFehlerTyp } from "@/lib/ki/fehler";
 import type { FachOption } from "@/lib/fach-option";
@@ -175,7 +178,7 @@ export function KiKartenDialog({
         </div>
       )}
 
-      {schritt === "laden" && <p className="muted ki-mitte">Lädt …</p>}
+      {schritt === "laden" && <KiLadeZustand text="Lädt …" />}
 
       {schritt === "nicht_verfuegbar" && (
         <>
@@ -245,16 +248,10 @@ export function KiKartenDialog({
             </label>
           )}
 
-          {fehler && (
-            <p className="auth-error" role="alert">
-              {fehler}
-            </p>
-          )}
+          <KiFehlerMeldung meldung={fehler} />
 
           <div className="ki-fuss">
-            <span className="muted ki-limit">
-              Heute noch {verbleibend} von {status.limit} KI-Anfragen
-            </span>
+            <KiLimitHinweis verbleibend={verbleibend} limit={status.limit} />
             <button type="submit" className="btnp" disabled={verbleibend === 0 || (neuerStapelGewaehlt && !neuerName.trim())}>
               Erstellen
             </button>
@@ -263,11 +260,7 @@ export function KiKartenDialog({
       )}
 
       {schritt === "erstellt" && (
-        <div className="ki-mitte ki-laedt" role="status">
-          <span className="ki-spinner" aria-hidden />
-          <p>Die KI liest deine Notiz …</p>
-          <p className="muted">Das dauert meist ein paar Sekunden.</p>
-        </div>
+        <KiLadeZustand text="Die KI liest deine Notiz …" untertext="Das dauert meist ein paar Sekunden." />
       )}
 
       {schritt === "vorschau" && (
@@ -313,11 +306,7 @@ export function KiKartenDialog({
           </ul>
           {entwuerfe.length === 0 && <p className="empty-state">Alle Vorschläge entfernt.</p>}
           {unvollstaendig && <p className="auth-error">Vorder- und Rückseite dürfen nicht leer sein.</p>}
-          {fehler && (
-            <p className="auth-error" role="alert">
-              {fehler}
-            </p>
-          )}
+          <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
             <button
               type="button"

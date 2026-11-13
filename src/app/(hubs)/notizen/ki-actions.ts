@@ -59,33 +59,6 @@ async function eingewilligt(supabase: Supabase, userId: string): Promise<boolean
 }
 
 // ---------------------------------------------------------------------------
-// KI-D1: Einwilligung
-// ---------------------------------------------------------------------------
-
-export async function kiEinwilligen(): Promise<KiErgebnis<null>> {
-  try {
-    const { supabase, userId } = await nutzer();
-    const { error } = await supabase.from("settings").update({ ki_einwilligung: new Date().toISOString() }).eq("user_id", userId);
-    if (error) throw new Error(error.message);
-    return { ok: true, daten: null };
-  } catch (err) {
-    return alsFehler(err);
-  }
-}
-
-export async function kiEinwilligungWiderrufen(): Promise<KiErgebnis<null>> {
-  try {
-    const { supabase, userId } = await nutzer();
-    const { error } = await supabase.from("settings").update({ ki_einwilligung: null }).eq("user_id", userId);
-    if (error) throw new Error(error.message);
-    revalidatePath("/", "layout");
-    return { ok: true, daten: null };
-  } catch (err) {
-    return alsFehler(err);
-  }
-}
-
-// ---------------------------------------------------------------------------
 // KI-L1: Nutzung heute / Status für den Dialog
 // ---------------------------------------------------------------------------
 
@@ -216,7 +189,9 @@ export async function vorschlaegeUebernehmen(
     }
 
     // Ein einziges insert; neue Karten starten als "Neu" (sofort fällig)
-    const { error } = await supabase.from("kk_karte").insert(geprueft.map((k) => ({ ...k, user_id: userId, stapel_id: stapelId })));
+    const { error } = await supabase
+      .from("kk_karte")
+      .insert(geprueft.map((k) => ({ ...k, user_id: userId, stapel_id: stapelId, ki_erzeugt: true })));
     if (error) throw new Error(error.message);
 
     await supabase.from("kk_stapel").update({ geaendert_am: new Date().toISOString() }).eq("id", stapelId);

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { kiEinwilligungWiderrufen } from "@/app/(hubs)/notizen/ki-actions";
-import { KI_EINWILLIGUNG_EVENT, KiEinwilligungInhalt, kiEinwilligungMelden } from "@/components/ki/ki-einwilligung";
+import { useEffect, useState } from "react";
+import { kiEinwilligungWiderrufen } from "@/app/(hubs)/ki/einwilligung-actions";
+import { KI_EINWILLIGUNG_EVENT, KiEinwilligungDialog, kiEinwilligungMelden, type EinwilligungsEreignis } from "@/components/ki/ki-einwilligung-dialog";
 import { track } from "@/lib/analytics";
 
 /** KI-D1: Schalter in der Seitenleiste – Einwilligung geben oder widerrufen. */
@@ -10,14 +10,12 @@ export function KiEinstellung({ startEingewilligt }: { startEingewilligt: boolea
   const [an, setAn] = useState(startEingewilligt);
   const [dialog, setDialog] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
-  const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    if (dialog) ref.current?.showModal();
-  }, [dialog]);
-
-  useEffect(() => {
-    const geaendert = (e: Event) => setAn((e as CustomEvent<boolean>).detail);
+    const geaendert = (e: Event) => {
+      const { art, an: neu } = (e as CustomEvent<EinwilligungsEreignis>).detail;
+      if (art === "text") setAn(neu);
+    };
     window.addEventListener(KI_EINWILLIGUNG_EVENT, geaendert);
     return () => window.removeEventListener(KI_EINWILLIGUNG_EVENT, geaendert);
   }, []);
@@ -28,11 +26,11 @@ export function KiEinstellung({ startEingewilligt }: { startEingewilligt: boolea
       return;
     }
     setLaeuft(true);
-    const ergebnis = await kiEinwilligungWiderrufen().catch(() => null);
+    const ergebnis = await kiEinwilligungWiderrufen("text").catch(() => null);
     setLaeuft(false);
     if (ergebnis?.ok) {
       setAn(false);
-      kiEinwilligungMelden(false);
+      kiEinwilligungMelden("text", false);
       track("ki_einwilligung_widerrufen");
     } else {
       window.alert("Das hat nicht geklappt. Bitte versuch es noch einmal.");
@@ -46,23 +44,15 @@ export function KiEinstellung({ startEingewilligt }: { startEingewilligt: boolea
         <span style={{ color: "var(--accent-strong)" }}>{an ? "An" : "Aus"}</span>
       </button>
       {dialog && (
-        <dialog
-          ref={ref}
-          className="card ki-dialog ki-dialog-klein"
-          onCancel={(e) => {
-            e.preventDefault();
+        <KiEinwilligungDialog
+          art="text"
+          onSchliessen={() => setDialog(false)}
+          onZugestimmt={() => {
+            setAn(true);
             setDialog(false);
+            track("ki_einwilligung_erteilt", { ort: "einstellungen" });
           }}
-        >
-          <KiEinwilligungInhalt
-            onAbbrechen={() => setDialog(false)}
-            onZugestimmt={() => {
-              setAn(true);
-              setDialog(false);
-              track("ki_einwilligung_erteilt", { ort: "einstellungen" });
-            }}
-          />
-        </dialog>
+        />
       )}
     </>
   );

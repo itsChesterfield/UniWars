@@ -6054,3 +6054,13 @@ dialog.ki-dialog-klein {
   font-size: 20px;
   margin: 28px 0 8px;
 }
+
+.ki-markierung {
+  font-size: 0.85em;
+  cursor: help;
+  opacity: 0.85;
+}
+
+.ki-limit.leer {
+  color: var(--danger);
+}

@@ -37,7 +37,7 @@ const status = (s: number) => () => new Response("{}", { status: s });
 test("KI-Anfrage: Erfolg – OpenAI-Format, JSON-Modus, Tokens", async () => {
   const { u, aufrufe, logs } = umgebung([() => ok('{"karten":[]}')]);
   const antwort = await kiAnfrageMit(KONFIG, OPTIONEN, u);
-  assert.deepEqual(antwort, { text: '{"karten":[]}', tokensEin: 120, tokensAus: 45 });
+  assert.deepEqual(antwort, { text: '{"karten":[]}', tokensEin: 120, tokensAus: 45, werkzeugAufrufe: [] });
   assert.equal(aufrufe.length, 1);
   assert.equal(aufrufe[0].url, "https://api.example.test/v1/chat/completions");
   const body = JSON.parse(String(aufrufe[0].init.body));

@@ -17,6 +17,7 @@ import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { markdownAlsText } from "@/components/hubs/markdown-editor";
 import { KartenFormular } from "@/components/karteikarten/karten-formular";
 import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
+import { KiMarkierung } from "@/components/ki/ki-markierung";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { intervallText, reife, REIFE_TEXT, type Reife } from "@/lib/karteikarten/wiederholung";
@@ -199,7 +200,9 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
                       }}
                       title="Bearbeiten"
                     >
-                      <span className="kk-karte-vorne">{markdownAlsText(k.vorderseite) || "—"}</span>
+                      <span className="kk-karte-vorne">
+                        {markdownAlsText(k.vorderseite) || "—"} <KiMarkierung an={k.ki_erzeugt} />
+                      </span>
                       <span className="kk-karte-hinten muted">{markdownAlsText(k.rueckseite)}</span>
                     </button>
                     <span

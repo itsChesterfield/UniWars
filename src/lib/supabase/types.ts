@@ -558,28 +558,37 @@ export type Database = {
       }
       ki_nutzung: {
         Row: {
+          einheit: string
           erfolgreich: boolean
           erstellt_am: string
           funktion: string
           id: string
+          kontingent: string
+          menge: number
           tokens_aus: number | null
           tokens_ein: number | null
           user_id: string
         }
         Insert: {
+          einheit?: string
           erfolgreich?: boolean
           erstellt_am?: string
           funktion: string
           id?: string
+          kontingent?: string
+          menge?: number
           tokens_aus?: number | null
           tokens_ein?: number | null
           user_id: string
         }
         Update: {
+          einheit?: string
           erfolgreich?: boolean
           erstellt_am?: string
           funktion?: string
           id?: string
+          kontingent?: string
+          menge?: number
           tokens_aus?: number | null
           tokens_ein?: number | null
           user_id?: string
@@ -594,6 +603,7 @@ export type Database = {
           geaendert_am: string
           id: string
           intervall_tage: number
+          ki_erzeugt: boolean
           leichtigkeit: number
           naechste_abfrage: string
           rueckseite: string
@@ -610,6 +620,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           intervall_tage?: number
+          ki_erzeugt?: boolean
           leichtigkeit?: number
           naechste_abfrage?: string
           rueckseite: string
@@ -626,6 +637,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           intervall_tage?: number
+          ki_erzeugt?: boolean
           leichtigkeit?: number
           naechste_abfrage?: string
           rueckseite?: string
@@ -690,6 +702,7 @@ export type Database = {
           geaendert_am: string
           id: string
           jahr: number
+          ki_erzeugt: boolean
           notiz: string | null
           seiten: string | null
           titel: string
@@ -707,6 +720,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           jahr: number
+          ki_erzeugt?: boolean
           notiz?: string | null
           seiten?: string | null
           titel: string
@@ -724,6 +738,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           jahr?: number
+          ki_erzeugt?: boolean
           notiz?: string | null
           seiten?: string | null
           titel?: string
@@ -788,6 +803,7 @@ export type Database = {
           fach_id: string | null
           geaendert_am: string
           id: string
+          ki_erzeugt: boolean
           name: string
           user_id: string
         }
@@ -797,6 +813,7 @@ export type Database = {
           fach_id?: string | null
           geaendert_am?: string
           id?: string
+          ki_erzeugt?: boolean
           name: string
           user_id?: string
         }
@@ -806,6 +823,7 @@ export type Database = {
           fach_id?: string | null
           geaendert_am?: string
           id?: string
+          ki_erzeugt?: boolean
           name?: string
           user_id?: string
         }
@@ -886,6 +904,7 @@ export type Database = {
           geaendert_am: string
           id: string
           inhalt: string
+          ki_erzeugt: boolean
           stundenplan_eintrag_id: string | null
           titel: string
           user_id: string
@@ -898,6 +917,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           inhalt?: string
+          ki_erzeugt?: boolean
           stundenplan_eintrag_id?: string | null
           titel?: string
           user_id?: string
@@ -910,6 +930,7 @@ export type Database = {
           geaendert_am?: string
           id?: string
           inhalt?: string
+          ki_erzeugt?: boolean
           stundenplan_eintrag_id?: string | null
           titel?: string
           user_id?: string
@@ -1019,6 +1040,7 @@ export type Database = {
           folien: Json
           geaendert_am: string
           id: string
+          ki_erzeugt: boolean
           titel: string
           user_id: string
         }
@@ -1029,6 +1051,7 @@ export type Database = {
           folien?: Json
           geaendert_am?: string
           id?: string
+          ki_erzeugt?: boolean
           titel: string
           user_id?: string
         }
@@ -1039,6 +1062,7 @@ export type Database = {
           folien?: Json
           geaendert_am?: string
           id?: string
+          ki_erzeugt?: boolean
           titel?: string
           user_id?: string
         }
@@ -1095,6 +1119,7 @@ export type Database = {
       }
       settings: {
         Row: {
+          ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
           sichtbare_widgets: Json
           streak_count: number
@@ -1106,6 +1131,7 @@ export type Database = {
           work_station: Json
         }
         Insert: {
+          ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
           sichtbare_widgets?: Json
           streak_count?: number
@@ -1117,6 +1143,7 @@ export type Database = {
           work_station?: Json
         }
         Update: {
+          ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
           sichtbare_widgets?: Json
           streak_count?: number
@@ -1335,6 +1362,17 @@ export type Database = {
         }[]
       }
       chat_ungelesen_gesamt: { Args: never; Returns: number }
+      ki_kontingent_buchen: {
+        Args: {
+          p_einheit: string
+          p_funktion: string
+          p_kontingent: string
+          p_limit: number
+          p_menge: number
+          p_zeitraum: string
+        }
+        Returns: string
+      }
       ki_nutzung_abschliessen: {
         Args: { p_erfolgreich: boolean; p_id: string; p_tokens_aus: number; p_tokens_ein: number }
         Returns: undefined

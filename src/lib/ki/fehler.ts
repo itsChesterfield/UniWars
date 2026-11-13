@@ -3,7 +3,16 @@
  * Meldung für den Nutzer und einen Typ für Analytics (ohne Inhalte).
  */
 
-export type KiFehlerTyp = "limit" | "ausgelastet" | "keine_karten" | "technisch" | "einwilligung" | "eingabe";
+export type KiFehlerTyp =
+  | "limit"
+  | "ausgelastet"
+  | "keine_karten"
+  | "keine_daten"
+  | "technisch"
+  | "einwilligung"
+  | "eingabe"
+  | "zu_komplex"
+  | "abgebrochen";
 
 export class KiFehler extends Error {
   readonly nutzerMeldung: string;
@@ -68,5 +77,19 @@ export class KiKeineEinwilligung extends KiFehler {
 export class KiEingabe extends KiFehler {
   constructor(nutzerMeldung: string) {
     super(nutzerMeldung, "eingabe");
+  }
+}
+
+/** Tool-Schleife hat nach der Höchstzahl an Runden noch keine Antwort */
+export class KiZuKomplex extends KiFehler {
+  constructor() {
+    super("Das war zu kompliziert, versuch es mit einer kürzeren Frage.", "zu_komplex");
+  }
+}
+
+/** Antwort wurde mittendrin abgebrochen (Netz, Timeout) – bisheriger Text bleibt erhalten */
+export class KiAbgebrochen extends KiFehler {
+  constructor(intern: string) {
+    super("Die Antwort wurde unterbrochen. Bitte versuch es noch einmal.", "abgebrochen", intern);
   }
 }
