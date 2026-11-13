@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth/"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -41,7 +41,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && isPublicPath) {
+  // E-Mail-Links (/auth/…) müssen auch mit bestehender Sitzung durchlaufen,
+  // sonst landet z. B. ein Passwort-Link einfach auf dem Dashboard.
+  if (user && isPublicPath && !request.nextUrl.pathname.startsWith("/auth/")) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/";
     return NextResponse.redirect(dashboardUrl);
