@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 
 type Treffer = {
   id: string;
-  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten" | "Datei" | "Quelle" | "Dokument";
+  typ: "Fach" | "Deadline" | "To-Do" | "Note" | "Notiz" | "Karteikarten" | "Datei" | "Quelle" | "Dokument" | "Tabelle" | "Präsentation";
   titel: string;
   href?: string;
 };
@@ -42,6 +42,8 @@ export function SearchBar() {
         { data: dateien },
         { data: quellen },
         { data: dokumente },
+        { data: tabellen },
+        { data: praesentationen },
       ] = await Promise.all([
         supabase.from("fach").select("id, name").ilike("name", pattern).limit(5),
         supabase.from("deadline").select("id, titel").ilike("titel", pattern).limit(5),
@@ -57,6 +59,8 @@ export function SearchBar() {
         supabase.from("datei").select("id, name, fach_id, mime_typ").ilike("name", pattern).limit(5),
         supabase.from("literatur_quelle").select("id, titel, jahr").or(`titel.ilike.${sicher},autoren.ilike.${sicher}`).limit(5),
         supabase.from("dokument").select("id, titel").or(`titel.ilike.${sicher},klartext.ilike.${sicher}`).limit(5),
+        supabase.from("tabelle").select("id, titel").ilike("titel", pattern).limit(5),
+        supabase.from("praesentation").select("id, titel").ilike("titel", pattern).limit(5),
       ]);
 
       const treffer = [
@@ -99,6 +103,18 @@ export function SearchBar() {
           typ: "Dokument" as const,
           titel: d.titel || "Unbenanntes Dokument",
           href: `/textverarbeitung/${d.id}`,
+        })),
+        ...(tabellen ?? []).map((t) => ({
+          id: t.id,
+          typ: "Tabelle" as const,
+          titel: t.titel || "Unbenannte Tabelle",
+          href: `/tabellen/${t.id}`,
+        })),
+        ...(praesentationen ?? []).map((p) => ({
+          id: p.id,
+          typ: "Präsentation" as const,
+          titel: p.titel,
+          href: `/praesentationen/${p.id}`,
         })),
       ];
       setErgebnisse(treffer);

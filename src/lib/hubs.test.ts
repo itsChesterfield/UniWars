@@ -146,3 +146,80 @@ test("APA: Zitat im Text und Verzeichnis", () => {
   assert.equal(verzeichnisEintrag(artikel), "Zander, L. (2021). Neue Ansätze. Informatik Spektrum, 44(2), 10–20.");
   assert.deepEqual(literaturverzeichnis([artikel, buch]).map((e) => e.slice(0, 6)), ["Müller", "Zander"]);
 });
+
+import {
+  alsCsv,
+  anzeigen,
+  auswerten,
+  bezuegeVerschieben,
+  einfuegen,
+  excelFormel,
+  loeschen,
+  zahlLesen,
+  type TabellenDaten,
+} from "./tabellen/formeln.ts";
+
+function tab(zellen: Record<string, string>): TabellenDaten {
+  return { spalten: 10, zeilen: 20, zellen: Object.fromEntries(Object.entries(zellen).map(([k, w]) => [k, { w }])) };
+}
+function wert(zellen: Record<string, string>, ref: string, fmt?: "std" | "2" | "%") {
+  return anzeigen(auswerten(tab(zellen)).get(ref), fmt);
+}
+
+test("Tabellen: Zahlen in deutscher Schreibweise", () => {
+  assert.equal(zahlLesen("3,5"), 3.5);
+  assert.equal(zahlLesen("1.234,5"), 1234.5);
+  assert.equal(zahlLesen("2.5"), 2.5);
+  assert.equal(zahlLesen("12%"), 0.12);
+  assert.equal(zahlLesen("abc"), null);
+  assert.equal(zahlLesen(""), null);
+});
+
+test("Tabellen: Formeln (TAB-04)", () => {
+  const z = { A1: "2", A2: "3,5", A3: "4", B1: "Text" };
+  assert.equal(wert({ ...z, C1: "=A1+A2*2" }, "C1"), "9");
+  assert.equal(wert({ ...z, C1: "=(A1+A2)*2" }, "C1"), "11");
+  assert.equal(wert({ ...z, C1: "=SUMME(A1:A3)" }, "C1"), "9,5");
+  assert.equal(wert({ ...z, C1: "=MITTELWERT(A1:A3)" }, "C1", "2"), "3,17");
+  assert.equal(wert({ ...z, C1: "=MIN(A1:A3)" }, "C1"), "2");
+  assert.equal(wert({ ...z, C1: "=max(A1:A3; 10)" }, "C1"), "10");
+  assert.equal(wert({ ...z, C1: "=ANZAHL(A1:B3)" }, "C1"), "3");
+  assert.equal(wert({ ...z, C1: "=-A1/4" }, "C1"), "-0,5");
+  assert.equal(wert({ ...z, C1: "=A1*1,5" }, "C1"), "3");
+  assert.equal(wert({ ...z, C1: "=A1+D9" }, "C1"), "2"); // leere Zelle = 0
+  assert.equal(wert({ A1: "0,25" }, "A1", "%"), "25 %");
+});
+
+test("Tabellen: Fehlerfälle ergeben #FEHLER", () => {
+  const z = { A1: "2", B1: "Text" };
+  for (const f of ["=A1+B1", "=A1/0", "=SUMME(A1", "=FOO(A1)", "=A1:A3", "=", "=1+", "=MITTELWERT(C1:C3)"]) {
+    assert.equal(wert({ ...z, C1: f }, "C1"), "#FEHLER", f);
+  }
+  // Zirkelbezug
+  assert.equal(wert({ A1: "=B1", B1: "=A1" }, "A1"), "#FEHLER");
+  assert.equal(wert({ A1: "=A1+1" }, "A1"), "#FEHLER");
+  // Folgefehler
+  assert.equal(wert({ A1: "=1/0", B1: "=A1+1" }, "B1"), "#FEHLER");
+});
+
+test("Tabellen: Bezüge beim Einfügen/Löschen anpassen (TAB-03)", () => {
+  assert.equal(bezuegeVerschieben("=SUMME(A1:A3)+B2", { art: "zeile", index: 1, delta: 1 }), "=SUMME(A1:A4)+B3");
+  assert.equal(bezuegeVerschieben("=SUMME(A1:A3)+B2", { art: "zeile", index: 1, delta: -1 }), "=SUMME(A1:A2)+#FEHLER");
+  assert.equal(bezuegeVerschieben("=C1*2", { art: "spalte", index: 0, delta: 1 }), "=D1*2");
+  assert.equal(bezuegeVerschieben("=SUMME(B1:B1)", { art: "spalte", index: 1, delta: -1 }), "=SUMME(#FEHLER)");
+  const d = tab({ A1: "1", A2: "2", A3: "=SUMME(A1:A2)" });
+  const mehr = einfuegen(d, "zeile", 1)!;
+  assert.equal(mehr.zeilen, 21);
+  assert.equal(mehr.zellen.A3.w, "2");
+  assert.equal(mehr.zellen.A4.w, "=SUMME(A1:A3)");
+  assert.equal(anzeigen(auswerten(mehr).get("A4")), "3");
+  const weniger = loeschen(d, "zeile", 0)!;
+  assert.equal(weniger.zellen.A2.w, "=SUMME(A1:A1)");
+  assert.equal(anzeigen(auswerten(weniger).get("A2")), "2");
+});
+
+test("Tabellen: Export CSV und Excel-Formeln (TAB-06)", () => {
+  const csv = alsCsv(tab({ A1: "Name", B1: "Note", A2: "Max; Mustermann", B2: "1,7", B3: "=SUMME(B2:B2)" }));
+  assert.equal(csv, '﻿Name;Note\r\n"Max; Mustermann";1,7\r\n;1,7');
+  assert.equal(excelFormel("=SUMME(A1:A3; 2,5)*mittelwert(B1:B2)"), "SUM(A1:A3, 2.5)*AVERAGE(B1:B2)");
+});

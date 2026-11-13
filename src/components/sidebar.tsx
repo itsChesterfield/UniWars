@@ -60,6 +60,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Tabellen",
+    href: "/tabellen",
     icon: "rect:3.5,4.5,17,15,2|M3.5 9.5h17M9 9.5v10M3.5 14.5h17",
   },
   {
