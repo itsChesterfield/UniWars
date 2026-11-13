@@ -1,6 +1,9 @@
 :root {
   /* Überschriften nutzen dieselbe schlichte Schrift wie der Text (Inter) */
   --font-display: var(--font-body);
+  /* Zahlen (Timer, Noten, Streak) ebenfalls in Inter – mit gleich breiten Ziffern */
+  --font-mono: var(--font-body);
+  --font-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Helles Gegenstück zur dunklen Design-Palette: gleiche Akzentfarben
      (Gold/Blau/Lila/Grün/Rot), aber warmes Creme statt Espresso-Braun. */
   --page-bg: #f7f3ea;
@@ -103,6 +106,7 @@ h4 {
 
 .mono {
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 a {
@@ -310,6 +314,7 @@ textarea {
   padding: 0 4px;
   color: var(--warn);
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -358,7 +363,7 @@ textarea {
 .dashboard-greeting h1 {
   font-size: 28px;
   line-height: 1.1;
-  font-weight: 400;
+  font-weight: 650;
 }
 
 .dashboard-greeting p {
@@ -1007,6 +1012,7 @@ input[type="checkbox"] {
 
 .entry-countdown-wert {
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
@@ -1014,6 +1020,7 @@ input[type="checkbox"] {
 
 .entry-countdown-einheit {
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0;
@@ -1352,6 +1359,7 @@ input[type="checkbox"] {
   background: var(--accent-soft);
   color: var(--accent-strong);
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 16px;
   font-weight: 700;
 }
@@ -1392,6 +1400,7 @@ input[type="checkbox"] {
 .lernzeit-saeule-wert {
   font-weight: 700;
   font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 13px;
 }
 
@@ -2054,7 +2063,7 @@ a.btng:hover {
 
 kbd {
   display: inline-block;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-code);
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 5px;
@@ -2352,7 +2361,7 @@ kbd {
 }
 
 .md-inhalt code {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-code);
   font-size: 0.88em;
   background: var(--card2);
   border: 1px solid var(--border);
