@@ -7703,3 +7703,37 @@ dialog.ki-dialog-klein {
   margin: 10px 0 0;
   font-size: 11.5px;
 }
+
+/* Dateiablage: Import über einen Link */
+.dat-link-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+}
+
+.dat-link-zeile {
+  min-width: 0;
+}
+
+.dat-link-zeile .field {
+  width: 100%;
+}
+
+.dat-link-tipp {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12.5px;
+}
+
+@media (max-width: 640px) {
+  .dat-link-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dat-link-zeile {
+    grid-column: 1 / -1;
+  }
+}

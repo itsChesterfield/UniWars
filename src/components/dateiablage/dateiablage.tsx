@@ -9,6 +9,7 @@ import {
   dateiUmbenennen,
   dateiVerschieben,
   dateiVerwendung,
+  ausLinkImportieren,
   uploadAbschliessen,
   uploadVerwerfen,
   uploadVorbereiten,
@@ -26,11 +27,12 @@ import {
   type DateiArt,
 } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
+import { linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type Ordner = { id: string | null; name: string; farbe: string | null };
 
-type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null };
+type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null; vonLink?: boolean };
 type Sortierung = { spalte: "name" | "datum" | "groesse"; absteigend: boolean };
 type Vorschau = { art: "bild" | "audio"; url: string; name: string; id: string };
 
@@ -61,7 +63,10 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
   const [ziehenUeber, setZiehenUeber] = useState(false);
   const [ordnerZiel, setOrdnerZiel] = useState<string | null | undefined>(undefined);
   const [meldung, setMeldung] = useState<string | null>(null);
+  const [linkOffen, setLinkOffen] = useState(false);
+  const [linkWert, setLinkWert] = useState("");
   const eingabe = useRef<HTMLInputElement>(null);
+  const einfuegenRef = useRef<(e: ClipboardEvent) => void>(() => undefined);
 
   const belegt = dateien.reduce((s, d) => s + Number(d.groesse), 0);
   const voll = belegt >= limit;
@@ -135,6 +140,63 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
     };
     void Promise.all([arbeiter(), arbeiter(), arbeiter()]);
   }
+
+  // --- Import über einen Link (öffentliche Dateien, der Server lädt sie herunter) ---
+  async function ausLink(link: string) {
+    const fachId = aktuellerOrdner.id;
+    const schluessel = crypto.randomUUID();
+    let anzeige = link.trim();
+    try {
+      const u = linkNormalisieren(link);
+      if (u) anzeige = decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() ?? u.hostname) || u.hostname;
+    } catch {
+      // Anzeige bleibt der Link
+    }
+    setUploads((u) => [...u, { schluessel, name: anzeige, anteil: 0, fehler: null, vonLink: true }]);
+    const a = await ausLinkImportieren({ link, fachId }).catch(() => null);
+    if (!a?.ok) {
+      const fehler = a && !a.ok ? a.fehler : "Keine Verbindung. Bitte versuch es noch einmal.";
+      setUploads((liste) => liste.map((u) => (u.schluessel === schluessel ? { ...u, fehler } : u)));
+      track("datei_link_import_fehler", {});
+      return;
+    }
+    setDateien((liste) => [a.datei, ...liste]);
+    setUploads((liste) => liste.filter((u) => u.schluessel !== schluessel));
+    track("datei_hochgeladen", { art: dateiTyp(a.datei.name)?.art ?? "unbekannt", kb: Math.round(Number(a.datei.groesse) / 1024), mit_fach: Boolean(fachId), quelle: "link" });
+  }
+
+  function linkAbschicken() {
+    if (!linkNormalisieren(linkWert)) return;
+    void ausLink(linkWert);
+    setLinkWert("");
+    setLinkOffen(false);
+  }
+
+  // Strg+V auf der Seite: kopierter Link wird importiert, kopierte Dateien hochgeladen
+  useEffect(() => {
+    einfuegenRef.current = (e: ClipboardEvent) => {
+      const ziel = e.target as HTMLElement | null;
+      if (ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.isContentEditable)) return;
+      if (document.querySelector("dialog[open], .quick-add-overlay")) return;
+      const kopierteDateien = Array.from(e.clipboardData?.files ?? []);
+      if (kopierteDateien.length) {
+        e.preventDefault();
+        if (!voll) hochladen(kopierteDateien);
+        return;
+      }
+      const text = e.clipboardData?.getData("text/plain") ?? "";
+      if (linkNormalisieren(text)) {
+        e.preventDefault();
+        if (voll) setMeldung("Dein Speicherplatz ist voll (2 GB).");
+        else void ausLink(text);
+      }
+    };
+  });
+  useEffect(() => {
+    const einfuegen = (e: ClipboardEvent) => einfuegenRef.current(e);
+    window.addEventListener("paste", einfuegen);
+    return () => window.removeEventListener("paste", einfuegen);
+  }, []);
 
   // --- DAT-04 Öffnen ------------------------------------------------------
   async function oeffnen(d: Datei) {
@@ -213,6 +275,16 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
 
   const hochladenKnopf = (
     <>
+      <button
+        type="button"
+        className="btng"
+        onClick={() => setLinkOffen((o) => !o)}
+        disabled={voll}
+        aria-expanded={linkOffen}
+        title="Datei über einen Link importieren (oder Link mit Strg+V einfügen)"
+      >
+        🔗 Aus Link
+      </button>
       <button type="button" className="btnp" onClick={() => eingabe.current?.click()} disabled={voll} title={voll ? "Speicher voll" : undefined}>
         ⤒ Hochladen
       </button>
@@ -233,6 +305,42 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
   return (
     <>
       <HubKopf titel="Dateiablage" untertitel="Alle Uni-Dateien an einem Ort, nach Fach geordnet." aktionen={hochladenKnopf} />
+      {linkOffen && (
+        <form
+          className="card dat-link-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            linkAbschicken();
+          }}
+        >
+          <label className="dat-link-zeile">
+            <span className="sr-only">Link zur Datei</span>
+            <input
+              className="field"
+              type="url"
+              inputMode="url"
+              autoFocus
+              placeholder="https://… Link zur Datei einfügen"
+              value={linkWert}
+              onChange={(e) => setLinkWert(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setLinkOffen(false);
+              }}
+            />
+          </label>
+          <button type="submit" className="btnp" disabled={!linkNormalisieren(linkWert)}>
+            Importieren
+          </button>
+          <button type="button" className="btng" onClick={() => setLinkOffen(false)}>
+            Abbrechen
+          </button>
+          <p className="muted dat-link-tipp">
+            Öffne die PDF im Browser, kopiere die Adresse und füg sie hier ein – oder drück einfach Strg+V auf dieser Seite. Die Datei landet im
+            Ordner „{aktuellerOrdner.name}“. Links hinter einer Anmeldung (z. B. Moodle, ILIAS) gehen nicht – die Datei dann herunterladen und
+            hierher ziehen.
+          </p>
+        </form>
+      )}
       {meldung && (
         <p className="auth-error" role="alert">
           {meldung}{" "}
@@ -297,7 +405,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
           className={`card dat-inhalt ${ziehenUeber ? "dat-ablegen" : ""}`}
           aria-label={`Dateien in ${aktuellerOrdner.name}`}
           onDragOver={(e) => {
-            if (e.dataTransfer.types.includes("Files")) {
+            if (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes("text/uri-list")) {
               e.preventDefault();
               setZiehenUeber(true);
             }
@@ -306,7 +414,14 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
             if (!e.currentTarget.contains(e.relatedTarget as Node)) setZiehenUeber(false);
           }}
           onDrop={(e) => {
-            if (!e.dataTransfer.files.length) return;
+            if (!e.dataTransfer.files.length) {
+              const link = e.dataTransfer.getData("text/uri-list").split("\n").find((z) => z && !z.startsWith("#")) ?? "";
+              if (!linkNormalisieren(link)) return;
+              e.preventDefault();
+              setZiehenUeber(false);
+              if (!voll) void ausLink(link);
+              return;
+            }
             e.preventDefault();
             setZiehenUeber(false);
             if (!voll) hochladen(e.dataTransfer.files);
@@ -331,6 +446,8 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                         ✕
                       </button>
                     </>
+                  ) : u.vonLink ? (
+                    <span className="faint">🔗 Wird aus dem Link geladen …</span>
                   ) : (
                     <>
                       <div className="progress-track">
@@ -349,7 +466,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
               icon="📂"
               text={
                 dateien.length === 0
-                  ? "Noch keine Dateien. Lade Skripte, Folien oder Aufnahmen hoch – oder zieh sie einfach hierher."
+                  ? "Noch keine Dateien. Lade Skripte, Folien oder Aufnahmen hoch, zieh sie hierher – oder füg einen Link zur Datei mit Strg+V ein."
                   : "Dieser Ordner ist leer. Zieh Dateien hierher oder lade sie hoch."
               }
               aktion={

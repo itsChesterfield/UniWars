@@ -9,6 +9,8 @@ import {
   uploadPruefen,
   SPEICHER_LIMIT_BYTES,
 } from "@/lib/dateiablage/dateien";
+import { dateiBestimmen, LinkFehler, linkNormalisieren } from "@/lib/dateiablage/link-import";
+import { linkHerunterladen } from "@/lib/dateiablage/link-laden";
 import type { Tables } from "@/lib/supabase/types";
 
 export type Datei = Tables<"datei">;
@@ -81,7 +83,15 @@ export async function uploadAbschliessen(eingabe: { pfad: string; name: string; 
     throw new Error(pruefung.fehler);
   }
 
-  // Bei parallelen Uploads mit gleichem Namen: nächsten freien Namen nehmen.
+  return dateiEintragen(supabase, userId, { pfad: eingabe.pfad, name: eingabe.name, fachId: eingabe.fachId, groesse, mime: pruefung.mime });
+}
+
+/** Datei-Eintrag anlegen; bei gleichem Namen (parallel) den nächsten freien nehmen. */
+async function dateiEintragen(
+  supabase: Supabase,
+  userId: string,
+  eingabe: { pfad: string; name: string; fachId: string | null; groesse: number; mime: string },
+): Promise<Datei> {
   let name = eingabe.name;
   for (let versuch = 0; versuch < 5; versuch++) {
     const { data, error } = await supabase
@@ -90,8 +100,8 @@ export async function uploadAbschliessen(eingabe: { pfad: string; name: string; 
         user_id: userId,
         fach_id: eingabe.fachId || null,
         name,
-        groesse,
-        mime_typ: pruefung.mime,
+        groesse: eingabe.groesse,
+        mime_typ: eingabe.mime,
         speicher_pfad: eingabe.pfad,
       })
       .select()
@@ -110,6 +120,37 @@ export async function uploadAbschliessen(eingabe: { pfad: string; name: string; 
   }
   await supabase.storage.from(BUCKET).remove([eingabe.pfad]);
   throw new Error("Name konnte nicht vergeben werden.");
+}
+
+export type LinkImport = { ok: true; datei: Datei } | { ok: false; fehler: string };
+
+/**
+ * Datei über einen Link importieren: Der Server lädt sie herunter (öffentliche Links,
+ * höchstens 25 MB) und legt sie im Ordner ab. Fehler kommen als Wert zurück.
+ */
+export async function ausLinkImportieren(eingabe: { link: string; fachId: string | null }): Promise<LinkImport> {
+  try {
+    const { supabase, userId } = await nutzer();
+    const url = linkNormalisieren(eingabe.link);
+    if (!url) return { ok: false, fehler: "Das ist kein gültiger Link. Kopiere die Adresse aus der Adresszeile deines Browsers (beginnt mit https://)." };
+
+    const geladen = await linkHerunterladen(url);
+    const { name: vorschlag, mime } = dateiBestimmen(geladen);
+    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase));
+    if (!pruefung.ok) return { ok: false, fehler: pruefung.fehler };
+
+    const name = freierName(vorschlag, await namenImOrdner(supabase, eingabe.fachId));
+    const pfad = `${userId}/${eingabe.fachId ?? "allgemein"}/${crypto.randomUUID()}-${speicherName(name)}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(pfad, geladen.bytes, { contentType: mime, upsert: false });
+    if (error) throw new Error(error.message);
+    const datei = await dateiEintragen(supabase, userId, { pfad, name, fachId: eingabe.fachId, groesse: geladen.bytes.length, mime });
+    return { ok: true, datei };
+  } catch (err) {
+    if (err instanceof LinkFehler) return { ok: false, fehler: err.message };
+    if (err instanceof Error && err.message.includes("Speicherplatz")) return { ok: false, fehler: err.message };
+    console.error("[dateiablage] Link-Import", err instanceof Error ? err.message : err);
+    return { ok: false, fehler: "Der Import hat nicht geklappt. Versuch es noch einmal." };
+  }
 }
 
 /** Upload abgebrochen: Objekt wieder entfernen. */
