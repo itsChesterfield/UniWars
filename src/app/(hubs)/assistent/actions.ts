@@ -1,14 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createDeadline } from "@/app/deadline/actions";
-import { createTodo } from "@/app/todo/actions";
-import { notizAnlegen, notizSpeichern } from "@/app/(hubs)/notizen/actions";
-import { vorschlaegeUebernehmen } from "@/app/(hubs)/notizen/ki-actions";
-import { karteBauen, werkzeugDatenLesen, type Aktionskarte, type KartenStatus } from "@/lib/ki/assistent";
+import { karteAusfuehren, karteMitAenderung, type KartenAenderung } from "@/lib/ki/aktionskarten-server";
+import { werkzeugDatenLesen, type Aktionskarte, type KartenStatus } from "@/lib/ki/assistent";
 import { KiEingabe } from "@/lib/ki/fehler";
 import { alsFehler, chatStatus, kiNutzer, type KiErgebnis, type Supabase, type TextStatus } from "@/lib/ki/server";
-import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
 import type { Json } from "@/lib/supabase/types";
 
 /**
@@ -118,14 +114,7 @@ async function statusSetzen(
   if (error) throw new Error(error.message);
 }
 
-export type KartenAenderung = {
-  titel?: string;
-  faellig_am?: string;
-  fach_id?: string | null;
-  prioritaet?: string;
-  inhalt?: string;
-  karten?: { vorderseite: string; rueckseite: string }[];
-};
+export type { KartenAenderung } from "@/lib/ki/aktionskarten-server";
 
 /**
  * Aktionskarte übernehmen (KI-ALL-01: erst jetzt wird gespeichert). Bearbeitete Werte werden
@@ -139,58 +128,8 @@ export async function karteUebernehmen(
   try {
     const { supabase } = await kiNutzer();
     const { daten, karte } = await karteLaden(supabase, nachrichtId, karteId);
-    if (karte.status !== "offen") throw new KiEingabe(karte.status === "uebernommen" ? "Dieser Vorschlag wurde schon übernommen." : "Dieser Vorschlag wurde verworfen.");
-
-    let k: Aktionskarte = karte;
-    if (aenderung) {
-      const umfeld = { ...(await umfeldLaden(supabase)), jetzt: new Date() };
-      const basis: Record<string, unknown> = { ...karte, fach: karte.typ === "stapel_lernen" ? undefined : (karte as { fach_id?: string | null }).fach_id ?? undefined };
-      const args: Record<string, unknown> = { ...basis, ...aenderung };
-      if (aenderung.fach_id !== undefined) args.fach = aenderung.fach_id ?? undefined;
-      if (karte.typ === "karteikarten") args.stapel = karte.stapel_id ?? karte.stapel_name;
-      if (karte.typ === "stapel_lernen") args.stapel = karte.stapel_id;
-      k = { id: karte.id, status: "offen", ...karteBauen(karte.typ, args, umfeld) } as Aktionskarte;
-    }
-
-    let ergebnisId: string | null = null;
-    let link: string | null = null;
-    switch (k.typ) {
-      case "deadline": {
-        const neu = await createDeadline({ titel: k.titel, fach_id: k.fach_id, faellig_am: k.faellig_am, typ: k.deadline_typ, kategorie: "NORMAL" });
-        ergebnisId = neu?.[0]?.id ?? null;
-        link = ergebnisId ? `/?detail=deadline:${ergebnisId}` : "/";
-        break;
-      }
-      case "todo": {
-        const neu = await createTodo({ titel: k.titel, fach_id: k.fach_id, prioritaet: k.prioritaet });
-        ergebnisId = neu.id;
-        link = `/?detail=todo:${neu.id}`;
-        break;
-      }
-      case "notiz": {
-        const neu = await notizAnlegen(k.fach_id);
-        await notizSpeichern(neu.id, { titel: k.titel, inhalt: k.inhalt });
-        await supabase.from("notiz").update({ ki_erzeugt: true }).eq("id", neu.id);
-        ergebnisId = neu.id;
-        link = `/notizen?id=${neu.id}`;
-        break;
-      }
-      case "karteikarten": {
-        const ziel = k.stapel_id ? { stapelId: k.stapel_id } : { neuerStapel: { name: k.stapel_name, fachId: k.fach_id } };
-        const a = await vorschlaegeUebernehmen(ziel, k.karten);
-        if (!a.ok) throw new KiEingabe(a.fehler);
-        ergebnisId = a.daten.stapelId;
-        link = `/karteikarten/${a.daten.stapelId}`;
-        break;
-      }
-      case "lernsession":
-        link = k.fach_id ? `/work-station?fach=${k.fach_id}` : "/work-station";
-        break;
-      case "stapel_lernen":
-        link = `/karteikarten/${k.stapel_id}/lernen`;
-        ergebnisId = k.stapel_id;
-        break;
-    }
+    const k = await karteMitAenderung(supabase, karte, aenderung);
+    const { ergebnisId, link } = await karteAusfuehren(supabase, k);
     await statusSetzen(supabase, nachrichtId, daten, k, "uebernommen", ergebnisId);
     return { ok: true, daten: { karte: { ...k, status: "uebernommen", ergebnisId }, link } };
   } catch (err) {

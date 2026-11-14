@@ -29,6 +29,7 @@ import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
 import { NotificationBell } from "@/components/notification-bell";
 import { WidgetToggle, istWidgetSichtbar } from "@/components/widget-toggle";
+import { Tagesvorschlaege } from "@/components/ki/tagesvorschlaege";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
@@ -76,6 +77,7 @@ export function DashboardContent({
   username,
   userId,
   kalender,
+  kiVerfuegbar = false,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -92,6 +94,7 @@ export function DashboardContent({
   username: string;
   userId: string;
   kalender: { konfiguriert: boolean; verbunden: boolean; probleme: string[] };
+  kiVerfuegbar?: boolean;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -161,7 +164,7 @@ export function DashboardContent({
           <SearchBar />
           <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
           <div className="dashboard-toolbar-rechts">
-            <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} />
+            <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} kiVerfuegbar={kiVerfuegbar} />
             <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
             <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
           </div>
@@ -171,6 +174,8 @@ export function DashboardContent({
       <FachFilterChips faecher={faecher} />
 
       <div className="dashboard-grid">
+        {kiVerfuegbar && sichtbar("ki") && <Tagesvorschlaege faecher={faecher} />}
+
         {sichtbar("heute") && (
           <SegmentedCard
             title="Termine"

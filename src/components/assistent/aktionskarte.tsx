@@ -5,11 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { karteUebernehmen, karteVerwerfen, type KartenAenderung } from "@/app/(hubs)/assistent/actions";
 import { datumText, PRIORITAETEN, type Aktionskarte } from "@/lib/ki/assistent";
-import { kiVorschauUebernommen } from "@/lib/ki/tracking";
+import type { KiErgebnis } from "@/lib/ki/ergebnis";
+import { kiVorschauUebernommen, type KiFunktionsId } from "@/lib/ki/tracking";
 import { berlinDatum, berlinUhrzeit } from "@/lib/zeit";
 import { track } from "@/lib/analytics";
 
 type Fach = { id: string; name: string };
+
+/** Woher die Karte stammt: Antwort im Assistenten (Standard) oder z. B. Tagesvorschläge */
+export type KartenAktionen = {
+  uebernehmen: (karteId: string, aenderung: KartenAenderung | null) => Promise<KiErgebnis<{ karte: Aktionskarte; link: string | null }>>;
+  verwerfen: (karteId: string) => Promise<KiErgebnis<null>>;
+  verwerfenText: string;
+  funktion: KiFunktionsId;
+};
 
 const KOPF: Record<Aktionskarte["typ"], string> = {
   deadline: "📅 Deadline",
@@ -34,13 +43,18 @@ function lokal(iso: string) {
  */
 export function AktionskarteAnzeige({
   karte: start,
-  nachrichtId,
+  nachrichtId = null,
   faecher,
+  aktionen,
+  onGeaendert,
 }: {
   karte: Aktionskarte;
   /** null, solange die Antwort noch läuft (dann sind die Knöpfe gesperrt) */
-  nachrichtId: string | null;
+  nachrichtId?: string | null;
   faecher: Fach[];
+  /** statt der Assistent-Actions (dann ist nachrichtId egal) */
+  aktionen?: KartenAktionen;
+  onGeaendert?: (karte: Aktionskarte) => void;
 }) {
   const router = useRouter();
   const [karte, setKarte] = useState(start);
@@ -50,34 +64,38 @@ export function AktionskarteAnzeige({
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const navigation = karte.typ === "lernsession" || karte.typ === "stapel_lernen";
+  const bereit = Boolean(aktionen || nachrichtId);
+  const funktion = aktionen?.funktion ?? "ki12";
 
   async function uebernehmen(aenderung: KartenAenderung | null) {
-    if (!nachrichtId) return;
+    if (!bereit) return;
     setFehler(null);
     setLaeuft(true);
-    const a = await karteUebernehmen(nachrichtId, karte.id, aenderung).catch(() => null);
+    const a = await (aktionen ? aktionen.uebernehmen(karte.id, aenderung) : karteUebernehmen(nachrichtId as string, karte.id, aenderung)).catch(() => null);
     setLaeuft(false);
     if (!a?.ok) {
       setFehler(a && !a.ok ? a.fehler : "Das hat nicht geklappt. Bitte versuch es noch einmal.");
       return;
     }
     setKarte(a.daten.karte);
+    onGeaendert?.(a.daten.karte);
     setLink(a.daten.link);
     setBearbeiten(false);
-    track("ki_aktionskarte", { typ: karte.typ, ergebnis: aenderung ? "bearbeitet" : "uebernommen" });
-    kiVorschauUebernommen("ki12", 1, aenderung ? 1 : 0);
+    track("ki_aktionskarte", { typ: karte.typ, ergebnis: aenderung ? "bearbeitet" : "uebernommen", funktion });
+    kiVorschauUebernommen(funktion, 1, aenderung ? 1 : 0);
     if (navigation && a.daten.link) router.push(a.daten.link);
     else router.refresh();
   }
 
   async function verwerfen() {
-    if (!nachrichtId) return;
+    if (!bereit) return;
     setLaeuft(true);
-    const a = await karteVerwerfen(nachrichtId, karte.id).catch(() => null);
+    const a = await (aktionen ? aktionen.verwerfen(karte.id) : karteVerwerfen(nachrichtId as string, karte.id)).catch(() => null);
     setLaeuft(false);
     if (a?.ok) {
       setKarte({ ...karte, status: "verworfen" });
-      track("ki_aktionskarte", { typ: karte.typ, ergebnis: "verworfen" });
+      onGeaendert?.({ ...karte, status: "verworfen" });
+      track("ki_aktionskarte", { typ: karte.typ, ergebnis: "verworfen", funktion });
     } else setFehler("Das hat nicht geklappt.");
   }
 
@@ -110,7 +128,7 @@ export function AktionskarteAnzeige({
       <div className="ki-karte-kopf">
         <span>{KOPF[karte.typ]}</span>
         {karte.status === "uebernommen" && <span className="ki-karte-status">✓ Übernommen</span>}
-        {karte.status === "verworfen" && <span className="ki-karte-status muted">Verworfen</span>}
+        {karte.status === "verworfen" && <span className="ki-karte-status muted">{aktionen ? "Ausgeblendet" : "Verworfen"}</span>}
       </div>
 
       {!bearbeiten ? (
@@ -154,7 +172,12 @@ export function AktionskarteAnzeige({
               </ul>
             </>
           )}
-          {karte.typ === "lernsession" && <strong>Fokus-Session{karte.fach_name ? ` · ${karte.fach_name}` : ""}</strong>}
+          {karte.typ === "lernsession" && (
+            <strong>
+              Fokus-Session{karte.fach_name ? ` · ${karte.fach_name}` : ""}
+              {karte.minuten ? ` · ${karte.minuten} Min` : ""}
+            </strong>
+          )}
           {karte.typ === "stapel_lernen" && (
             <strong>
               {karte.faellig} fällige {karte.faellig === 1 ? "Karte" : "Karten"} in „{karte.stapel_name}“
@@ -234,21 +257,21 @@ export function AktionskarteAnzeige({
               <button type="button" className="btng" disabled={laeuft} onClick={() => setBearbeiten(false)}>
                 Abbrechen
               </button>
-              <button type="button" className="btnp" disabled={laeuft || !nachrichtId} onClick={() => void uebernehmen(entwurf)}>
+              <button type="button" className="btnp" disabled={laeuft || !bereit} onClick={() => void uebernehmen(entwurf)}>
                 {laeuft ? "Speichert …" : "Speichern"}
               </button>
             </>
           ) : (
             <>
-              <button type="button" className="link-knopf" disabled={laeuft || !nachrichtId} onClick={() => void verwerfen()}>
-                Verwerfen
+              <button type="button" className="link-knopf" disabled={laeuft || !bereit} onClick={() => void verwerfen()}>
+                {aktionen?.verwerfenText ?? "Verwerfen"}
               </button>
               {!navigation && (
-                <button type="button" className="btng" disabled={laeuft || !nachrichtId} onClick={bearbeitenStarten}>
+                <button type="button" className="btng" disabled={laeuft || !bereit} onClick={bearbeitenStarten}>
                   Bearbeiten
                 </button>
               )}
-              <button type="button" className="btnp" disabled={laeuft || !nachrichtId} onClick={() => void uebernehmen(null)}>
+              <button type="button" className="btnp" disabled={laeuft || !bereit} onClick={() => void uebernehmen(null)}>
                 {laeuft ? "…" : navigation ? (karte.typ === "lernsession" ? "Starten" : "Jetzt lernen") : "Übernehmen"}
               </button>
             </>

@@ -102,7 +102,7 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   }
 
   return (
-    <section className="card">
+    <section className="card" id="faecher">
       <div className="ch" style={{ marginBottom: 14 }}>
         <span className="ct">Fächer</span>
         <button type="button" onClick={openCreateForm} className="btng" style={{ padding: "5px 11px" }}>

@@ -118,6 +118,7 @@ export default async function DashboardPage() {
               verbunden: Boolean(kalenderVerbindung),
               probleme: kalenderProbleme,
             }}
+            kiVerfuegbar={kiKonfiguriert()}
           />
         </Suspense>
       </main>

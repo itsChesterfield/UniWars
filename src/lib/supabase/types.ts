@@ -644,6 +644,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ki_tagesvorschlag: {
+        Row: {
+          datum: string
+          erstellt_am: string
+          geaendert_am: string
+          id: string
+          neu_erstellt: boolean
+          status: string
+          user_id: string
+          vorschlaege: Json
+        }
+        Insert: {
+          datum: string
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          neu_erstellt?: boolean
+          status?: string
+          user_id?: string
+          vorschlaege?: Json
+        }
+        Update: {
+          datum?: string
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          neu_erstellt?: boolean
+          status?: string
+          user_id?: string
+          vorschlaege?: Json
+        }
+        Relationships: []
+      }
       ki_unterhaltung: {
         Row: {
           erstellt_am: string
