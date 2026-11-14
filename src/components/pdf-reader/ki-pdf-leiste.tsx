@@ -421,7 +421,7 @@ export function KiPdfLeiste({
                 />
                 <div className="ki-fuss">
                   <KiLimitHinweis verbleibend={ki.verbleibend} limit={ki.status?.limit ?? 0} />
-                  <button type="submit" className="btnp" disabled={laeuft || !frage.trim() || ki.verbleibend === 0}>
+                  <button type="submit" className="btnp" aria-label={laeuft ? "Antwort wird erstellt" : "Fragen"} disabled={laeuft || !frage.trim() || ki.verbleibend === 0}>
                     {laeuft ? "…" : "Fragen"}
                   </button>
                 </div>
@@ -478,6 +478,7 @@ export function KiPdfLeiste({
 
       {kartenOffen && kartenSeiten && (
         <KiKartenDialog
+          funktion="ki03"
           notiz={{ titel: `${datei.name.replace(/\.pdf$/i, "")} (${kurzBereich(kartenSeiten.seiten.map((s) => s.seite))})`, fach_id: null }}
           faecher={[]}
           vorschlagen={(n) => pdfKartenVorschlagen(datei.id, kartenSeiten.seiten, n)}

@@ -485,6 +485,7 @@ export function TranskriptAnsicht({
                       type="button"
                       className="tra-zeitstempel mono"
                       title="Ab hier abspielen"
+                      aria-label={`Ab ${zeitText(a.start)} abspielen${stand.teile.length > 1 ? ` (Teil ${a.teil})` : ""}`}
                       onClick={() => void springen(a.teil, a.start, true)}
                     >
                       ▶ {stand.teile.length > 1 ? `T${a.teil} ` : ""}
@@ -535,6 +536,7 @@ export function TranskriptAnsicht({
       {dialog === "mitschrift" && <KiMitschriftDialog transkriptId={transkript.id} onSchliessen={() => setDialog(null)} />}
       {dialog === "karten" && (
         <KiKartenDialog
+          funktion="ki04"
           notiz={{ titel, fach_id: fachId || null }}
           faecher={faecher}
           vorschlagen={(n) =>

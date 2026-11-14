@@ -102,6 +102,8 @@ export async function tagesvorschlaege(modus: "laden" | "neu" = "laden"): Promis
       if (!uebernommen?.length) return { ok: true, daten: { status: "laeuft" } };
       id = z.id;
     } else {
+      // Datensparsamkeit: Vorschläge vergangener Tage werden nicht mehr gebraucht
+      await supabase.from("ki_tagesvorschlag").delete().lt("datum", datum);
       const { data: neu, error } = await supabase.from("ki_tagesvorschlag").insert({ user_id: userId, datum, status: "laeuft" }).select("id").single();
       if (error || !neu) {
         if (error?.code === "23505") return { ok: true, daten: { status: "laeuft" } };

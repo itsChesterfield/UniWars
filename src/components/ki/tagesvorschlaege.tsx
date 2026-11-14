@@ -52,7 +52,7 @@ export function Tagesvorschlaege({ faecher }: { faecher: Fach[] }) {
     }
     versuche.current = 0;
     setStand(d);
-    if (d.status === "fertig" && d.neuErzeugt) kiVorschauAngezeigt("ki05", d.vorschlaege.length, Math.round(performance.now() - start));
+    if (d.status === "fertig" && d.neuErzeugt) kiVorschauAngezeigt("ki05", d.vorschlaege.length, start);
   }
   useEffect(() => {
     ladenRef.current = laden;

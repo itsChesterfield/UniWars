@@ -271,7 +271,7 @@ export function AktionskarteAnzeige({
                   Bearbeiten
                 </button>
               )}
-              <button type="button" className="btnp" disabled={laeuft || !bereit} onClick={() => void uebernehmen(null)}>
+              <button type="button" className="btnp" aria-busy={laeuft} disabled={laeuft || !bereit} onClick={() => void uebernehmen(null)}>
                 {laeuft ? "…" : navigation ? (karte.typ === "lernsession" ? "Starten" : "Jetzt lernen") : "Übernehmen"}
               </button>
             </>

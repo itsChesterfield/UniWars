@@ -5,6 +5,8 @@ import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import { useSprachStatus } from "@/components/ki/sprach-status";
 import { aufnahmeFormat, zeitText } from "@/lib/transkription/transkript";
 import { track } from "@/lib/analytics";
+import { kiFehlerTracken } from "@/lib/ki/tracking";
+import type { KiFehlerTyp } from "@/lib/ki/fehler";
 
 const MAX_SEKUNDEN = 120;
 const STILLE_SEKUNDEN = 60;
@@ -86,7 +88,7 @@ export function DiktatKnopf({ onText, disabled = false, klasse = "" }: { onText:
       if (!daten?.ok) {
         if (daten && !daten.ok && daten.typ === "einwilligung") setEinwilligung(daten.art ?? "audio");
         else setFehler(daten && !daten.ok ? daten.fehler : "Das Diktat hat nicht geklappt.");
-        track("ki_fehler", { funktion: "ki13", typ: daten && !daten.ok ? daten.typ : "technisch" });
+        kiFehlerTracken("ki13", (daten && !daten.ok ? daten.typ : "technisch") as KiFehlerTyp);
         return;
       }
       statusAendern({ audioRestSekunden: daten.daten.verbleibendSekunden });

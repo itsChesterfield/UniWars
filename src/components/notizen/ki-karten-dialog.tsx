@@ -14,21 +14,17 @@ import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
 import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { ERLAUBTE_ANZAHL, MAX_SEITE_ZEICHEN, type KartenAnzahl } from "@/lib/ki/karten";
-import type { KiFehlerTyp } from "@/lib/ki/fehler";
 import type { KiErgebnis } from "@/lib/ki/ergebnis";
 import type { Vorschlag } from "@/lib/ki/karten";
 import type { FachOption } from "@/lib/fach-option";
 import { track } from "@/lib/analytics";
+import { kiFehlerTracken, type KiFunktionsId } from "@/lib/ki/tracking";
 
 type Schritt = "laden" | "nicht_verfuegbar" | "einwilligung" | "einstellungen" | "erstellt" | "vorschau" | "fertig";
 type Entwurf = { id: number; vorderseite: string; rueckseite: string; an: boolean; original: string };
 
 const NEUER_STAPEL = "__neu__";
 
-/** Nur diese Typen gehen an Analytics (nie Inhalte). */
-function fehlerTracken(typ: KiFehlerTyp) {
-  if (typ === "limit" || typ === "ausgelastet" || typ === "keine_karten" || typ === "technisch") track("ki_fehler", { typ });
-}
 
 export type KartenVorschlagen = (anzahl: KartenAnzahl) => Promise<KiErgebnis<{ karten: Vorschlag[]; gekuerzt: boolean; verbleibendHeute: number }>>;
 
@@ -44,6 +40,7 @@ export function KiKartenDialog({
   vorschlagen,
   ladeText = "Die KI liest deine Notiz …",
   kuerzungsText = "Nur der Anfang der Notiz wurde verwendet.",
+  funktion = "ki01",
   onSchliessen,
 }: {
   /** Herkunft: bei Notizen mit id (wird an der Karte vermerkt) */
@@ -54,6 +51,8 @@ export function KiKartenDialog({
   vorschlagen?: KartenVorschlagen;
   ladeText?: string;
   kuerzungsText?: string;
+  /** für Analytics: Notiz (ki01), PDF (ki03), Transkript (ki04) */
+  funktion?: KiFunktionsId;
   onSchliessen: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -112,13 +111,13 @@ export function KiKartenDialog({
     const antwort = await (vorschlagen ? vorschlagen(anzahl) : karteikartenVorschlagen(notiz.id ?? "", anzahl)).catch(() => null);
     if (!antwort) {
       setFehler("Da ist etwas schiefgelaufen. Bitte versuch es noch einmal.");
-      fehlerTracken("technisch");
+      kiFehlerTracken(funktion, "technisch");
       setSchritt("einstellungen");
       return;
     }
     if (!antwort.ok) {
       setFehler(antwort.fehler);
-      fehlerTracken(antwort.typ);
+      kiFehlerTracken(funktion, antwort.typ);
       if (antwort.typ === "limit" && status) setStatus({ ...status, genutzt: status.limit });
       setSchritt(antwort.typ === "einwilligung" ? "einwilligung" : "einstellungen");
       return;

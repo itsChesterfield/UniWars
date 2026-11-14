@@ -199,7 +199,8 @@ export function Sidebar({
         <AnalyticsEinstellung />
         <KiEinstellung startEingewilligt={kiEingewilligt} />
         <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
-        {kiEingewilligt && <KiVerlaufLoeschen />}
+        {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
+        {kiVerfuegbar && <KiVerlaufLoeschen />}
         {kiEingewilligt && <KiKontingentAnzeige />}
         <AbmeldenButton />
       </div>
