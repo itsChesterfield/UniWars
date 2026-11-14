@@ -86,10 +86,13 @@ export function QuickAdd({
   faecher,
   todos = [],
   pruefungen = [],
+  ohneKnopf = false,
 }: {
   faecher: FachOption[];
   todos?: TodoOption[];
   pruefungen?: PruefungOption[];
+  /** Nur per Taste Q erreichbar (in allen Hubs, ohne eigenen Knopf in der Kopfzeile) */
+  ohneKnopf?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [modus, setModus] = useState<QuickAddModus>("ABGABE");
@@ -170,9 +173,11 @@ export function QuickAdd({
       const ziel = e.target as HTMLElement | null;
       const editierbar =
         !!ziel &&
-        (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.isContentEditable);
+        (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.tagName === "SELECT" || ziel.isContentEditable);
+      // Nicht bei Tastenkombinationen, beim Gedrückthalten oder während ein anderer Dialog offen ist
+      const andererDialog = Boolean(document.querySelector("dialog[open]"));
 
-      if (!open && !editierbar && e.key.toLowerCase() === "q") {
+      if (!open && !editierbar && !andererDialog && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && e.key.toLowerCase() === "q") {
         e.preventDefault();
         setOpen(true);
         track("schnell_erfassen_geoeffnet", { quelle: "taste_q" });
@@ -386,20 +391,22 @@ export function QuickAdd({
 
   return (
     <>
-      <button
-        type="button"
-        className="btnp"
-        onClick={() => {
-          setOpen(true);
-          track("schnell_erfassen_geoeffnet", { quelle: "button" });
-        }}
-        title="Schnell erfassen (Taste Q)"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        Schnell erfassen
-      </button>
+      {!ohneKnopf && (
+        <button
+          type="button"
+          className="btnp"
+          onClick={() => {
+            setOpen(true);
+            track("schnell_erfassen_geoeffnet", { quelle: "button" });
+          }}
+          title="Schnell erfassen (Taste Q)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Schnell erfassen
+        </button>
+      )}
 
       {open && (
         <div className="quick-add-overlay" onClick={handleClose}>
