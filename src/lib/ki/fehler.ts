@@ -62,14 +62,22 @@ export class KiKeineKarten extends KiFehler {
 }
 
 export class KiLimitErreicht extends KiFehler {
-  constructor(limit: number) {
-    super(`Du hast dein KI-Limit für heute erreicht (${limit} Anfragen). Morgen geht es weiter.`, "limit");
+  constructor(limit: number, meldung?: string) {
+    super(meldung ?? `Du hast dein KI-Limit für heute erreicht (${limit} Anfragen). Morgen geht es weiter.`, "limit");
   }
 }
 
 export class KiKeineEinwilligung extends KiFehler {
-  constructor() {
-    super("Bitte bestätige zuerst, dass du die KI-Funktionen nutzen möchtest.", "einwilligung");
+  /** Welche Einwilligung fehlt: Text-KI (KI-D1) oder zusätzlich Audio (KI-D2) */
+  readonly art: "text" | "audio";
+  constructor(art: "text" | "audio" = "text") {
+    super(
+      art === "audio"
+        ? "Bitte bestätige zuerst, dass deine Aufnahmen zur Umwandlung an die KI gehen dürfen."
+        : "Bitte bestätige zuerst, dass du die KI-Funktionen nutzen möchtest.",
+      "einwilligung",
+    );
+    this.art = art;
   }
 }
 

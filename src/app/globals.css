@@ -6471,3 +6471,454 @@ dialog.ki-dialog-klein {
   margin: 6px 0 0;
   font-size: 11px;
 }
+
+/* ---------------------------------------------------------------------------
+   Transkription (TRA-01 … TRA-05, KI-04)
+   --------------------------------------------------------------------------- */
+.tra-start-raster {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.tra-aufnahme,
+.tra-datei,
+.tra-umwandeln {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tra-aufnahme .ct,
+.tra-datei .ct,
+.tra-umwandeln .ct {
+  margin: 0;
+}
+
+.tra-datei > p.muted,
+.tra-umwandeln > p.muted {
+  margin: 0;
+  font-size: 14px;
+}
+
+.tra-einstellungen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tra-datei .tra-einstellungen {
+  grid-template-columns: minmax(0, 1fr) 150px;
+}
+
+.tra-rekorder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 6px;
+}
+
+.tra-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 30px;
+  border: none;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(193 78 52 / 0.3);
+}
+
+.tra-start:hover {
+  filter: brightness(1.06);
+}
+
+.tra-start:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.tra-punkt {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  flex: none;
+}
+
+.tra-zeit .tra-punkt {
+  background: var(--faint);
+}
+
+.tra-zeit .tra-punkt.an {
+  background: var(--danger);
+  animation: tra-blinken 1.2s ease-in-out infinite;
+}
+
+@keyframes tra-blinken {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.tra-zeit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.tra-zeit strong {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tra-pegel {
+  width: min(320px, 100%);
+  height: 8px;
+  border-radius: 999px;
+  background: var(--card2);
+  overflow: hidden;
+}
+
+.tra-pegel span {
+  display: block;
+  height: 100%;
+  background: var(--success);
+  border-radius: inherit;
+  transition: width 0.08s linear;
+}
+
+.tra-stopp {
+  min-width: 140px;
+}
+
+.tra-fehler {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tra-fehler .auth-error {
+  margin: 0;
+}
+
+.tra-hinweis {
+  margin: 0;
+  font-size: 12px;
+}
+
+.tra-knoepfe {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tra-liste-titel {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.tra-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tra-liste li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tra-liste li:last-child {
+  border-bottom: none;
+}
+
+.tra-eintrag {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 11px 6px;
+  color: var(--text);
+  border-radius: 8px;
+}
+
+.tra-eintrag:hover {
+  background: var(--card2);
+  text-decoration: none;
+}
+
+.tra-eintrag-titel {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tra-eintrag-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tra-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--card2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tra-status-fertig {
+  color: var(--success);
+}
+
+.tra-status-in_bearbeitung {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.tra-status-fehler {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.tra-ansicht {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 920px;
+}
+
+.tra-kopf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tra-kopf .tra-titel {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.tra-kopf select.tra-fach {
+  flex: none;
+  width: 180px;
+}
+
+.tra-player {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.tra-player audio {
+  width: 100%;
+}
+
+.tra-teile-wahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tra-teile {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.tra-teil-fertig {
+  color: var(--success);
+}
+
+.tra-teil-fehler {
+  color: var(--danger);
+}
+
+.tra-teil-in_bearbeitung {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.tra-sprache {
+  max-width: 220px;
+}
+
+.tra-fortschritt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.tra-fortschritt .muted {
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.ki-spinner.tra-spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.tra-aktionen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tra-speicher {
+  font-size: 13px;
+}
+
+.tra-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+}
+
+.tra-absatz {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.tra-absatz.aktiv {
+  background: var(--accent-soft);
+}
+
+.tra-zeitstempel {
+  border: none;
+  background: none;
+  padding: 7px 4px;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.tra-zeitstempel:hover {
+  background: var(--card2);
+}
+
+.tra-absatz-text {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 5px 8px;
+  border-radius: 8px;
+  resize: none;
+  field-sizing: content;
+}
+
+.tra-absatz-text:hover {
+  border-color: var(--border-soft);
+}
+
+.tra-absatz-text:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--card);
+}
+
+.tra-mitschrift-vorschau {
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 4px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+
+.tra-mitschrift-text {
+  min-height: 45vh;
+  font-family: var(--font-code);
+  font-size: 13px;
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .tra-start-raster,
+  .tra-einstellungen,
+  .tra-datei .tra-einstellungen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tra-kopf {
+    flex-wrap: wrap;
+  }
+
+  .tra-kopf .tra-titel {
+    flex-basis: calc(100% - 60px);
+  }
+
+  .tra-kopf select.tra-fach {
+    width: auto;
+    flex: 1;
+  }
+
+  .tra-absatz {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .tra-zeitstempel {
+    justify-self: start;
+    padding: 4px;
+  }
+
+  .tra-knoepfe {
+    justify-content: stretch;
+  }
+
+  .tra-knoepfe > * {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tra-zeit .tra-punkt.an {
+    animation: none;
+  }
+}

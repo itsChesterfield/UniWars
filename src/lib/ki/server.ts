@@ -8,6 +8,7 @@ import { kiAnfrage, kiKonfiguriert, type ModellZweck } from "@/lib/ki/anbieter";
 import type { KiAntwort, KiOptionen } from "@/lib/ki/anfrage";
 import { KiEingabe, KiFehler, KiKeineEinwilligung, KiKonfiguration, KiLimitErreicht, type KiFehlerTyp } from "@/lib/ki/fehler";
 import { kiLimits } from "@/lib/ki/limits";
+import { audioVerfuegbar } from "@/lib/ki/audio";
 import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
 
 import type { TextStatus } from "@/lib/ki/ergebnis";
@@ -123,4 +124,80 @@ export async function textAnfrageAusfuehren<T>({
   } finally {
     await nutzungAbschliessen(supabase, nutzungId, { tokensEin, tokensAus, erfolgreich });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Audio (Transkription, Diktieren): Kontingent in Sekunden pro Monat (KI-ALL-02/03)
+// ---------------------------------------------------------------------------
+
+export type AudioStatus = {
+  /** Key und Spracherkennungs-Modell eingerichtet */
+  verfuegbar: boolean;
+  eingewilligt: boolean;
+  audioEingewilligt: boolean;
+  genutztSekunden: number;
+  limitSekunden: number;
+};
+
+/** In diesem Monat (Europe/Berlin) verbrauchte Audio-Sekunden */
+export async function audioMonatGenutzt(supabase: Supabase): Promise<number> {
+  const monatsanfang = berlinMitternacht(`${berlinDatum().slice(0, 7)}-01`);
+  const { data } = await supabase
+    .from("ki_nutzung")
+    .select("menge")
+    .eq("kontingent", "audio")
+    .gte("erstellt_am", monatsanfang.toISOString());
+  return (data ?? []).reduce((n, z) => n + (z.menge ?? 0), 0);
+}
+
+export async function audioStatus(supabase: Supabase, userId: string): Promise<AudioStatus> {
+  const [{ data }, genutzt] = await Promise.all([
+    supabase.from("settings").select("ki_einwilligung, ki_audio_einwilligung").eq("user_id", userId).maybeSingle(),
+    audioMonatGenutzt(supabase),
+  ]);
+  return {
+    verfuegbar: audioVerfuegbar().diktat,
+    eingewilligt: Boolean(data?.ki_einwilligung),
+    audioEingewilligt: Boolean(data?.ki_audio_einwilligung),
+    genutztSekunden: genutzt,
+    limitSekunden: kiLimits().audio.limit,
+  };
+}
+
+/** Spracherkennung eingerichtet, Einwilligung KI-D1 und KI-D2 erteilt? */
+export async function audioVoraussetzungen(supabase: Supabase, userId: string): Promise<void> {
+  if (!audioVerfuegbar().diktat) throw new KiKonfiguration("MISTRAL_API_KEY oder KI_AUDIO_STT_MODELL fehlt");
+  const { data } = await supabase.from("settings").select("ki_einwilligung, ki_audio_einwilligung").eq("user_id", userId).maybeSingle();
+  if (!data?.ki_einwilligung) throw new KiKeineEinwilligung("text");
+  if (!data?.ki_audio_einwilligung) throw new KiKeineEinwilligung("audio");
+}
+
+function audioLimitMeldung(limitSekunden: number): string {
+  return `Dein Kontingent für diesen Monat reicht dafür nicht (${Math.round(limitSekunden / 60)} Audio-Minuten). Nächsten Monat geht es weiter.`;
+}
+
+/**
+ * Audio-Sekunden vom Monatskontingent abbuchen. Mit `erzwingen` wird ohne Limitprüfung
+ * nachgebucht (wenn die Aufnahme laut Dienst länger war als vorab angegeben).
+ */
+export async function audioBuchen(
+  supabase: Supabase,
+  funktion: string,
+  sekunden: number,
+  erzwingen = false,
+): Promise<{ nutzungId: string; limitSekunden: number }> {
+  const limitSekunden = kiLimits().audio.limit;
+  const { data, error } = await supabase.rpc("ki_kontingent_buchen", {
+    p_kontingent: "audio",
+    p_funktion: funktion,
+    p_einheit: "audio_sekunden",
+    p_menge: Math.max(1, Math.ceil(sekunden)),
+    p_limit: erzwingen ? 2_000_000_000 : limitSekunden,
+    p_zeitraum: "monat",
+  });
+  if (error) {
+    if (error.message.includes("KI_LIMIT")) throw new KiLimitErreicht(limitSekunden, audioLimitMeldung(limitSekunden));
+    throw new Error(`Buchung fehlgeschlagen: ${error.message}`);
+  }
+  return { nutzungId: data, limitSekunden };
 }

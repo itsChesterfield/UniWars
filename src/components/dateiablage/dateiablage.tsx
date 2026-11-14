@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -31,7 +32,7 @@ export type Ordner = { id: string | null; name: string; farbe: string | null };
 
 type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null };
 type Sortierung = { spalte: "name" | "datum" | "groesse"; absteigend: boolean };
-type Vorschau = { art: "bild" | "audio"; url: string; name: string };
+type Vorschau = { art: "bild" | "audio"; url: string; name: string; id: string };
 
 const ART_ICON: Record<DateiArt, string> = { pdf: "📕", bild: "🖼️", office: "📄", text: "📝", audio: "🎵" };
 const OFFICE_ICON: Record<string, string> = { docx: "📘", pptx: "📙", xlsx: "📗" };
@@ -145,7 +146,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
     }
     try {
       if (art === "bild" || art === "audio") {
-        setVorschau({ art, url: await dateiLink(d.id), name: d.name });
+        setVorschau({ art, url: await dateiLink(d.id), name: d.name, id: d.id });
       } else {
         window.location.assign(await dateiLink(d.id, true));
       }
@@ -539,7 +540,9 @@ function VorschauFenster({ vorschau, onSchliessen }: { vorschau: Vorschau; onSch
       ) : (
         <>
           <audio src={vorschau.url} controls autoFocus />
-          <p className="muted dat-transkribieren">🎙️ Transkribieren kommt mit dem Transkriptions-Hub.</p>
+          <Link href={`/transkription?datei=${vorschau.id}`} className="btng dat-transkribieren">
+            🎙️ Transkribieren
+          </Link>
         </>
       )}
     </dialog>

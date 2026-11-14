@@ -28,8 +28,9 @@ const TEXTE: Record<EinwilligungsArt, { titel: string; absatz: React.ReactNode; 
     titel: "Sprachfunktionen nutzen?",
     absatz: (
       <>
-        Deine Sprachaufnahme wird an <strong>Mistral AI (EU)</strong> gesendet und in Text umgewandelt. Die Aufnahme selbst
-        wird nicht gespeichert, nur der erkannte Text.
+        Deine Sprachaufnahme wird an <strong>Mistral AI (EU)</strong> gesendet und dort in Text umgewandelt. Beim Diktieren
+        speichert UniWars nur den erkannten Text. Aufnahmen im Transkriptions-Hub liegen zusätzlich in deiner Dateiablage,
+        bis du sie löschst.
       </>
     ),
     widerruf: "Sprachfunktionen",

@@ -32,6 +32,21 @@ export default function DatenschutzSeite() {
         <strong>Ohne Einwilligung</strong> werden keine Inhalte an Mistral AI übertragen. Alle anderen Funktionen von UniWars
         kannst du uneingeschränkt nutzen.
       </p>
+
+      <h2 id="audio">Transkription und Sprachfunktionen</h2>
+      <p>
+        <strong>Was passiert:</strong> Wenn du eine Aufnahme transkribierst, wird die Audiodatei an Mistral AI SAS (EU) gesendet und
+        dort in Text umgewandelt. Aufnahmen aus dem Transkriptions-Hub speichern wir in deiner Dateiablage; den erkannten Text
+        speichern wir als Transkript. Beides kannst du jederzeit löschen.
+      </p>
+      <p>
+        <strong>Rechtsgrundlage:</strong> eine eigene Einwilligung für Sprachfunktionen (zusätzlich zu der für KI-Funktionen),
+        die du in der Seitenleiste unter „Sprachfunktionen“ widerrufen kannst.
+      </p>
+      <p>
+        <strong>Was wir protokollieren:</strong> für das Monatskontingent die Dauer der umgewandelten Aufnahmen in Sekunden und den
+        Zeitpunkt – nicht den Inhalt.
+      </p>
     </main>
   );
 }

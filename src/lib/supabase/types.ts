@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -45,7 +45,15 @@ export type Database = {
           ziel_id?: string
           ziel_typ?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "anhang_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       benachrichtigung: {
         Row: {
@@ -702,6 +710,38 @@ export type Database = {
           },
         ]
       }
+      lern_session: {
+        Row: {
+          dauer_minuten: number
+          fach_id: string | null
+          id: string
+          start: string
+          user_id: string
+        }
+        Insert: {
+          dauer_minuten: number
+          fach_id?: string | null
+          id?: string
+          start: string
+          user_id: string
+        }
+        Update: {
+          dauer_minuten?: number
+          fach_id?: string | null
+          id?: string
+          start?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lern_session_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       literatur_quelle: {
         Row: {
           abgerufen_am: string | null
@@ -767,38 +807,6 @@ export type Database = {
           },
           {
             foreignKeyName: "literatur_quelle_fach_id_fkey"
-            columns: ["fach_id"]
-            isOneToOne: false
-            referencedRelation: "fach"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lern_session: {
-        Row: {
-          dauer_minuten: number
-          fach_id: string | null
-          id: string
-          start: string
-          user_id: string
-        }
-        Insert: {
-          dauer_minuten: number
-          fach_id?: string | null
-          id?: string
-          start: string
-          user_id: string
-        }
-        Update: {
-          dauer_minuten?: number
-          fach_id?: string | null
-          id?: string
-          start?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lern_session_fach_id_fkey"
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"
@@ -888,6 +896,73 @@ export type Database = {
           },
         ]
       }
+      notiz: {
+        Row: {
+          angepinnt: boolean
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          inhalt: string
+          ki_erzeugt: boolean
+          quelle_transkript_id: string | null
+          stundenplan_eintrag_id: string | null
+          titel: string
+          user_id: string
+          vorlesung_datum: string | null
+        }
+        Insert: {
+          angepinnt?: boolean
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: string
+          ki_erzeugt?: boolean
+          quelle_transkript_id?: string | null
+          stundenplan_eintrag_id?: string | null
+          titel?: string
+          user_id?: string
+          vorlesung_datum?: string | null
+        }
+        Update: {
+          angepinnt?: boolean
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          inhalt?: string
+          ki_erzeugt?: boolean
+          quelle_transkript_id?: string | null
+          stundenplan_eintrag_id?: string | null
+          titel?: string
+          user_id?: string
+          vorlesung_datum?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notiz_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notiz_quelle_transkript_id_fkey"
+            columns: ["quelle_transkript_id"]
+            isOneToOne: false
+            referencedRelation: "transkript"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notiz_stundenplan_eintrag_id_fkey"
+            columns: ["stundenplan_eintrag_id"]
+            isOneToOne: false
+            referencedRelation: "stundenplan_eintrag"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nutzer_blockiert: {
         Row: {
           blockiert_id: string
@@ -905,63 +980,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      notiz: {
-        Row: {
-          angepinnt: boolean
-          erstellt_am: string
-          fach_id: string | null
-          geaendert_am: string
-          id: string
-          inhalt: string
-          ki_erzeugt: boolean
-          stundenplan_eintrag_id: string | null
-          titel: string
-          user_id: string
-          vorlesung_datum: string | null
-        }
-        Insert: {
-          angepinnt?: boolean
-          erstellt_am?: string
-          fach_id?: string | null
-          geaendert_am?: string
-          id?: string
-          inhalt?: string
-          ki_erzeugt?: boolean
-          stundenplan_eintrag_id?: string | null
-          titel?: string
-          user_id?: string
-          vorlesung_datum?: string | null
-        }
-        Update: {
-          angepinnt?: boolean
-          erstellt_am?: string
-          fach_id?: string | null
-          geaendert_am?: string
-          id?: string
-          inhalt?: string
-          ki_erzeugt?: boolean
-          stundenplan_eintrag_id?: string | null
-          titel?: string
-          user_id?: string
-          vorlesung_datum?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notiz_fach_id_fkey"
-            columns: ["fach_id"]
-            isOneToOne: false
-            referencedRelation: "fach"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notiz_stundenplan_eintrag_id_fkey"
-            columns: ["stundenplan_eintrag_id"]
-            isOneToOne: false
-            referencedRelation: "stundenplan_eintrag"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       pdf_markierung: {
         Row: {
@@ -1299,6 +1317,116 @@ export type Database = {
           },
         ]
       }
+      transkript: {
+        Row: {
+          absaetze: Json
+          erstellt_am: string
+          fach_id: string | null
+          geaendert_am: string
+          id: string
+          quelle: string
+          sprache: string
+          text: string
+          titel: string
+          user_id: string
+        }
+        Insert: {
+          absaetze?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          quelle?: string
+          sprache?: string
+          text?: string
+          titel: string
+          user_id?: string
+        }
+        Update: {
+          absaetze?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          geaendert_am?: string
+          id?: string
+          quelle?: string
+          sprache?: string
+          text?: string
+          titel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transkript_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transkript_teil: {
+        Row: {
+          datei_id: string | null
+          erstellt_am: string
+          fehler: string | null
+          geaendert_am: string
+          gestartet_am: string | null
+          id: string
+          nr: number
+          segmente: Json
+          sekunden: number
+          status: string
+          text: string
+          transkript_id: string
+          user_id: string
+        }
+        Insert: {
+          datei_id?: string | null
+          erstellt_am?: string
+          fehler?: string | null
+          geaendert_am?: string
+          gestartet_am?: string | null
+          id?: string
+          nr: number
+          segmente?: Json
+          sekunden: number
+          status?: string
+          text?: string
+          transkript_id: string
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string | null
+          erstellt_am?: string
+          fehler?: string | null
+          geaendert_am?: string
+          gestartet_am?: string | null
+          id?: string
+          nr?: number
+          segmente?: Json
+          sekunden?: number
+          status?: string
+          text?: string
+          transkript_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transkript_teil_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transkript_teil_transkript_id_fkey"
+            columns: ["transkript_id"]
+            isOneToOne: false
+            referencedRelation: "transkript"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whiteboard: {
         Row: {
           daten: Json
@@ -1342,9 +1470,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      benachrichtigungen_fuer_faellige_deadlines: {
+        Args: never
+        Returns: undefined
+      }
       benutzer_per_email: {
         Args: { p_email: string }
-        Returns: { user_id: string; username: string }[]
+        Returns: {
+          user_id: string
+          username: string
+        }[]
+      }
+      benutzer_suchen: {
+        Args: { suchtext: string }
+        Returns: {
+          user_id: string
+          username: string
+        }[]
       }
       chat_direkt_starten: { Args: { p_user_id: string }; Returns: string }
       chat_fuer_deadline: { Args: { p_deadline_id: string }; Returns: string }
@@ -1355,23 +1497,49 @@ export type Database = {
       }
       chat_mitglieder: {
         Args: { p_chat_id: string }
-        Returns: { user_id: string; username: string }[]
+        Returns: {
+          user_id: string
+          username: string
+        }[]
       }
       chat_uebersicht: {
         Args: never
         Returns: {
           chat_id: string
-          deadline_id: string | null
-          letzte_nachricht: string | null
+          deadline_id: string
+          letzte_nachricht: string
           letzte_nachricht_am: string
           mitglieder: number
-          name: string | null
-          partner_id: string | null
+          name: string
+          partner_id: string
           typ: string
           ungelesen: number
         }[]
       }
       chat_ungelesen_gesamt: { Args: never; Returns: number }
+      deadline_mitglieder: {
+        Args: { p_deadline_id: string }
+        Returns: {
+          ist_ersteller: boolean
+          status: Database["public"]["Enums"]["einladung_status"]
+          user_id: string
+          username: string
+        }[]
+      }
+      ist_blockiert: { Args: { p_a: string; p_b: string }; Returns: boolean }
+      ist_chat_mitglied: { Args: { p_chat_id: string }; Returns: boolean }
+      ist_ersteller: {
+        Args: { p_user_id: string; p_ziel_id: string; p_ziel_typ: string }
+        Returns: boolean
+      }
+      ist_mitglied: {
+        Args: { p_ziel_id: string; p_ziel_typ: string }
+        Returns: boolean
+      }
+      ist_username_verfuegbar: {
+        Args: { p_username: string }
+        Returns: boolean
+      }
       ki_kontingent_buchen: {
         Args: {
           p_einheit: string
@@ -1384,12 +1552,18 @@ export type Database = {
         Returns: string
       }
       ki_nutzung_abschliessen: {
-        Args: { p_erfolgreich: boolean; p_id: string; p_tokens_aus: number; p_tokens_ein: number }
+        Args: {
+          p_erfolgreich: boolean
+          p_id: string
+          p_tokens_aus: number
+          p_tokens_ein: number
+        }
         Returns: undefined
       }
-      ki_nutzung_buchen: { Args: { p_funktion: string; p_limit: number }; Returns: string }
-      ist_blockiert: { Args: { p_a: string; p_b: string }; Returns: boolean }
-      ist_chat_mitglied: { Args: { p_chat_id: string }; Returns: boolean }
+      ki_nutzung_buchen: {
+        Args: { p_funktion: string; p_limit: number }
+        Returns: string
+      }
       nachricht_loeschen: { Args: { p_id: string }; Returns: undefined }
       nachricht_senden: {
         Args: {
@@ -1407,38 +1581,12 @@ export type Database = {
           text: string
           user_id: string | null
         }
-      }
-      benachrichtigungen_fuer_faellige_deadlines: {
-        Args: never
-        Returns: undefined
-      }
-      benutzer_suchen: {
-        Args: { suchtext: string }
-        Returns: {
-          user_id: string
-          username: string
-        }[]
-      }
-      deadline_mitglieder: {
-        Args: { p_deadline_id: string }
-        Returns: {
-          ist_ersteller: boolean
-          status: Database["public"]["Enums"]["einladung_status"]
-          user_id: string
-          username: string
-        }[]
-      }
-      ist_ersteller: {
-        Args: { p_user_id: string; p_ziel_id: string; p_ziel_typ: string }
-        Returns: boolean
-      }
-      ist_mitglied: {
-        Args: { p_ziel_id: string; p_ziel_typ: string }
-        Returns: boolean
-      }
-      ist_username_verfuegbar: {
-        Args: { p_username: string }
-        Returns: boolean
+        SetofOptions: {
+          from: "*"
+          to: "chat_nachricht"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       notenschnitt: { Args: never; Returns: number }
       pruefung_mitglieder: {

@@ -23,6 +23,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
         theme={settings?.theme ?? "HELL"}
         streak={settings?.streak_count ?? 0}
         kiEingewilligt={Boolean(settings?.ki_einwilligung)}
+        audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
       />
       <main className="dashboard-main hub-main">{children}</main>
     </div>

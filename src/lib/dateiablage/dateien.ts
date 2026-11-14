@@ -17,6 +17,9 @@ const ENDUNGEN: Record<string, { mime: string; art: DateiArt }> = {
   mp3: { mime: "audio/mpeg", art: "audio" },
   m4a: { mime: "audio/mp4", art: "audio" },
   wav: { mime: "audio/wav", art: "audio" },
+  // Aufnahmen aus dem Browser (TRA-01): Chrome/Firefox nehmen WebM/Opus bzw. Ogg auf
+  webm: { mime: "audio/webm", art: "audio" },
+  ogg: { mime: "audio/ogg", art: "audio" },
 };
 
 export const ERLAUBTE_ENDUNGEN = Object.keys(ENDUNGEN);

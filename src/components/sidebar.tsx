@@ -70,6 +70,7 @@ const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
   },
   {
     name: "Transkription",
+    href: "/transkription",
     icon: "rect:9,3,6,11,3|M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6",
   },
   {
@@ -114,12 +115,15 @@ export function Sidebar({
   theme,
   streak,
   kiEingewilligt = false,
+  audioEingewilligt = false,
 }: {
   email: string;
   theme: Enums<"theme">;
   streak: number;
   /** KI-D1: settings.ki_einwilligung gesetzt? */
   kiEingewilligt?: boolean;
+  /** KI-D2: settings.ki_audio_einwilligung gesetzt? */
+  audioEingewilligt?: boolean;
 }) {
   const pfad = usePathname();
   const [menueOffen, setMenueOffen] = useState(false);
@@ -183,6 +187,7 @@ export function Sidebar({
         <ThemeUmschalter theme={theme} />
         <AnalyticsEinstellung />
         <KiEinstellung startEingewilligt={kiEingewilligt} />
+        <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
         <AbmeldenButton />
       </div>
     </aside>
