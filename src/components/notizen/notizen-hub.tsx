@@ -15,6 +15,7 @@ import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { MarkdownEditor, markdownAlsText } from "@/components/hubs/markdown-editor";
+import { DiktatKnopf } from "@/components/ki/diktat-knopf";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
@@ -423,6 +424,10 @@ function NotizEditor({
         wert={notiz.inhalt}
         platzhalter="Losschreiben … (# Überschrift, - Liste, [ ] Checkbox)"
         label="Notiztext"
+        werkzeugExtra={(editor) => (
+          // KI-13: diktierter Text wird an der Cursorposition eingefügt
+          <DiktatKnopf klasse="md-diktat" onText={(text) => editor.chain().focus().insertContent({ type: "text", text: `${text} ` }).run()} />
+        )}
         onAendern={(inhalt) => {
           onLokal({ inhalt });
           aendern({ inhalt });

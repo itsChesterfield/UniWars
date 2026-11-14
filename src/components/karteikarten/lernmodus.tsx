@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { karteBeantworten, lernrundeAbschliessen } from "@/app/(hubs)/karteikarten/actions";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
+import { VorlesenKnopf } from "@/components/ki/vorlesen-knopf";
 import { KiErklaerung } from "@/components/karteikarten/ki-erklaerung";
 import {
   BEWERTUNGEN,
@@ -256,6 +257,18 @@ export function Lernmodus({
           </div>
         </div>
       </div>
+
+      {kiVerfuegbar && (
+        <div className="kk-vorlesen">
+          {/* KI-14: Seite vorlesen (außerhalb der Karte, damit der Klick sie nicht umdreht) */}
+          <VorlesenKnopf
+            key={`${karte.id}-${runde.umgedreht ? "r" : "v"}`}
+            text={runde.umgedreht ? karte.rueckseite : karte.vorderseite}
+            cacheKey={`kk-${karte.id}-${runde.umgedreht ? "r" : "v"}`}
+            label={runde.umgedreht ? "Rückseite vorlesen" : "Vorderseite vorlesen"}
+          />
+        </div>
+      )}
 
       {runde.umgedreht && kiVerfuegbar && <KiErklaerung key={`${karte.id}-${runde.index}`} karteId={karte.id} />}
 

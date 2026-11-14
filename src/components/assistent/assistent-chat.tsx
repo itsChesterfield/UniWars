@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { assistentStart, unterhaltungLaden, type AssistentNachricht } from "@/app/(hubs)/assistent/actions";
 import { AktionskarteAnzeige } from "@/components/assistent/aktionskarte";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
+import { DiktatKnopf } from "@/components/ki/diktat-knopf";
+import { VorlesenKnopf } from "@/components/ki/vorlesen-knopf";
+import { einstellungLesen, einstellungSetzen, SPRACH_EINSTELLUNGEN } from "@/components/ki/sprach-status";
 import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
 import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
@@ -60,11 +63,26 @@ export function AssistentChat({
   const [laufend, setLaufend] = useState<Laufend | null>(null);
   const [eingabe, setEingabe] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
+  const [eingabeArt, setEingabeArt] = useState<"text" | "sprache">("text");
+  const [optionenOffen, setOptionenOffen] = useState(false);
+  const [sofortSenden, setSofortSenden] = useState(false);
+  const [autoVorlesen, setAutoVorlesen] = useState(false);
+  /** Antwort, die gerade automatisch vorgelesen werden soll (nur die neueste) */
+  const [vorleseId, setVorleseId] = useState<string | null>(null);
   const abbruch = useRef<AbortController | null>(null);
   const ende = useRef<HTMLDivElement>(null);
   const feld = useRef<HTMLTextAreaElement>(null);
   /** Von diesem Chat selbst angelegte Unterhaltung – deren Verlauf liegt schon lokal vor */
   const selbstAngelegt = useRef<string | null>(null);
+
+  // Geräte-Einstellungen (KI-13/14) – erst im Browser lesen
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setSofortSenden(einstellungLesen(SPRACH_EINSTELLUNGEN.diktatSofortSenden));
+      setAutoVorlesen(einstellungLesen(SPRACH_EINSTELLUNGEN.automatischVorlesen));
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Status + Fächer einmal laden
   useEffect(() => {
@@ -115,11 +133,12 @@ export function AssistentChat({
   const verbleibend = status ? Math.max(0, status.limit - status.genutzt) : 0;
 
   const senden = useCallback(
-    async (text: string) => {
+    async (text: string, art: "text" | "sprache" = eingabeArt) => {
       const frage = text.trim();
       if (!frage || laufend || verbleibend === 0) return;
       setFehler(null);
       setEingabe("");
+      setEingabeArt("text");
       kiGestartet("ki12");
       const start = performance.now();
       const neu: Laufend = { frage, text: "", status: null, karten: [], fehler: null };
@@ -138,7 +157,7 @@ export function AssistentChat({
         const antwort = await fetch("/api/ki/assistent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ unterhaltungId: id, frage, kontext, eingabeArt: "text" }),
+          body: JSON.stringify({ unterhaltungId: id, frage, kontext, eingabeArt: art }),
           signal: steuerung.signal,
         });
         if (!antwort.ok || !antwort.body) {
@@ -203,8 +222,9 @@ export function AssistentChat({
         },
       ]);
       setLaufend(null);
+      if (autoVorlesen && nachrichtId && aktuell.text.trim()) setVorleseId(nachrichtId);
       if (aktuell.fehler) kiFehlerTracken("ki12", "technisch");
-      track("ki_assistent_nachricht", { eingabe_art: "text", werkzeuge_anzahl: werkzeuge, dauer_ms: Math.round(performance.now() - start) });
+      track("ki_assistent_nachricht", { eingabe_art: art, werkzeuge_anzahl: werkzeuge, dauer_ms: Math.round(performance.now() - start) });
       if (gespraech && !id) onUnterhaltung?.(gespraech);
       // Nachricht-ID für Aktionskarten fehlt nach Abbruch → Verlauf frisch laden
       if (!nachrichtId && aktuell.karten.length && gespraech) {
@@ -212,7 +232,7 @@ export function AssistentChat({
         if (a?.ok) setNachrichten(a.daten.nachrichten);
       }
     },
-    [id, kontext, laufend, onUnterhaltung, verbleibend],
+    [id, kontext, laufend, onUnterhaltung, verbleibend, eingabeArt, autoVorlesen],
   );
 
   if (phase === "laden") return <KiLadeZustand text="Lädt …" />;
@@ -258,10 +278,14 @@ export function AssistentChat({
           ) : (
             <div key={n.id} className="ki-blase ki-blase-ki">
               {n.inhalt && <MarkdownAnzeige wert={n.inhalt} className="ki-chat-md" />}
+              {n.inhalt && !n.id.startsWith("a-") && (
+                <span className="ki-blase-aktionen">
+                  <VorlesenKnopf text={n.inhalt} cacheKey={n.id} autoStart={vorleseId === n.id} label="Antwort vorlesen" />
+                </span>
+              )}
               {n.karten.map((k) => (
                 <AktionskarteAnzeige key={k.id} karte={k} nachrichtId={n.id.startsWith("a-") ? null : n.id} faecher={faecher} />
               ))}
-              {/* KI-14 (Phase 13): Platz für „Vorlesen“ */}
             </div>
           ),
         )}
@@ -297,7 +321,10 @@ export function AssistentChat({
           maxLength={MAX_FRAGE_ZEICHEN}
           placeholder="Frag den Assistenten …"
           aria-label="Nachricht an den Assistenten"
-          onChange={(e) => setEingabe(e.target.value)}
+          onChange={(e) => {
+            setEingabe(e.target.value);
+            if (!e.target.value.trim()) setEingabeArt("text");
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -305,9 +332,33 @@ export function AssistentChat({
             }
           }}
         />
-        {/* KI-13 (Phase 13): Platz für den Mikrofon-Knopf */}
         <div className="ki-chat-fuss">
-          <KiLimitHinweis verbleibend={verbleibend} limit={status?.limit ?? 0} einheit="Nachrichten" />
+          <span className="ki-chat-werkzeuge">
+            <DiktatKnopf
+              disabled={Boolean(laufend) || verbleibend === 0}
+              onText={(t) => {
+                // KI-13: Text landet im Eingabefeld und wird NICHT automatisch gesendet (außer per Einstellung)
+                const neu = eingabe.trim() ? `${eingabe.trim()} ${t}` : t;
+                if (sofortSenden) void senden(neu, "sprache");
+                else {
+                  setEingabe(neu);
+                  setEingabeArt("sprache");
+                  feld.current?.focus();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="icon-knopf"
+              aria-label="Einstellungen für Sprache"
+              aria-expanded={optionenOffen}
+              title="Einstellungen"
+              onClick={() => setOptionenOffen((o) => !o)}
+            >
+              ⚙
+            </button>
+            <KiLimitHinweis verbleibend={verbleibend} limit={status?.limit ?? 0} einheit="Nachrichten" />
+          </span>
           {laufend ? (
             <button type="button" className="btng" onClick={() => abbruch.current?.abort()}>
               ■ Stopp
@@ -319,6 +370,32 @@ export function AssistentChat({
           )}
         </div>
       </form>
+      {optionenOffen && (
+        <div className="ki-chat-optionen">
+          <label className="ki-check">
+            <input
+              type="checkbox"
+              checked={sofortSenden}
+              onChange={(e) => {
+                setSofortSenden(e.target.checked);
+                einstellungSetzen(SPRACH_EINSTELLUNGEN.diktatSofortSenden, e.target.checked);
+              }}
+            />
+            Diktat sofort senden
+          </label>
+          <label className="ki-check">
+            <input
+              type="checkbox"
+              checked={autoVorlesen}
+              onChange={(e) => {
+                setAutoVorlesen(e.target.checked);
+                einstellungSetzen(SPRACH_EINSTELLUNGEN.automatischVorlesen, e.target.checked);
+              }}
+            />
+            Antworten automatisch vorlesen
+          </label>
+        </div>
+      )}
       <p className="faint ki-chat-fusszeile">✨ KI kann sich irren. Gespeichert wird nur, was du übernimmst.</p>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -68,7 +69,7 @@ const KNOEPFE: Knopf[] = [
   },
 ];
 
-function Werkzeugleiste({ editor }: { editor: Editor }) {
+function Werkzeugleiste({ editor, extra }: { editor: Editor; extra?: (editor: Editor) => ReactNode }) {
   const aktiv = useEditorState({
     editor,
     selector: ({ editor: e }) => KNOEPFE.map((k) => k.aktiv(e)),
@@ -89,6 +90,7 @@ function Werkzeugleiste({ editor }: { editor: Editor }) {
           {k.label}
         </button>
       ))}
+      {extra?.(editor)}
     </div>
   );
 }
@@ -100,6 +102,7 @@ export function MarkdownEditor({
   autoFokus = false,
   kompakt = false,
   label,
+  werkzeugExtra,
 }: {
   /** Startinhalt; spätere Änderungen von außen werden ignoriert (Editor per key neu mounten). */
   wert: string;
@@ -108,6 +111,8 @@ export function MarkdownEditor({
   autoFokus?: boolean;
   kompakt?: boolean;
   label?: string;
+  /** Zusätzliche Knöpfe am Ende der Formatierungsleiste (z. B. KI-13 Diktieren) */
+  werkzeugExtra?: (editor: Editor) => ReactNode;
 }) {
   const onAendernRef = useRef(onAendern);
   useEffect(() => {
@@ -126,7 +131,7 @@ export function MarkdownEditor({
 
   return (
     <div className={`md-editor ${kompakt ? "md-kompakt" : ""}`}>
-      {editor && <Werkzeugleiste editor={editor} />}
+      {editor && <Werkzeugleiste editor={editor} extra={werkzeugExtra} />}
       <EditorContent editor={editor} className="md-flaeche" />
     </div>
   );

@@ -8,6 +8,7 @@ import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
 import { KiEinstellung } from "@/components/ki/ki-einstellung";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
 import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
+import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
 import type { Enums } from "@/lib/supabase/types";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
@@ -199,6 +200,7 @@ export function Sidebar({
         <KiEinstellung startEingewilligt={kiEingewilligt} />
         <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
         {kiEingewilligt && <KiVerlaufLoeschen />}
+        {kiEingewilligt && <KiKontingentAnzeige />}
         <AbmeldenButton />
       </div>
       {kiVerfuegbar && (

@@ -164,9 +164,11 @@ export async function audioStatus(supabase: Supabase, userId: string): Promise<A
   };
 }
 
-/** Spracherkennung eingerichtet, Einwilligung KI-D1 und KI-D2 erteilt? */
-export async function audioVoraussetzungen(supabase: Supabase, userId: string): Promise<void> {
-  if (!audioVerfuegbar().diktat) throw new KiKonfiguration("MISTRAL_API_KEY oder KI_AUDIO_STT_MODELL fehlt");
+/** Spracherkennung bzw. Sprachausgabe eingerichtet, Einwilligung KI-D1 und KI-D2 erteilt? */
+export async function audioVoraussetzungen(supabase: Supabase, userId: string, art: "diktat" | "vorlesen" = "diktat"): Promise<void> {
+  if (!audioVerfuegbar()[art]) {
+    throw new KiKonfiguration(art === "diktat" ? "MISTRAL_API_KEY oder KI_AUDIO_STT_MODELL fehlt" : "MISTRAL_API_KEY oder KI_AUDIO_TTS_MODELL fehlt");
+  }
   const { data } = await supabase.from("settings").select("ki_einwilligung, ki_audio_einwilligung").eq("user_id", userId).maybeSingle();
   if (!data?.ki_einwilligung) throw new KiKeineEinwilligung("text");
   if (!data?.ki_audio_einwilligung) throw new KiKeineEinwilligung("audio");
@@ -239,4 +241,52 @@ export async function chatBuchen(supabase: Supabase): Promise<{ nutzungId: strin
     throw new Error(`Buchung fehlgeschlagen: ${error.message}`);
   }
   return { nutzungId: data, limit };
+}
+
+// ---------------------------------------------------------------------------
+// Vorlesen (KI-14): Kontingent in Zeichen pro Monat
+// ---------------------------------------------------------------------------
+
+export async function ttsMonatGenutzt(supabase: Supabase): Promise<number> {
+  const monatsanfang = berlinMitternacht(`${berlinDatum().slice(0, 7)}-01`);
+  const { data } = await supabase.from("ki_nutzung").select("menge").eq("kontingent", "tts").gte("erstellt_am", monatsanfang.toISOString());
+  return (data ?? []).reduce((n, z) => n + (z.menge ?? 0), 0);
+}
+
+export async function ttsBuchen(supabase: Supabase, zeichen: number): Promise<{ nutzungId: string; limit: number }> {
+  const limit = kiLimits().tts.limit;
+  const { data, error } = await supabase.rpc("ki_kontingent_buchen", {
+    p_kontingent: "tts",
+    p_funktion: "vorlesen",
+    p_einheit: "tts_zeichen",
+    p_menge: Math.max(1, zeichen),
+    p_limit: limit,
+    p_zeitraum: "monat",
+  });
+  if (error) {
+    if (error.message.includes("KI_LIMIT")) {
+      throw new KiLimitErreicht(limit, `Dein Vorlese-Kontingent für diesen Monat ist aufgebraucht (${limit.toLocaleString("de-DE")} Zeichen).`);
+    }
+    throw new Error(`Buchung fehlgeschlagen: ${error.message}`);
+  }
+  return { nutzungId: data, limit };
+}
+
+export type KiKontingente = {
+  text: { genutzt: number; limit: number };
+  chat: { genutzt: number; limit: number };
+  audioSekunden: { genutzt: number; limit: number };
+  ttsZeichen: { genutzt: number; limit: number };
+};
+
+/** Alle Kontingente auf einen Blick (Einstellungen). */
+export async function kiKontingente(supabase: Supabase): Promise<KiKontingente> {
+  const l = kiLimits();
+  const [text, chat, audio, tts] = await Promise.all([textHeuteGenutzt(supabase), chatHeuteGenutzt(supabase), audioMonatGenutzt(supabase), ttsMonatGenutzt(supabase)]);
+  return {
+    text: { genutzt: text, limit: l.text.limit },
+    chat: { genutzt: chat, limit: l.chat.limit },
+    audioSekunden: { genutzt: audio, limit: l.audio.limit },
+    ttsZeichen: { genutzt: tts, limit: l.tts.limit },
+  };
 }

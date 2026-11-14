@@ -7531,3 +7531,121 @@ dialog.ki-dialog-klein {
     display: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   KI-13 Diktieren, KI-14 Vorlesen, Kontingent-Anzeige
+   --------------------------------------------------------------------------- */
+.ki-diktat,
+.ki-vorlesen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.ki-diktat-knopf.an,
+.ki-vorlesen-knopf.an {
+  background: var(--danger);
+  color: #fff;
+  border-radius: 50%;
+}
+
+.ki-vorlesen-knopf.an {
+  background: var(--accent);
+}
+
+.ki-diktat-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ki-diktat-pegel {
+  width: 48px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--card2);
+  overflow: hidden;
+}
+
+.ki-diktat-pegel span {
+  display: block;
+  height: 100%;
+  background: var(--success);
+  transition: width 0.08s linear;
+}
+
+.ki-diktat-fehler {
+  font-size: 12px;
+  color: var(--danger);
+  max-width: 220px;
+}
+
+.ki-chat-werkzeuge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ki-chat-optionen {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+
+.ki-blase-aktionen {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
+.ki-blase-aktionen .icon-knopf {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.md-werkzeuge .md-diktat {
+  margin-left: auto;
+}
+
+.kk-vorlesen {
+  display: flex;
+  justify-content: center;
+  min-height: 0;
+}
+
+.ki-kontingent {
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 2px 4px;
+}
+
+.ki-kontingent summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.ki-kontingent ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 2px;
+}
+
+.ki-kontingent p {
+  margin: 4px 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ki-diktat-pegel span {
+    transition: none;
+  }
+}
