@@ -12,6 +12,7 @@ import { dokumentFachSetzen, dokumentLoeschen, dokumentSpeichern, type Dokument 
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { BildAuswahl, bildUrl } from "@/components/hubs/bild-auswahl";
 import { OHNE_TITEL } from "@/components/textverarbeitung/dokument-liste";
+import { KiFeedbackLeiste } from "@/components/textverarbeitung/ki-feedback-leiste";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import { zitatImText } from "@/lib/literatur/apa";
 import { alsDocx, dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
@@ -31,17 +32,21 @@ export function DokumentEditor({
   faecher,
   quellen,
   istNeu,
+  kiVerfuegbar = false,
 }: {
   dokument: Dokument;
   faecher: FachOption[];
   quellen: Quelle[];
   istNeu: boolean;
+  /** KI-06: Mistral-Key gesetzt → "✨ Feedback" anzeigen */
+  kiVerfuegbar?: boolean;
 }) {
   const router = useRouter();
   const [titel, setTitel] = useState(dokument.titel);
   const [fachId, setFachId] = useState(dokument.fach_id);
   const [bildDialog, setBildDialog] = useState(false);
   const [exportiert, setExportiert] = useState<string | null>(null);
+  const [kiOffen, setKiOffen] = useState(false);
   const { status, aendern } = useAutoSpeichern<Aenderung>((a) => dokumentSpeichern(dokument.id, a));
 
   const editor = useEditor({
@@ -173,6 +178,18 @@ export function DokumentEditor({
                 </option>
               ))}
             </select>
+            {kiVerfuegbar && (
+              <button
+                type="button"
+                className={`btng txt-ki-knopf ${kiOffen ? "an" : ""}`}
+                aria-expanded={kiOffen}
+                title="Hinweise zu Struktur, Verständlichkeit und Stil"
+                onClick={() => setKiOffen((o) => !o)}
+                disabled={!editor}
+              >
+                ✨ Feedback
+              </button>
+            )}
             <ExportMenue onWahl={(art) => void exportieren(art)} />
             <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
           </div>
@@ -187,7 +204,7 @@ export function DokumentEditor({
         />
       )}
 
-      <div className="txt-koerper">
+      <div className={`txt-koerper ${kiOffen && editor ? "mit-ki" : ""}`}>
         <nav className="txt-gliederung" aria-label="Gliederung">
           <h3>Gliederung</h3>
           {!gliederung || gliederung.length === 0 ? (
@@ -211,6 +228,8 @@ export function DokumentEditor({
             <EditorContent editor={editor} />
           </article>
         </div>
+
+        {kiOffen && editor && <KiFeedbackLeiste editor={editor} dokumentId={dokument.id} onSchliessen={() => setKiOffen(false)} />}
       </div>
 
       {zaehler && (

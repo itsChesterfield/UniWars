@@ -4429,6 +4429,155 @@ select.field.txt-block {
   align-items: start;
 }
 
+.txt-koerper.mit-ki {
+  grid-template-columns: 200px minmax(0, 1fr) 330px;
+}
+
+.txt-ki-knopf.an {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* KI-06: Feedback-Seitenleiste */
+.txt-ki-leiste {
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 14px;
+}
+
+.txt-ki-leiste h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.txt-ki-grundsatz,
+.txt-ki-umfang {
+  margin: 0;
+  font-size: 13px;
+}
+
+.txt-ki-fokus {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.txt-ki-fokus legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.txt-ki-satz .btng {
+  width: 100%;
+}
+
+.txt-ki-alternativen ul,
+.txt-ki-kommentare ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.txt-ki-alternativen li {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.txt-ki-alternativen li p {
+  margin: 0;
+}
+
+.txt-ki-alternativen li .btng {
+  justify-self: end;
+}
+
+.txt-ki-kommentar {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.txt-ki-kommentar:hover {
+  border-color: var(--accent);
+}
+
+.txt-ki-kommentar.aktiv {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.txt-ki-fokus-tag {
+  justify-self: start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--card2);
+  color: var(--muted);
+}
+
+.txt-ki-fokus-tag.fokus-struktur {
+  color: var(--blue);
+}
+
+.txt-ki-fokus-tag.fokus-verstaendlichkeit {
+  color: var(--success);
+}
+
+.txt-ki-fokus-tag.fokus-stil {
+  color: var(--purple);
+}
+
+.txt-ki-zitat {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.txt-ki-nicht-gefunden {
+  justify-self: start;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.txt-ki-problem {
+  font-weight: 600;
+}
+
+.txt-ki-fuss {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
 .txt-gliederung {
   position: sticky;
   top: 70px;
@@ -4628,9 +4777,42 @@ dialog.bild-auswahl {
   white-space: nowrap;
 }
 
+@media (max-width: 1200px) and (min-width: 901px) {
+  .txt-koerper.mit-ki {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .txt-koerper.mit-ki .txt-gliederung {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
-  .txt-koerper {
+  .txt-koerper,
+  .txt-koerper.mit-ki {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* KI-ALL-10: Feedback auf dem Handy bildschirmfüllend */
+  .txt-ki-leiste {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+  }
+
+  .txt-ki-leiste.eingeklappt {
+    inset: auto 16px 16px auto;
+    padding: 0;
+    background: none;
+    border: none;
+    overflow: visible;
+  }
+
+  .txt-ki-leiste.eingeklappt .btnp {
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
   }
 
   .txt-gliederung {
@@ -4654,6 +4836,7 @@ dialog.bild-auswahl {
   .txt-kopf,
   .txt-werkzeuge,
   .txt-gliederung,
+  .txt-ki-leiste,
   .txt-fuss,
   .analytics-banner,
   nextjs-portal {

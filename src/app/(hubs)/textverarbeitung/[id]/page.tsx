@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { DokumentEditor } from "@/components/textverarbeitung/dokument-editor";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export default async function DokumentSeite({
   params,
@@ -32,6 +33,6 @@ export default async function DokumentSeite({
   if (!dokument) notFound();
 
   return (
-    <DokumentEditor key={dokument.id} dokument={dokument} faecher={faecher ?? []} quellen={quellen ?? []} istNeu={neu === "1"} />
+    <DokumentEditor key={dokument.id} dokument={dokument} faecher={faecher ?? []} quellen={quellen ?? []} istNeu={neu === "1"} kiVerfuegbar={kiKonfiguriert()} />
   );
 }
