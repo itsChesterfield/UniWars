@@ -1,3 +1,4 @@
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
         streak={settings?.streak_count ?? 0}
         kiEingewilligt={Boolean(settings?.ki_einwilligung)}
         audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
+        kiVerfuegbar={kiKonfiguriert()}
       />
       <main className="dashboard-main hub-main">{children}</main>
     </div>

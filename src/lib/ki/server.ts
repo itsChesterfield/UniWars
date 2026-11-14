@@ -201,3 +201,42 @@ export async function audioBuchen(
   }
   return { nutzungId: data, limitSekunden };
 }
+
+// ---------------------------------------------------------------------------
+// Assistent (KI-12): eigenes Tageskontingent in Nachrichten
+// ---------------------------------------------------------------------------
+
+/** Heute (Europe/Berlin) gesendete Nachrichten an den Assistenten */
+export async function chatHeuteGenutzt(supabase: Supabase): Promise<number> {
+  const { data } = await supabase
+    .from("ki_nutzung")
+    .select("menge")
+    .eq("kontingent", "chat")
+    .gte("erstellt_am", berlinMitternacht(berlinDatum()).toISOString());
+  return (data ?? []).reduce((n, z) => n + (z.menge ?? 0), 0);
+}
+
+export async function chatStatus(supabase: Supabase, userId: string): Promise<TextStatus> {
+  const [genutzt, eingewilligt] = await Promise.all([chatHeuteGenutzt(supabase), textEingewilligt(supabase, userId)]);
+  return { verfuegbar: kiKonfiguriert(), eingewilligt, genutzt, limit: kiLimits().chat.limit };
+}
+
+/** Eine Nachricht an den Assistenten buchen – Werkzeugrunden zählen nicht einzeln (8.6). */
+export async function chatBuchen(supabase: Supabase): Promise<{ nutzungId: string; limit: number }> {
+  const limit = kiLimits().chat.limit;
+  const { data, error } = await supabase.rpc("ki_kontingent_buchen", {
+    p_kontingent: "chat",
+    p_funktion: "assistent",
+    p_einheit: "anfrage",
+    p_menge: 1,
+    p_limit: limit,
+    p_zeitraum: "tag",
+  });
+  if (error) {
+    if (error.message.includes("KI_LIMIT")) {
+      throw new KiLimitErreicht(limit, `Du hast heute schon ${limit} Nachrichten an den Assistenten geschickt. Morgen geht es weiter.`);
+    }
+    throw new Error(`Buchung fehlgeschlagen: ${error.message}`);
+  }
+  return { nutzungId: data, limit };
+}

@@ -1,3 +1,4 @@
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -94,7 +95,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
-      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} kiEingewilligt={Boolean(settings.ki_einwilligung)} audioEingewilligt={Boolean(settings.ki_audio_einwilligung)} />
+      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} kiEingewilligt={Boolean(settings.ki_einwilligung)} audioEingewilligt={Boolean(settings.ki_audio_einwilligung)} kiVerfuegbar={kiKonfiguriert()} />
       <main className="dashboard-main">
         <Suspense fallback={null}>
           <DashboardContent

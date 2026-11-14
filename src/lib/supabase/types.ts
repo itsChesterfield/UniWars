@@ -564,6 +564,47 @@ export type Database = {
         }
         Relationships: []
       }
+      ki_nachricht: {
+        Row: {
+          eingabe_art: string
+          erstellt_am: string
+          id: string
+          inhalt: string
+          rolle: string
+          unterhaltung_id: string
+          user_id: string
+          werkzeug_daten: Json | null
+        }
+        Insert: {
+          eingabe_art?: string
+          erstellt_am?: string
+          id?: string
+          inhalt?: string
+          rolle: string
+          unterhaltung_id: string
+          user_id?: string
+          werkzeug_daten?: Json | null
+        }
+        Update: {
+          eingabe_art?: string
+          erstellt_am?: string
+          id?: string
+          inhalt?: string
+          rolle?: string
+          unterhaltung_id?: string
+          user_id?: string
+          werkzeug_daten?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ki_nachricht_unterhaltung_id_fkey"
+            columns: ["unterhaltung_id"]
+            isOneToOne: false
+            referencedRelation: "ki_unterhaltung"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ki_nutzung: {
         Row: {
           einheit: string
@@ -600,6 +641,36 @@ export type Database = {
           tokens_aus?: number | null
           tokens_ein?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      ki_unterhaltung: {
+        Row: {
+          erstellt_am: string
+          geaendert_am: string
+          id: string
+          titel: string
+          user_id: string
+          zusammenfassung: string | null
+          zusammengefasst_bis: string | null
+        }
+        Insert: {
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          titel?: string
+          user_id?: string
+          zusammenfassung?: string | null
+          zusammengefasst_bis?: string | null
+        }
+        Update: {
+          erstellt_am?: string
+          geaendert_am?: string
+          id?: string
+          titel?: string
+          user_id?: string
+          zusammenfassung?: string | null
+          zusammengefasst_bis?: string | null
         }
         Relationships: []
       }

@@ -6,7 +6,8 @@ import { WorkStation, type TagesEintrag } from "@/components/work-station/work-s
 
 export const metadata = { title: "Work Station · UniWars" };
 
-export default async function WorkStationSeite() {
+export default async function WorkStationSeite({ searchParams }: { searchParams: Promise<{ fach?: string }> }) {
+  const { fach: fachAusLink } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +22,9 @@ export default async function WorkStationSeite() {
   ]);
 
   const liste = faecher ?? [];
-  const vorschlag = await fachVorschlag(supabase, liste);
+  // KI-12: Aktionskarte "Lernsession" öffnet die Work Station mit vorausgewähltem Fach
+  const ausLink = typeof fachAusLink === "string" ? liste.find((f) => f.id === fachAusLink) : undefined;
+  const vorschlag = ausLink ? { fachId: ausLink.id, grund: "Vom Assistenten vorgeschlagen" } : await fachVorschlag(supabase, liste);
 
   // WS-05: heute gelernt, pro Fach
   const proFach = new Map<string | null, number>();
