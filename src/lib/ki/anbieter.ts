@@ -15,13 +15,15 @@ import { kiLimits } from "@/lib/ki/limits";
 const umgebung = (name: string) => process.env[name]?.trim() || undefined;
 
 /** Wofür ein Modell gebraucht wird – jede Funktion kann per .env ein eigenes bekommen. */
-export type ModellZweck = "standard" | "chat" | "lang";
+export type ModellZweck = "standard" | "chat" | "lang" | "bild";
 
 /** Modell pro Zweck; fällt auf KI_MODELL zurück. */
 export function kiModell(zweck: ModellZweck = "standard"): string {
   const standard = umgebung("KI_MODELL") ?? "mistral-small-latest";
   if (zweck === "chat") return umgebung("KI_MODELL_CHAT") ?? standard;
   if (zweck === "lang") return umgebung("KI_MODELL_LANG") ?? standard;
+  // Bilder (z. B. Stundenplan-Foto) brauchen ein Modell mit Bildverständnis
+  if (zweck === "bild") return umgebung("KI_MODELL_BILD") ?? umgebung("KI_MODELL") ?? "mistral-small-latest";
   return standard;
 }
 

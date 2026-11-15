@@ -43,6 +43,8 @@ export type KiOptionen = {
   temperatur: number;
   /** Antwort als JSON-Objekt erzwingen */
   json?: boolean;
+  /** Bilder (Data-URLs) zur Nutzernachricht `nutzer` – braucht ein Modell mit Bildverständnis */
+  bilder?: string[];
   /** Abbruch durch den Nutzer (z. B. "Stopp") */
   signal?: AbortSignal;
 };
@@ -84,7 +86,12 @@ export function nachrichtenBauen(optionen: KiOptionen): Record<string, unknown>[
   if (optionen.nutzer) liste.push({ role: "user", content: optionen.nutzer });
   liste.push(...(optionen.nachrichten ?? []));
   return liste.map((n) =>
-    n.role === "assistant" && n.tool_calls?.length
+    n.role === "user" && n.content === optionen.nutzer && optionen.bilder?.length
+      ? {
+          role: "user",
+          content: [{ type: "text", text: n.content }, ...optionen.bilder.map((url) => ({ type: "image_url", image_url: url }))],
+        }
+      : n.role === "assistant" && n.tool_calls?.length
       ? {
           role: "assistant",
           content: n.content,

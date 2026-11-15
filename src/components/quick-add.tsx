@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { createFach } from "@/app/fach/actions";
-import { naechsteFarbe } from "@/components/fach-manager";
+import { naechsteFarbe } from "@/lib/fach-farben";
 import { createDeadline } from "@/app/deadline/actions";
 import { createTodo } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";

@@ -12,6 +12,8 @@ import { belegtZeitenLaden } from "@/app/kalender/actions";
 import type { BelegtBlock } from "@/lib/kalender/google";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
+import { useRouter } from "next/navigation";
+import { StundenplanFotoDialog } from "@/components/stundenplan-foto-dialog";
 
 type Eintrag = Tables<"stundenplan_eintrag">;
 type Deadline = Tables<"deadline">;
@@ -99,6 +101,8 @@ export function StundenplanManager({
 }) {
   const [eintraege, setEintraege] = useState(initialEintraege);
   const [formOpen, setFormOpen] = useState(false);
+  const [fotoOffen, setFotoOffen] = useState(false);
+  const router = useRouter();
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<StundenplanInput>(leeresFormular(faecher[0]?.id ?? null));
   const [error, setError] = useState<string | null>(null);
@@ -250,10 +254,28 @@ export function StundenplanManager({
             </button>
           )}
         </div>
-        <button type="button" onClick={openCreateForm} className="btnp">
-          + Eintrag
-        </button>
+        <div className="row" style={{ gap: 8 }}>
+          <button type="button" onClick={() => setFotoOffen(true)} className="btng" title="Stundenplan per Foto oder Screenshot eintragen lassen">
+            📷 Aus Foto
+          </button>
+          <button type="button" onClick={openCreateForm} className="btnp">
+            + Eintrag
+          </button>
+        </div>
       </div>
+
+      {fotoOffen && (
+        <StundenplanFotoDialog
+          faecher={faecher}
+          onSchliessen={() => setFotoOffen(false)}
+          onUebernommen={(neu) => {
+            setFotoOffen(false);
+            setEintraege((l) => [...l, ...neu]);
+            // neue Fächer und Termine auch im Rest der Seite zeigen
+            router.refresh();
+          }}
+        />
+      )}
 
       {error && <p className="auth-error">{error}</p>}
 
