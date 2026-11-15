@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { dateiVerschieben } from "@/app/(hubs)/dateiablage/actions";
 import { alsRechtecke, istFarbe, type Farbe, type Rechteck } from "@/lib/pdf-reader/markierungen";
 
 /** PDF-04 / PDF-05: Lesezeichen und zuletzt gelesene Seite merken. */
@@ -118,13 +119,27 @@ export async function pdfOrdnerLoeschen(id: string) {
   if (error) throw new Error(error.message);
 }
 
-export async function pdfInOrdner(dateiId: string, ordnerId: string | null) {
+/** Wohin eine PDF gezogen wurde: in ein Fach (= Ordner der Dateiablage), einen eigenen Ordner oder ganz raus. */
+export type PdfZiel = { art: "fach"; id: string } | { art: "ordner"; id: string } | { art: "wurzel" };
+
+/**
+ * PDF verschieben. Fach-Ordner sind dieselben wie in der Dateiablage (fach_id);
+ * eigene Ordner gibt es nur im PDF Reader (pdf_ordner_id). "Ganz raus" heißt:
+ * ohne Fach und ohne Ordner. Gibt den (evtl. eindeutig gemachten) Namen zurück.
+ */
+export async function pdfVerschieben(dateiId: string, ziel: PdfZiel): Promise<{ name: string }> {
   const supabase = await angemeldet();
-  if (ordnerId) {
+  if (ziel.art === "ordner") {
     // Nur eigene Ordner (RLS liefert fremde gar nicht erst)
-    const { data: ordner } = await supabase.from("pdf_ordner").select("id").eq("id", ordnerId).maybeSingle();
+    const { data: ordner } = await supabase.from("pdf_ordner").select("id").eq("id", ziel.id).maybeSingle();
     if (!ordner) throw new Error("Ordner nicht gefunden.");
+    const { data, error } = await supabase.from("datei").update({ pdf_ordner_id: ziel.id }).eq("id", dateiId).select("name").single();
+    if (error) throw new Error(error.message);
+    return data;
   }
-  const { error } = await supabase.from("datei").update({ pdf_ordner_id: ordnerId }).eq("id", dateiId);
+  // Fach oder ganz raus: wie in der Dateiablage verschieben (Name wird bei Bedarf eindeutig)
+  const verschoben = await dateiVerschieben(dateiId, ziel.art === "fach" ? ziel.id : null);
+  const { error } = await supabase.from("datei").update({ pdf_ordner_id: null }).eq("id", dateiId);
   if (error) throw new Error(error.message);
+  return { name: verschoben.name };
 }

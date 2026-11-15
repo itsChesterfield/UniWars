@@ -3,28 +3,67 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { pdfInOrdner, pdfOrdnerAnlegen, pdfOrdnerLoeschen, pdfOrdnerUmbenennen, type PdfOrdner } from "@/app/(hubs)/pdf-reader/actions";
+import {
+  pdfOrdnerAnlegen,
+  pdfOrdnerLoeschen,
+  pdfOrdnerUmbenennen,
+  pdfVerschieben,
+  type PdfOrdner,
+  type PdfZiel,
+} from "@/app/(hubs)/pdf-reader/actions";
+import { uploadAbschliessen, uploadVerwerfen, uploadVorbereiten } from "@/app/(hubs)/dateiablage/actions";
 import { UmbenennenFeld } from "@/components/dateiablage/dateiablage";
 import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
 import { groesseText } from "@/lib/dateiablage/dateien";
+import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type PdfEintrag = {
   id: string;
   name: string;
   groesse: number;
+  fachId: string | null;
   ordnerId: string | null;
-  fach: { name: string; farbe: string | null } | null;
   letzteSeite: number | null;
 };
 
-const OHNE = "ohne";
+export type PdfFach = { id: string; name: string; farbe: string | null };
+
+/** Ordner-Schlüssel in der Adresse: "f:<fach>" oder "o:<eigener Ordner>"; ohne = oberste Ebene. */
+type Ort = string | null;
+type Ordner = { schluessel: string; name: string; farbe: string | null; eigen: boolean; id: string };
+type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null };
+
 const PDF_DRAG_TYP = "application/x-uniwars-pdf";
 
-function OrdnerIcon() {
+function ortVon(p: PdfEintrag): Ort {
+  if (p.ordnerId) return `o:${p.ordnerId}`;
+  if (p.fachId) return `f:${p.fachId}`;
+  return null;
+}
+
+function zielVon(ort: Ort): PdfZiel {
+  if (ort?.startsWith("o:")) return { art: "ordner", id: ort.slice(2) };
+  if (ort?.startsWith("f:")) return { art: "fach", id: ort.slice(2) };
+  return { art: "wurzel" };
+}
+
+function istPdf(datei: File) {
+  return datei.type === "application/pdf" || datei.name.toLowerCase().endsWith(".pdf");
+}
+
+function OrdnerIcon({ farbe, gross = false }: { farbe?: string | null; gross?: boolean }) {
+  const g = gross ? 34 : 15;
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
-      <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+    <svg width={g} height={g} viewBox="0 0 24 24" aria-hidden className="pdf-ordner-icon">
+      <path
+        d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"
+        fill={farbe ?? "var(--accent)"}
+        fillOpacity={gross ? 0.85 : 0}
+        stroke={gross ? "none" : "currentColor"}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -86,98 +125,171 @@ function OrdnerNameFeld({
   );
 }
 
-export function PdfListe({ startPdfs, startOrdner }: { startPdfs: PdfEintrag[]; startOrdner: PdfOrdner[] }) {
+/**
+ * PDF Reader wie ein Datei-Explorer (à la OneDrive): oben die Ordner als Kacheln –
+ * jedes Fach ist automatisch ein Ordner, dazu eigene Ordner –, darunter die PDFs.
+ * PDFs per Drag & Drop in Ordner hinein oder (auf "Meine PDFs") wieder heraus ziehen;
+ * PDFs vom Computer hineinziehen lädt sie direkt dort hoch.
+ */
+export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEintrag[]; startOrdner: PdfOrdner[]; faecher: PdfFach[] }) {
   const router = useRouter();
   const pfad = usePathname();
   const searchParams = useSearchParams();
-  const auswahl = searchParams.get("ordner");
 
   const [pdfs, setPdfs] = useState(startPdfs);
-  const [ordner, setOrdner] = useState(() => [...startOrdner].sort((a, b) => a.name.localeCompare(b.name, "de")));
+  const [eigene, setEigene] = useState(startOrdner);
   const [neuerOrdner, setNeuerOrdner] = useState(false);
   const [ordnerUmbenennen, setOrdnerUmbenennen] = useState<string | null>(null);
   const [umbenennenId, setUmbenennenId] = useState<string | null>(null);
-  const [ziehZiel, setZiehZiel] = useState<string | null>(null);
+  const [ziel, setZiel] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<Upload[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
 
-  const aktiverOrdner = ordner.find((o) => o.id === auswahl) ?? null;
-  const filter = aktiverOrdner ? aktiverOrdner.id : auswahl === OHNE ? OHNE : null;
-  const sichtbar = pdfs.filter((p) => (filter === null ? true : filter === OHNE ? !p.ordnerId : p.ordnerId === filter));
-  const anzahl = (id: string | null) => pdfs.filter((p) => p.ordnerId === id).length;
-  const ordnerName = (id: string | null) => ordner.find((o) => o.id === id)?.name ?? null;
-  const sortiert = (liste: PdfOrdner[]) => [...liste].sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const ordner: Ordner[] = [
+    ...faecher.map((f) => ({ schluessel: `f:${f.id}`, name: f.name, farbe: f.farbe, eigen: false, id: f.id })),
+    ...[...eigene]
+      .sort((a, b) => a.name.localeCompare(b.name, "de"))
+      .map((o) => ({ schluessel: `o:${o.id}`, name: o.name, farbe: null, eigen: true, id: o.id })),
+  ];
+  const gewaehlt = searchParams.get("ordner");
+  const aktuell = ordner.find((o) => o.schluessel === gewaehlt) ?? null;
+  const ort: Ort = aktuell?.schluessel ?? null;
+  const sichtbar = pdfs.filter((p) => ortVon(p) === ort);
+  const anzahl = (schluessel: string) => pdfs.filter((p) => ortVon(p) === schluessel).length;
 
-  function waehlen(wert: string | null) {
+  function oeffnen(schluessel: Ort) {
     const params = new URLSearchParams(searchParams.toString());
-    if (wert) params.set("ordner", wert);
+    if (schluessel) params.set("ordner", schluessel);
     else params.delete("ordner");
     const query = params.toString();
     router.push(query ? `${pfad}?${query}` : pfad, { scroll: false });
   }
 
+  // --- Ordner -----------------------------------------------------------------
   async function anlegen(name: string) {
     const neu = await pdfOrdnerAnlegen(name);
-    setOrdner((l) => sortiert([...l, neu]));
+    setEigene((l) => [...l, neu]);
     setNeuerOrdner(false);
     track("pdf_ordner_angelegt");
-    waehlen(neu.id);
   }
 
   async function umbenennen(id: string, name: string) {
     const neu = await pdfOrdnerUmbenennen(id, name);
-    setOrdner((l) => sortiert(l.map((o) => (o.id === id ? neu : o))));
+    setEigene((l) => l.map((o) => (o.id === id ? neu : o)));
     setOrdnerUmbenennen(null);
     track("pdf_ordner_umbenannt");
   }
 
-  function loeschen(o: PdfOrdner) {
-    const n = anzahl(o.id);
-    const hinweis = n > 0 ? ` Die ${n === 1 ? "PDF darin bleibt" : `${n} PDFs darin bleiben`} erhalten und ${n === 1 ? "landet" : "landen"} in „Ohne Ordner“.` : "";
+  function loeschen(o: Ordner) {
+    const n = anzahl(o.schluessel);
+    const hinweis = n > 0 ? ` ${n === 1 ? "Die PDF darin bleibt" : `Die ${n} PDFs darin bleiben`} erhalten.` : "";
     if (!window.confirm(`Ordner „${o.name}“ löschen?${hinweis}`)) return;
-    const vorher = { ordner, pdfs };
-    setOrdner((l) => l.filter((x) => x.id !== o.id));
+    const vorher = { eigene, pdfs };
+    setEigene((l) => l.filter((x) => x.id !== o.id));
     setPdfs((l) => l.map((p) => (p.ordnerId === o.id ? { ...p, ordnerId: null } : p)));
-    waehlen(null);
+    if (ort === o.schluessel) oeffnen(null);
     track("pdf_ordner_geloescht", { pdfs: n });
     pdfOrdnerLoeschen(o.id).catch((err) => {
-      setOrdner(vorher.ordner);
+      setEigene(vorher.eigene);
       setPdfs(vorher.pdfs);
       setFehler("Der Ordner konnte nicht gelöscht werden.");
       fehlerMelden(err, { ort: "pdf_ordner_loeschen" });
     });
   }
 
-  function verschieben(pdfId: string, ordnerId: string | null) {
+  // --- Verschieben ------------------------------------------------------------
+  function verschieben(pdfId: string, nach: Ort) {
     const pdf = pdfs.find((p) => p.id === pdfId);
-    if (!pdf || pdf.ordnerId === ordnerId) return;
+    if (!pdf || ortVon(pdf) === nach) return;
+    const z = zielVon(nach);
+    const neu: PdfEintrag =
+      z.art === "ordner"
+        ? { ...pdf, ordnerId: z.id }
+        : z.art === "fach"
+          ? { ...pdf, ordnerId: null, fachId: z.id }
+          : { ...pdf, ordnerId: null, fachId: null };
     setFehler(null);
-    setPdfs((l) => l.map((p) => (p.id === pdfId ? { ...p, ordnerId } : p)));
-    track("pdf_verschoben", { in_ordner: Boolean(ordnerId) });
-    pdfInOrdner(pdfId, ordnerId).catch((err) => {
-      setPdfs((l) => l.map((p) => (p.id === pdfId ? { ...p, ordnerId: pdf.ordnerId } : p)));
-      setFehler("Verschieben hat nicht geklappt.");
-      fehlerMelden(err, { ort: "pdf_verschieben" });
-    });
+    setPdfs((l) => l.map((p) => (p.id === pdfId ? neu : p)));
+    track("pdf_verschoben", { ziel: z.art });
+    pdfVerschieben(pdfId, z)
+      .then(({ name }) => setPdfs((l) => l.map((p) => (p.id === pdfId ? { ...p, name } : p))))
+      .catch((err) => {
+        setPdfs((l) => l.map((p) => (p.id === pdfId ? pdf : p)));
+        setFehler("Verschieben hat nicht geklappt.");
+        fehlerMelden(err, { ort: "pdf_verschieben" });
+      });
   }
 
-  /** Chip als Ablageziel: PDF-Zeile auf einen Ordner ziehen. */
-  function ablageZiel(ziel: string | null) {
-    const schluessel = ziel ?? OHNE;
+  // --- Hochladen (PDFs vom Computer hineinziehen) -----------------------------
+  async function eineHochladen(datei: File, nach: Ort, schluessel: string) {
+    const setzen = (teil: Partial<Upload>) => setUploads((l) => l.map((u) => (u.schluessel === schluessel ? { ...u, ...teil } : u)));
+    const z = zielVon(nach);
+    const fachId = z.art === "fach" ? z.id : null;
+    let ticketPfad: string | null = null;
+    try {
+      const ticket = await uploadVorbereiten({ name: datei.name, groesse: datei.size, fachId });
+      ticketPfad = ticket.pfad;
+      setzen({ name: ticket.name });
+      await hochladenMitFortschritt(ticket.signedUrl, datei, ticket.mime, (anteil) => setzen({ anteil }));
+      const neu = await uploadAbschliessen({ pfad: ticket.pfad, name: ticket.name, fachId });
+      ticketPfad = null;
+      if (z.art === "ordner") await pdfVerschieben(neu.id, z);
+      setPdfs((l) => [
+        { id: neu.id, name: neu.name, groesse: Number(neu.groesse), fachId: neu.fach_id, ordnerId: z.art === "ordner" ? z.id : null, letzteSeite: null },
+        ...l,
+      ]);
+      setUploads((l) => l.filter((u) => u.schluessel !== schluessel));
+      track("datei_hochgeladen", { art: "pdf", kb: Math.round(datei.size / 1024), mit_fach: Boolean(fachId), ort: "pdf_reader" });
+    } catch (err) {
+      if (ticketPfad) void uploadVerwerfen(ticketPfad).catch(() => undefined);
+      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen." });
+      fehlerMelden(err, { ort: "pdf_upload" });
+    }
+  }
+
+  function hochladen(dateien: File[], nach: Ort) {
+    const neue: Upload[] = [];
+    const starten: [File, string][] = [];
+    for (const datei of dateien) {
+      const schluessel = crypto.randomUUID();
+      if (!istPdf(datei)) {
+        neue.push({ schluessel, name: datei.name, anteil: 0, fehler: "Nur PDFs – andere Dateien bitte in der Dateiablage hochladen." });
+        continue;
+      }
+      neue.push({ schluessel, name: datei.name, anteil: 0, fehler: null });
+      starten.push([datei, schluessel]);
+    }
+    setUploads((u) => [...u, ...neue]);
+    const warteschlange = [...starten];
+    const arbeiter = async () => {
+      for (let n = warteschlange.shift(); n; n = warteschlange.shift()) await eineHochladen(n[0], nach, n[1]);
+    };
+    void Promise.all([arbeiter(), arbeiter()]);
+  }
+
+  /** Ablageziel für PDFs aus der Liste (verschieben) und vom Computer (hochladen). */
+  function ablage(nach: Ort, kennung: string) {
     return {
       onDragOver: (e: React.DragEvent) => {
-        if (!e.dataTransfer.types.includes(PDF_DRAG_TYP)) return;
+        const typen = e.dataTransfer.types;
+        if (!typen.includes(PDF_DRAG_TYP) && !typen.includes("Files")) return;
+        // Die ganze Fläche nimmt nur Dateien vom Computer an (eine PDF aus der Liste liegt ja schon hier)
+        if (kennung === "hier" && !typen.includes("Files")) return;
         e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        if (ziehZiel !== schluessel) setZiehZiel(schluessel);
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = typen.includes("Files") ? "copy" : "move";
+        if (ziel !== kennung) setZiel(kennung);
       },
-      onDragLeave: () => setZiehZiel(null),
+      onDragLeave: (e: React.DragEvent) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setZiel((z) => (z === kennung ? null : z));
+      },
       onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setZiel(null);
         const id = e.dataTransfer.getData(PDF_DRAG_TYP);
-        setZiehZiel(null);
-        if (id) {
-          e.preventDefault();
-          verschieben(id, ziel);
-        }
+        if (id) verschieben(id, nach);
+        else if (e.dataTransfer.files.length) hochladen(Array.from(e.dataTransfer.files), nach);
       },
     };
   }
@@ -185,71 +297,130 @@ export function PdfListe({ startPdfs, startOrdner }: { startPdfs: PdfEintrag[]; 
   function menue(p: PdfEintrag): MenuePunkt[] {
     const punkte: MenuePunkt[] = [{ label: "Umbenennen", onClick: () => setUmbenennenId(p.id) }];
     for (const o of ordner) {
-      if (o.id !== p.ordnerId) punkte.push({ label: `In „${o.name}“ verschieben`, onClick: () => verschieben(p.id, o.id) });
+      if (o.schluessel !== ortVon(p)) punkte.push({ label: `Nach „${o.name}“ verschieben`, onClick: () => verschieben(p.id, o.schluessel) });
     }
-    if (p.ordnerId) punkte.push({ label: "Aus dem Ordner nehmen", onClick: () => verschieben(p.id, null) });
-    if (ordner.length === 0) punkte.push({ label: "Neuer Ordner …", onClick: () => setNeuerOrdner(true) });
+    if (ortVon(p)) punkte.push({ label: "Aus dem Ordner nehmen", onClick: () => verschieben(p.id, null) });
     return punkte;
   }
 
   return (
-    <>
-      <div className="pdf-ordner-leiste" role="toolbar" aria-label="Ordner">
-        <button type="button" className={`chip ${filter === null ? "chip-active" : ""}`} onClick={() => waehlen(null)}>
-          Alle <span className="pdf-ordner-zahl">{pdfs.length}</span>
+    <div className={`pdf-explorer ${ziel === "hier" ? "pdf-ablage-aktiv" : ""}`} {...ablage(ort, "hier")}>
+      <nav className="pdf-pfad" aria-label="Ordnerpfad">
+        <button
+          type="button"
+          className={`pdf-pfad-teil ${ziel === "wurzel" ? "pdf-ordner-ziel" : ""}`}
+          onClick={() => oeffnen(null)}
+          aria-current={ort === null ? "page" : undefined}
+          title={ort ? "Zurück – PDFs hierher ziehen, um sie aus dem Ordner zu nehmen" : undefined}
+          {...(ort ? ablage(null, "wurzel") : {})}
+        >
+          Meine PDFs
         </button>
-        {ordner.map((o) =>
-          ordnerUmbenennen === o.id ? (
-            <OrdnerNameFeld key={o.id} start={o.name} onSpeichern={(name) => umbenennen(o.id, name)} onAbbrechen={() => setOrdnerUmbenennen(null)} />
-          ) : (
-            <button
-              key={o.id}
-              type="button"
-              className={`chip ${filter === o.id ? "chip-active" : ""} ${ziehZiel === o.id ? "pdf-ordner-ziel" : ""}`}
-              onClick={() => waehlen(o.id)}
-              onDoubleClick={() => setOrdnerUmbenennen(o.id)}
-              title="Doppelklick zum Umbenennen – PDFs hierher ziehen zum Verschieben"
-              {...ablageZiel(o.id)}
-            >
-              <OrdnerIcon /> {o.name} <span className="pdf-ordner-zahl">{anzahl(o.id)}</span>
-            </button>
-          ),
+        {aktuell && (
+          <>
+            <span className="faint" aria-hidden>
+              ›
+            </span>
+            {ordnerUmbenennen === aktuell.schluessel ? (
+              <OrdnerNameFeld start={aktuell.name} onSpeichern={(name) => umbenennen(aktuell.id, name)} onAbbrechen={() => setOrdnerUmbenennen(null)} />
+            ) : (
+              <span className="pdf-pfad-teil aktiv" aria-current="page">
+                <OrdnerIcon farbe={aktuell.farbe} /> {aktuell.name}
+              </span>
+            )}
+            {aktuell.eigen ? (
+              <DreiPunkteMenue
+                label="Ordner-Aktionen"
+                punkte={[
+                  { label: "Ordner umbenennen", onClick: () => setOrdnerUmbenennen(aktuell.schluessel) },
+                  { label: "Ordner löschen", onClick: () => loeschen(aktuell), gefahr: true },
+                ]}
+              />
+            ) : (
+              <span className="faint pdf-pfad-hinweis">Fach-Ordner · auch in der Dateiablage</span>
+            )}
+          </>
         )}
-        {ordner.length > 0 && (
-          <button
-            type="button"
-            className={`chip ${filter === OHNE ? "chip-active" : ""} ${ziehZiel === OHNE ? "pdf-ordner-ziel" : ""}`}
-            onClick={() => waehlen(OHNE)}
-            {...ablageZiel(null)}
-          >
-            Ohne Ordner <span className="pdf-ordner-zahl">{anzahl(null)}</span>
-          </button>
-        )}
-        {neuerOrdner ? (
-          <OrdnerNameFeld onSpeichern={anlegen} onAbbrechen={() => setNeuerOrdner(false)} />
-        ) : (
-          <button type="button" className="chip pdf-ordner-neu" onClick={() => setNeuerOrdner(true)}>
-            + Neuer Ordner
-          </button>
-        )}
-        {aktiverOrdner && ordnerUmbenennen !== aktiverOrdner.id && (
-          <span className="pdf-ordner-aktionen">
-            <DreiPunkteMenue
-              label="Ordner-Aktionen"
-              punkte={[
-                { label: "Ordner umbenennen", onClick: () => setOrdnerUmbenennen(aktiverOrdner.id) },
-                { label: "Ordner löschen", onClick: () => loeschen(aktiverOrdner), gefahr: true },
-              ]}
-            />
-          </span>
-        )}
-      </div>
+      </nav>
+
       {fehler && <p className="auth-error">{fehler}</p>}
 
-      <section className="card">
+      {uploads.length > 0 && (
+        <ul className="pdf-uploads">
+          {uploads.map((u) => (
+            <li key={u.schluessel}>
+              <span className="pdf-upload-name">⤒ {u.name}</span>
+              {u.fehler ? (
+                <>
+                  <span className="dat-upload-fehler">{u.fehler}</span>
+                  <button type="button" className="icon-knopf" aria-label="Ausblenden" onClick={() => setUploads((l) => l.filter((x) => x.schluessel !== u.schluessel))}>
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <span className="progress-track pdf-upload-balken">
+                  <span className="progress-fill" style={{ width: `${Math.round(u.anteil * 100)}%` }} />
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {ort === null && (
+        <section aria-label="Ordner">
+          <div className="pdf-ordner-raster">
+            {ordner.map((o) =>
+              ordnerUmbenennen === o.schluessel ? (
+                <div key={o.schluessel} className="pdf-ordner-kachel">
+                  <OrdnerIcon farbe={o.farbe} gross />
+                  <OrdnerNameFeld start={o.name} onSpeichern={(name) => umbenennen(o.id, name)} onAbbrechen={() => setOrdnerUmbenennen(null)} />
+                </div>
+              ) : (
+                <div key={o.schluessel} className={`pdf-ordner-kachel ${ziel === o.schluessel ? "pdf-ordner-ziel" : ""}`} {...ablage(o.schluessel, o.schluessel)}>
+                  <button type="button" className="pdf-ordner-oeffnen" onClick={() => oeffnen(o.schluessel)} title={o.eigen ? o.name : `${o.name} (Fach)`}>
+                    <OrdnerIcon farbe={o.farbe} gross />
+                    <span className="pdf-ordner-name">{o.name}</span>
+                    <span className="faint pdf-ordner-zahl">
+                      {anzahl(o.schluessel)} {anzahl(o.schluessel) === 1 ? "PDF" : "PDFs"}
+                      {!o.eigen && " · Fach"}
+                    </span>
+                  </button>
+                  {o.eigen && (
+                    <DreiPunkteMenue
+                      label={`Aktionen für Ordner ${o.name}`}
+                      punkte={[
+                        { label: "Umbenennen", onClick: () => setOrdnerUmbenennen(o.schluessel) },
+                        { label: "Löschen", onClick: () => loeschen(o), gefahr: true },
+                      ]}
+                    />
+                  )}
+                </div>
+              ),
+            )}
+            {neuerOrdner ? (
+              <div className="pdf-ordner-kachel pdf-ordner-neu">
+                <OrdnerIcon gross />
+                <OrdnerNameFeld onSpeichern={anlegen} onAbbrechen={() => setNeuerOrdner(false)} />
+              </div>
+            ) : (
+              <button type="button" className="pdf-ordner-kachel pdf-ordner-neu" onClick={() => setNeuerOrdner(true)}>
+                <span className="pdf-ordner-plus" aria-hidden>
+                  +
+                </span>
+                <span className="pdf-ordner-name">Neuer Ordner</span>
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="card pdf-dateien" aria-label="PDFs">
         {sichtbar.length === 0 ? (
           <p className="empty-state">
-            {filter === null ? "Noch keine PDFs." : "Dieser Ordner ist leer. Zieh eine PDF auf den Ordner oder nutze ⋯ → Verschieben."}
+            {ort === null
+              ? "Hier liegen PDFs ohne Ordner. Zieh PDFs von deinem Computer hierher, um sie hochzuladen."
+              : "Dieser Ordner ist leer. Zieh PDFs von deinem Computer hierher oder verschiebe welche über ⋯."}
           </p>
         ) : (
           <ul className="pdf-liste">
@@ -258,6 +429,7 @@ export function PdfListe({ startPdfs, startOrdner }: { startPdfs: PdfEintrag[]; 
                 key={d.id}
                 className="pdf-liste-eintrag"
                 draggable={umbenennenId !== d.id}
+                title="In einen Ordner ziehen zum Verschieben"
                 onDragStart={(e) => {
                   e.dataTransfer.setData(PDF_DRAG_TYP, d.id);
                   e.dataTransfer.effectAllowed = "move";
@@ -278,20 +450,6 @@ export function PdfListe({ startPdfs, startOrdner }: { startPdfs: PdfEintrag[]; 
                   <Link href={`/pdf-reader/${d.id}`} className="pdf-liste-zeile" draggable={false}>
                     <span aria-hidden>📕</span>
                     <span className="pdf-liste-name">{d.name}</span>
-                    {filter === null && d.ordnerId && (
-                      <span className="muted pdf-liste-fach">
-                        <OrdnerIcon /> {ordnerName(d.ordnerId)}
-                      </span>
-                    )}
-                    <span className="muted pdf-liste-fach">
-                      {d.fach ? (
-                        <>
-                          <span className="dot" style={{ background: d.fach.farbe ?? "#94a3b8" }} /> {d.fach.name}
-                        </>
-                      ) : (
-                        "Allgemein"
-                      )}
-                    </span>
                     <span className="faint mono">{groesseText(d.groesse)}</span>
                     {d.letzteSeite && <span className="tag tag-accent">weiter bei S. {d.letzteSeite}</span>}
                   </Link>
@@ -302,6 +460,9 @@ export function PdfListe({ startPdfs, startOrdner }: { startPdfs: PdfEintrag[]; 
           </ul>
         )}
       </section>
-    </>
+      <p className="faint pdf-explorer-tipp">
+        Tipp: PDFs auf einen Ordner ziehen verschiebt sie – auf „Meine PDFs“ ziehen nimmt sie wieder heraus.
+      </p>
+    </div>
   );
 }

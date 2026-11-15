@@ -8129,40 +8129,157 @@ html[data-eingebettet] .dashboard-main {
   }
 }
 
-/* --- PDF Reader: Ordner --- */
+/* --- PDF Reader: Ordner wie im Datei-Explorer --- */
 
-.pdf-ordner-leiste {
+.pdf-explorer {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 14px;
+  outline: 2px dashed transparent;
+  outline-offset: 6px;
+  transition: outline-color 0.1s;
 }
 
-.pdf-ordner-leiste .chip {
+.pdf-explorer.pdf-ablage-aktiv {
+  outline-color: var(--accent);
+}
+
+.pdf-pfad {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 34px;
+  font-size: 15px;
+}
+
+.pdf-pfad-teil {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.pdf-pfad-teil:hover {
+  background: var(--card2);
+  color: var(--text);
+}
+
+.pdf-pfad-teil.aktiv,
+.pdf-pfad-teil[aria-current="page"] {
+  color: var(--text);
+  cursor: default;
+}
+
+.pdf-pfad-hinweis {
+  font-size: 12px;
+}
+
+.pdf-ordner-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.pdf-ordner-kachel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  min-height: 112px;
+  transition: border-color 0.1s, background 0.1s, transform 0.1s;
+}
+
+.pdf-ordner-kachel:hover {
+  border-color: var(--accent);
+}
+
+.pdf-ordner-kachel .drei-punkte {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.pdf-ordner-kachel > .pdf-ordner-icon,
+.pdf-ordner-kachel > .pdf-ordner-feld {
+  margin: 12px 14px 0;
+}
+
+.pdf-ordner-kachel > .pdf-ordner-feld .field {
+  width: 100%;
+}
+
+.pdf-ordner-oeffnen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.pdf-ordner-name {
+  font-weight: 600;
+  font-size: 14px;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  padding-right: 18px;
 }
 
 .pdf-ordner-zahl {
-  font-size: 11px;
-  opacity: 0.7;
-  font-variant-numeric: tabular-nums;
+  font-size: 12px;
 }
 
 .pdf-ordner-neu {
   border-style: dashed;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
 }
 
-.pdf-ordner-ziel {
+.pdf-ordner-neu .pdf-ordner-name {
+  font-weight: 600;
+}
+
+.pdf-ordner-plus {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--accent-strong);
+}
+
+.pdf-ordner-ziel,
+.pdf-ordner-kachel.pdf-ordner-ziel {
   outline: 2px dashed var(--accent);
   outline-offset: 2px;
+  background: var(--accent-soft);
+  transform: scale(1.02);
 }
 
 .pdf-ordner-feld {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .pdf-ordner-feld .field {
@@ -8171,15 +8288,12 @@ html[data-eingebettet] .dashboard-main {
   font-size: 13px;
 }
 
-.pdf-ordner-aktionen {
-  margin-left: -4px;
-}
-
 .pdf-liste-eintrag {
   display: flex;
   align-items: center;
   gap: 4px;
   border-bottom: 1px solid var(--border-soft);
+  cursor: grab;
 }
 
 .pdf-liste li.pdf-liste-eintrag:last-child {
@@ -8194,6 +8308,40 @@ html[data-eingebettet] .dashboard-main {
 
 .pdf-liste-eintrag .dat-umbenennen {
   flex: 1;
+}
+
+.pdf-uploads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdf-uploads li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.pdf-upload-name {
+  flex: 0 1 280px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-upload-balken {
+  flex: 1;
+  max-width: 240px;
+}
+
+.pdf-explorer-tipp {
+  margin: 0;
+  font-size: 12px;
 }
 
 /* Umschalter Scrollen / Seiten in der PDF-Leiste */
