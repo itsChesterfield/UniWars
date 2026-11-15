@@ -13,7 +13,18 @@ import { fehlerMelden, track } from "@/lib/analytics";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
 
-export function StapelUebersicht({ stapel, faecher }: { stapel: StapelKachel[]; faecher: FachOption[] }) {
+export type KartenVorschlag = { stapelId: string; gruende: string[] };
+
+export function StapelUebersicht({
+  stapel,
+  faecher,
+  vorschlaege = [],
+}: {
+  stapel: StapelKachel[];
+  faecher: FachOption[];
+  /** Was sich jetzt zu lernen lohnt (fällig, Prüfung, Vorlesung) */
+  vorschlaege?: KartenVorschlag[];
+}) {
   const router = useRouter();
   const fachFilter = useSearchParams().get("fachId");
   const [dialog, setDialog] = useState<{ modus: "neu" } | { modus: "bearbeiten"; stapel: StapelKachel } | null>(null);
@@ -44,6 +55,46 @@ export function StapelUebersicht({ stapel, faecher }: { stapel: StapelKachel[]; 
     <>
       <HubKopf titel="Karteikarten" untertitel="Lernen mit Wiederholung – fällige Karten kommen automatisch wieder." aktionen={neuKnopf} />
       <FachFilterChips faecher={faecher} />
+
+      {vorschlaege.length > 0 && !fachFilter && (
+        <section className="card kk-vorschlaege" aria-label="Jetzt lernen">
+          <div className="ch">
+            <span className="ct">Jetzt lernen</span>
+            <span className="muted" style={{ fontSize: 12 }}>
+              nach Wiederholung, Prüfungen und Vorlesungen
+            </span>
+          </div>
+          <ul>
+            {vorschlaege.map((v) => {
+              const s = stapel.find((x) => x.id === v.stapelId);
+              if (!s) return null;
+              const fach = fachVon(s.fach_id);
+              return (
+                <li key={v.stapelId}>
+                  <span className="dot" style={{ background: fach?.farbe ?? "#94a3b8" }} aria-hidden />
+                  <span className="kk-vorschlag-text">
+                    <strong>{s.name}</strong>
+                    <span className="kk-vorschlag-gruende">
+                      {v.gruende.map((g) => (
+                        <span key={g} className="tag">
+                          {g}
+                        </span>
+                      ))}
+                    </span>
+                  </span>
+                  <Link
+                    href={`/karteikarten/${s.id}/lernen`}
+                    className="btnp"
+                    onClick={() => track("kk_vorschlag_geoeffnet", { faellig: s.faellig, gruende: v.gruende.length })}
+                  >
+                    Lernen{s.faellig > 0 ? ` (${s.faellig})` : ""}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {stapel.length === 0 ? (
         <LeererZustand

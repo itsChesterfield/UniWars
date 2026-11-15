@@ -8447,3 +8447,38 @@ button.pdf-pfad-teil:hover {
     object-fit: contain;
   }
 }
+
+/* --- Karteikarten: Vorschläge "Jetzt lernen" --- */
+.kk-vorschlaege ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kk-vorschlaege li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 2px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.kk-vorschlaege li:first-child {
+  border-top: none;
+}
+
+.kk-vorschlag-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kk-vorschlag-gruende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
