@@ -6,6 +6,7 @@ import { googleEinrichtungsProbleme } from "@/lib/kalender/google";
 import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
+import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { DashboardContent } from "@/components/dashboard-content";
 
 export default async function DashboardPage() {
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
       <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} kiEingewilligt={Boolean(settings.ki_einwilligung)} audioEingewilligt={Boolean(settings.ki_audio_einwilligung)} kiVerfuegbar={kiKonfiguriert()} />
-      <main className="dashboard-main">
+      <GeteilteAnsicht mainKlasse="dashboard-main">
         <Suspense fallback={null}>
           <DashboardContent
             faecher={faecher ?? []}
@@ -121,7 +122,7 @@ export default async function DashboardPage() {
             kiVerfuegbar={kiKonfiguriert()}
           />
         </Suspense>
-      </main>
+      </GeteilteAnsicht>
     </div>
   );
 }

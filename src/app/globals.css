@@ -7737,3 +7737,223 @@ dialog.ki-dialog-klein {
     grid-column: 1 / -1;
   }
 }
+
+/* --- Geteilte Ansicht: zwei Hubs nebeneinander / übereinander --- */
+
+.split-rahmen {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  position: relative;
+}
+
+.split-rahmen > .split-haupt {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.split-rahmen[data-aktiv] {
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.split-rahmen[data-aktiv] > .split-haupt {
+  overflow-y: auto;
+}
+
+@media (min-width: 901px) {
+  .split-rahmen[data-aktiv] > .split-haupt {
+    padding: 22px 24px 32px;
+  }
+}
+
+.split-rahmen[data-seite="links"] {
+  flex-direction: row-reverse;
+}
+
+.split-rahmen[data-seite="oben"] {
+  flex-direction: column-reverse;
+}
+
+.split-rahmen[data-seite="unten"] {
+  flex-direction: column;
+}
+
+.split-zweite {
+  flex: 0 0 calc(var(--split-anteil, 0.5) * 100%);
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.split-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px 4px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--card);
+  font-size: 13px;
+}
+
+.split-titel {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.split-knoepfe {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.split-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  display: block;
+  background: var(--bg);
+}
+
+.split-rahmen[data-blockiert] .split-frame {
+  pointer-events: none;
+}
+
+.split-trenner {
+  flex: 0 0 8px;
+  position: relative;
+  background: var(--border-soft);
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+
+.split-rahmen[data-seite="oben"] .split-trenner,
+.split-rahmen[data-seite="unten"] .split-trenner {
+  cursor: row-resize;
+}
+
+.split-trenner::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 3px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border-radius: 3px;
+  background: var(--faint);
+  opacity: 0.6;
+}
+
+.split-rahmen[data-seite="oben"] .split-trenner::after,
+.split-rahmen[data-seite="unten"] .split-trenner::after {
+  width: 36px;
+  height: 3px;
+}
+
+.split-trenner:hover,
+.split-trenner:focus-visible,
+.split-rahmen[data-blockiert] .split-trenner {
+  background: var(--accent);
+  outline: none;
+}
+
+/* Ablagezonen beim Ziehen eines Hub-Icons */
+.split-zonen {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--bg) 35%, transparent);
+}
+
+.split-hinweis,
+.split-vorschau span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.split-vorschau {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  margin: 8px;
+  transition: all 0.12s ease-out;
+}
+
+.split-vorschau[data-seite="links"] {
+  inset: 0 auto 0 0;
+  width: calc(var(--split-anteil, 0.5) * 100% - 16px);
+}
+
+.split-vorschau[data-seite="rechts"] {
+  inset: 0 0 0 auto;
+  width: calc(var(--split-anteil, 0.5) * 100% - 16px);
+}
+
+.split-vorschau[data-seite="oben"] {
+  inset: 0 0 auto 0;
+  height: calc(var(--split-anteil, 0.5) * 100% - 16px);
+}
+
+.split-vorschau[data-seite="unten"] {
+  inset: auto 0 0 0;
+  height: calc(var(--split-anteil, 0.5) * 100% - 16px);
+}
+
+/* Der zweite Hub selbst: ohne Sidebar, Assistent-Knopf und Banner */
+html[data-eingebettet] .sidebar,
+html[data-eingebettet] .ki-starter,
+html[data-eingebettet] .analytics-banner {
+  display: none !important;
+}
+
+html[data-eingebettet] .dashboard-main {
+  padding: 18px 20px 28px;
+}
+
+/* Zieh-Ziel für Markierungen (PDF → Notiz) */
+.md-editor.zitat-ziel .md-inhalt {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.pdf-markier-liste li[draggable="true"] {
+  cursor: grab;
+}
+
+/* Auf schmalen Bildschirmen fehlt der Platz: dann nur die Hauptansicht */
+@media (max-width: 900px) {
+  .split-zweite,
+  .split-trenner,
+  .split-zonen {
+    display: none;
+  }
+
+  .split-rahmen[data-aktiv] {
+    height: auto;
+    position: static;
+  }
+
+  .split-rahmen[data-aktiv] > .split-haupt {
+    overflow-y: visible;
+  }
+}

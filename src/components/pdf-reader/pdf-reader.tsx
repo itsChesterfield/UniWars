@@ -756,6 +756,7 @@ export function PdfReader({
             </div>
             {leistenTab === "markierungen" ? (
               <MarkierungsListe
+                quelle={datei.name}
                 markierungen={markierungen}
                 seite={seite}
                 onSpringen={(m) => zuSeite(m.seite, "smooth")}

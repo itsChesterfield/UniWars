@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { QuickAdd } from "@/components/quick-add";
+import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 
 // Gemeinsamer Rahmen aller Hubs: Sidebar, Theme, Streak (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
@@ -34,7 +35,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
         audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
         kiVerfuegbar={kiKonfiguriert()}
       />
-      <main className="dashboard-main hub-main">{children}</main>
+      <GeteilteAnsicht mainKlasse="dashboard-main hub-main">{children}</GeteilteAnsicht>
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
     </div>
   );

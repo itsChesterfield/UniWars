@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Markierung } from "@/app/(hubs)/pdf-reader/actions";
 import { FARBEN, FARB_INFO, type Farbe } from "@/lib/pdf-reader/markierungen";
+import { ZITAT_DRAG_TYP, zitatAlsText, type Zitat } from "@/lib/geteilte-ansicht";
 
 export type MenuePosition = { x: number; y: number; unten: boolean };
 
@@ -129,12 +130,15 @@ export function MarkierungMenue({
 }
 
 export function MarkierungsListe({
+  quelle,
   markierungen,
   seite,
   onSpringen,
   onLoeschen,
   onKopieren,
 }: {
+  /** Dateiname – kommt beim Ziehen in eine Notiz als Quellenangabe mit */
+  quelle: string;
   markierungen: Markierung[];
   seite: number;
   onSpringen: (m: Markierung) => void;
@@ -158,7 +162,19 @@ export function MarkierungsListe({
       </div>
       <ul className="pdf-markier-liste">
         {sichtbar.map((m) => (
-          <li key={m.id} style={{ "--marker": FARB_INFO[m.farbe].wert } as React.CSSProperties}>
+          <li
+            key={m.id}
+            style={{ "--marker": FARB_INFO[m.farbe].wert } as React.CSSProperties}
+            draggable={Boolean(m.text.trim())}
+            title={m.text.trim() ? "In eine Notiz ziehen, um die Stelle als Zitat einzufügen" : undefined}
+            onDragStart={(e) => {
+              // Geteilte Ansicht: Markierung in den Notizen-Hub ziehen
+              const zitat: Zitat = { text: m.text, quelle, seite: m.seite, notiz: m.notiz };
+              e.dataTransfer.setData(ZITAT_DRAG_TYP, JSON.stringify(zitat));
+              e.dataTransfer.setData("text/plain", zitatAlsText(zitat));
+              e.dataTransfer.effectAllowed = "copy";
+            }}
+          >
             <button type="button" className={m.seite === seite ? "aktiv" : ""} onClick={() => onSpringen(m)}>
               <span className="pdf-markier-seite">S. {m.seite}</span>
               <span className="pdf-markier-text">{m.text.trim() || "(ohne Text)"}</span>

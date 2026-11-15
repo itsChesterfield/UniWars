@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Placeholder } from "@tiptap/extensions";
+import { ZITAT_DRAG_TYP, quellenAngabe, zitatLesen, type Zitat } from "@/lib/geteilte-ansicht";
+import { track } from "@/lib/analytics";
 
 // NOT-02 (Version 1): Überschrift, fett, kursiv, Aufzählung, Nummerierung, Checkliste, Code-Block.
 // Gespeichert wird Markdown. Kürzel wie Strg+B, "# " oder "- " funktionieren direkt.
@@ -25,6 +27,30 @@ function erweiterungen(platzhalter?: string) {
     Markdown,
     ...(platzhalter ? [Placeholder.configure({ placeholder: platzhalter })] : []),
   ];
+}
+
+/** Gezogene Markierung (z. B. aus dem PDF Reader) als eigener Absatz: kursives Zitat + Quelle. */
+function zitatInhalt(z: Zitat) {
+  const einzeilig = (t: string) => t.replace(/\s+/g, " ").trim();
+  const absaetze: object[] = [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", marks: [{ type: "italic" }], text: `„${einzeilig(z.text)}“` },
+        { type: "text", text: ` (${quellenAngabe(z)})` },
+      ],
+    },
+  ];
+  if (z.notiz) {
+    absaetze.push({
+      type: "paragraph",
+      content: [
+        { type: "text", marks: [{ type: "bold" }], text: "Notiz:" },
+        { type: "text", text: ` ${einzeilig(z.notiz)}` },
+      ],
+    });
+  }
+  return absaetze;
 }
 
 type Knopf = {
@@ -119,18 +145,51 @@ export function MarkdownEditor({
     onAendernRef.current = onAendern;
   }, [onAendern]);
 
+  const editorRef = useRef<Editor | null>(null);
+  const [zitatZiel, setZitatZiel] = useState(false);
+
   const editor = useEditor({
     extensions: erweiterungen(platzhalter),
     content: wert,
     contentType: "markdown",
     immediatelyRender: false,
     autofocus: autoFokus ? "end" : false,
-    editorProps: { attributes: { class: "md-inhalt", ...(label ? { "aria-label": label } : {}) } },
+    editorProps: {
+      attributes: { class: "md-inhalt", ...(label ? { "aria-label": label } : {}) },
+      // Geteilte Ansicht: Markierung aus dem PDF Reader hier ablegen
+      handleDrop: (view, event) => {
+        const roh = event.dataTransfer?.getData(ZITAT_DRAG_TYP);
+        const zitat = roh ? zitatLesen(roh) : null;
+        const e = editorRef.current;
+        if (!zitat || !e) return false;
+        event.preventDefault();
+        const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.doc.content.size;
+        const $pos = view.state.doc.resolve(pos);
+        // hinter den Absatz, auf den gezogen wurde – nicht mitten hinein
+        const ziel = $pos.depth > 0 ? $pos.after(1) : pos;
+        e.chain().focus().insertContentAt(ziel, zitatInhalt(zitat)).run();
+        track("zitat_eingefuegt", { mit_notiz: Boolean(zitat.notiz) });
+        return true;
+      },
+    },
     onUpdate: ({ editor: e }) => onAendernRef.current(e.getMarkdown()),
   });
 
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
+
   return (
-    <div className={`md-editor ${kompakt ? "md-kompakt" : ""}`}>
+    <div
+      className={`md-editor ${kompakt ? "md-kompakt" : ""} ${zitatZiel ? "zitat-ziel" : ""}`}
+      onDragOver={(e) => {
+        if (!zitatZiel && e.dataTransfer.types.includes(ZITAT_DRAG_TYP)) setZitatZiel(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setZitatZiel(false);
+      }}
+      onDrop={() => setZitatZiel(false)}
+    >
       {editor && <Werkzeugleiste editor={editor} extra={werkzeugExtra} />}
       <EditorContent editor={editor} className="md-flaeche" />
     </div>
