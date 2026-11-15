@@ -1300,6 +1300,7 @@ export type Database = {
           streak_last_active: string | null
           theme: Database["public"]["Enums"]["theme"]
           user_id: string
+          avatar_pfad: string | null
           username: string | null
           work_station: Json
         }
@@ -1312,6 +1313,7 @@ export type Database = {
           streak_last_active?: string | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id: string
+          avatar_pfad?: string | null
           username?: string | null
           work_station?: Json
         }
@@ -1324,6 +1326,7 @@ export type Database = {
           streak_last_active?: string | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id?: string
+          avatar_pfad?: string | null
           username?: string | null
           work_station?: Json
         }

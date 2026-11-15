@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 
 const BESCHRIFTUNG: Record<EinwilligungsArt, string> = { text: "KI-Funktionen", audio: "Sprachfunktionen" };
 
-/** KI-D1 / KI-D2: Schalter in der Seitenleiste – Einwilligung geben oder widerrufen (getrennt). */
+/** KI-D1 / KI-D2: Schalter in den Einstellungen – Einwilligung geben oder widerrufen (getrennt). */
 export function KiEinstellung({ startEingewilligt, art = "text" }: { startEingewilligt: boolean; art?: EinwilligungsArt }) {
   const [an, setAn] = useState(startEingewilligt);
   const [dialog, setDialog] = useState(false);

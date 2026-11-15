@@ -3,15 +3,10 @@
 import { Suspense, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AbmeldenButton, ThemeUmschalter } from "@/components/sidebar-aktionen";
-import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
-import { KiEinstellung } from "@/components/ki/ki-einstellung";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
-import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
-import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
-import type { Enums } from "@/lib/supabase/types";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
+import { ProfilAvatar } from "@/components/profil-avatar";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import { WEITERE_HUBS, ZENTRALER_HUB } from "@/lib/hubs/navigation";
@@ -60,20 +55,17 @@ function TimerRest() {
 }
 
 export function Sidebar({
+  name,
   email,
-  theme,
+  avatarUrl = null,
   streak,
-  kiEingewilligt = false,
-  audioEingewilligt = false,
   kiVerfuegbar = false,
 }: {
+  /** Anzeigename (Nutzername) */
+  name: string;
   email: string;
-  theme: Enums<"theme">;
+  avatarUrl?: string | null;
   streak: number;
-  /** KI-D1: settings.ki_einwilligung gesetzt? */
-  kiEingewilligt?: boolean;
-  /** KI-D2: settings.ki_audio_einwilligung gesetzt? */
-  audioEingewilligt?: boolean;
   /** KI-12: Mistral-Key gesetzt → schwebender ✨-Knopf (Strg+J) */
   kiVerfuegbar?: boolean;
 }) {
@@ -164,16 +156,23 @@ export function Sidebar({
           </div>
         )}
 
-        <span className="sidebar-user">{email}</span>
-
-        <ThemeUmschalter theme={theme} />
-        <AnalyticsEinstellung />
-        <KiEinstellung startEingewilligt={kiEingewilligt} />
-        <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
-        {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
-        {kiVerfuegbar && <KiVerlaufLoeschen />}
-        {kiEingewilligt && <KiKontingentAnzeige />}
-        <AbmeldenButton />
+        {/* Profil → Einstellungen (Name, Bild, Konto, Design, KI, Abmelden) */}
+        <Link
+          href="/einstellungen"
+          className={`sidebar-profil ${pfad === "/einstellungen" ? "active" : ""}`}
+          title="Profil und Einstellungen"
+          onClick={() => setMenueOffen(false)}
+        >
+          <ProfilAvatar name={name} url={avatarUrl} groesse={34} />
+          <span className="sidebar-profil-text">
+            <span className="sidebar-profil-name">{name}</span>
+            <span className="sidebar-profil-mail">{email}</span>
+          </span>
+          <svg className="sidebar-profil-zahnrad" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+          </svg>
+        </Link>
       </div>
       {kiVerfuegbar && (
         <Suspense fallback={null}>
