@@ -692,24 +692,26 @@ export function PdfReader({
         </div>
 
         <div className="pdf-gruppe">
-          <button
-            type="button"
-            className={`icon-knopf ${seitenweise ? "an" : ""}`}
-            aria-pressed={seitenweise}
-            aria-label="Seite für Seite"
-            title={seitenweise ? "Seite für Seite (aus: fließend scrollen)" : "Seite für Seite blättern statt scrollen"}
-            onClick={ansichtUmschalten}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
-              {seitenweise ? (
-                <path d="M6 3h12v18H6Z" />
-              ) : (
-                <>
-                  <path d="M6 2h12v9H6ZM6 14h12v8" />
-                </>
-              )}
-            </svg>
-          </button>
+          <span className="pdf-ansicht-wahl" role="group" aria-label="Ansicht">
+            <button
+              type="button"
+              className={!seitenweise ? "an" : ""}
+              aria-pressed={!seitenweise}
+              title="Alle Seiten untereinander, fließend scrollen"
+              onClick={() => seitenweise && ansichtUmschalten()}
+            >
+              Scrollen
+            </button>
+            <button
+              type="button"
+              className={seitenweise ? "an" : ""}
+              aria-pressed={seitenweise}
+              title="Seite für Seite blättern (◀ ▶, Pfeiltasten oder Mausrad am Seitenende)"
+              onClick={() => !seitenweise && ansichtUmschalten()}
+            >
+              Seiten
+            </button>
+          </span>
           <button
             type="button"
             className={`icon-knopf ${vollbild ? "an" : ""}`}

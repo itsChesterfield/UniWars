@@ -8195,3 +8195,30 @@ html[data-eingebettet] .dashboard-main {
 .pdf-liste-eintrag .dat-umbenennen {
   flex: 1;
 }
+
+/* Umschalter Scrollen / Seiten in der PDF-Leiste */
+.pdf-ansicht-wahl {
+  display: inline-flex;
+  margin-right: 4px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--border-soft);
+}
+
+.pdf-ansicht-wahl button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pdf-ansicht-wahl button.an {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
