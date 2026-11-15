@@ -572,7 +572,8 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
   );
 }
 
-function UmbenennenFeld({ datei, onFertig }: { datei: Datei; onFertig: (neu: Datei | null) => void }) {
+/** Inline umbenennen; die Endung (.pdf …) bleibt erhalten. Auch im PDF Reader genutzt. */
+export function UmbenennenFeld({ datei, onFertig }: { datei: Pick<Datei, "id" | "name">; onFertig: (neu: Datei | null) => void }) {
   const [wert, setWert] = useState(nameOhneEndung(datei.name));
   const [fehler, setFehler] = useState<string | null>(null);
   const fertig = useRef(false);

@@ -173,6 +173,7 @@ export async function dateiUmbenennen(id: string, eingabe: string): Promise<Date
   const { data, error } = await supabase.from("datei").update({ name: neu }).eq("id", id).select().single();
   if (error) throw new Error(error.message);
   revalidatePath("/dateiablage");
+  revalidatePath("/pdf-reader");
   return data;
 }
 

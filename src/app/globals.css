@@ -8128,3 +8128,70 @@ html[data-eingebettet] .dashboard-main {
     height: calc(100dvh - 90px);
   }
 }
+
+/* --- PDF Reader: Ordner --- */
+
+.pdf-ordner-leiste {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pdf-ordner-leiste .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-ordner-zahl {
+  font-size: 11px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-ordner-neu {
+  border-style: dashed;
+}
+
+.pdf-ordner-ziel {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.pdf-ordner-feld {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-ordner-feld .field {
+  width: 180px;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.pdf-ordner-aktionen {
+  margin-left: -4px;
+}
+
+.pdf-liste-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.pdf-liste li.pdf-liste-eintrag:last-child {
+  border-bottom: none;
+}
+
+.pdf-liste-eintrag .pdf-liste-zeile {
+  flex: 1;
+  min-width: 0;
+  border-bottom: none;
+}
+
+.pdf-liste-eintrag .dat-umbenennen {
+  flex: 1;
+}

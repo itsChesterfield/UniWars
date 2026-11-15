@@ -80,3 +80,51 @@ export async function markierungLoeschen(id: string) {
   const { error } = await supabase.from("pdf_markierung").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+// --- Ordner im PDF Reader ------------------------------------------------------
+
+export type PdfOrdner = { id: string; name: string };
+
+function ordnerName(eingabe: string): string {
+  const name = eingabe.replace(/\s+/g, " ").trim();
+  if (!name) throw new Error("Der Ordnername darf nicht leer sein.");
+  if (name.length > 100) throw new Error("Der Ordnername ist zu lang (höchstens 100 Zeichen).");
+  return name;
+}
+
+function ordnerFehler(error: { code?: string; message: string }): never {
+  if (error.code === "23505") throw new Error("Es gibt schon einen Ordner mit diesem Namen.");
+  throw new Error(error.message);
+}
+
+export async function pdfOrdnerAnlegen(eingabe: string): Promise<PdfOrdner> {
+  const supabase = await angemeldet();
+  const { data, error } = await supabase.from("pdf_ordner").insert({ name: ordnerName(eingabe) }).select("id, name").single();
+  if (error) ordnerFehler(error);
+  return data;
+}
+
+export async function pdfOrdnerUmbenennen(id: string, eingabe: string): Promise<PdfOrdner> {
+  const supabase = await angemeldet();
+  const { data, error } = await supabase.from("pdf_ordner").update({ name: ordnerName(eingabe) }).eq("id", id).select("id, name").single();
+  if (error) ordnerFehler(error);
+  return data;
+}
+
+/** Die PDFs bleiben erhalten und landen wieder in "Ohne Ordner". */
+export async function pdfOrdnerLoeschen(id: string) {
+  const supabase = await angemeldet();
+  const { error } = await supabase.from("pdf_ordner").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function pdfInOrdner(dateiId: string, ordnerId: string | null) {
+  const supabase = await angemeldet();
+  if (ordnerId) {
+    // Nur eigene Ordner (RLS liefert fremde gar nicht erst)
+    const { data: ordner } = await supabase.from("pdf_ordner").select("id").eq("id", ordnerId).maybeSingle();
+    if (!ordner) throw new Error("Ordner nicht gefunden.");
+  }
+  const { error } = await supabase.from("datei").update({ pdf_ordner_id: ordnerId }).eq("id", dateiId);
+  if (error) throw new Error(error.message);
+}

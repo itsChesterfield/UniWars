@@ -231,6 +231,7 @@ export type Database = {
           id: string
           mime_typ: string
           name: string
+          pdf_ordner_id: string | null
           speicher_pfad: string
           user_id: string
         }
@@ -242,6 +243,7 @@ export type Database = {
           id?: string
           mime_typ: string
           name: string
+          pdf_ordner_id?: string | null
           speicher_pfad: string
           user_id?: string
         }
@@ -253,6 +255,7 @@ export type Database = {
           id?: string
           mime_typ?: string
           name?: string
+          pdf_ordner_id?: string | null
           speicher_pfad?: string
           user_id?: string
         }
@@ -262,6 +265,13 @@ export type Database = {
             columns: ["fach_id"]
             isOneToOne: false
             referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "datei_pdf_ordner_id_fkey"
+            columns: ["pdf_ordner_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_ordner"
             referencedColumns: ["id"]
           },
         ]
@@ -1131,6 +1141,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pdf_ordner: {
+        Row: {
+          erstellt_am: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       pdf_stand: {
         Row: {
