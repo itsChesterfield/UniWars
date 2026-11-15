@@ -21,6 +21,7 @@ import {
   type Rechteck,
 } from "@/lib/pdf-reader/markierungen";
 import { KiPdfLeiste } from "@/components/pdf-reader/ki-pdf-leiste";
+import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 import { AuswahlMenue, FarbPunkte, MarkierungMenue, MarkierungsListe, type MenuePosition } from "@/components/pdf-reader/markier-menue";
 
 type Zoom = "breite" | "seite" | number;
@@ -29,6 +30,10 @@ type Treffer = { seite: number; nr: number };
 type Erfasst = { seite: number; rechtecke: Rechteck[]; text: string };
 
 const STIFT_SPEICHER = "uniwars-pdf-stift";
+const ANSICHT_SPEICHER = "uniwars-pdf-ansicht";
+type Ansicht = "fliessend" | "seitenweise";
+/** Mindestabstand beim Blättern mit dem Mausrad im Modus „Seite für Seite“ */
+const BLAETTER_PAUSE_MS = 450;
 const KEINE_MARKIERUNGEN: Markierung[] = [];
 
 function gespeicherteFarbe(): Farbe {
@@ -106,6 +111,13 @@ export function PdfReader({
   const [trefferIndex, setTrefferIndex] = useState(0);
   const [sucht, setSucht] = useState(false);
   const [kiOffen, setKiOffen] = useState(false);
+  const [vollbild, setVollbild] = useState(false);
+  // Fließend scrollen oder Seite für Seite blättern (pro Gerät gemerkt)
+  const ansicht: Ansicht = useBrowserWert(ANSICHT_SPEICHER, "fliessend") === "seitenweise" ? "seitenweise" : "fliessend";
+  const seitenweise = ansicht === "seitenweise";
+  const ansichtRef = useRef(ansicht);
+  const readerRef = useRef<HTMLDivElement>(null);
+  const letztesBlaettern = useRef(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const seitenRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -178,7 +190,9 @@ export function PdfReader({
       const ziel = Math.min(Math.max(1, nr), Math.max(1, anzahl));
       const el = seitenRefs.current[ziel - 1];
       const container = scrollRef.current;
-      if (el && container) container.scrollTo({ top: el.offsetTop - SEITEN_ABSTAND / 2, behavior: verhalten });
+      // Seite für Seite: es ist immer nur eine Seite da – nach oben an ihren Anfang
+      if (ansichtRef.current === "seitenweise") container?.scrollTo({ top: 0 });
+      else if (el && container) container.scrollTo({ top: el.offsetTop - SEITEN_ABSTAND / 2, behavior: verhalten });
       seiteRef.current = ziel;
       setSeite(ziel);
       setSeiteEingabe(String(ziel));
@@ -202,11 +216,66 @@ export function PdfReader({
     requestAnimationFrame(() => zuSeite(nr));
   }, [zoom, zuSeite]);
 
+  // Beim Wechsel der Ansicht auf der aktuellen Seite bleiben
+  useEffect(() => {
+    if (ansichtRef.current === ansicht) return;
+    ansichtRef.current = ansicht;
+    const nr = seiteRef.current;
+    requestAnimationFrame(() => zuSeite(nr));
+  }, [ansicht, zuSeite]);
+
+  function ansichtUmschalten() {
+    const neu: Ansicht = seitenweise ? "fliessend" : "seitenweise";
+    // Seite für Seite liest sich am besten, wenn die ganze Seite passt
+    if (neu === "seitenweise" && zoom === "breite") setZoom("seite");
+    browserWertSchreiben(ANSICHT_SPEICHER, neu === "seitenweise" ? neu : null);
+    track("pdf_ansicht", { ansicht: neu });
+  }
+
+  /** Seite für Seite: am Seitenende weiterscrollen blättert um. */
+  function beimRad(e: React.WheelEvent) {
+    if (!seitenweise || e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+    const c = scrollRef.current;
+    if (!c) return;
+    const jetzt = Date.now();
+    if (jetzt - letztesBlaettern.current < BLAETTER_PAUSE_MS) return;
+    const unten = c.scrollTop + c.clientHeight >= c.scrollHeight - 2;
+    const oben = c.scrollTop <= 0;
+    if (e.deltaY > 0 && unten && seiteRef.current < anzahl) {
+      letztesBlaettern.current = jetzt;
+      zuSeite(seiteRef.current + 1);
+    } else if (e.deltaY < 0 && oben && seiteRef.current > 1) {
+      letztesBlaettern.current = jetzt;
+      zuSeite(seiteRef.current - 1);
+    }
+  }
+
+  // --- Vollbild ----------------------------------------------------------------
+  function vollbildUmschalten() {
+    if (vollbild) {
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+      setVollbild(false);
+      return;
+    }
+    setVollbild(true);
+    track("pdf_vollbild");
+    // Ohne Fullscreen-API (z. B. iPhone) füllt der Reader trotzdem das ganze Fenster
+    readerRef.current?.requestFullscreen?.().catch(() => undefined);
+  }
+
+  useEffect(() => {
+    const geaendert = () => {
+      if (!document.fullscreenElement) setVollbild(false);
+    };
+    document.addEventListener("fullscreenchange", geaendert);
+    return () => document.removeEventListener("fullscreenchange", geaendert);
+  }, []);
+
   function beimScrollen() {
     if (auswahlMenue) setAuswahlMenue(null);
     if (aktiv) setAktiv(null);
     const container = scrollRef.current;
-    if (!container || anzahl === 0) return;
+    if (!container || anzahl === 0 || ansichtRef.current === "seitenweise") return;
     const marke = container.scrollTop + container.clientHeight / 3;
     let aktuell = 1;
     for (let i = 0; i < anzahl; i++) {
@@ -532,6 +601,7 @@ export function PdfReader({
       }
       if (e.target instanceof HTMLElement && e.target.closest("input, select, textarea")) return;
       if (e.key === "Escape") {
+        setVollbild(false);
         setStift(null);
         setAuswahlMenue(null);
         setAktiv(null);
@@ -557,7 +627,7 @@ export function PdfReader({
   );
 
   return (
-    <div className="pdf-reader">
+    <div ref={readerRef} className={`pdf-reader ${vollbild ? "vollbild" : ""}`}>
       <div className="pdf-leiste" role="toolbar" aria-label="PDF-Steuerung">
         <Link href="/pdf-reader" className="btng pdf-zurueck" title="Alle PDFs">
           ←
@@ -571,7 +641,6 @@ export function PdfReader({
             ◀
           </button>
           <span className="pdf-seitenzahl">
-            Seite
             <input
               className="field"
               inputMode="numeric"
@@ -583,7 +652,7 @@ export function PdfReader({
               }}
               onBlur={() => setSeiteEingabe(String(seite))}
             />
-            von {anzahl || "…"}
+            / {anzahl || "…"}
           </span>
           <button
             type="button"
@@ -619,6 +688,39 @@ export function PdfReader({
           </select>
           <button type="button" className="icon-knopf" aria-label="Vergrößern" onClick={() => zoomSchritt(1)} disabled={aktuellerMassstab >= MAX_ZOOM}>
             +
+          </button>
+        </div>
+
+        <div className="pdf-gruppe">
+          <button
+            type="button"
+            className={`icon-knopf ${seitenweise ? "an" : ""}`}
+            aria-pressed={seitenweise}
+            aria-label="Seite für Seite"
+            title={seitenweise ? "Seite für Seite (aus: fließend scrollen)" : "Seite für Seite blättern statt scrollen"}
+            onClick={ansichtUmschalten}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
+              {seitenweise ? (
+                <path d="M6 3h12v18H6Z" />
+              ) : (
+                <>
+                  <path d="M6 2h12v9H6ZM6 14h12v8" />
+                </>
+              )}
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`icon-knopf ${vollbild ? "an" : ""}`}
+            aria-pressed={vollbild}
+            aria-label={vollbild ? "Vollbild beenden" : "Vollbild"}
+            title={vollbild ? "Vollbild beenden (Esc)" : "Vollbild"}
+            onClick={vollbildUmschalten}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              {vollbild ? <path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6" /> : <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />}
+            </svg>
           </button>
         </div>
 
@@ -780,9 +882,10 @@ export function PdfReader({
         )}
 
         <div
-          className={`pdf-flaeche ${stift ? "stift-an" : ""}`}
+          className={`pdf-flaeche ${stift ? "stift-an" : ""} ${seitenweise ? "seitenweise" : ""}`}
           ref={scrollRef}
           onScroll={beimScrollen}
+          onWheel={beimRad}
           tabIndex={-1}
           onPointerDown={(e) => {
             if (e.pointerType !== "mouse" || e.button !== 0) return;
@@ -794,7 +897,8 @@ export function PdfReader({
           {ladeFehler && <p className="auth-error">{ladeFehler}</p>}
           {!ladeFehler && !doc && <p className="muted pdf-laden">PDF wird geladen …</p>}
           {doc &&
-            masse.map((m, i) => (
+            masse.map((m, i) =>
+              seitenweise && i !== seite - 1 ? null : (
               <PdfSeite
                 key={i}
                 ref={(el) => {
@@ -810,7 +914,8 @@ export function PdfReader({
                 markierungen={nachSeite.get(i + 1) ?? KEINE_MARKIERUNGEN}
                 aktiveMarkierung={aktiv?.id ?? null}
               />
-            ))}
+              ),
+            )}
         </div>
 
         {kiOffen && doc && (

@@ -16,6 +16,10 @@ import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import { WEITERE_HUBS, ZENTRALER_HUB } from "@/lib/hubs/navigation";
 import { HUB_DRAG_TYP } from "@/lib/geteilte-ansicht";
+import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
+
+/** Gleicher Schlüssel wie im Skript in app/layout.tsx (setzt das Attribut vor dem ersten Zeichnen). */
+export const SIDEBAR_SCHLUESSEL = "uniwars-sidebar-eingeklappt";
 
 /** Hub-Icon an den Rand ziehen → geteilte Ansicht (siehe GeteilteAnsicht). */
 function hubZiehen(e: DragEvent, href: string) {
@@ -74,6 +78,13 @@ export function Sidebar({
 }) {
   const pfad = usePathname();
   const [menueOffen, setMenueOffen] = useState(false);
+  const eingeklappt = useBrowserWert(SIDEBAR_SCHLUESSEL, "0") === "1";
+
+  function einklappenUmschalten() {
+    const neu = !eingeklappt;
+    document.documentElement.toggleAttribute("data-sidebar-eingeklappt", neu);
+    browserWertSchreiben(SIDEBAR_SCHLUESSEL, neu ? "1" : null);
+  }
   const istAktiv = (href: string) => (href === "/" ? pfad === "/" : pfad === href || pfad.startsWith(`${href}/`));
 
   return (
@@ -87,6 +98,20 @@ export function Sidebar({
           </svg>
         </div>
         <div className="sidebar-brand-name">UniWars</div>
+        <button
+          type="button"
+          className="sidebar-einklappen"
+          aria-expanded={!eingeklappt}
+          aria-label={eingeklappt ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+          title={eingeklappt ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
+          onClick={einklappenUmschalten}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+            <path d="M9 4.5v15" />
+            <path d={eingeklappt ? "m13 10 2 2-2 2" : "m15 10-2 2 2 2"} />
+          </svg>
+        </button>
         <button
           type="button"
           className="sidebar-menue-knopf"
@@ -103,7 +128,7 @@ export function Sidebar({
       <nav className="sidebar-nav" onClick={() => setMenueOffen(false)}>
         <Link href="/" className={`navitem ${istAktiv("/") ? "active" : ""}`} draggable onDragStart={(e) => hubZiehen(e, "/")}>
           <NavIcon path={ZENTRALER_HUB.icon} />
-          {ZENTRALER_HUB.name}
+          <span className="navitem-text">{ZENTRALER_HUB.name}</span>
         </Link>
         {WEITERE_HUBS.map((hub) =>
           hub.href ? (
@@ -112,11 +137,11 @@ export function Sidebar({
               href={hub.href}
               className={`navitem ${istAktiv(hub.href) ? "active" : ""}`}
               draggable
-              title="Zum Teilen des Bildschirms an den Rand ziehen"
+              title={`${hub.name} – zum Teilen des Bildschirms an den Rand ziehen`}
               onDragStart={(e) => hubZiehen(e, hub.href!)}
             >
               <NavIcon path={hub.icon} />
-              {hub.name}
+              <span className="navitem-text">{hub.name}</span>
               {hub.href === "/work-station" && <TimerRest />}
               {hub.href === "/chat" && <ChatPunkt />}
             </Link>

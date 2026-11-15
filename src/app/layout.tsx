@@ -25,9 +25,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${schrift.variable}`}
     >
       <body>
-        {/* Zweiter Hub der geteilten Ansicht: Sidebar & Co. vor dem ersten Zeichnen ausblenden */}
+        {/* Vor dem ersten Zeichnen: zweiter Hub der geteilten Ansicht ohne Sidebar, eingeklappte Sidebar */}
         <Script id="geteilte-ansicht" strategy="beforeInteractive">
-          {`if (window.name === ${JSON.stringify(FRAME_NAME)}) document.documentElement.setAttribute("data-eingebettet", "");`}
+          {`if (window.name === ${JSON.stringify(FRAME_NAME)}) document.documentElement.setAttribute("data-eingebettet", "");
+try { if (localStorage.getItem("uniwars-sidebar-eingeklappt") === "1") document.documentElement.setAttribute("data-sidebar-eingeklappt", ""); } catch (e) {}`}
         </Script>
         {children}
         <AnalyticsBanner />

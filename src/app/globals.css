@@ -7957,3 +7957,174 @@ html[data-eingebettet] .dashboard-main {
     overflow-y: visible;
   }
 }
+
+/* --- PDF Reader: schmale Leiste wie eine Notch, mehr Platz fürs PDF --- */
+
+.dashboard-main:has(> .pdf-reader) {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.dashboard-main > .pdf-reader {
+  height: calc(100vh - 20px);
+  gap: 6px;
+}
+
+.pdf-reader .pdf-leiste {
+  align-self: center;
+  max-width: 100%;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 8px;
+  min-height: 34px;
+  border-radius: 18px;
+  font-size: 12.5px;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
+}
+
+.pdf-leiste .pdf-gruppe {
+  gap: 0;
+  padding-left: 4px;
+  margin-left: 2px;
+  border-left: 1px solid var(--border-soft);
+}
+
+.pdf-leiste .icon-knopf {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+
+.pdf-leiste .pdf-zurueck {
+  padding: 2px 8px;
+  font-size: 13px;
+}
+
+.pdf-leiste .pdf-name {
+  flex: 0 1 auto;
+  max-width: 190px;
+  font-size: 12.5px;
+  padding: 0 4px;
+}
+
+.pdf-leiste .pdf-seitenzahl {
+  gap: 4px;
+  font-size: 12px;
+}
+
+.pdf-leiste .pdf-seitenzahl .field {
+  width: 38px;
+  padding: 2px 4px;
+  font-size: 12px;
+}
+
+.pdf-leiste .pdf-zoom {
+  padding: 2px 4px;
+  font-size: 12px;
+}
+
+.pdf-leiste .pdf-ki-knopf {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.pdf-reader .pdf-flaeche {
+  padding: 4px 8px;
+}
+
+/* Seite für Seite: die eine Seite mittig */
+.pdf-flaeche.seitenweise {
+  overscroll-behavior: contain;
+}
+
+/* Vollbild (echtes Vollbild oder – ohne Fullscreen-API – fensterfüllend) */
+.pdf-reader.vollbild {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 6px 8px 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.pdf-reader.vollbild .pdf-flaeche {
+  border-radius: 8px;
+}
+
+/* --- Sidebar einklappen (nur am Desktop; am Handy ist sie oben eine Leiste) --- */
+
+.sidebar-einklappen {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.sidebar-einklappen:hover {
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 761px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    transition: width 0.15s ease-out;
+  }
+
+  .sidebar-nav {
+    flex-shrink: 0;
+    overflow-y: visible;
+  }
+
+  html[data-sidebar-eingeklappt] .sidebar {
+    width: 64px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  html[data-sidebar-eingeklappt] .sidebar-brand {
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  html[data-sidebar-eingeklappt] .sidebar-brand-name,
+  html[data-sidebar-eingeklappt] .sidebar-footer,
+  html[data-sidebar-eingeklappt] .navitem > :not(svg) {
+    display: none;
+  }
+
+  html[data-sidebar-eingeklappt] .sidebar-einklappen {
+    margin-left: 0;
+  }
+
+  html[data-sidebar-eingeklappt] .navitem {
+    justify-content: center;
+    padding: 9px 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar-einklappen {
+    display: none;
+  }
+
+  .dashboard-main > .pdf-reader {
+    height: calc(100dvh - 90px);
+  }
+}
