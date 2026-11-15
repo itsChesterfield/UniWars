@@ -52,7 +52,7 @@ function begruessung(): string {
   const stunde = new Date().getHours();
   if (stunde < 11) return "Guten Morgen";
   if (stunde < 18) return "Guten Tag";
-  return "Gute Nacht";
+  return "Guten Abend";
 }
 
 function heutigesDatum(): string {
