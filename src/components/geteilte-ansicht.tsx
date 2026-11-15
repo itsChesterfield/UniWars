@@ -5,12 +5,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   FRAME_NAME,
   HUB_DRAG_TYP,
+  OEFFNEN_EREIGNIS,
   PFAD_NACHRICHT,
   anteilAusPosition,
   anteilBegrenzen,
   aufteilungLesen,
   gegenueber,
   istAppPfad,
+  istSeite,
   istWaagrecht,
   zoneAusPosition,
   type Aufteilung,
@@ -118,11 +120,23 @@ export function GeteilteAnsicht({ children, mainKlasse }: { children: ReactNode;
       const aktuell = aufteilungLesen(rohLesen());
       if (aktuell && aktuell.href !== daten.href) aufteilungSchreiben({ ...aktuell, href: daten.href });
     };
+    // Andere Komponenten (z. B. PDF Reader → Notiz) öffnen etwas als zweite Ansicht
+    const oeffnenWunsch = (e: Event) => {
+      const { href, seite } = (e as CustomEvent<{ href: unknown; seite: unknown }>).detail ?? {};
+      if (!istAppPfad(href)) return;
+      const aktuell = aufteilungLesen(rohLesen());
+      const ziel: Seite = istSeite(seite) ? seite : (aktuell?.seite ?? "rechts");
+      aufteilungSchreiben({ href, seite: ziel, anteil: aktuell?.anteil ?? 0.5 });
+      setFrameQuelle(href);
+      track("geteilte_ansicht_geoeffnet", { hub: hubNameAusPfad(href), seite: ziel, ersetzt: Boolean(aktuell), ausloeser: "verknuepfung" });
+    };
+    window.addEventListener(OEFFNEN_EREIGNIS, oeffnenWunsch);
     window.addEventListener("dragstart", start);
     window.addEventListener("dragend", ende);
     window.addEventListener("drop", ende);
     window.addEventListener("message", nachricht);
     return () => {
+      window.removeEventListener(OEFFNEN_EREIGNIS, oeffnenWunsch);
       window.removeEventListener("dragstart", start);
       window.removeEventListener("dragend", ende);
       window.removeEventListener("drop", ende);

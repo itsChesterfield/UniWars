@@ -99,3 +99,37 @@ export async function notizLoeschen(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/notizen");
 }
+
+/** Notiz mit einer PDF verknüpfen (oder lösen) – der PDF Reader zeigt sie dann in der Seitenleiste. */
+export async function notizPdfSetzen(id: string, dateiId: string | null) {
+  const { supabase } = await nutzer();
+  if (dateiId) {
+    const { data: datei } = await supabase.from("datei").select("id, mime_typ").eq("id", dateiId).maybeSingle();
+    if (!datei || datei.mime_typ !== "application/pdf") throw new Error("PDF nicht gefunden.");
+  }
+  const { error } = await supabase.from("notiz").update({ datei_id: dateiId }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/pdf-reader/${dateiId ?? ""}`);
+}
+
+/** Neue Notiz direkt aus dem PDF Reader – mit der PDF verknüpft und im Fach der PDF. */
+export async function notizZuPdfAnlegen(dateiId: string): Promise<Notiz> {
+  const { supabase, userId } = await nutzer();
+  const { data: datei, error: dateiFehler } = await supabase.from("datei").select("id, name, fach_id, mime_typ").eq("id", dateiId).single();
+  if (dateiFehler) throw new Error(dateiFehler.message);
+  if (datei.mime_typ !== "application/pdf") throw new Error("Keine PDF.");
+  const { data, error } = await supabase
+    .from("notiz")
+    .insert({
+      user_id: userId,
+      fach_id: datei.fach_id,
+      datei_id: datei.id,
+      titel: `Notizen zu ${datei.name.replace(/\.pdf$/i, "")}`.slice(0, 300),
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/notizen");
+  revalidatePath(`/pdf-reader/${dateiId}`);
+  return data;
+}

@@ -10,7 +10,7 @@ export const metadata = { title: "Notizen · UniWars" };
 
 export default async function NotizenSeite() {
   const supabase = await createClient();
-  const [{ data: notizen, error }, { data: faecher }, { data: stundenplan }] = await Promise.all([
+  const [{ data: notizen, error }, { data: faecher }, { data: stundenplan }, { data: pdfs }] = await Promise.all([
     supabase
       .from("notiz")
       .select("*")
@@ -18,6 +18,8 @@ export default async function NotizenSeite() {
       .order("geaendert_am", { ascending: false }),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("stundenplan_eintrag").select("id, fach_id, tag, start_zeit, end_zeit"),
+    // zum Verknüpfen einer Notiz mit einer PDF
+    supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf").order("name"),
   ]);
 
   if (tabelleFehlt(error)) {
@@ -54,6 +56,7 @@ export default async function NotizenSeite() {
         faecher={faecher ?? []}
         laufendeVorlesung={laufendeVorlesung}
         kiVerfuegbar={kiKonfiguriert()}
+        pdfs={pdfs ?? []}
       />
     </Suspense>
   );

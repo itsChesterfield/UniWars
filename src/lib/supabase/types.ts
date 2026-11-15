@@ -1013,6 +1013,7 @@ export type Database = {
       notiz: {
         Row: {
           angepinnt: boolean
+          datei_id: string | null
           erstellt_am: string
           fach_id: string | null
           geaendert_am: string
@@ -1027,6 +1028,7 @@ export type Database = {
         }
         Insert: {
           angepinnt?: boolean
+          datei_id?: string | null
           erstellt_am?: string
           fach_id?: string | null
           geaendert_am?: string
@@ -1041,6 +1043,7 @@ export type Database = {
         }
         Update: {
           angepinnt?: boolean
+          datei_id?: string | null
           erstellt_am?: string
           fach_id?: string | null
           geaendert_am?: string
@@ -1054,6 +1057,13 @@ export type Database = {
           vorlesung_datum?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "notiz_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notiz_fach_id_fkey"
             columns: ["fach_id"]

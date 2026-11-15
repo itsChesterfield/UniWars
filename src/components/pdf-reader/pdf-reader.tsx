@@ -22,6 +22,8 @@ import {
 } from "@/lib/pdf-reader/markierungen";
 import { KiPdfLeiste } from "@/components/pdf-reader/ki-pdf-leiste";
 import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
+import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { notizZuPdfAnlegen } from "@/app/(hubs)/notizen/actions";
 import { AuswahlMenue, FarbPunkte, MarkierungMenue, MarkierungsListe, type MenuePosition } from "@/components/pdf-reader/markier-menue";
 
 type Zoom = "breite" | "seite" | number;
@@ -75,6 +77,8 @@ function vorkommen(text: string, suche: string): number[] {
   return positionen;
 }
 
+export type PdfNotiz = { id: string; titel: string; vorschau: string };
+
 export function PdfReader({
   datei,
   url,
@@ -82,6 +86,7 @@ export function PdfReader({
   startLesezeichen,
   startMarkierungen,
   kiVerfuegbar = false,
+  startNotizen = [],
 }: {
   datei: { id: string; name: string };
   url: string;
@@ -90,6 +95,8 @@ export function PdfReader({
   startMarkierungen: Markierung[];
   /** KI-03: Mistral-Key gesetzt → "✨ KI"-Knopf anzeigen */
   kiVerfuegbar?: boolean;
+  /** Mit dieser PDF verknüpfte Notizen – stehen gleich offen in der Seitenleiste */
+  startNotizen?: PdfNotiz[];
 }) {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [masse, setMasse] = useState<Masse[]>([]);
@@ -99,8 +106,11 @@ export function PdfReader({
   const [seite, setSeite] = useState(startSeite);
   const [seiteEingabe, setSeiteEingabe] = useState(String(startSeite));
   const [lesezeichen, setLesezeichen] = useState<number[]>(startLesezeichen);
-  const [seitenleiste, setSeitenleiste] = useState(false);
-  const [leistenTab, setLeistenTab] = useState<"markierungen" | "lesezeichen">("markierungen");
+  const [notizen, setNotizen] = useState<PdfNotiz[]>(startNotizen);
+  const [notizLaeuft, setNotizLaeuft] = useState(false);
+  // Gibt es Notizen zur PDF, ist die Seitenleiste direkt mit ihnen offen
+  const [seitenleiste, setSeitenleiste] = useState(startNotizen.length > 0);
+  const [leistenTab, setLeistenTab] = useState<"notizen" | "markierungen" | "lesezeichen">(startNotizen.length > 0 ? "notizen" : "markierungen");
   const [markierungen, setMarkierungen] = useState<Markierung[]>(startMarkierungen);
   const [stift, setStift] = useState<Farbe | null>(null);
   const [auswahlMenue, setAuswahlMenue] = useState<MenuePosition | null>(null);
@@ -527,6 +537,27 @@ export function PdfReader({
     if (auswahlErfassen().length > 0) markieren(neu);
   }
 
+  // --- Notizen zur PDF ---------------------------------------------------------
+  function notizOeffnen(id: string) {
+    track("pdf_notiz_geoeffnet");
+    inZweiterAnsichtOeffnen(`/notizen?id=${id}`, "rechts");
+  }
+
+  async function neueNotiz() {
+    setNotizLaeuft(true);
+    try {
+      const n = await notizZuPdfAnlegen(datei.id);
+      setNotizen((l) => [{ id: n.id, titel: n.titel, vorschau: "" }, ...l]);
+      track("pdf_notiz_angelegt");
+      inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts");
+    } catch (err) {
+      fehlerMelden(err, { ort: "pdf_notiz_anlegen" });
+      window.alert("Die Notiz konnte nicht angelegt werden.");
+    } finally {
+      setNotizLaeuft(false);
+    }
+  }
+
   function alleKopieren() {
     const text = markierungenAlsText(datei.name, markierungen);
     navigator.clipboard
@@ -840,6 +871,16 @@ export function PdfReader({
               <button
                 type="button"
                 role="tab"
+                aria-selected={leistenTab === "notizen"}
+                title="Notizen zu dieser PDF"
+                className={`seg ${leistenTab === "notizen" ? "on" : ""}`}
+                onClick={() => setLeistenTab("notizen")}
+              >
+                📝&nbsp;{notizen.length}
+              </button>
+              <button
+                type="button"
+                role="tab"
                 aria-selected={leistenTab === "markierungen"}
                 title="Markierungen"
                 className={`seg ${leistenTab === "markierungen" ? "on" : ""}`}
@@ -858,7 +899,29 @@ export function PdfReader({
                 🔖&nbsp;{lesezeichen.length}
               </button>
             </div>
-            {leistenTab === "markierungen" ? (
+            {leistenTab === "notizen" ? (
+              <div className="pdf-notizen">
+                <button type="button" className="btnp pdf-notiz-neu" disabled={notizLaeuft} onClick={() => void neueNotiz()}>
+                  + Notiz zu dieser PDF
+                </button>
+                {notizen.length === 0 ? (
+                  <p className="empty-state">
+                    Noch keine Notizen zu dieser PDF. Leg eine an – sie öffnet sich daneben, und du kannst Markierungen hineinziehen.
+                  </p>
+                ) : (
+                  <ul>
+                    {notizen.map((n) => (
+                      <li key={n.id}>
+                        <button type="button" onClick={() => notizOeffnen(n.id)} title="Daneben öffnen">
+                          <span className="pdf-notiz-titel">{n.titel || "Unbenannte Notiz"}</span>
+                          {n.vorschau && <span className="pdf-notiz-vorschau">{n.vorschau}</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : leistenTab === "markierungen" ? (
               <MarkierungsListe
                 quelle={datei.name}
                 markierungen={markierungen}

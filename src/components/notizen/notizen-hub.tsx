@@ -8,6 +8,7 @@ import {
   notizAnpinnen,
   notizFachSetzen,
   notizLoeschen,
+  notizPdfSetzen,
   notizSpeichern,
   type Notiz,
 } from "@/app/(hubs)/notizen/actions";
@@ -27,6 +28,9 @@ import { KiMarkierung } from "@/components/ki/ki-markierung";
 import { MIN_MINDMAP_ZEICHEN, mindmapMoeglich } from "@/lib/ki/mindmap";
 import { MIN_ZUSAMMENFASSUNG_ZEICHEN, zusammenfassungMoeglich } from "@/lib/ki/zusammenfassung";
 import { MIN_NOTIZ_ZEICHEN, notizLangGenug } from "@/lib/ki/karten";
+import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+
+export type PdfOption = { id: string; name: string };
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
 
@@ -66,8 +70,11 @@ export function NotizenHub({
   faecher,
   laufendeVorlesung,
   kiVerfuegbar,
+  pdfs = [],
 }: {
   initialNotizen: Notiz[];
+  /** PDFs zum Verknüpfen */
+  pdfs?: PdfOption[];
   faecher: FachOption[];
   laufendeVorlesung: LaufendeVorlesung | null;
   /** KI-01: ist ein KI-Schlüssel hinterlegt? */
@@ -262,6 +269,7 @@ export function NotizenHub({
                 key={auswahl.id}
                 notiz={auswahl}
                 faecher={faecher}
+                pdfs={pdfs}
                 kiVerfuegbar={kiVerfuegbar}
                 autoFokusTitel={auswahl.id === neuId}
                 onZurueck={() => oeffnen(null)}
@@ -286,6 +294,7 @@ export function NotizenHub({
 function NotizEditor({
   notiz,
   faecher,
+  pdfs,
   kiVerfuegbar,
   autoFokusTitel,
   onZurueck,
@@ -296,6 +305,7 @@ function NotizEditor({
 }: {
   notiz: Notiz;
   faecher: FachOption[];
+  pdfs: PdfOption[];
   kiVerfuegbar: boolean;
   autoFokusTitel: boolean;
   onZurueck: () => void;
@@ -322,6 +332,15 @@ function NotizEditor({
     });
   }
 
+  function pdfAendern(dateiId: string) {
+    onLokal({ datei_id: dateiId || null });
+    track("notiz_pdf_verknuepft", { verknuepft: Boolean(dateiId) });
+    notizPdfSetzen(notiz.id, dateiId || null).catch((err) => {
+      onLokal({ datei_id: notiz.datei_id });
+      fehlerMelden(err, { ort: "notiz_pdf" });
+    });
+  }
+
   return (
     <div className="notiz-editor">
       <div className="notiz-editor-leiste">
@@ -339,6 +358,32 @@ function NotizEditor({
             ))}
           </select>
         </label>
+        {(pdfs.length > 0 || notiz.datei_id) && (
+          <label className="notiz-fach notiz-pdf">
+            <span className="muted">📕 PDF:</span>
+            <select className="field" value={notiz.datei_id ?? ""} onChange={(e) => pdfAendern(e.target.value)}>
+              <option value="">keine</option>
+              {pdfs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            {notiz.datei_id && (
+              <button
+                type="button"
+                className="btng notiz-pdf-oeffnen"
+                title="PDF daneben öffnen"
+                onClick={() => {
+                  track("notiz_pdf_geoeffnet");
+                  inZweiterAnsichtOeffnen(`/pdf-reader/${notiz.datei_id}`, "links");
+                }}
+              >
+                Öffnen
+              </button>
+            )}
+          </label>
+        )}
         <span className={`speicher-status ${status}`} aria-live="polite">
           {SPEICHER_TEXT[status]}
         </span>

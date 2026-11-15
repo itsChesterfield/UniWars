@@ -23,6 +23,28 @@ export const FRAME_NAME = "uniwars-zweite-ansicht";
 /** Nachricht des zweiten Hubs an das Hauptfenster, wenn sich seine Adresse ändert. */
 export const PFAD_NACHRICHT = "uniwars-zweite-ansicht-pfad";
 
+/** Ereignis im Hauptfenster: "öffne diesen Pfad als zweite Ansicht" (siehe inZweiterAnsichtOeffnen). */
+export const OEFFNEN_EREIGNIS = "uniwars-zweite-ansicht-oeffnen";
+
+/** Läuft diese Seite gerade selbst als zweiter Hub im iframe? */
+export function istEingebettet(): boolean {
+  return typeof window !== "undefined" && window.name === FRAME_NAME;
+}
+
+/**
+ * Einen Pfad neben der aktuellen Seite öffnen (z. B. Notiz neben der PDF).
+ * Ist die aktuelle Seite selbst schon die zweite Ansicht, wird stattdessen die
+ * Hauptansicht dorthin gewechselt – die zweite Ansicht bleibt dabei erhalten.
+ */
+export function inZweiterAnsichtOeffnen(href: string, seite: Seite = "rechts") {
+  if (!istAppPfad(href)) return;
+  if (istEingebettet()) {
+    window.top?.location.assign(href);
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(OEFFNEN_EREIGNIS, { detail: { href, seite } }));
+}
+
 export const MIN_ANTEIL = 0.2;
 export const MAX_ANTEIL = 0.8;
 const SEITEN: Seite[] = ["links", "rechts", "oben", "unten"];

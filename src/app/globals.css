@@ -8482,3 +8482,65 @@ button.pdf-pfad-teil:hover {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* --- PDF Reader: Notizen zur PDF in der Seitenleiste --- */
+.pdf-notizen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pdf-notiz-neu {
+  width: 100%;
+}
+
+.pdf-notizen ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdf-notizen li button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pdf-notizen li button:hover {
+  border-color: var(--accent);
+}
+
+.pdf-notiz-titel {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.pdf-notiz-vorschau {
+  font-size: 12px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notiz-pdf select {
+  max-width: 180px;
+}
+
+.notiz-pdf-oeffnen {
+  padding: 4px 10px;
+  font-size: 12px;
+}

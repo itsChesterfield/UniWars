@@ -5,15 +5,18 @@ import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfReader } from "@/components/pdf-reader/pdf-reader";
 import { alsRechtecke, istFarbe } from "@/lib/pdf-reader/markierungen";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
+import { markdownAlsText } from "@/lib/markdown-text";
 
 export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: datei, error }, { data: stand }, { data: markierungen }] = await Promise.all([
+  const [{ data: datei, error }, { data: stand }, { data: markierungen }, { data: notizen }] = await Promise.all([
     supabase.from("datei").select("id, name, mime_typ, speicher_pfad").eq("id", id).maybeSingle(),
     supabase.from("pdf_stand").select("letzte_seite, lesezeichen").eq("datei_id", id).maybeSingle(),
     // Fehlt die Tabelle noch, bleibt die Liste einfach leer
     supabase.from("pdf_markierung").select("id, seite, farbe, rechtecke, text, notiz").eq("datei_id", id).order("seite").order("erstellt_am"),
+    // Mit dieser PDF verknüpfte Notizen (Seitenleiste)
+    supabase.from("notiz").select("id, titel, inhalt, geaendert_am").eq("datei_id", id).order("geaendert_am", { ascending: false }),
   ]);
 
   if (tabelleFehlt(error)) {
@@ -39,6 +42,7 @@ export default async function PdfAnsehenSeite({ params }: { params: Promise<{ id
       startSeite={stand?.letzte_seite ?? 1}
       startLesezeichen={stand?.lesezeichen ?? []}
       kiVerfuegbar={kiKonfiguriert()}
+      startNotizen={(notizen ?? []).map((n) => ({ id: n.id, titel: n.titel, vorschau: markdownAlsText(n.inhalt).slice(0, 140) }))}
       startMarkierungen={(markierungen ?? []).map((m) => ({
         ...m,
         farbe: istFarbe(m.farbe) ? m.farbe : "GELB",
