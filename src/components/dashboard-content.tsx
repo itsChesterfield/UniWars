@@ -36,6 +36,8 @@ import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
 import { HauptNotch } from "@/components/haupt-notch";
+import { ProfilAvatar } from "@/components/profil-avatar";
+import Link from "next/link";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;
@@ -81,6 +83,7 @@ export function DashboardContent({
   kalender,
   kiVerfuegbar = false,
   bereich = "uebersicht",
+  avatarUrl = null,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -100,6 +103,7 @@ export function DashboardContent({
   kiVerfuegbar?: boolean;
   /** Übersicht oder ein einzelner Bereich als eigene Seite (Notch) */
   bereich?: Bereich;
+  avatarUrl?: string | null;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -377,7 +381,9 @@ export function DashboardContent({
           <div className="dashboard-toolbar-rechts">
             {bereich === "uebersicht" && <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} kiVerfuegbar={kiVerfuegbar} />}
             <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
-            <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
+            <Link href="/einstellungen" className="avatar-link" title="Profil und Einstellungen" aria-label="Profil und Einstellungen">
+              <ProfilAvatar name={name} url={avatarUrl} />
+            </Link>
           </div>
         </div>
       </div>

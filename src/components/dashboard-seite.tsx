@@ -9,6 +9,8 @@ import { Sidebar } from "@/components/sidebar";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
+import { anzeigeName } from "@/lib/anzeige-name";
+import { profilbildUrl } from "@/lib/profilbild";
 
 
 /**
@@ -94,16 +96,12 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     abgleichNachLadenPlanen(session.access_token, user.id, kalenderVerbindung.zuletzt_abgeglichen);
   }
 
-  const username =
-    typeof settings.username === "string" && settings.username.trim() !== ""
-      ? settings.username
-      : typeof user.user_metadata?.username === "string" && user.user_metadata.username.trim() !== ""
-        ? user.user_metadata.username
-        : (user.email ?? "").split("@")[0];
+  const username = anzeigeName(settings, user);
+  const avatarUrl = await profilbildUrl(supabase, settings.avatar_pfad);
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
-      <Sidebar email={user.email ?? ""} theme={settings.theme} streak={settings.streak_count} kiEingewilligt={Boolean(settings.ki_einwilligung)} audioEingewilligt={Boolean(settings.ki_audio_einwilligung)} kiVerfuegbar={kiKonfiguriert()} />
+      <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} streak={settings.streak_count} kiVerfuegbar={kiKonfiguriert()} />
       <GeteilteAnsicht mainKlasse="dashboard-main">
         <Suspense fallback={null}>
           <DashboardContent
@@ -120,6 +118,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
             sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
             settings={settings}
             username={username}
+            avatarUrl={avatarUrl}
             userId={user.id}
             kalender={{
               konfiguriert: kalenderKonfiguriert,

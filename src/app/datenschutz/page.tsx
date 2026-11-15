@@ -28,7 +28,7 @@ export default function DatenschutzSeite() {
       </p>
       <p>
         <strong>Rechtsgrundlage:</strong> deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du erteilst sie vor der ersten Nutzung
-        und kannst sie jederzeit in der Seitenleiste unter „KI-Funktionen“ widerrufen. Der Widerruf gilt sofort und für die Zukunft:
+        und kannst sie jederzeit in den Einstellungen (Profilbild anklicken) unter „KI-Funktionen“ widerrufen. Der Widerruf gilt sofort und für die Zukunft:
         Danach werden keine Inhalte mehr an Mistral AI übertragen. Alle anderen Funktionen von UniWars kannst du ohne Einwilligung
         uneingeschränkt nutzen.
       </p>
@@ -53,7 +53,7 @@ export default function DatenschutzSeite() {
       <p>
         <strong>Speicherung:</strong> Deine Unterhaltungen mit dem Assistenten speichern wir in deinem Konto, damit du sie später
         wieder aufrufen kannst. Du kannst einzelne Unterhaltungen oder alle auf einmal löschen (auf der Seite „Assistent“
-        oder in der Seitenleiste unter „KI-Verlauf“) – auch nachdem du deine Einwilligung widerrufen hast. Beim Löschen deines Kontos werden sie vollständig mitgelöscht.
+        oder in den Einstellungen (Profilbild anklicken) unter „KI-Verlauf“) – auch nachdem du deine Einwilligung widerrufen hast. Beim Löschen deines Kontos werden sie vollständig mitgelöscht.
       </p>
 
       <h3>Vorschläge für heute (Dashboard)</h3>
@@ -74,7 +74,7 @@ export default function DatenschutzSeite() {
       <h2 id="audio">Transkription und Sprachfunktionen</h2>
       <p>
         <strong>Rechtsgrundlage:</strong> eine eigene Einwilligung für Sprachfunktionen (zusätzlich zu der für KI-Funktionen),
-        die du in der Seitenleiste unter „Sprachfunktionen“ jederzeit widerrufen kannst. Ohne sie werden keine Aufnahmen und
+        die du in den Einstellungen (Profilbild anklicken) unter „Sprachfunktionen“ jederzeit widerrufen kannst. Ohne sie werden keine Aufnahmen und
         keine Texte zum Vorlesen übertragen.
       </p>
       <p>

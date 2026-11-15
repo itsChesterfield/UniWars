@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { QuickAdd } from "@/components/quick-add";
+import { anzeigeName } from "@/lib/anzeige-name";
+import { profilbildUrl } from "@/lib/profilbild";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 
 // Gemeinsamer Rahmen aller Hubs: Sidebar, Theme, Streak (ALL-01: nur eingeloggt).
@@ -28,11 +30,10 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   return (
     <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "dark" : "light"}>
       <Sidebar
+        name={anzeigeName(settings, user)}
         email={user.email ?? ""}
-        theme={settings?.theme ?? "HELL"}
+        avatarUrl={await profilbildUrl(supabase, settings?.avatar_pfad)}
         streak={settings?.streak_count ?? 0}
-        kiEingewilligt={Boolean(settings?.ki_einwilligung)}
-        audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
         kiVerfuegbar={kiKonfiguriert()}
       />
       <GeteilteAnsicht mainKlasse="dashboard-main hub-main">{children}</GeteilteAnsicht>

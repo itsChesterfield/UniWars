@@ -69,7 +69,7 @@ export function KiEinwilligungInhalt({
       <h3 className="ct">{t.titel}</h3>
       <p>{t.absatz}</p>
       <p className="muted">
-        Du kannst die Einwilligung jederzeit in der Seitenleiste unter „{t.widerruf}“ widerrufen. Mehr dazu in der{" "}
+        Du kannst die Einwilligung jederzeit in den Einstellungen (Profilbild anklicken) unter „{t.widerruf}“ widerrufen. Mehr dazu in der{" "}
         <Link href="/datenschutz#ki" target="_blank">
           Datenschutzerklärung
         </Link>
