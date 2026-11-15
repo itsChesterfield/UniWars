@@ -1,3 +1,5 @@
+import { BEREICHE } from "@/lib/dashboard-bereiche";
+
 /** Die Hubs in der Sidebar – auch für Titel in der geteilten Ansicht. */
 
 export const ZENTRALER_HUB = { name: "Zentraler Hub", href: "/", icon: "M3 10.5 12 3l9 7.5|M5 9.5V21h14V9.5|M9.5 21v-6h5v6" };
@@ -79,6 +81,8 @@ export const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
 export function hubNameAusPfad(href: string): string {
   const pfad = href.split(/[?#]/)[0];
   if (pfad === "/") return ZENTRALER_HUB.name;
+  const bereich = BEREICHE.find((b) => b.href === pfad);
+  if (bereich) return bereich.name;
   const hub = WEITERE_HUBS.find((h) => h.href && (pfad === h.href || pfad.startsWith(`${h.href}/`)));
   return hub?.name ?? "Ansicht";
 }

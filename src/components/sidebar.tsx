@@ -15,6 +15,7 @@ import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import { WEITERE_HUBS, ZENTRALER_HUB } from "@/lib/hubs/navigation";
+import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { HUB_DRAG_TYP } from "@/lib/geteilte-ansicht";
 import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 
@@ -85,7 +86,9 @@ export function Sidebar({
     document.documentElement.toggleAttribute("data-sidebar-eingeklappt", neu);
     browserWertSchreiben(SIDEBAR_SCHLUESSEL, neu ? "1" : null);
   }
-  const istAktiv = (href: string) => (href === "/" ? pfad === "/" : pfad === href || pfad.startsWith(`${href}/`));
+  // Die Bereiche des Zentralen Hubs (Termine, Noten …) gehören zum Zentralen Hub
+  const istAktiv = (href: string) =>
+    href === "/" ? BEREICHE.some((b) => b.href === pfad) : pfad === href || pfad.startsWith(`${href}/`);
 
   return (
     <aside className="sidebar" data-menue-offen={menueOffen}>

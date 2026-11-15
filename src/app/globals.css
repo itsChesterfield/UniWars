@@ -8544,3 +8544,54 @@ button.pdf-pfad-teil:hover {
   padding: 4px 10px;
   font-size: 12px;
 }
+
+/* --- Zentraler Hub: Notch mit den Bereichen als eigene Seiten --- */
+.haupt-notch {
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
+}
+
+.haupt-notch a {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.haupt-notch a:hover {
+  color: var(--text);
+  background: var(--card2);
+  text-decoration: none;
+}
+
+.haupt-notch a.an {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.aufgaben-voll {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 760px) {
+  .haupt-notch {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    align-self: stretch;
+    border-radius: 14px;
+  }
+}

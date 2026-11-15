@@ -34,6 +34,8 @@ import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
+import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
+import { HauptNotch } from "@/components/haupt-notch";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;
@@ -78,6 +80,7 @@ export function DashboardContent({
   userId,
   kalender,
   kiVerfuegbar = false,
+  bereich = "uebersicht",
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -95,6 +98,8 @@ export function DashboardContent({
   userId: string;
   kalender: { konfiguriert: boolean; verbunden: boolean; probleme: string[] };
   kiVerfuegbar?: boolean;
+  /** Übersicht oder ein einzelner Bereich als eigene Seite (Notch) */
+  bereich?: Bereich;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -145,200 +150,270 @@ export function DashboardContent({
 
   const gesamtEcts = faecher.reduce((sum, f) => sum + (f.ects ?? 0), 0);
 
+
+  const terminKarte = (klasse: string) => (
+        <SegmentedCard
+          title="Termine"
+          subtitle={heutigesDatum()}
+          className={klasse}
+          aktion={
+            <KalenderButton
+              konfiguriert={kalender.konfiguriert}
+              verbunden={kalender.verbunden}
+              probleme={kalender.probleme}
+            />
+          }
+          banner={
+            <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
+          }
+          segments={[
+            {
+              key: "heute",
+              label: "Heute",
+              content: (
+                <HeuteView
+                  stundenplanEintraege={stundenplanEintraege}
+                  deadlines={deadlines}
+                  todos={todos}
+                  faecher={faecher}
+                />
+              ),
+            },
+            {
+              key: "plan",
+              label: "Stundenplan",
+              content: (
+                <StundenplanManager
+                  key={`stundenplan-${filterKey}`}
+                  initialEintraege={gefilterteStundenplan}
+                  deadlines={gefilterteDeadlines}
+                  pruefungen={gefiltertePruefungen}
+                  faecher={faecher}
+                  kalenderVerbunden={kalender.verbunden}
+                  embedded
+                />
+              ),
+            },
+          ]}
+        />
+  );
+
+  const aufgabenKarte = (klasse: string, scroll: boolean) => (
+        <section className={`card ${klasse}`}>
+          <div className="ch">
+            <span className="ct">Aufgaben &amp; Fristen</span>
+            <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
+          </div>
+
+          <div className={scroll ? "aufgaben-scroll" : "aufgaben-voll"}>
+            <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
+            <DeadlineManager
+              key={`deadline-${filterKey}`}
+              initialDeadlines={gefilterteDeadlines}
+              faecher={faecher}
+              embedded
+              versteckeErstellen
+              userId={userId}
+            />
+
+            <h3 className="aufgaben-untertitel">To-Dos</h3>
+            <TodoManager
+              key={`todo-${filterKey}`}
+              initialTodos={gefilterteTodos}
+              faecher={faecher}
+              deadlines={gefilterteDeadlines}
+              embedded
+              versteckeErstellen
+              userId={userId}
+            />
+
+            <h3 className="aufgaben-untertitel">Prüfungen</h3>
+            <PruefungManager
+              key={`pruefung-${filterKey}`}
+              initialPruefungen={gefiltertePruefungen}
+              faecher={faecher}
+              deadlines={gefilterteDeadlines}
+              embedded
+              versteckeErstellen
+              userId={userId}
+            />
+          </div>
+        </section>
+  );
+
+  const notenBlock = (klasse: string) => (
+        <div className={klasse} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <SegmentedCard
+            title="Noten-Rechner"
+            segments={[
+              {
+                key: "prognose",
+                label: "Prognose",
+                content: <NotenPrognose notenschnitt={notenschnitt} notes={notes} />,
+              },
+              {
+                key: "rechner",
+                label: "Rechner",
+                content: (
+                  <div className="rechner-grid">
+                    <ZielnotenRechner notes={notes} />
+                    <WasWaereWenn notes={notes} />
+                  </div>
+                ),
+              },
+              {
+                key: "noten",
+                label: "Noten",
+                content: (
+                  <NoteManager
+                    key={`noten-${filterKey}`}
+                    initialNotes={notes}
+                    faecher={faecher}
+                    notenschnitt={notenschnitt}
+                    embedded
+                  />
+                ),
+              },
+              {
+                key: "status",
+                label: "Status",
+                content: <BestandenUebersicht pruefungen={pruefungen} />,
+              },
+            ]}
+          />
+
+          <section className="card">
+            <div className="ch">
+              <span className="ct">Durchschnitt pro Fach</span>
+            </div>
+            <NotenDurchschnittProFach notes={notes} faecher={faecher} />
+          </section>
+        </div>
+  );
+
+  const fortschrittKarte = (klasse: string) => (
+        <SegmentedCard
+          title="Fortschritt"
+          className={klasse}
+          segments={[
+            {
+              key: "lernzeit",
+              label: "Lernzeit",
+              content: <LernzeitStatistik lernSessions={lernSessions} faecher={faecher} />,
+            },
+            {
+              key: "anwesenheit",
+              label: "Anwesenheit",
+              content: <AnwesenheitUebersicht faecher={faecher} />,
+            },
+            {
+              key: "streak",
+              label: "Streak",
+              content: <StreakUebersicht settings={settings} />,
+            },
+          ]}
+        />
+  );
+
+  const bachelorKarte = (
+    <LockedCard
+        className="span-12"
+        icon={
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5" y="11" width="14" height="9" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+          </svg>
+        }
+        title="Bachelorarbeit-Tracker"
+        description="Erscheint automatisch, sobald du bereit bist — mit Countdown & Meilensteinen."
+        right={
+          <div style={{ minWidth: 220 }}>
+            <div className="rowb" style={{ marginBottom: 7 }}>
+              <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Freischaltung ab 120 ECTS</span>
+              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}>
+                {gesamtEcts} / 120
+              </span>
+            </div>
+            <div className="progress-track" style={{ height: 9 }}>
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.min((gesamtEcts / 120) * 100, 100)}%`, background: "var(--faint)" }}
+              />
+            </div>
+          </div>
+        }
+      />
+  );
+
+  const info = BEREICHE.find((b) => b.bereich === bereich) ?? BEREICHE[0];
+
   return (
     <>
       <AnalyticsNutzer userId={userId} username={username} />
       <div className="dashboard-header-row">
         <div className="dashboard-greeting">
-          <h1>
-            {begruessung()}, {name}
-          </h1>
-          <p>
-            {heutigesDatum()}
-            {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
-            {stats.offeneTodos > 0 && ` · ${stats.offeneTodos} offene To-Do${stats.offeneTodos === 1 ? "" : "s"}`}
-          </p>
+          {bereich === "uebersicht" ? (
+            <>
+              <h1>
+                {begruessung()}, {name}
+              </h1>
+              <p>
+                {heutigesDatum()}
+                {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
+                {stats.offeneTodos > 0 && ` · ${stats.offeneTodos} offene To-Do${stats.offeneTodos === 1 ? "" : "s"}`}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1>{info.name}</h1>
+              <p>{info.untertitel}</p>
+            </>
+          )}
         </div>
 
         <div className="dashboard-toolbar">
           <SearchBar />
           <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
           <div className="dashboard-toolbar-rechts">
-            <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} kiVerfuegbar={kiVerfuegbar} />
+            {bereich === "uebersicht" && <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} kiVerfuegbar={kiVerfuegbar} />}
             <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
             <div className="avatar">{name.slice(0, 2).toUpperCase()}</div>
           </div>
         </div>
       </div>
 
-      <FachFilterChips faecher={faecher} />
+      <HauptNotch aktiv={bereich} />
 
-      <div className="dashboard-grid">
+      {bereich !== "fortschritt" && bereich !== "faecher" && <FachFilterChips faecher={faecher} />}
+
+      {bereich === "termine" && <div className="dashboard-grid">{terminKarte("span-12")}</div>}
+      {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12", false)}</div>}
+      {bereich === "noten" && <div className="dashboard-grid">{notenBlock("span-12")}</div>}
+      {bereich === "fortschritt" && (
+        <div className="dashboard-grid">
+          {fortschrittKarte("span-12")}
+          {bachelorKarte}
+        </div>
+      )}
+      {bereich === "faecher" && (
+        <div className="dashboard-grid">
+          <div className="span-12">
+            <FachManager initialFaecher={faecher} />
+          </div>
+        </div>
+      )}
+
+      {bereich === "uebersicht" && (
+        <div className="dashboard-grid">
         {kiVerfuegbar && sichtbar("ki") && <Tagesvorschlaege faecher={faecher} />}
 
-        {sichtbar("heute") && (
-          <SegmentedCard
-            title="Termine"
-            subtitle={heutigesDatum()}
-            className="span-12"
-            aktion={
-              <KalenderButton
-                konfiguriert={kalender.konfiguriert}
-                verbunden={kalender.verbunden}
-                probleme={kalender.probleme}
-              />
-            }
-            banner={
-              <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
-            }
-            segments={[
-              {
-                key: "heute",
-                label: "Heute",
-                content: (
-                  <HeuteView
-                    stundenplanEintraege={stundenplanEintraege}
-                    deadlines={deadlines}
-                    todos={todos}
-                    faecher={faecher}
-                  />
-                ),
-              },
-              {
-                key: "plan",
-                label: "Stundenplan",
-                content: (
-                  <StundenplanManager
-                    key={`stundenplan-${filterKey}`}
-                    initialEintraege={gefilterteStundenplan}
-                    deadlines={gefilterteDeadlines}
-                    pruefungen={gefiltertePruefungen}
-                    faecher={faecher}
-                    kalenderVerbunden={kalender.verbunden}
-                    embedded
-                  />
-                ),
-              },
-            ]}
-          />
-        )}
+        {sichtbar("heute") && terminKarte("span-12")}
 
-        {sichtbar("aufgaben") && (
-          <section className="card span-5">
-            <div className="ch">
-              <span className="ct">Aufgaben &amp; Fristen</span>
-              <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
-            </div>
+        {sichtbar("aufgaben") && aufgabenKarte("span-5", true)}
 
-            <div className="aufgaben-scroll">
-              <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
-              <DeadlineManager
-                key={`deadline-${filterKey}`}
-                initialDeadlines={gefilterteDeadlines}
-                faecher={faecher}
-                embedded
-                versteckeErstellen
-                userId={userId}
-              />
+        {sichtbar("aufgaben") && notenBlock("span-7")}
 
-              <h3 className="aufgaben-untertitel">To-Dos</h3>
-              <TodoManager
-                key={`todo-${filterKey}`}
-                initialTodos={gefilterteTodos}
-                faecher={faecher}
-                deadlines={gefilterteDeadlines}
-                embedded
-                versteckeErstellen
-                userId={userId}
-              />
-
-              <h3 className="aufgaben-untertitel">Prüfungen</h3>
-              <PruefungManager
-                key={`pruefung-${filterKey}`}
-                initialPruefungen={gefiltertePruefungen}
-                faecher={faecher}
-                deadlines={gefilterteDeadlines}
-                embedded
-                versteckeErstellen
-                userId={userId}
-              />
-            </div>
-          </section>
-        )}
-
-        {sichtbar("aufgaben") && (
-          <div className="span-7" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <SegmentedCard
-              title="Noten-Rechner"
-              segments={[
-                {
-                  key: "prognose",
-                  label: "Prognose",
-                  content: <NotenPrognose notenschnitt={notenschnitt} notes={notes} />,
-                },
-                {
-                  key: "rechner",
-                  label: "Rechner",
-                  content: (
-                    <div className="rechner-grid">
-                      <ZielnotenRechner notes={notes} />
-                      <WasWaereWenn notes={notes} />
-                    </div>
-                  ),
-                },
-                {
-                  key: "noten",
-                  label: "Noten",
-                  content: (
-                    <NoteManager
-                      key={`noten-${filterKey}`}
-                      initialNotes={notes}
-                      faecher={faecher}
-                      notenschnitt={notenschnitt}
-                      embedded
-                    />
-                  ),
-                },
-                {
-                  key: "status",
-                  label: "Status",
-                  content: <BestandenUebersicht pruefungen={pruefungen} />,
-                },
-              ]}
-            />
-
-            <section className="card">
-              <div className="ch">
-                <span className="ct">Durchschnitt pro Fach</span>
-              </div>
-              <NotenDurchschnittProFach notes={notes} faecher={faecher} />
-            </section>
-          </div>
-        )}
-
-        {sichtbar("fortschritt") && (
-          <SegmentedCard
-            title="Fortschritt"
-            className="span-7"
-            segments={[
-              {
-                key: "lernzeit",
-                label: "Lernzeit",
-                content: <LernzeitStatistik lernSessions={lernSessions} faecher={faecher} />,
-              },
-              {
-                key: "anwesenheit",
-                label: "Anwesenheit",
-                content: <AnwesenheitUebersicht faecher={faecher} />,
-              },
-              {
-                key: "streak",
-                label: "Streak",
-                content: <StreakUebersicht settings={settings} />,
-              },
-            ]}
-          />
-        )}
+        {sichtbar("fortschritt") && fortschrittKarte("span-7")}
 
         <div className="span-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <LockedCard
@@ -355,34 +430,9 @@ export function DashboardContent({
           {sichtbar("faecher") && <FachManager initialFaecher={faecher} />}
         </div>
 
-        <LockedCard
-          className="span-12"
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="5" y="11" width="14" height="9" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-          }
-          title="Bachelorarbeit-Tracker"
-          description="Erscheint automatisch, sobald du bereit bist — mit Countdown & Meilensteinen."
-          right={
-            <div style={{ minWidth: 220 }}>
-              <div className="rowb" style={{ marginBottom: 7 }}>
-                <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Freischaltung ab 120 ECTS</span>
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}>
-                  {gesamtEcts} / 120
-                </span>
-              </div>
-              <div className="progress-track" style={{ height: 9 }}>
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min((gesamtEcts / 120) * 100, 100)}%`, background: "var(--faint)" }}
-                />
-              </div>
-            </div>
-          }
-        />
-      </div>
+        {bachelorKarte}
+        </div>
+      )}
 
       {detailZielTyp && detailZielId && (
         <DetailAnsicht zielTyp={detailZielTyp} zielId={detailZielId} onClose={schliesseDetail} />
