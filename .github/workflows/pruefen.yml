@@ -1,0 +1,39 @@
+# Prüft jeden Push und jeden Pull Request: Lint, Typen, Tests und Produktions-Build.
+# So fällt ein Fehler auf, bevor er live geht.
+name: Prüfen
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: pruefen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Nur Platzhalter – der Build braucht die Variablen, verbindet sich aber nicht
+      NEXT_PUBLIC_SUPABASE_URL: https://platzhalter.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: platzhalter
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Routen-Typen erzeugen
+        run: npx next typegen
+      - name: Typen prüfen
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build

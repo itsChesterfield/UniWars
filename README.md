@@ -66,3 +66,13 @@ supabase/
 ## Autor
 
 Max Danigel – Student Angewandte Informatik, HTW Berlin
+
+## Arbeitsweise mit Git
+
+- **`main`** ist der Stand, der live ist (Vercel baut daraus die Produktion).
+- Neue Arbeit passiert auf einem eigenen Branch und kommt per **Pull Request** nach `main`.
+  Vercel baut für jeden Pull Request eine Vorschau-Seite; die GitHub-Action „Prüfen“
+  läuft Lint, Typprüfung, Tests und Build.
+- **Datenbank:** Jede Änderung ist eine Datei in `supabase/migrations/`. Der Dateiname
+  beginnt mit derselben Version, unter der die Migration in Supabase eingetragen ist.
+
