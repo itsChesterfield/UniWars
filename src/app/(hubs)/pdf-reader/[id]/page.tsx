@@ -4,7 +4,6 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfReader } from "@/components/pdf-reader/pdf-reader";
 import { alsRechtecke, istFarbe } from "@/lib/pdf-reader/markierungen";
-import { kiKonfiguriert } from "@/lib/ki/anbieter";
 import { markdownAlsText } from "@/lib/markdown-text";
 
 export default async function PdfAnsehenSeite({
@@ -18,13 +17,15 @@ export default async function PdfAnsehenSeite({
   // ?seite=12 – z. B. aus einer Verlinkung [[Skript.pdf#S12]] in einer Notiz
   const zielSeite = Number((await searchParams).seite) || null;
   const supabase = await createClient();
-  const [{ data: datei, error }, { data: stand }, { data: markierungen }, { data: links }] = await Promise.all([
+  const [{ data: datei, error }, { data: stand }, { data: markierungen }, { data: links }, { count: eingelesen }] = await Promise.all([
     supabase.from("datei").select("id, name, mime_typ, speicher_pfad").eq("id", id).maybeSingle(),
     supabase.from("pdf_stand").select("letzte_seite, lesezeichen").eq("datei_id", id).maybeSingle(),
     // Fehlt die Tabelle noch, bleibt die Liste einfach leer
     supabase.from("pdf_markierung").select("id, seite, farbe, rechtecke, text, notiz").eq("datei_id", id).order("seite").order("erstellt_am"),
     // Notizen, die auf diese PDF verlinken (Seitenleiste)
     supabase.from("notiz_link").select("von_notiz_id, seite").eq("ziel_datei_id", id),
+    // Hat UniVerse Studio den Text schon? (sonst liest der Reader ihn einmal ein)
+    supabase.from("quelle_seite").select("seite", { count: "exact", head: true }).eq("datei_id", id),
   ]);
   const seitenProNotiz = new Map<string, number[]>();
   for (const l of links ?? []) {
@@ -58,7 +59,7 @@ export default async function PdfAnsehenSeite({
       url={link.signedUrl}
       startSeite={zielSeite ?? stand?.letzte_seite ?? 1}
       startLesezeichen={stand?.lesezeichen ?? []}
-      kiVerfuegbar={kiKonfiguriert()}
+      eingelesen={eingelesen ?? 0}
       startNotizen={(notizen ?? []).map((n) => ({
         id: n.id,
         titel: n.titel,

@@ -71,11 +71,6 @@ export const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
     icon: "rect:9,3,6,11,3|M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6",
   },
   {
-    name: "Assistent",
-    href: "/assistent",
-    icon: "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8Z",
-  },
-  {
     name: "Chat",
     href: "/chat",
     icon: "M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9A1.5 1.5 0 0 1 18.5 16H9l-5 4Z",

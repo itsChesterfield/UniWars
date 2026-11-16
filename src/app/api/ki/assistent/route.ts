@@ -6,7 +6,6 @@ import {
   laufenderEintrag,
   MAX_FRAGE_ZEICHEN,
   modellNachrichten,
-  titelAusFrage,
   verlaufKuerzen,
   zusammenfassungPrompt,
   type Aktionskarte,
@@ -18,12 +17,21 @@ import { KiEingabe, KiFehler } from "@/lib/ki/fehler";
 import { chatBuchen, chatHeuteGenutzt, kiNutzer, nutzungAbschliessen, textVoraussetzungen, type Supabase } from "@/lib/ki/server";
 import { kiFehlerAntwort } from "@/lib/ki/stream-antwort";
 import { lesewerkzeuge } from "@/lib/ki/werkzeuge/lesen";
-import { umfeldLaden, vorschlagswerkzeuge } from "@/lib/ki/werkzeuge/vorschlagen";
+import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
+import { handlungswerkzeuge, type Sammlung } from "@/lib/ki/werkzeuge/handeln";
+import { studioQuellen } from "@/lib/ki/lernraum-server";
+import { absichtLesen, absichtPrompt, absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_AUSWAHL, MAX_KONTEXT_GANZ, profilAnpassen, profilLesen, profilText, type Absicht } from "@/lib/ki/lernraum";
+import { STUDIO_SYSTEM } from "@/lib/ki/studio";
+import { einbetten, MATERIAL_REGEL } from "@/lib/ki/material";
 import type { Json } from "@/lib/supabase/types";
 
 /**
- * KI-12: UniWars-Assistent. Antwort als Server-Sent Events:
- *   start {unterhaltungId} · status {text} · text {text} · karte {karte} · fehler {fehler} · fertig {nachrichtId, verbleibend}
+ * UniVerse Studio (früher KI-12 Assistent): EIN gemeinsamer Chat für die ganze App.
+ * Kennt den Kontext (offene PDF mit Seite, Notiz, zweite Ansicht, markierter Text, Karteikarte,
+ * Fach im Lernraum), antwortet mit Belegen aus den Quellen und handelt selbst (Werkzeuge).
+ * Server-Sent Events:
+ *   start {unterhaltungId, quellen} · status {text} · text {text} · karte {karte} · erledigt {eintrag}
+ *   · block {block} · aktion {aktion} · fehler {fehler} · fertig {nachrichtId, verbleibend}
  * Fehler VOR dem Stream (Limit, Einwilligung, Eingabe) kommen als JSON mit Fehlerstatus.
  */
 export const maxDuration = 120;
@@ -107,7 +115,14 @@ export async function POST(request: Request) {
       if (!data) throw new KiEingabe("Unterhaltung nicht gefunden.");
       unterhaltung = data;
     } else {
-      unterhaltung = { id: "", zusammenfassung: null, zusammengefasst_bis: null };
+      // Ein gemeinsamer Chat: ohne Angabe die zuletzt genutzte Unterhaltung weiterführen
+      const { data } = await supabase
+        .from("ki_unterhaltung")
+        .select("id, zusammenfassung, zusammengefasst_bis")
+        .order("geaendert_am", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      unterhaltung = data ?? { id: "", zusammenfassung: null, zusammengefasst_bis: null };
     }
 
     // Erst buchen (Limit vorab), dann speichern
@@ -115,7 +130,7 @@ export async function POST(request: Request) {
     if (!unterhaltung.id) {
       const { data, error } = await supabase
         .from("ki_unterhaltung")
-        .insert({ user_id: userId, titel: titelAusFrage(frage) })
+        .insert({ user_id: userId, titel: "UniVerse Studio" })
         .select("id, zusammenfassung, zusammengefasst_bis")
         .single();
       if (error) throw new Error(error.message);
@@ -135,22 +150,79 @@ export async function POST(request: Request) {
       .insert({ user_id: userId, unterhaltung_id: unterhaltung.id, rolle: "nutzer", inhalt: frage, eingabe_art: eingabeArt });
     if (frageFehler) throw new Error(frageFehler.message);
 
-    const [{ behalten, neuZusammenfassen }, objekt, laufend, umfeld] = await Promise.all([
+    const [{ behalten, neuZusammenfassen }, objekt, zweitesObjekt, laufend, umfeld, material, { data: settings }] = await Promise.all([
       Promise.resolve(verlaufKuerzen(alte, unterhaltung.zusammengefasst_bis)),
       objektTitel(supabase, kontext.objekt),
+      objektTitel(supabase, kontext.zweite ? { art: kontext.zweite.art, id: kontext.zweite.id } : null),
       laufendeVorlesung(supabase, jetzt),
       umfeldLaden(supabase),
+      studioQuellen(supabase, kontext),
+      supabase.from("settings").select("ki_profil").eq("user_id", userId).maybeSingle(),
     ]);
     const zusammenfassung = await zusammenfassungAktualisieren(supabase, unterhaltung, neuZusammenfassen);
 
+    // Absicht erkennen (kleines Modell): Format, ganzes Material?, Recherche?, dauerhafte Wünsche
+    let profil = profilLesen(settings?.ki_profil);
+    let absicht: Absicht;
+    try {
+      const vorherige = [...behalten].reverse().find((n) => n.rolle === "nutzer")?.inhalt ?? null;
+      const p = absichtPrompt(frage, vorherige);
+      const a = await kiAnfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0, maxTokens: 120, timeoutMs: 8000 }, "schnell");
+      absicht = absichtLesen(a.text, frage);
+    } catch {
+      absicht = absichtSchaetzen(frage);
+    }
+    if (absicht.vorliebe) {
+      profil = profilAnpassen(profil, "gut", absicht.vorliebe);
+      await supabase.from("settings").update({ ki_profil: profil as unknown as Json }).eq("user_id", userId);
+    }
+
+    // Material aus den Quellen des Kontexts (mit Kostenbremse)
+    const stoff = kontextBauen(
+      material.quellen,
+      [kontext.markiert, frage].filter(Boolean).join(" "),
+      absicht.ganz ? MAX_KONTEXT_GANZ : MAX_KONTEXT_AUSWAHL,
+      material.bevorzugt,
+    );
+    const quellenInfo = material.quellen.map((q) => ({ nr: q.nr, art: q.art, id: q.id, titel: q.titel }));
+    const zusatz = [
+      kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
+      kontext.objekt?.art === "pdf" && kontext.seite ? `- Der Nutzer ist in der PDF gerade auf Seite ${kontext.seite}.` : "",
+      zweitesObjekt ? `- Daneben (geteilte Ansicht) offen: ${zweitesObjekt.titel} (${zweitesObjekt.art})` : "",
+      material.fehlend.length ? `- Noch nicht eingelesen (Text fehlt): ${material.fehlend.join(", ")}` : "",
+      kontext.karte ? `Gerade gezeigte Karteikarte:\n${einbetten(`Vorderseite: ${kontext.karte.vorderseite}\nRückseite: ${kontext.karte.rueckseite}`, "quelle")}` : "",
+      kontext.markiert ? `Vom Nutzer markierter Text (darauf bezieht sich die Frage vermutlich):\n${einbetten(kontext.markiert, "quelle")}` : "",
+      `Antwortformat: ${FORMAT[absicht.modus]}`,
+      `Erklärweise: ${profilText(profil)}`,
+      absicht.web ? "Der Nutzer möchte eine Recherche: nutze web_recherchieren." : "",
+      quellenInfo.length
+        ? `Quellenliste:\n${quellenInfo.map((q) => `Q${q.nr}: ${q.titel} (${q.art === "pdf" ? "PDF" : "Notiz"})`).join("\n")}\n\n${MATERIAL_REGEL}\n\n${stoff.text}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const karten: Aktionskarte[] = [];
-    const werkzeuge = [...lesewerkzeuge(supabase, jetzt), ...vorschlagswerkzeuge({ ...umfeld, jetzt }, karten)];
+    const sammlung: Sammlung = { erledigt: [], bloecke: [], aktionen: [], karten };
+    const offeneNotiz = kontext.objekt?.art === "notiz" ? kontext.objekt.id : kontext.zweite?.art === "notiz" ? kontext.zweite.id : null;
+    let fachDesKontexts = kontext.fachId ?? null;
+    if (!fachDesKontexts && offeneNotiz) fachDesKontexts = (await supabase.from("notiz").select("fach_id").eq("id", offeneNotiz).maybeSingle()).data?.fach_id ?? null;
+    if (!fachDesKontexts && kontext.objekt?.art === "pdf") fachDesKontexts = (await supabase.from("datei").select("fach_id").eq("id", kontext.objekt.id).maybeSingle()).data?.fach_id ?? null;
+    const werkzeuge = [
+      ...lesewerkzeuge(supabase, jetzt),
+      ...handlungswerkzeuge(
+        { supabase, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil },
+        sammlung,
+      ),
+    ];
     const nachrichten = modellNachrichten({
-      kontext: kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
+      kontext: zusatz,
       zusammenfassung,
       behalten,
       frage,
+      system: STUDIO_SYSTEM,
     });
+    const maxTokens = absicht.modus === "plaudern" ? 500 : profil.laenge === "kurz" ? 1000 : profil.laenge === "ausfuehrlich" ? 3500 : 2000;
 
     const abbruch = new AbortController();
     request.signal.addEventListener("abort", () => abbruch.abort(), { once: true });
@@ -169,7 +241,7 @@ export async function POST(request: Request) {
             offen = false;
           }
         };
-        senden({ typ: "start", unterhaltungId: gespraech });
+        senden({ typ: "start", unterhaltungId: gespraech, quellen: quellenInfo });
 
         let text = "";
         let tokens = { tokensEin: 0, tokensAus: 0 };
@@ -177,10 +249,17 @@ export async function POST(request: Request) {
         let fehlerText: string | null = null;
         const aufrufe: { name: string; fehler?: string }[] = [];
         let gesendeteKarten = 0;
+        const gesendet = { erledigt: 0, bloecke: 0, aktionen: 0 };
+        const nachreichen = () => {
+          while (gesendeteKarten < karten.length) senden({ typ: "karte", karte: karten[gesendeteKarten++] });
+          while (gesendet.erledigt < sammlung.erledigt.length) senden({ typ: "erledigt", eintrag: sammlung.erledigt[gesendet.erledigt++] });
+          while (gesendet.bloecke < sammlung.bloecke.length) senden({ typ: "block", block: sammlung.bloecke[gesendet.bloecke++] });
+          while (gesendet.aktionen < sammlung.aktionen.length) senden({ typ: "aktion", aktion: sammlung.aktionen[gesendet.aktionen++] });
+        };
         try {
           for await (const e of agentLauf({
             rufen: (o) => kiAnfrageStream(o, "chat"),
-            optionen: { maxTokens: 1500, temperatur: 0.4, signal: abbruch.signal },
+            optionen: { maxTokens, temperatur: 0.4, signal: abbruch.signal, timeoutMs: stoff.zeichen > 150_000 ? 90_000 : 45_000 },
             nachrichten,
             werkzeuge,
           })) {
@@ -190,7 +269,7 @@ export async function POST(request: Request) {
               senden({ typ: "text", text: e.text });
             } else if (e.typ === "werkzeug") {
               aufrufe.push({ name: e.name, ...(e.fehler ? { fehler: e.fehler } : {}) });
-              while (gesendeteKarten < karten.length) senden({ typ: "karte", karte: karten[gesendeteKarten++] });
+              nachreichen();
             } else if (e.typ === "fehler") {
               fehlerText = e.fehler.nutzerMeldung;
               senden({ typ: "fehler", fehler: fehlerText });
@@ -210,7 +289,9 @@ export async function POST(request: Request) {
         }
 
         // Antwort speichern (auch Teilantworten nach Abbruch), Nutzung abschließen
-        const inhalt = text.trim() || (karten.length ? "" : fehlerText ? `_(${fehlerText})_` : "");
+        nachreichen();
+        const etwasPassiert = karten.length + sammlung.erledigt.length + sammlung.bloecke.length + sammlung.aktionen.length > 0;
+        const inhalt = text.trim() || (etwasPassiert ? "" : fehlerText ? `_(${fehlerText})_` : "");
         const { data: gespeichert } = await db
           .from("ki_nachricht")
           .insert({
@@ -218,7 +299,10 @@ export async function POST(request: Request) {
             unterhaltung_id: gespraech,
             rolle: "assistent",
             inhalt: inhalt.slice(0, 60_000),
-            werkzeug_daten: aufrufe.length || karten.length ? ({ aufrufe, karten } as unknown as Json) : null,
+            werkzeug_daten:
+              aufrufe.length || etwasPassiert || quellenInfo.length
+                ? ({ aufrufe, karten, erledigt: sammlung.erledigt, bloecke: sammlung.bloecke, aktionen: sammlung.aktionen, quellen: quellenInfo } as unknown as Json)
+                : null,
           })
           .select("id")
           .single();

@@ -20,7 +20,8 @@ import {
   type Farbe,
   type Rechteck,
 } from "@/lib/pdf-reader/markierungen";
-import { KiPdfLeiste } from "@/components/pdf-reader/ki-pdf-leiste";
+import { quelleSeitenSpeichern } from "@/app/(hubs)/lernraum/actions";
+import { studioMelden } from "@/lib/ki/studio-kontext";
 import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { notizZuPdfAnlegen } from "@/app/(hubs)/notizen/actions";
@@ -85,7 +86,7 @@ export function PdfReader({
   startSeite,
   startLesezeichen,
   startMarkierungen,
-  kiVerfuegbar = false,
+  eingelesen = 0,
   startNotizen = [],
 }: {
   datei: { id: string; name: string };
@@ -95,6 +96,8 @@ export function PdfReader({
   startMarkierungen: Markierung[];
   /** KI-03: Mistral-Key gesetzt → "✨ KI"-Knopf anzeigen */
   kiVerfuegbar?: boolean;
+  /** Seiten, deren Text schon gespeichert ist (0 = UniVerse Studio kennt die PDF noch nicht) */
+  eingelesen?: number;
   /** Mit dieser PDF verknüpfte Notizen – stehen gleich offen in der Seitenleiste */
   startNotizen?: PdfNotiz[];
 }) {
@@ -120,7 +123,6 @@ export function PdfReader({
   const [gefundeneTreffer, setTreffer] = useState<{ suche: string; liste: Treffer[] }>({ suche: "", liste: [] });
   const [trefferIndex, setTrefferIndex] = useState(0);
   const [sucht, setSucht] = useState(false);
-  const [kiOffen, setKiOffen] = useState(false);
   const [vollbild, setVollbild] = useState(false);
   // Fließend scrollen oder Seite für Seite blättern (pro Gerät gemerkt)
   const ansicht: Ansicht = useBrowserWert(ANSICHT_SPEICHER, "fliessend") === "seitenweise" ? "seitenweise" : "fliessend";
@@ -583,6 +585,38 @@ export function PdfReader({
     [doc],
   );
 
+  // UniVerse Studio: aktuelle Seite melden (Strg+J kennt dann PDF und Seite)
+  useEffect(() => {
+    studioMelden({ pdf: { id: datei.id, seite } });
+  }, [datei.id, seite]);
+  useEffect(() => () => studioMelden({ pdf: null }), []);
+
+  // Text der PDF einmal speichern, damit UniVerse Studio die ganze PDF lesen kann
+  useEffect(() => {
+    if (!doc || eingelesen > 0) return;
+    let abgebrochen = false;
+    const id = window.setTimeout(async () => {
+      let block: { seite: number; text: string }[] = [];
+      let erster = true;
+      for (let nr = 1; nr <= doc.numPages; nr++) {
+        if (abgebrochen) return;
+        const texte = await seitenText(nr).catch(() => [] as string[]);
+        block.push({ seite: nr, text: texte.join(" ").replace(/\s+/g, " ").trim() });
+        if (block.length === 40 || nr === doc.numPages) {
+          const teil = block;
+          block = [];
+          await quelleSeitenSpeichern(datei.id, teil, erster).catch((err) => fehlerMelden(err, { ort: "pdf_einlesen" }));
+          erster = false;
+        }
+      }
+      track("pdf_eingelesen", { seiten: doc.numPages });
+    }, 2500);
+    return () => {
+      abgebrochen = true;
+      window.clearTimeout(id);
+    };
+  }, [doc, eingelesen, datei.id, seitenText]);
+
   const normSuche = suchText.trim().toLocaleLowerCase("de-DE");
   const treffer = normSuche.length >= 2 && gefundeneTreffer.suche === normSuche ? gefundeneTreffer.liste : [];
 
@@ -814,18 +848,6 @@ export function PdfReader({
           >
             🔍
           </button>
-          {kiVerfuegbar && (
-            <button
-              type="button"
-              className={`btng pdf-ki-knopf ${kiOffen ? "an" : ""}`}
-              aria-expanded={kiOffen}
-              title="Fragen zum Skript, Seiten zusammenfassen, Karteikarten"
-              onClick={() => setKiOffen((o) => !o)}
-              disabled={!doc}
-            >
-              ✨ KI
-            </button>
-          )}
         </div>
       </div>
 
@@ -864,7 +886,7 @@ export function PdfReader({
         </div>
       )}
 
-      <div className={`pdf-koerper ${seitenleiste ? "mit-leiste" : ""} ${kiOffen && doc ? "mit-ki" : ""}`}>
+      <div className={`pdf-koerper ${seitenleiste ? "mit-leiste" : ""}`}>
         {seitenleiste && (
           <aside className="pdf-seitenleiste" aria-label="Markierungen und Lesezeichen">
             <div className="segwrap pdf-leisten-tabs" role="tablist">
@@ -992,16 +1014,6 @@ export function PdfReader({
             )}
         </div>
 
-        {kiOffen && doc && (
-          <KiPdfLeiste
-            doc={doc}
-            datei={datei}
-            seite={seite}
-            seitenText={seitenText}
-            onSeite={(nr) => zuSeite(nr, "smooth")}
-            onSchliessen={() => setKiOffen(false)}
-          />
-        )}
       </div>
 
       {auswahlMenue && <AuswahlMenue pos={auswahlMenue} onMarkieren={markieren} onKopieren={() => {

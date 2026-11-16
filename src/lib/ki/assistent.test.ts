@@ -36,7 +36,22 @@ test("Assistent: Kontext aus der Adresse (nur Hub und ID, keine Inhalte)", () =>
   assert.deepEqual(kontextAusPfad(`/karteikarten/${id}/lernen`), { hub: "karteikarten", objekt: { art: "stapel", id } });
   assert.deepEqual(kontextAusPfad("/"), { hub: "dashboard", objekt: null });
   assert.deepEqual(kontextAusPfad("/irgendwas"), { hub: "dashboard" });
-  assert.deepEqual(kontextPruefen({ hub: "notizen", objekt: { art: "notiz", id: "x; drop table" }, inhalt: "geheim" }), { hub: "notizen", objekt: null });
+  assert.deepEqual(kontextPruefen({ hub: "notizen", objekt: { art: "notiz", id: "x; drop table" }, inhalt: "geheim" }), {
+    hub: "notizen",
+    objekt: null,
+    seite: null,
+    zweite: null,
+    markiert: null,
+    karte: null,
+    fachId: null,
+  });
+  // UniVerse Studio: Seite, zweite Ansicht, markierter Text und Fach werden geprüft übernommen
+  const k = kontextPruefen({ hub: "pdf-reader", objekt: { art: "pdf", id }, seite: 12, zweite: { art: "notiz", id, seite: "x" }, markiert: "  Text ", fachId: id });
+  assert.equal(k.seite, 12);
+  assert.deepEqual(k.zweite, { art: "notiz", id, seite: null });
+  assert.equal(k.markiert, "Text");
+  assert.equal(kontextPruefen({ seite: 0 }).seite, null);
+  assert.deepEqual(kontextAusPfad(`/lernraum/${id}`), { hub: "lernraum", objekt: null, fachId: id });
 });
 
 test("Assistent: Kontext-Block mit Datum (Berlin), Bereich, Objekt und laufender Vorlesung", () => {

@@ -32,7 +32,6 @@ export function DokumentEditor({
   faecher,
   quellen,
   istNeu,
-  kiVerfuegbar = false,
 }: {
   dokument: Dokument;
   faecher: FachOption[];
@@ -178,18 +177,6 @@ export function DokumentEditor({
                 </option>
               ))}
             </select>
-            {kiVerfuegbar && (
-              <button
-                type="button"
-                className={`btng txt-ki-knopf ${kiOffen ? "an" : ""}`}
-                aria-expanded={kiOffen}
-                title="Hinweise zu Struktur, Verständlichkeit und Stil"
-                onClick={() => setKiOffen((o) => !o)}
-                disabled={!editor}
-              >
-                ✨ Feedback
-              </button>
-            )}
             <ExportMenue onWahl={(art) => void exportieren(art)} />
             <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
           </div>

@@ -7,6 +7,7 @@ import { AssistentStarter } from "@/components/assistent/assistent-starter";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar } from "@/components/profil-avatar";
+import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import { WEITERE_HUBS, ZENTRALER_HUB } from "@/lib/hubs/navigation";
@@ -154,6 +155,17 @@ export function Sidebar({
           <div className="streak-badge">
             🔥 {streak} {streak === 1 ? "Tag" : "Tage"}
           </div>
+        )}
+
+        {/* UniVerse Studio: kein KI-Knopf, nur der Hinweis aufs Tastenkürzel (antippbar fürs Handy) */}
+        {kiVerfuegbar && (
+          <button type="button" className="studio-hinweis" onClick={() => studioOeffnen()} title="UniVerse Studio öffnen">
+            <span>✨ UniVerse Studio</span>
+            <span className="studio-hinweis-taste">
+              <kbd>Strg</kbd>
+              <kbd>J</kbd>
+            </span>
+          </button>
         )}
 
         {/* Profil → Einstellungen (Name, Bild, Konto, Design, KI, Abmelden) */}

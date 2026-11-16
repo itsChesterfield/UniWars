@@ -7,6 +7,7 @@ import { editorErweiterungen, type LinkAufloesung } from "@/components/notizen/e
 import { Werkzeugleiste, type LinkZiel } from "@/components/notizen/werkzeugleiste";
 import { ZITAT_DRAG_TYP, quellenAngabe, zitatLesen, type Zitat } from "@/lib/geteilte-ansicht";
 import { istPdfName, zielText } from "@/lib/notizen/wikilinks";
+import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
 import { track } from "@/lib/analytics";
 
 /** Gezogene PDF-Markierung: kursives Zitat + Verlinkung auf die PDF-Seite (bzw. Quelle als Text). */
@@ -38,6 +39,7 @@ function zitatInhalt(z: Zitat) {
  * Verlinkungen als [[…]], Callouts als > [!typ], Farben/Ausrichtung als HTML-Schnipsel.
  */
 export function NotizEditorFlaeche({
+  notizId,
   wert,
   onAendern,
   ziele,
@@ -48,6 +50,8 @@ export function NotizEditorFlaeche({
   label,
   werkzeugExtra,
 }: {
+  /** ID der Notiz – UniVerse Studio kann Text hineinschreiben, solange sie offen ist */
+  notizId?: string;
   /** Startinhalt; spätere Änderungen von außen → per key neu mounten */
   wert: string;
   onAendern: (markdown: string) => void;
@@ -136,6 +140,20 @@ export function NotizEditorFlaeche({
     onEditor?.(editor);
     return () => onEditor?.(null);
   }, [editor, onEditor]);
+
+  // UniVerse Studio schreibt in die offene Notiz (Markdown, an der Cursorposition bzw. am Ende)
+  useEffect(() => {
+    if (!editor || !notizId) return;
+    const einfuegen = (e: Event) => {
+      const d = (e as CustomEvent<{ notizId: string; text: string; erledigt: boolean }>).detail;
+      if (!d || d.notizId !== notizId) return;
+      d.erledigt = true;
+      const kette = editor.chain().focus(editor.isFocused ? undefined : "end");
+      kette.insertContent(`\n\n${d.text}\n`, { contentType: "markdown" } as never).run();
+    };
+    window.addEventListener(NOTIZ_EINFUEGEN, einfuegen);
+    return () => window.removeEventListener(NOTIZ_EINFUEGEN, einfuegen);
+  }, [editor, notizId]);
 
   return (
     <div

@@ -55,6 +55,8 @@ export function kontextBauen(
   quellen: LernQuelle[],
   frage: string,
   budget: number,
+  /** Seiten, die auf jeden Fall mitgehen (z. B. die gerade offene PDF-Seite ± 1) */
+  bevorzugt: { quelle: number; seiten: number[] }[] = [],
 ): { text: string; umfang: "ganz" | "auswahl"; zeichen: number; seiten: Record<number, number[]> } {
   const stuecke: Stueck[] = [];
   for (const q of quellen) for (const a of q.abschnitte) if (a.text.trim()) stuecke.push({ q, seite: a.seite, text: a.text.trim(), schluessel: stuecke.length });
@@ -77,6 +79,7 @@ export function kontextBauen(
       gewaehlt.add(s.schluessel);
       rest -= s.text.length;
     };
+    for (const b of bevorzugt) for (const seite of b.seiten) nehmen(stuecke.find((x) => x.q.nr === b.quelle && x.seite === seite));
     for (const s of sortiert) {
       if (rest <= 0) break;
       if ((punkte.get(s.schluessel) ?? 0) <= 0 && gewaehlt.size > 0) break;
@@ -214,7 +217,7 @@ export function profilAnpassen(p: Lernprofil, r: Rueckmeldung, vorliebe?: string
   return neu;
 }
 
-function profilText(p: Lernprofil): string {
+export function profilText(p: Lernprofil): string {
   const laenge = { kurz: "Halte dich kurz und auf den Punkt.", normal: "Mittlere Länge.", ausfuehrlich: "Erkläre ausführlich und gründlich." }[p.laenge];
   const niveau = {
     einfach: "Erkläre sehr einfach, ohne Fachjargon (oder erkläre jeden Fachbegriff), wie für Erstsemester.",
@@ -228,7 +231,7 @@ function profilText(p: Lernprofil): string {
 // Antwort-Prompt
 // ---------------------------------------------------------------------------
 
-const FORMAT: Record<Modus, string> = {
+export const FORMAT: Record<Modus, string> = {
   erklaeren: "Erkläre Schritt für Schritt: erst die Kernidee in 1–2 Sätzen, dann die Details, ein konkretes Beispiel, zum Schluss „**Kurz gesagt:**“ mit einem Satz.",
   frage: "Beantworte die Frage direkt im ersten Satz, danach die wichtigsten Details.",
   zusammenfassen: "Fasse mit Zwischenüberschriften (##) und Stichpunkten zusammen; das Wichtigste zuerst.",
