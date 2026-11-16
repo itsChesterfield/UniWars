@@ -18,8 +18,9 @@ function zuletztLesen(): string | null {
 /**
  * Persönliche Überschrift im Dashboard – bei jedem Öffnen eine andere („Kaffee und Uni, Max?“,
  * „Gute Nacht, Max 🌙“). Erst aus einer festen Sammlung, dann die von der KI geschriebenen.
+ * Im Zentralen Hub steht sie als Zeile über der Überschrift (`als="p"`): Die h1 nennt dort die nächste Aufgabe.
  */
-export function DashboardUeberschrift({ name, standard }: { name: string; standard: string }) {
+export function DashboardUeberschrift({ name, standard, als = "h1" }: { name: string; standard: string; als?: "h1" | "p" }) {
   const [text, setText] = useState(standard);
   const vorname = name.split(/[\s._-]/)[0];
   const anzeigeName = vorname ? vorname.charAt(0).toUpperCase() + vorname.slice(1) : "";
@@ -55,6 +56,13 @@ export function DashboardUeberschrift({ name, standard }: { name: string; standa
     };
   }, [anzeigeName]);
 
+  if (als === "p") {
+    return (
+      <p className="gruss-zeile" key={text}>
+        {text}
+      </p>
+    );
+  }
   return (
     <h1 className="dashboard-ueberschrift" key={text}>
       {text}

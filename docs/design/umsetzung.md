@@ -23,6 +23,7 @@ Jeder Schritt auf eigenem Branch, Vercel-Vorschau, `npm run lint`, `npm test`, H
 2. **Gerüst** – `src/app/(hubs)/layout.tsx`, `src/components/sidebar.tsx`: Symbolleiste, Kontextspalte, eingelassene Arbeitsfläche, Kopfleiste mit Sync, Glocke, Fokus-Timer. Studio-Knopf und Profil-Menü. Handy-Tab-Leiste.
 3. **Übergänge und Zustände** – View Transitions zwischen Bereichen (Next.js/React bieten dafür eigene Unterstützung; vorher in `node_modules/next/dist/docs/` prüfen, siehe AGENTS.md), Skelett nach 300 ms, Leer- und Fehlerzustände je Bereich, Offline-Status.
 4. **Zentraler Hub** – Unterseiten in die Kontextspalte, Übersicht als Raster mit S/M/L, Bearbeiten-Modus (Bibliothek: `@dnd-kit/sortable` mit Tastatur-Sensor), „Dein Tag“ zusammenführen.
+   Umgesetzt in `src/components/hub/` und `src/lib/hub-layout.ts`. Die Anordnung liegt in `settings.hub_layout`. Start des Bearbeiten-Modus: „Anpassen“ in der Kopfleiste, das Ereignis `uniwars-hub-anordnen` oder der Link `/?anordnen`.
 5. **Personalisierung** – Einstellungsseite auf die neuen Spalten umstellen, Symbolleiste-Reihenfolge, Darstellung.
 6. **Bereiche einzeln** – Karteikarten (inkl. Quiz), Notizen, PDF Reader, Lernraum, Transkription (inkl. Podcast), dann die übrigen.
 
