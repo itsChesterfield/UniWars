@@ -143,7 +143,10 @@ export function absichtPrompt(frage: string, vorherigeFrage: string | null) {
 /** Grobe Einschätzung ohne KI (Ersatz, falls die Einordnung scheitert) */
 export function absichtSchaetzen(frage: string): Absicht {
   const f = frage.toLowerCase();
-  const modus: Modus = /quiz|frag mich|abfragen|teste mich/.test(f)
+  const kurz = f.trim().length < 45;
+  const modus: Modus = kurz && /^(hi|hallo|hey|moin|servus|na\b|danke|dankeschön|vielen dank|ok|okay|super|cool|top|nice|gute nacht|guten (morgen|abend|tag)|was geht|wie geht'?s|alles klar|bis (später|morgen|dann))/.test(f.trim())
+    ? "plaudern"
+    : /quiz|frag mich|abfragen|teste mich/.test(f)
     ? "quiz"
     : /karteikarte/.test(f)
       ? "karteikarten"

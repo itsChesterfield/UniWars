@@ -149,3 +149,10 @@ test("Persönlichkeit: Standard Lernbuddy, gültige Werte bleiben", () => {
   assert.equal(profilLesen({ persoenlichkeit: "coach" }).persoenlichkeit, "coach");
   assert.equal(profilLesen({ persoenlichkeit: "pirat" }).persoenlichkeit, "kumpel");
 });
+
+test("absichtSchaetzen: Smalltalk erkennt das schnelle Modell", () => {
+  assert.equal(absichtSchaetzen("hallo").modus, "plaudern");
+  assert.equal(absichtSchaetzen("Was geht?").modus, "plaudern");
+  assert.equal(absichtSchaetzen("Danke dir!").modus, "plaudern");
+  assert.notEqual(absichtSchaetzen("Hallo, erklär mir bitte ausführlich die Varianz und warum man quadriert").modus, "plaudern");
+});
