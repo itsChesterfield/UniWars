@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       request,
       supabase,
       funktion: "erklaeren",
-      optionen: { system: prompt.system, nutzer: prompt.nutzer, temperatur: 0.4, maxTokens: 600 },
+      optionen: { system: prompt.system, nutzer: prompt.nutzer, temperatur: 0.4, maxTokens: 1200 },
+      zweck: "stark",
     });
   } catch (err) {
     return kiFehlerAntwort(err);

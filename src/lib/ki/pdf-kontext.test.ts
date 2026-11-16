@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  MAX_KONTEXT_ZEICHEN,
   hatLesbarenText,
   pdfFragePrompt,
   relevanz,
@@ -48,8 +49,8 @@ test("PDF-Kontext: Zeichenlimit wird eingehalten, aktuelle Seite bleibt auch bei
   const summe = auswahl.reduce((n, s) => n + s.text.length, 0);
   assert.ok(summe <= 5000, `Summe ${summe}`);
   assert.ok(auswahl.some((s) => s.seite === 33));
-  const riesig = seitenFuerFrage([{ seite: 1, text: "y".repeat(20_000) }], "egal", 1);
-  assert.equal(riesig[0].text.length, 15_000, "aktuelle Seite wird notfalls gekürzt");
+  const riesig = seitenFuerFrage([{ seite: 1, text: "y".repeat(MAX_KONTEXT_ZEICHEN + 5000) }], "egal", 1);
+  assert.equal(riesig[0].text.length, MAX_KONTEXT_ZEICHEN, "aktuelle Seite wird notfalls gekürzt");
 });
 
 test("PDF-Kontext: Seitenbereich, Kürzung wird gemeldet", () => {
@@ -72,7 +73,7 @@ test("PDF-Kontext: Server prüft Seiten (Anzahl, Nummern, Zeichen)", () => {
   assert.equal(seitenPruefen([{ seite: 0, text: "a" }]), null);
   assert.equal(seitenPruefen([{ seite: 1.5, text: "a" }]), null);
   assert.equal(seitenPruefen([{ seite: 1, text: 5 }]), null);
-  assert.equal(seitenPruefen([{ seite: 1, text: "x".repeat(17_000) }]), null);
+  assert.equal(seitenPruefen([{ seite: 1, text: "x".repeat(MAX_KONTEXT_ZEICHEN + 2000) }]), null);
   assert.equal(seitenPruefen(Array.from({ length: 61 }, (_, i) => ({ seite: i + 1, text: "a" }))), null);
 });
 

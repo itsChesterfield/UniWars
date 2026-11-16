@@ -9732,3 +9732,490 @@ button.pdf-pfad-teil:hover {
     flex-wrap: wrap;
   }
 }
+
+/* =====================================================================
+   Lernraum (wie NotebookLM): Quellen | Chat | Studio
+   ===================================================================== */
+
+.lr-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.lr-kachel {
+  gap: 6px;
+  border-top: 4px solid var(--accent);
+  text-decoration: none;
+  color: var(--text);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.lr-kachel:hover {
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.lr-kachel-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 16px;
+}
+
+.lr-klein {
+  font-size: 12px;
+}
+
+.lr {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.lr .card {
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.lr-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lr-kopf h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin: 0;
+}
+
+.lr-kopf-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lr-quellen,
+.lr-studio {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
+.lr-quellen-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lr-quellen-liste li.aus {
+  opacity: 0.5;
+}
+
+.lr-quelle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lr-quelle-titel {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  padding: 5px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lr-quelle-titel:hover {
+  background: var(--card2);
+}
+
+.lr-status {
+  display: block;
+  margin-left: 26px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.lr-ueberblick {
+  margin: 4px 0 8px 26px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--card2);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lr-ueberblick p {
+  margin: 0;
+}
+
+.lr-themen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lr-vorschlag {
+  border: 1px solid var(--border-soft);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.lr-vorschlag:hover {
+  border-color: var(--accent);
+}
+
+.lr-chat {
+  min-height: 70vh;
+}
+
+.lr-profil-knopf {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.lr-profil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--card2);
+  font-size: 12.5px;
+}
+
+.lr-profil label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lr-profil .field {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.lr-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.lr-hinweise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+}
+
+.lr-hinweise .tag button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.lr-hinweis {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lr-verlauf {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+}
+
+.lr-start {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 20px 4px;
+}
+
+.lr-nachricht.nutzer {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 8px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--accent-soft);
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.lr-nachricht.ki {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lr-stream {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.lr-denkt {
+  animation: lr-pulsieren 1.2s ease-in-out infinite;
+}
+
+@keyframes lr-pulsieren {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.md-lesen {
+  min-height: 0;
+}
+
+.md-lesen-rahmen a[href^="#beleg-"] {
+  display: inline-block;
+  padding: 0 7px;
+  margin: 0 1px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.78em;
+  font-weight: 600;
+  text-decoration: none;
+  vertical-align: 1px;
+  cursor: pointer;
+}
+
+.md-lesen-rahmen a[href="#ergaenzt"],
+.md-lesen-rahmen a[href="#web"] {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.72em;
+  text-decoration: none;
+  vertical-align: 1px;
+  cursor: help;
+}
+
+.lr-web {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12.5px;
+}
+
+.lr-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lr-aktionen button {
+  border: 1px solid var(--border-soft);
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.lr-aktionen button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.lr-vorschlaege {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lr-eingabe {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  position: sticky;
+  bottom: 8px;
+  background: var(--card);
+  padding-top: 6px;
+}
+
+.lr-eingabe textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 44px;
+}
+
+.lr-studio-knoepfe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.lr-studio-knopf {
+  border: 1px solid var(--border-soft);
+  background: var(--card2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lr-studio-knopf:hover:not(:disabled),
+.lr-studio-knopf.an {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.lr-studio-ergebnis {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.lr-studio-ergebnis .md-notiz {
+  font-size: 14px;
+}
+
+.lr-quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lr-quiz-frage {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lr-quiz-frage p {
+  margin: 0;
+}
+
+.lr-quiz-frage > button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lr-quiz-frage > button.richtig {
+  border-color: #16a34a;
+  background: color-mix(in srgb, #16a34a 14%, transparent);
+}
+
+.lr-quiz-frage > button.falsch {
+  border-color: #dc2626;
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+}
+
+.lr-quiz-ergebnis {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.lr-beleg-knopf {
+  border: none;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 0 7px;
+  cursor: pointer;
+}
+
+.lr-karten {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lr-karte {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+.lr-karte summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.lr-karte p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+@media (max-width: 1250px) {
+  .lr {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .lr-studio {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .lr {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lr-quellen {
+    position: static;
+    max-height: 40vh;
+  }
+}

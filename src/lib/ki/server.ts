@@ -224,11 +224,11 @@ export async function chatStatus(supabase: Supabase, userId: string): Promise<Te
 }
 
 /** Eine Nachricht an den Assistenten buchen – Werkzeugrunden zählen nicht einzeln (8.6). */
-export async function chatBuchen(supabase: Supabase): Promise<{ nutzungId: string; limit: number }> {
+export async function chatBuchen(supabase: Supabase, funktion = "assistent"): Promise<{ nutzungId: string; limit: number }> {
   const limit = kiLimits().chat.limit;
   const { data, error } = await supabase.rpc("ki_kontingent_buchen", {
     p_kontingent: "chat",
-    p_funktion: "assistent",
+    p_funktion: funktion,
     p_einheit: "anfrage",
     p_menge: 1,
     p_limit: limit,

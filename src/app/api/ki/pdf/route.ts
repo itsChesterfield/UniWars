@@ -40,7 +40,8 @@ export async function POST(request: Request) {
       request,
       supabase,
       funktion: modus === "frage" ? "pdf_frage" : "pdf_zusammenfassung",
-      optionen: { system: prompt.system, nutzer: prompt.nutzer, temperatur: 0.2, maxTokens: modus === "frage" ? 700 : 900 },
+      optionen: { system: prompt.system, nutzer: prompt.nutzer, temperatur: 0.2, maxTokens: modus === "frage" ? 1500 : 1800, timeoutMs: 45_000 },
+      zweck: "stark",
     });
   } catch (err) {
     return kiFehlerAntwort(err);

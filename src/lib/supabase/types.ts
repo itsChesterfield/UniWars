@@ -856,6 +856,128 @@ export type Database = {
           },
         ]
       }
+      lernraum: {
+        Row: {
+          erstellt_am: string
+          fach_id: string
+          geaendert_am: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          fach_id: string
+          geaendert_am?: string
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          fach_id?: string
+          geaendert_am?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lernraum_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lernraum_nachricht: {
+        Row: {
+          erstellt_am: string
+          id: string
+          inhalt: string
+          lernraum_id: string
+          meta: Json
+          rolle: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          id?: string
+          inhalt: string
+          lernraum_id: string
+          meta?: Json
+          rolle: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          id?: string
+          inhalt?: string
+          lernraum_id?: string
+          meta?: Json
+          rolle?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lernraum_nachricht_lernraum_id_fkey"
+            columns: ["lernraum_id"]
+            isOneToOne: false
+            referencedRelation: "lernraum"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lernraum_quelle: {
+        Row: {
+          datei_id: string | null
+          erstellt_am: string
+          id: string
+          lernraum_id: string
+          notiz_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          datei_id?: string | null
+          erstellt_am?: string
+          id?: string
+          lernraum_id: string
+          notiz_id?: string | null
+          status: string
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string | null
+          erstellt_am?: string
+          id?: string
+          lernraum_id?: string
+          notiz_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lernraum_quelle_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lernraum_quelle_lernraum_id_fkey"
+            columns: ["lernraum_id"]
+            isOneToOne: false
+            referencedRelation: "lernraum"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lernraum_quelle_notiz_id_fkey"
+            columns: ["notiz_id"]
+            isOneToOne: false
+            referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       literatur_quelle: {
         Row: {
           abgerufen_am: string | null
@@ -1115,7 +1237,29 @@ export type Database = {
           ziel_datei_id?: string | null
           ziel_notiz_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notiz_link_von_notiz_id_fkey"
+            columns: ["von_notiz_id"]
+            isOneToOne: false
+            referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notiz_link_ziel_datei_id_fkey"
+            columns: ["ziel_datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notiz_link_ziel_notiz_id_fkey"
+            columns: ["ziel_notiz_id"]
+            isOneToOne: false
+            referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nutzer_blockiert: {
         Row: {
@@ -1320,43 +1464,120 @@ export type Database = {
           },
         ]
       }
+      quelle_seite: {
+        Row: {
+          datei_id: string
+          seite: number
+          text: string
+          user_id: string
+        }
+        Insert: {
+          datei_id: string
+          seite: number
+          text: string
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string
+          seite?: number
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quelle_seite_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quelle_ueberblick: {
+        Row: {
+          datei_id: string | null
+          erstellt_am: string
+          id: string
+          inhalt: Json
+          notiz_id: string | null
+          stand: string
+          user_id: string
+        }
+        Insert: {
+          datei_id?: string | null
+          erstellt_am?: string
+          id?: string
+          inhalt: Json
+          notiz_id?: string | null
+          stand: string
+          user_id?: string
+        }
+        Update: {
+          datei_id?: string | null
+          erstellt_am?: string
+          id?: string
+          inhalt?: Json
+          notiz_id?: string | null
+          stand?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quelle_ueberblick_datei_id_fkey"
+            columns: ["datei_id"]
+            isOneToOne: false
+            referencedRelation: "datei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quelle_ueberblick_notiz_id_fkey"
+            columns: ["notiz_id"]
+            isOneToOne: false
+            referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
+          avatar_pfad: string | null
           ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
+          ki_profil: Json
           sichtbare_widgets: Json
           streak_count: number
           streak_freezes: number
           streak_last_active: string | null
           theme: Database["public"]["Enums"]["theme"]
           user_id: string
-          avatar_pfad: string | null
           username: string | null
           work_station: Json
         }
         Insert: {
+          avatar_pfad?: string | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
+          ki_profil?: Json
           sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id: string
-          avatar_pfad?: string | null
           username?: string | null
           work_station?: Json
         }
         Update: {
+          avatar_pfad?: string | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
+          ki_profil?: Json
           sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id?: string
-          avatar_pfad?: string | null
           username?: string | null
           work_station?: Json
         }
