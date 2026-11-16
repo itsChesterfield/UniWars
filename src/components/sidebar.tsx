@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
 import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
+import { InaktivitaetsWaechter } from "@/components/inaktivitaet-waechter";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar } from "@/components/profil-avatar";
@@ -215,6 +216,7 @@ export function Sidebar({
         </Suspense>
       )}
       <Befehlspalette kiVerfuegbar={kiVerfuegbar} />
+      <InaktivitaetsWaechter />
     </aside>
   );
 }

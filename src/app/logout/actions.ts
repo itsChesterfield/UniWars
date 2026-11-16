@@ -10,3 +10,11 @@ export async function logout() {
   revalidatePath("/", "layout");
   redirect("/login");
 }
+
+/** Automatisch nach Inaktivität abgemeldet */
+export async function inaktivAbmelden() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login?grund=inaktiv");
+}

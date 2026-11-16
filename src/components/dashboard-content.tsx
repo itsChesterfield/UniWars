@@ -29,7 +29,7 @@ import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
 import { NotificationBell } from "@/components/notification-bell";
 import { WidgetToggle, istWidgetSichtbar } from "@/components/widget-toggle";
-import { Tagesvorschlaege } from "@/components/ki/tagesvorschlaege";
+import { TagesBriefing } from "@/components/ki/tages-briefing";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
@@ -411,7 +411,7 @@ export function DashboardContent({
 
       {bereich === "uebersicht" && (
         <div className="dashboard-grid">
-        {kiVerfuegbar && sichtbar("ki") && <Tagesvorschlaege faecher={faecher} />}
+        {sichtbar("ki") && <TagesBriefing />}
 
         {sichtbar("heute") && terminKarte("span-12")}
 

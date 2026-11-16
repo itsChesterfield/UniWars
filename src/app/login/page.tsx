@@ -5,9 +5,9 @@ import { TrackEvent } from "@/components/track-event";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string; grund?: string }>;
 }) {
-  const { error, reset } = await searchParams;
+  const { error, reset, grund } = await searchParams;
 
   return (
     <main className="auth-page">
@@ -17,6 +17,7 @@ export default async function LoginPage({
         {error && <p className="auth-error">{error}</p>}
         {error && <TrackEvent event="login_fehlgeschlagen" properties={{ grund: error }} />}
         {reset && <p className="auth-info">Passwort geändert — du kannst dich jetzt anmelden.</p>}
+        {grund === "inaktiv" && <p className="auth-info">Du wurdest nach 5 Minuten ohne Aktivität abgemeldet – zum Schutz deiner Daten.</p>}
         {reset && <TrackEvent event="passwort_geaendert" />}
 
         <div className="auth-field">

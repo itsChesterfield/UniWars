@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { aktivHalten } from "@/lib/inaktivitaet";
 import { useRouter } from "next/navigation";
 import { transkriptAnlegen } from "@/app/(hubs)/transkription/actions";
 import { inDateiablage } from "@/components/transkription/audio-hilfen";
@@ -23,6 +24,11 @@ function datumUhrzeit(d: Date) {
 export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfuegbar: boolean }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("bereit");
+  // Laufende Aufnahme hält die Sitzung wach (keine automatische Abmeldung)
+  useEffect(() => {
+    aktivHalten("aufnahme", phase !== "bereit");
+    return () => aktivHalten("aufnahme", false);
+  }, [phase]);
   const [fachId, setFachId] = useState<string>("");
   const [sprache, setSprache] = useState<"de" | "en">("de");
   const [sekunden, setSekunden] = useState(0);

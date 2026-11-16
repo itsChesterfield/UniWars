@@ -11665,3 +11665,125 @@ html[data-eingebettet] .notiz-karte {
   margin: 0;
   font-size: 14px;
 }
+
+/* „Dein Tag“: Begrüßung und Vorschläge für heute */
+.tb-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tb-gruss {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  animation: tb-ein 0.4s ease-out;
+}
+
+.tb-schreibt {
+  opacity: 0.75;
+}
+
+@keyframes tb-ein {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+.tb-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.tb-vorschlag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.tb-vorschlag:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.tb-icon {
+  font-size: 20px;
+  flex: none;
+}
+
+.tb-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-titel {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tb-grund {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.tb-pfeil {
+  color: var(--muted);
+  flex: none;
+}
+
+.tb-fuss {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Hinweis vor der automatischen Abmeldung */
+.inaktiv-hinweis {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 16px 40px rgb(20 16 10 / 0.25);
+  font-size: 14px;
+}
+
+.inaktiv-hinweis p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .inaktiv-hinweis {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
