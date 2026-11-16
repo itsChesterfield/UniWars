@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { alsFehler, kiNutzer, type KiErgebnis } from "@/lib/ki/server";
 import { materialLaden, mitBuchung, podcastErzeugen, type QuellAuswahl } from "@/lib/ki/quiz-server";
+import { persoenlichKontext } from "@/lib/ki/gedaechtnis-server";
 import type { PodcastLaenge } from "@/lib/ki/quiz";
 import type { Json } from "@/lib/supabase/types";
 
@@ -20,7 +21,8 @@ export async function podcastErstellen(eingabe: {
     const quellen = (Array.isArray(eingabe.quellen) ? eingabe.quellen : []).filter((q) => (q?.art === "pdf" || q?.art === "notiz") && typeof q.id === "string").slice(0, 30);
     const ergebnis = await mitBuchung(supabase, userId, "podcast", "stark", async (anfrage) => {
       const material = await materialLaden(supabase, userId, quellen, fachId, 120_000);
-      const p = await podcastErzeugen(anfrage, material, laenge, String(eingabe.fokus ?? "").slice(0, 300));
+      const persoenlich = await persoenlichKontext(supabase, String(eingabe.fokus ?? ""), fachId).catch(() => "");
+      const p = await podcastErzeugen(anfrage, material, laenge, String(eingabe.fokus ?? "").slice(0, 300), persoenlich);
       return { ...p, info: material.info, fachName: material.fachName };
     });
     const { data, error } = await supabase

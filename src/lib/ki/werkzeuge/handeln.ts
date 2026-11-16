@@ -13,6 +13,8 @@ import { kartenLesen, kontextBauen, MAX_KONTEXT_GANZ, quizLesen, STUDIO, studioP
 import { quellenListe, quellenTexte } from "@/lib/ki/lernraum-server";
 import { bereichPfad, type Aktion, type Block, type Erledigt } from "@/lib/ki/studio";
 import { createPruefung } from "@/app/pruefung/actions";
+import { gedaechtnisLaden, merken, persoenlichKontext } from "@/lib/ki/gedaechtnis-server";
+import { aehnlich, BEREICHE, istBereich } from "@/lib/ki/gedaechtnis";
 import { materialLaden, podcastErzeugen, quizErzeugen, type QuellAuswahl } from "@/lib/ki/quiz-server";
 import { einstellungenLesen, FRAGE_TYPEN } from "@/lib/ki/quiz";
 import type { Json } from "@/lib/supabase/types";
@@ -347,6 +349,44 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
       },
     },
     {
+      name: "merken",
+      beschreibung:
+        "Merkt sich dauerhaft etwas über die Person (\"Merk dir, dass …\"): Ziele, Studium/Alltag, Lernstil, Interessen, Kommunikation. Kurz in der dritten Person formulieren.",
+      parameter: {
+        type: "object",
+        properties: {
+          bereich: { type: "string", enum: [...BEREICHE] },
+          inhalt: { type: "string", description: "z. B. \"arbeitet dienstags im Nebenjob\"" },
+        },
+        required: ["bereich", "inhalt"],
+      },
+      statusText: "Merke mir das …",
+      ausfuehren: async (a) => {
+        const inhalt = t(a.inhalt, 300);
+        if (!inhalt || !istBereich(a.bereich)) throw new KiEingabe("Was soll ich mir merken?");
+        const id = await merken(u.supabase, u.userId, a.bereich, inhalt);
+        s.erledigt.push({ id: crypto.randomUUID(), art: "gemerkt", text: `Gemerkt: ${inhalt}`, link: "/einstellungen/gedaechtnis", status: "ok", ziel: id });
+        return { gemerkt: inhalt };
+      },
+    },
+    {
+      name: "vergessen",
+      beschreibung: "Vergisst etwas, das Studio über die Person gespeichert hat (\"Vergiss das mit dem Job\", \"stimmt nicht mehr\").",
+      parameter: { type: "object", properties: { was: { type: "string", description: "Stichworte des Eintrags" } }, required: ["was"] },
+      statusText: "Vergesse das …",
+      ausfuehren: async (a) => {
+        const was = t(a.was, 200);
+        const eintraege = (await gedaechtnisLaden(u.supabase)).filter((e) => e.status !== "verworfen");
+        const treffer = eintraege.filter((e) => aehnlich(e.inhalt, was) || e.inhalt.toLowerCase().includes(was.toLowerCase()));
+        if (!treffer.length) return { hinweis: "Dazu habe ich nichts gespeichert.", bekannt: eintraege.slice(0, 30).map((e) => e.inhalt) };
+        for (const e of treffer.slice(0, 3)) {
+          await u.supabase.from("ki_gedaechtnis").update({ status: "verworfen" }).eq("id", e.id);
+          s.erledigt.push({ id: crypto.randomUUID(), art: "vergessen", text: `Vergessen: ${e.inhalt}`, link: "/einstellungen/gedaechtnis", status: "ok", ziel: e.id });
+        }
+        return { vergessen: treffer.slice(0, 3).map((e) => e.inhalt) };
+      },
+    },
+    {
       name: "quiz_anlegen",
       beschreibung:
         "Legt ein richtiges Übungs-Quiz bei den Karteikarten an (Multiple Choice, Wahr/Falsch, Lückentext, Zuordnen, freie Antworten mit KI-Bewertung, Schwächen üben) – aus der offenen PDF/Notiz, sonst aus dem Fach – und öffnet es.",
@@ -364,7 +404,8 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         const { fachId, auswahl } = materialAuswahl(a);
         const einstellungen = einstellungenLesen({ anzahl: a.anzahl, schwierigkeit: a.schwierigkeit, typen: a.typen });
         const material = await materialLaden(u.supabase, u.userId, auswahl, fachId);
-        const quiz = await quizErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, einstellungen);
+        const persoenlich = await persoenlichKontext(u.supabase, material.fachName ?? "", fachId).catch(() => "");
+        const quiz = await quizErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, einstellungen, [], persoenlich);
         const titel = (quiz.titel || `Quiz ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
         const { data, error } = await u.supabase
           .from("quiz")
@@ -390,7 +431,8 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         const { fachId, auswahl } = materialAuswahl(a);
         const laenge = a.laenge === "kurz" || a.laenge === "lang" ? a.laenge : "normal";
         const material = await materialLaden(u.supabase, u.userId, auswahl, fachId, 120_000);
-        const p = await podcastErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, laenge, t(a.fokus, 300));
+        const persoenlich = await persoenlichKontext(u.supabase, t(a.fokus, 300), fachId).catch(() => "");
+        const p = await podcastErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, laenge, t(a.fokus, 300), persoenlich);
         const titel = (p.titel || `Podcast ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
         const { data, error } = await u.supabase
           .from("podcast")

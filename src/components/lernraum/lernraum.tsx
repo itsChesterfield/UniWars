@@ -6,6 +6,7 @@ import { dateiLink } from "@/app/(hubs)/dateiablage/actions";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import type { Lernprofil, Ueberblick } from "@/lib/ki/lernraum";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { ampel } from "@/lib/ki/gedaechtnis";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -53,6 +54,7 @@ export function Lernraum({
   startQuellen,
   weitere,
   startProfil,
+  kompetenz = [],
 }: {
   lernraumId: string;
   fach: { id: string; name: string; farbe: string | null };
@@ -62,6 +64,8 @@ export function Lernraum({
   /** früher Lernraum-Chat – der Verlauf läuft jetzt in UniVerse Studio */
   startVerlauf?: LernNachricht[];
   startProfil: Lernprofil;
+  /** Persönliches Modell: Wissensstand je Thema in diesem Fach */
+  kompetenz?: { thema: string; beherrschung: number; fehlerbild: string | null }[];
 }) {
   const [quellen, setQuellen] = useState(startQuellen);
   const profil = startProfil;
@@ -269,6 +273,43 @@ export function Lernraum({
           ))}
         </div>
         <p className="faint lr-klein">Erklärweise: {profilText(profil)} – passt sich an deine Rückmeldungen an (Einstellungen in UniVerse Studio).</p>
+        <div className="lr-kompetenz">
+          <h3>Dein Stand</h3>
+          {kompetenz.length === 0 ? (
+            <p className="faint lr-klein">Entsteht aus Quiz und Karteikarten in diesem Fach – je mehr du übst, desto genauer.</p>
+          ) : (
+            <>
+              <ul className="gd-themen">
+                {kompetenz.map((t) => {
+                  const a = ampel(t.beherrschung);
+                  return (
+                    <li key={t.thema} className={`gd-thema ${a}`} title={t.fehlerbild ?? undefined}>
+                      <span className="gd-ampel" aria-hidden />
+                      <span className="gd-thema-name">{t.thema}</span>
+                      <span className="faint gd-thema-info">{Math.round(t.beherrschung * 100)} %</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              {kompetenz.some((t) => ampel(t.beherrschung) !== "sicher") && (
+                <button
+                  type="button"
+                  className="btnp lr-schwaches"
+                  onClick={() =>
+                    studioOeffnen(
+                      `Frag mich zu meinen schwachen Themen in ${fach.name} ab: ${kompetenz
+                        .filter((t) => ampel(t.beherrschung) !== "sicher")
+                        .map((t) => t.thema)
+                        .join(", ")}. Erst eine Frage, dann warten.`,
+                    )
+                  }
+                >
+                  🎯 Schwaches üben
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </section>
     </div>
   );

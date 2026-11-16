@@ -55,8 +55,9 @@ export async function quizErzeugen(
   material: { info: QuellInfo[]; text: string },
   einstellungen: QuizEinstellungen,
   schwerpunkte: string[] = [],
+  persoenlich = "",
 ): Promise<{ titel: string; fragen: QuizFrage[] }> {
-  const p = quizPrompt(einstellungen, material.info, material.text, schwerpunkte);
+  const p = quizPrompt(einstellungen, material.info, material.text, schwerpunkte, persoenlich);
   const a = await anfrage({
     system: p.system,
     nutzer: p.nutzer,
@@ -75,8 +76,9 @@ export async function podcastErzeugen(
   material: { info: QuellInfo[]; text: string },
   laenge: PodcastLaenge,
   fokus: string,
+  persoenlich = "",
 ): Promise<{ titel: string; segmente: PodcastSegment[] }> {
-  const p = podcastPrompt(laenge, material.info, material.text, fokus);
+  const p = podcastPrompt(laenge, material.info, material.text, fokus, persoenlich);
   const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0.7, maxTokens: laenge === "lang" ? 16_000 : laenge === "normal" ? 10_000 : 6000, timeoutMs: 60_000 });
   const ergebnis = podcastLesen(a.text);
   if (ergebnis.segmente.length < 3) throw new KiEingabe("Der Podcast ließ sich nicht erstellen. Versuch es noch einmal.");

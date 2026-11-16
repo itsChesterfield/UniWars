@@ -574,6 +574,59 @@ export type Database = {
         }
         Relationships: []
       }
+      ki_gedaechtnis: {
+        Row: {
+          bereich: string
+          erstellt_am: string
+          fest: boolean
+          geaendert_am: string
+          id: string
+          inhalt: string
+          nachricht_id: string | null
+          quelle: string
+          sicherheit: number
+          status: string
+          user_id: string
+          zuletzt_genutzt: string | null
+        }
+        Insert: {
+          bereich: string
+          erstellt_am?: string
+          fest?: boolean
+          geaendert_am?: string
+          id?: string
+          inhalt: string
+          nachricht_id?: string | null
+          quelle?: string
+          sicherheit?: number
+          status?: string
+          user_id?: string
+          zuletzt_genutzt?: string | null
+        }
+        Update: {
+          bereich?: string
+          erstellt_am?: string
+          fest?: boolean
+          geaendert_am?: string
+          id?: string
+          inhalt?: string
+          nachricht_id?: string | null
+          quelle?: string
+          sicherheit?: number
+          status?: string
+          user_id?: string
+          zuletzt_genutzt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ki_gedaechtnis_nachricht_id_fkey"
+            columns: ["nachricht_id"]
+            isOneToOne: false
+            referencedRelation: "ki_nachricht"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ki_nachricht: {
         Row: {
           eingabe_art: string
@@ -686,6 +739,47 @@ export type Database = {
           vorschlaege?: Json
         }
         Relationships: []
+      }
+      ki_thema_stand: {
+        Row: {
+          aktualisiert_am: string
+          beherrschung: number
+          fach_id: string | null
+          fehlerbild: string | null
+          id: string
+          thema: string
+          user_id: string
+          versuche: number
+        }
+        Insert: {
+          aktualisiert_am?: string
+          beherrschung?: number
+          fach_id?: string | null
+          fehlerbild?: string | null
+          id?: string
+          thema: string
+          user_id?: string
+          versuche?: number
+        }
+        Update: {
+          aktualisiert_am?: string
+          beherrschung?: number
+          fach_id?: string | null
+          fehlerbild?: string | null
+          id?: string
+          thema?: string
+          user_id?: string
+          versuche?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ki_thema_stand_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ki_unterhaltung: {
         Row: {
@@ -1666,6 +1760,8 @@ export type Database = {
           avatar_pfad: string | null
           ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
+          ki_gedaechtnis_an: boolean
+          ki_kennenlernen: Json
           ki_profil: Json
           sichtbare_widgets: Json
           streak_count: number
@@ -1680,6 +1776,8 @@ export type Database = {
           avatar_pfad?: string | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
+          ki_gedaechtnis_an?: boolean
+          ki_kennenlernen?: Json
           ki_profil?: Json
           sichtbare_widgets?: Json
           streak_count?: number
@@ -1694,6 +1792,8 @@ export type Database = {
           avatar_pfad?: string | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
+          ki_gedaechtnis_an?: boolean
+          ki_kennenlernen?: Json
           ki_profil?: Json
           sichtbare_widgets?: Json
           streak_count?: number

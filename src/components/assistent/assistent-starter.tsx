@@ -47,6 +47,8 @@ export function AssistentStarter() {
   const [offen, setOffen] = useState(false);
   const [markiert, setMarkiert] = useState<string | null>(null);
   const [startFrage, setStartFrage] = useState<{ text: string; nr: number } | null>(null);
+  /** Privater Chat: Studio lernt nichts aus diesem Gespräch (gilt bis zum Neuladen) */
+  const [privat, setPrivat] = useState(false);
   const eingebettet = istEingebettet();
 
   const umschalten = useCallback((weg: string) => {
@@ -105,6 +107,15 @@ export function AssistentStarter() {
       <div className="ki-panel-kopf">
         <h2>✨ {STUDIO_NAME}</h2>
         <span className="ki-panel-knoepfe">
+          <button
+            type="button"
+            className={`icon-knopf studio-privat ${privat ? "an" : ""}`}
+            aria-pressed={privat}
+            title={privat ? "Privater Chat: Studio lernt nichts aus diesem Gespräch. Klicken zum Beenden." : "Privater Chat – Studio lernt nichts aus diesem Gespräch"}
+            onClick={() => setPrivat((p) => !p)}
+          >
+            {privat ? "🕶️" : "👁️"}
+          </button>
           <kbd className="studio-kbd" title="Mit Strg+J öffnen und schließen">
             Strg J
           </kbd>
@@ -113,12 +124,14 @@ export function AssistentStarter() {
           </button>
         </span>
       </div>
+      {privat && <p className="studio-privat-hinweis faint">🕶️ Privater Chat – Studio nutzt, was es weiß, lernt aber nichts Neues.</p>}
       <AssistentChat
         unterhaltungId={null}
         kontext={kontext}
         kontextHolen={() => aktuellerKontext(window.location.pathname, window.location.search.slice(1), markiert)}
         onMarkierungEntfernen={() => setMarkiert(null)}
         startFrage={startFrage}
+        privat={privat}
       />
     </aside>,
     document.body,
