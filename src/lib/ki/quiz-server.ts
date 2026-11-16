@@ -6,7 +6,7 @@ import { kontextBauen, type LernQuelle } from "@/lib/ki/lernraum";
 import { lernraumSichern, quellenListe, quellenTexte, type QuellenEintrag } from "@/lib/ki/lernraum-server";
 import { podcastLesen, podcastPrompt, quizLesen, quizPrompt, type PodcastLaenge, type PodcastSegment, type QuizEinstellungen, type QuizFrage } from "@/lib/ki/quiz";
 import { nutzungAbschliessen, textBuchen, textVoraussetzungen, type Supabase } from "@/lib/ki/server";
-import { kiAnfrage, type ModellZweck } from "@/lib/ki/anbieter";
+import { kiAnfrageGesammelt, type ModellZweck } from "@/lib/ki/anbieter";
 
 export type QuellAuswahl = { art: "pdf" | "notiz"; id: string };
 export type QuellInfo = { nr: number; art: "pdf" | "notiz"; id: string; titel: string };
@@ -63,7 +63,7 @@ export async function quizErzeugen(
     json: true,
     temperatur: 0.5,
     maxTokens: Math.min(16_000, 1000 + einstellungen.anzahl * 650),
-    timeoutMs: 110_000,
+    timeoutMs: 60_000,
   });
   const ergebnis = quizLesen(a.text);
   if (ergebnis.fragen.length < 2) throw new KiEingabe("Aus dem Material ließ sich kein Quiz erstellen. Versuch es noch einmal.");
@@ -77,7 +77,7 @@ export async function podcastErzeugen(
   fokus: string,
 ): Promise<{ titel: string; segmente: PodcastSegment[] }> {
   const p = podcastPrompt(laenge, material.info, material.text, fokus);
-  const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0.7, maxTokens: laenge === "lang" ? 9000 : laenge === "normal" ? 6000 : 3500, timeoutMs: 110_000 });
+  const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0.7, maxTokens: laenge === "lang" ? 9000 : laenge === "normal" ? 6000 : 3500, timeoutMs: 60_000 });
   const ergebnis = podcastLesen(a.text);
   if (ergebnis.segmente.length < 3) throw new KiEingabe("Der Podcast ließ sich nicht erstellen. Versuch es noch einmal.");
   return ergebnis;
@@ -97,7 +97,7 @@ export async function mitBuchung<T>(
   let erfolgreich = false;
   try {
     const ergebnis = await arbeit(async (o) => {
-      const a = await kiAnfrage(o, zweck);
+      const a = await kiAnfrageGesammelt(o, zweck);
       tokens.tokensEin += a.tokensEin;
       tokens.tokensAus += a.tokensAus;
       return a;

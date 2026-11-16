@@ -113,3 +113,23 @@ export async function kiWebsuche(optionen: KiOptionen, zweck: ModellZweck = "sta
     return kiWebsucheMit({ ...kiKonfig(zweck), modell: ersatz }, optionen);
   }
 }
+
+/**
+ * Lange Antworten (Quiz, Podcast-Skript, Lernmaterial) gestreamt abholen und zusammensetzen.
+ * Vorteil gegenüber kiAnfrage: Das Zeitlimit gilt nur, solange gar nichts mehr kommt –
+ * lange Ausgaben des großen Modells brechen nicht mehr nach einer festen Gesamtzeit ab.
+ */
+export async function kiAnfrageGesammelt(optionen: KiOptionen, zweck: ModellZweck = "standard"): Promise<KiAntwort> {
+  let text = "";
+  let tokensEin = 0;
+  let tokensAus = 0;
+  for await (const e of kiAnfrageStream({ ...optionen, timeoutMs: optionen.timeoutMs ?? 60_000 }, zweck)) {
+    if (e.typ === "text") text += e.text;
+    else if (e.typ === "fehler") throw e.fehler;
+    else if (e.typ === "ende") {
+      tokensEin = e.tokensEin;
+      tokensAus = e.tokensAus;
+    }
+  }
+  return { text, tokensEin, tokensAus, werkzeugAufrufe: [] };
+}

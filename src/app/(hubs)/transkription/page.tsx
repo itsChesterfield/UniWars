@@ -11,7 +11,7 @@ import { PodcastBereich } from "@/components/quiz/podcast-bereich";
 import type { QuellOption } from "@/components/quiz/quellen-wahl";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export const metadata = { title: "Transkription · UniWars" };
 

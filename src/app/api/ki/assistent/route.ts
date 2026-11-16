@@ -35,7 +35,7 @@ import type { Json } from "@/lib/supabase/types";
  *   · block {block} · aktion {aktion} · fehler {fehler} · fertig {nachrichtId, verbleibend}
  * Fehler VOR dem Stream (Limit, Einwilligung, Eingabe) kommen als JSON mit Fehlerstatus.
  */
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const MAX_VERLAUF_LADEN = 200;
 /** Material im normalen Chat (≈ 10.000 Tokens) – hält die Antwortzeit kurz */
