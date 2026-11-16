@@ -14,6 +14,16 @@ export type PodcastKachel = { id: string; titel: string; fach_id: string | null;
 export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { podcasts: PodcastKachel[]; faecher: Fach[]; optionen: QuellOption[]; kiVerfuegbar: boolean }) {
   const [neu, setNeu] = useState(false);
   const router = useRouter();
+
+  // Aus der Befehlspalette (Strg+O): „…?neu=podcast“ öffnet gleich den Dialog
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("neu") !== "podcast" || !kiVerfuegbar) return;
+    url.searchParams.delete("neu");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    const id = window.setTimeout(() => setNeu(true), 0);
+    return () => window.clearTimeout(id);
+  }, [kiVerfuegbar]);
   return (
     <section className="qz-bereich" aria-labelledby="pc-titel">
       <div className="qz-kopf">

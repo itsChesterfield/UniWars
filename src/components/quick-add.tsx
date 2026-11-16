@@ -27,7 +27,10 @@ type PruefungOption = Pick<Tables<"pruefung">, "id" | "titel">;
  * Eingang in Schnell erfassen, da es dafür sonst keine andere Stelle im UI
  * gibt. Deshalb als zwei zusätzliche Chips am Ende der Leiste angehängt.
  */
-type QuickAddModus = ErkannterTyp | "FACH" | "NOTE";
+export type QuickAddModus = ErkannterTyp | "FACH" | "NOTE";
+
+/** Ereignis: Schnell erfassen öffnen (z. B. aus der Befehlspalette), detail: { modus?, titel? } */
+export const SCHNELL_ERFASSEN = "uniwars-schnell-erfassen";
 
 const CHIP_LABEL: Record<QuickAddModus, string> = {
   PRUEFUNG: "Prüfung",
@@ -193,6 +196,22 @@ export function QuickAdd({
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  // Strg+O (Befehlspalette) öffnet Schnell erfassen mit Typ und Titel
+  useEffect(() => {
+    function oeffnen(e: Event) {
+      const d = (e as CustomEvent<{ modus?: QuickAddModus; titel?: string }>).detail ?? {};
+      if (d.modus && ALLE_MODI.includes(d.modus)) {
+        setModus(d.modus);
+        setTypManuellGesetzt(true);
+      }
+      if (typeof d.titel === "string") setTitel(d.titel);
+      setOpen(true);
+      track("schnell_erfassen_geoeffnet", { quelle: "befehlspalette" });
+    }
+    window.addEventListener(SCHNELL_ERFASSEN, oeffnen);
+    return () => window.removeEventListener(SCHNELL_ERFASSEN, oeffnen);
+  }, []);
 
   // Debounced: Typ- und Datumserkennung aus dem Titel, plus URL -> Anhang.
   useEffect(() => {
