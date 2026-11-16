@@ -24,13 +24,15 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
   const m = muster(q);
+  // PostgREST-or()-Filter verträgt keine Kommas/Klammern im Suchbegriff
+  const sicher = muster(q.replace(/[,()]/g, " "));
   const n = 6;
 
-  const [pdfs, dateien, notizen, stapel, quizze, podcasts, deadlines, pruefungen, todos, faecher, dokumente, tabellen, praesentationen, mindmaps, whiteboards, transkripte, literatur, seiten] =
+  const [pdfs, dateien, notizen, stapel, quizze, podcasts, deadlines, pruefungen, todos, faecher, dokumente, tabellen, praesentationen, mindmaps, whiteboards, transkripte, literatur, seiten, karten, noten] =
     await Promise.all([
       supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf").ilike("name", m).limit(n),
       supabase.from("datei").select("id, name, mime_typ").neq("mime_typ", "application/pdf").ilike("name", m).limit(n),
-      supabase.from("notiz").select("id, titel").ilike("titel", m).order("geaendert_am", { ascending: false }).limit(n),
+      supabase.from("notiz").select("id, titel").or(`titel.ilike.${sicher},inhalt.ilike.${sicher}`).order("geaendert_am", { ascending: false }).limit(n),
       supabase.from("kk_stapel").select("id, name").ilike("name", m).limit(n),
       supabase.from("quiz").select("id, titel").ilike("titel", m).limit(n),
       supabase.from("podcast").select("id, titel").ilike("titel", m).limit(n),
@@ -47,6 +49,8 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
       supabase.from("literatur_quelle").select("id, titel").ilike("titel", m).limit(n),
       // Volltext in eingelesenen PDF-Seiten
       q.length >= 3 ? supabase.from("quelle_seite").select("datei_id, seite, text").ilike("text", m).limit(8) : Promise.resolve({ data: [] as { datei_id: string; seite: number; text: string }[] }),
+      supabase.from("kk_karte").select("id, stapel_id, vorderseite").or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`).limit(4),
+      supabase.from("note").select("id, titel").ilike("titel", m).limit(4),
     ]);
 
   const t: SuchTreffer[] = [];
@@ -67,6 +71,8 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   for (const x of transkripte.data ?? []) t.push({ art: "transkript", id: x.id, titel: x.titel, href: `/transkription/${x.id}`, icon: "🎙️", info: "Transkript" });
   for (const x of podcasts.data ?? []) t.push({ art: "podcast", id: x.id, titel: x.titel, href: `/transkription/podcast/${x.id}`, icon: "🎧", info: "Podcast" });
   for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung`, icon: "📚", info: "Literatur" });
+  for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "🃏", info: "Karteikarte" });
+  for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "💯", info: "Note" });
   for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: x.name, href: `/dateiablage`, icon: "📎", info: "Datei" });
 
   // Fundstellen im Text der PDFs (Titel nachladen)
