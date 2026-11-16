@@ -4,9 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { assistentStart, notizAnhaengen, unterhaltungLaden, type AssistentNachricht } from "@/app/(hubs)/assistent/actions";
 import { useRouter } from "next/navigation";
 import { BlockAnzeige, ErledigtListe, KontextLeiste, StudioAntwort } from "@/components/assistent/studio-bausteine";
+import { GemerktListe, KennenlernKarte, RueckblickKarte, RueckmeldungKnoepfe } from "@/components/assistent/persoenlich-bausteine";
+import { studioPersoenlich, type StudioPersoenlich } from "@/app/(hubs)/einstellungen/gedaechtnis-actions";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
-import { STUDIO_NAME, type Aktion, type Block, type Erledigt, type QuellInfo } from "@/lib/ki/studio";
+import { STUDIO_NAME, type Aktion, type Block, type Erledigt, type Gemerkt, type QuellInfo } from "@/lib/ki/studio";
 import { AktionskarteAnzeige } from "@/components/assistent/aktionskarte";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
 import { DiktatKnopf } from "@/components/ki/diktat-knopf";
@@ -30,6 +32,7 @@ type Laufend = {
   bloecke: Block[];
   quellen: QuellInfo[];
   aktionen: Aktion[];
+  gemerkt: Gemerkt[];
 };
 type Phase = "laden" | "nicht_verfuegbar" | "einwilligung" | "bereit";
 
@@ -62,6 +65,7 @@ export function AssistentChat({
   startFrage,
   onUnterhaltung,
   autoFokus = true,
+  privat = false,
 }: {
   /** null = der eine gemeinsame Chat (zuletzt genutzte Unterhaltung) */
   unterhaltungId: string | null;
@@ -74,6 +78,8 @@ export function AssistentChat({
   /** Neue Unterhaltung wurde angelegt bzw. hat sich geändert (für Verlauf/Adresse) */
   onUnterhaltung?: (id: string) => void;
   autoFokus?: boolean;
+  /** Privater Chat: Studio lernt nichts aus diesem Gespräch */
+  privat?: boolean;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("laden");
@@ -98,6 +104,10 @@ export function AssistentChat({
   const feld = useRef<HTMLTextAreaElement>(null);
   /** Von diesem Chat selbst angelegte Unterhaltung – deren Verlauf liegt schon lokal vor */
   const selbstAngelegt = useRef<string | null>(null);
+  /** Persönliches Modell: Kennenlernen, Semester-Auffrischen, Monatsrückblick */
+  const [persoenlich, setPersoenlich] = useState<StudioPersoenlich | null>(null);
+  const [kennenlernenZu, setKennenlernenZu] = useState(false);
+  const [rueckblickZu, setRueckblickZu] = useState(true);
 
   // Geräte-Einstellungen (KI-13/14) – erst im Browser lesen
   useEffect(() => {
@@ -128,6 +138,23 @@ export function AssistentChat({
           setVerlaufLaedt(true);
         }
         setPhase(!a.daten.status.verfuegbar ? "nicht_verfuegbar" : a.daten.status.eingewilligt ? "bereit" : "einwilligung");
+        if (a.daten.status.verfuegbar) {
+          studioPersoenlich()
+            .then((p) => {
+              if (ab) return;
+              setPersoenlich(p);
+              // Monatsrückblick in der ersten Woche des Monats, einmal pro Monat
+              const monat = new Date().toISOString().slice(0, 7);
+              let gesehen = "";
+              try {
+                gesehen = window.localStorage.getItem("uniwars-rueckblick") ?? "";
+              } catch {
+                // ohne Speicher: einmal pro Sitzung
+              }
+              setRueckblickZu(!(new Date().getDate() <= 7 && p.rueckblick.length > 0 && gesehen !== monat));
+            })
+            .catch(() => undefined);
+        }
       });
     return () => {
       ab = true;
@@ -184,7 +211,7 @@ export function AssistentChat({
       setEingabeArt("text");
       kiGestartet("ki12");
       const start = performance.now();
-      const neu: Laufend = { frage, text: "", status: null, karten: [], fehler: null, erledigt: [], bloecke: [], quellen: [], aktionen: [] };
+      const neu: Laufend = { frage, text: "", status: null, karten: [], fehler: null, erledigt: [], bloecke: [], quellen: [], aktionen: [], gemerkt: [] };
       setLaufend(neu);
       const steuerung = new AbortController();
       abbruch.current = steuerung;
@@ -200,7 +227,7 @@ export function AssistentChat({
         const antwort = await fetch("/api/ki/assistent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ unterhaltungId: id, frage, kontext: kontextHolen?.() ?? kontext, eingabeArt: art }),
+          body: JSON.stringify({ unterhaltungId: id, frage, kontext: kontextHolen?.() ?? kontext, eingabeArt: art, privat }),
           signal: steuerung.signal,
         });
         if (!antwort.ok || !antwort.body) {
@@ -248,6 +275,8 @@ export function AssistentChat({
               aktionAusfuehren(aktion);
             } else if (e.typ === "fehler" && typeof e.fehler === "string") {
               setzen({ fehler: e.fehler, status: null });
+            } else if (e.typ === "gemerkt" && Array.isArray(e.eintraege)) {
+              setzen({ gemerkt: e.eintraege as Gemerkt[] });
             } else if (e.typ === "fertig") {
               nachrichtId = typeof e.nachrichtId === "string" ? e.nachrichtId : null;
               if (typeof e.verbleibend === "number") {
@@ -270,7 +299,7 @@ export function AssistentChat({
           rolle: "assistent",
           inhalt: aktuell.text.trim() || (aktuell.fehler && !aktuell.karten.length && !aktuell.erledigt.length ? `_(${aktuell.fehler})_` : steuerung.signal.aborted ? "_(Abgebrochen)_" : ""),
           karten: aktuell.karten,
-          studio: { erledigt: aktuell.erledigt, bloecke: aktuell.bloecke, quellen: aktuell.quellen, aktionen: aktuell.aktionen },
+          studio: { erledigt: aktuell.erledigt, bloecke: aktuell.bloecke, quellen: aktuell.quellen, aktionen: aktuell.aktionen, gemerkt: aktuell.gemerkt },
           erstellt_am: jetzt,
         },
       ]);
@@ -286,7 +315,7 @@ export function AssistentChat({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- aktionAusfuehren nutzt nur stabile Werte (Router)
-    [id, kontext, kontextHolen, laufend, onUnterhaltung, verbleibend, eingabeArt, autoVorlesen],
+    [id, kontext, kontextHolen, laufend, onUnterhaltung, verbleibend, eingabeArt, autoVorlesen, privat],
   );
 
 
@@ -322,6 +351,22 @@ export function AssistentChat({
       <KontextLeiste kontext={kontext} onMarkierungEntfernen={onMarkierungEntfernen} />
       <div className="ki-chat-verlauf" aria-live="polite">
         {verlaufLaedt && <KiLadeZustand text="Unterhaltung wird geladen …" />}
+        {persoenlich && persoenlich.kennenlernen !== "fertig" && !kennenlernenZu && !laufend && (
+          <KennenlernKarte daten={persoenlich} onFertig={() => setKennenlernenZu(true)} />
+        )}
+        {persoenlich && !rueckblickZu && (persoenlich.kennenlernen === "fertig" || kennenlernenZu) && (
+          <RueckblickKarte
+            eintraege={persoenlich.rueckblick}
+            onSchliessen={() => {
+              setRueckblickZu(true);
+              try {
+                window.localStorage.setItem("uniwars-rueckblick", new Date().toISOString().slice(0, 7));
+              } catch {
+                // egal
+              }
+            }}
+          />
+        )}
         {leer && (
           <div className="ki-chat-start">
             <p className="ki-chat-gruss">
@@ -346,12 +391,18 @@ export function AssistentChat({
             <div key={n.id} className="ki-blase ki-blase-ki">
               {n.inhalt && <StudioAntwort text={n.inhalt} quellen={n.studio?.quellen ?? []} />}
               {n.studio && <ErledigtListe eintraege={n.studio.erledigt} nachrichtId={n.id.startsWith("a-") ? null : n.id} />}
+              {n.studio?.gemerkt?.length ? <GemerktListe eintraege={n.studio.gemerkt} /> : null}
               {n.studio?.bloecke.map((b) => (
                 <BlockAnzeige key={b.id} block={b} quellen={n.studio?.quellen ?? []} nachrichtId={n.id.startsWith("a-") ? null : n.id} />
               ))}
               {n.inhalt && !n.id.startsWith("a-") && (
                 <span className="ki-blase-aktionen">
                   <VorlesenKnopf text={n.inhalt} cacheKey={n.id} autoStart={vorleseId === n.id} label="Antwort vorlesen" />
+                  <RueckmeldungKnoepfe
+                    onNochmal={(art) =>
+                      void senden(art === "einfacher" ? "Bitte erklär das nochmal einfacher." : art === "kuerzer" ? "Bitte nochmal kürzer." : "Bitte nochmal mit konkreten Beispielen.")
+                    }
+                  />
                 </span>
               )}
               {n.karten.map((k) => (
@@ -367,6 +418,7 @@ export function AssistentChat({
               {laufend.text ? <p className="ki-chat-roh">{laufend.text}</p> : !laufend.status && !laufend.fehler && <p className="ki-chat-status">Denkt nach …</p>}
               {laufend.status && <p className="ki-chat-status">{laufend.status}</p>}
               <ErledigtListe key={laufend.erledigt.length} eintraege={laufend.erledigt} nachrichtId={null} />
+              {laufend.gemerkt.length > 0 && <GemerktListe key={`g${laufend.gemerkt.length}`} eintraege={laufend.gemerkt} />}
               {laufend.bloecke.map((b) => (
                 <BlockAnzeige key={b.id} block={b} quellen={laufend.quellen} nachrichtId={null} />
               ))}

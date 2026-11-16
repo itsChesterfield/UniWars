@@ -19,12 +19,13 @@ export default async function LernraumSeite({ params }: { params: Promise<{ fach
   if (error?.code === "22P02" || !fach) notFound();
 
   const lernraumId = await lernraumSichern(supabase, user.id, fach.id);
-  const [quellen, { data: verlauf }, { data: settings }, { data: pdfs }, { data: notizen }] = await Promise.all([
+  const [quellen, { data: verlauf }, { data: settings }, { data: pdfs }, { data: notizen }, { data: kompetenz }] = await Promise.all([
     quellenListe(supabase, lernraumId, fach.id),
     supabase.from("lernraum_nachricht").select("id, rolle, inhalt, meta").eq("lernraum_id", lernraumId).order("erstellt_am", { ascending: true }).limit(100),
     supabase.from("settings").select("ki_profil").eq("user_id", user.id).maybeSingle(),
     supabase.from("datei").select("id, name, fach_id").eq("mime_typ", "application/pdf").order("name"),
     supabase.from("notiz").select("id, titel, fach_id").order("geaendert_am", { ascending: false }).limit(300),
+    supabase.from("ki_thema_stand").select("thema, beherrschung, fehlerbild").eq("fach_id", fach.id).order("beherrschung", { ascending: true }).limit(40),
   ]);
 
   return (
@@ -40,6 +41,7 @@ export default async function LernraumSeite({ params }: { params: Promise<{ fach
         ]}
         startVerlauf={(verlauf ?? []).map((n) => ({ id: n.id, rolle: n.rolle === "ki" ? "ki" : "nutzer", inhalt: n.inhalt, meta: (n.meta ?? {}) as LernNachricht["meta"] }))}
         startProfil={profilLesen(settings?.ki_profil)}
+        kompetenz={kompetenz ?? []}
       />
     </>
   );

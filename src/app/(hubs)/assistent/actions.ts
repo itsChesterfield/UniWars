@@ -205,6 +205,16 @@ export async function erledigtRueckgaengig(nachrichtId: string, eintragId: strin
         if (error) throw new Error(error.message);
         break;
       }
+      case "gemerkt": {
+        const { error } = await supabase.from("ki_gedaechtnis").update({ status: "verworfen" }).eq("id", e.ziel!);
+        if (error) throw new Error(error.message);
+        break;
+      }
+      case "vergessen": {
+        const { error } = await supabase.from("ki_gedaechtnis").update({ status: "aktiv" }).eq("id", e.ziel!);
+        if (error) throw new Error(error.message);
+        break;
+      }
       case "quiz": {
         const { error } = await supabase.from("quiz").delete().eq("id", e.ziel!);
         if (error) throw new Error(error.message);

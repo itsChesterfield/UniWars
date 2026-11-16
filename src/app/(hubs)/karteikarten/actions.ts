@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { themenAktualisieren } from "@/lib/ki/gedaechtnis-server";
 import { createClient } from "@/lib/supabase/server";
 import {
   bewerten,
@@ -141,6 +143,14 @@ export async function karteBeantworten(id: string, bewertung: Bewertung): Promis
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  // Persönliches Modell: Ergebnis zählt für das Thema des Stapels (nach der Antwort, blockiert nichts)
+  after(async () => {
+    const { data: k } = await supabase.from("kk_karte").select("user_id, vorderseite, stapel:stapel_id(name, fach_id)").eq("id", id).maybeSingle();
+    const st = k?.stapel as { name?: string; fach_id?: string | null } | null;
+    if (!k || !st?.name) return;
+    const punkte = { 1: 0, 2: 0.5, 3: 0.8, 4: 1 }[bewertung];
+    await themenAktualisieren(supabase, k.user_id, st.fach_id ?? null, [{ thema: st.name, punkte, fehler: bewertung === 1 ? k.vorderseite.slice(0, 160) : null }]).catch(() => undefined);
+  });
   return { ...stand, naechste_abfrage: naechste.toISOString() };
 }
 

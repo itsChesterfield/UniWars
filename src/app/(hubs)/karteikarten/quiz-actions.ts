@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { persoenlichKontext, themenAktualisieren } from "@/lib/ki/gedaechtnis-server";
 import { KiEingabe } from "@/lib/ki/fehler";
 import { alsFehler, kiNutzer, type KiErgebnis } from "@/lib/ki/server";
 import { materialLaden, mitBuchung, quizErzeugen, type QuellAuswahl, type QuellInfo } from "@/lib/ki/quiz-server";
@@ -36,7 +38,8 @@ export async function quizErstellen(eingabe: {
     const fachId = typeof eingabe.fachId === "string" && eingabe.fachId ? eingabe.fachId : null;
     const ergebnis = await mitBuchung(supabase, userId, "quiz", "stark", async (anfrage) => {
       const material = await materialLaden(supabase, userId, auswahlPruefen(eingabe.quellen), fachId);
-      const quiz = await quizErzeugen(anfrage, material, einstellungen);
+      const persoenlich = await persoenlichKontext(supabase, material.fachName ?? "", fachId).catch(() => "");
+      const quiz = await quizErzeugen(anfrage, material, einstellungen, [], persoenlich);
       return { ...quiz, info: material.info, fachName: material.fachName };
     });
     const titel = (eingabe.titel?.trim() || ergebnis.titel || (ergebnis.fachName ? `Quiz ${ergebnis.fachName}` : "Quiz")).slice(0, 200);
@@ -76,7 +79,8 @@ export async function quizSchwaechenErweitern(quizId: string): Promise<KiErgebni
     const einstellungen = { ...einstellungenLesen(quiz.einstellungen), anzahl: 6 };
     const neu = await mitBuchung(supabase, userId, "quiz", "stark", async (anfrage) => {
       const material = await materialLaden(supabase, userId, quellen, quiz.fach_id);
-      return (await quizErzeugen(anfrage, material, einstellungen, themen)).fragen;
+      const persoenlich = await persoenlichKontext(supabase, themen.join(" "), quiz.fach_id).catch(() => "");
+      return (await quizErzeugen(anfrage, material, einstellungen, themen, persoenlich)).fragen;
     });
     const { error } = await supabase
       .from("quiz")
@@ -121,6 +125,19 @@ export async function versuchSpeichern(
     .from("quiz_versuch")
     .insert({ user_id: userId, quiz_id: quizId, modus, antworten: sauber as unknown as Json, punkte, max_punkte: sauber.length });
   if (!error) await supabase.from("quiz").update({ geaendert_am: new Date().toISOString() }).eq("id", quizId);
+  // Persönliches Modell: Ergebnisse je Thema in den Wissensstand übernehmen (nach der Antwort)
+  if (!error && sauber.length) {
+    after(async () => {
+      const { data: quiz } = await supabase.from("quiz").select("fach_id, fragen").eq("id", quizId).maybeSingle();
+      if (!quiz) return;
+      const fragen = fragenLesen(quiz.fragen);
+      const ergebnisse = sauber.flatMap((a) => {
+        const f = fragen.find((x) => x.id === a.frageId);
+        return f ? [{ thema: f.thema, punkte: a.punkte, fehler: a.punkte < 1 ? f.frage.slice(0, 160) : null }] : [];
+      });
+      await themenAktualisieren(supabase, userId, quiz.fach_id, ergebnisse).catch(() => undefined);
+    });
+  }
   revalidatePath("/karteikarten");
   return { ok: !error };
 }

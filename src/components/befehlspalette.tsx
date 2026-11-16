@@ -46,6 +46,7 @@ const SEITEN: { name: string; href: string; icon: string; woerter?: string }[] =
   ...BEREICHE.filter((b) => b.href !== "/").map((b) => ({ name: b.name, href: b.href, icon: "📌", woerter: b.untertitel })),
   ...WEITERE_HUBS.filter((h) => h.href).map((h) => ({ name: h.name, href: h.href!, icon: "🧩" })),
   { name: "Einstellungen", href: "/einstellungen", icon: "⚙️", woerter: "profil konto design passwort" },
+  { name: "Was Studio über dich weiß", href: "/einstellungen/gedaechtnis", icon: "🧠", woerter: "gedächtnis über mich wissen persönlich kennenlernen wissensstand" },
 ];
 
 const ICONS: Record<string, string> = {

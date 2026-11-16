@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   emailAendern,
@@ -312,6 +313,12 @@ export function Einstellungen({
           <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
           {kiEingewilligt && <KiKontingentAnzeige />}
           {kiVerfuegbar && <PersoenlichkeitWahl startProfil={kiProfil} />}
+          {kiVerfuegbar && (
+            <Link href="/einstellungen/gedaechtnis" className="sidebar-theme-toggle einst-gedaechtnis-link">
+              <span>🧠 Was Studio über dich weiß</span>
+              <span style={{ color: "var(--accent-strong)" }}>Ansehen →</span>
+            </Link>
+          )}
           {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
           {kiVerfuegbar && <KiVerlaufLoeschen />}
         </div>

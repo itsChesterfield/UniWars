@@ -11353,3 +11353,315 @@ html[data-eingebettet] .notiz-karte {
     padding-right: 460px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Persönliches Modell: Gemerkt-Chips, Rückmeldung, Kennenlernen, Gedächtnis-Seite
+   --------------------------------------------------------------------------- */
+.studio-gemerkt {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.studio-gemerkt li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #7c5cff 10%, transparent);
+}
+
+.studio-gemerkt li.zurueck {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+}
+
+.studio-gemerkt-knoepfe {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.studio-gemerkt-knoepfe button,
+.studio-rueckmeldung button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.studio-gemerkt-knoepfe button:hover,
+.studio-rueckmeldung button:hover {
+  border-color: var(--accent);
+}
+
+.studio-rueckmeldung {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.studio-rueckmeldung-danke {
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.studio-kennenlernen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--card));
+  font-size: 14px;
+}
+
+.studio-kennenlernen-titel {
+  margin: 0;
+  font-weight: 700;
+}
+
+.studio-kennenlernen-text,
+.studio-kennenlernen-frage {
+  margin: 0;
+}
+
+.studio-kennenlernen-frage {
+  font-weight: 600;
+}
+
+.studio-kennenlernen-liste {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.studio-kennenlernen-eingabe {
+  display: flex;
+  gap: 6px;
+}
+
+.studio-kennenlernen-eingabe .field {
+  flex: 1;
+}
+
+.studio-kennenlernen-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.studio-privat.an {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.studio-privat-hinweis {
+  margin: 0;
+  font-size: 12px;
+}
+
+.einst-gedaechtnis-link {
+  text-decoration: none;
+}
+
+.gd-seite {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 860px;
+}
+
+.gd-abschnitt {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.gd-titel {
+  font-size: 17px;
+  margin: 0;
+}
+
+.gd-zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.gd-zeile > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gd-klein {
+  font-size: 12px;
+}
+
+.gd-schalter.an {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.gd-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gd-gefahr {
+  color: var(--danger);
+}
+
+.gd-bereich h3 {
+  font-size: 14px;
+  margin: 6px 0 4px;
+}
+
+.gd-liste,
+.gd-liste-kurz {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gd-liste-kurz li {
+  font-size: 14px;
+}
+
+.gd-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.gd-inhalt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+
+.gd-inhalt small {
+  font-size: 11.5px;
+}
+
+.gd-aktionen {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+
+.gd-bearbeiten,
+.gd-neu {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.gd-bearbeiten .field,
+.gd-neu input.field {
+  flex: 1;
+  min-width: 180px;
+}
+
+.gd-neu select.field {
+  width: auto;
+}
+
+.gd-themen {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gd-thema {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 13px;
+}
+
+.gd-ampel {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.gd-thema.sicher .gd-ampel {
+  background: var(--success);
+}
+
+.gd-thema.wackelt .gd-ampel {
+  background: #d9a441;
+}
+
+.gd-thema.fehlt .gd-ampel {
+  background: var(--danger);
+}
+
+.gd-thema-info {
+  font-size: 11.5px;
+}
+
+.lr-kompetenz {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.lr-kompetenz h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.lr-schwaches {
+  align-self: flex-start;
+}
+
+@media (max-width: 760px) {
+  .gd-zeile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.gd-abschnitt > p {
+  margin: 0;
+  font-size: 14px;
+}
