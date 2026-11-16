@@ -8788,3 +8788,794 @@ button.pdf-pfad-teil:hover {
 .einst-passwort .einst-feld {
   flex: none;
 }
+
+/* =====================================================================
+   Notizen: Word-artige Werkzeugleiste, Obsidian-artige Verlinkungen
+   ===================================================================== */
+
+.md-editor-voll {
+  gap: 10px;
+}
+
+.wz {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card2);
+}
+
+.wz-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+}
+
+.wz-gruppe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.wz-trenner {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+.wz-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.wz-knopf:hover:not(:disabled) {
+  background: var(--card);
+  border-color: var(--border-soft);
+}
+
+.wz-knopf.an {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: transparent;
+}
+
+.wz-knopf:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.wz-knopf.breit {
+  font-size: 12.5px;
+  padding: 0 9px;
+}
+
+.wz-text {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wz-verlinken {
+  color: var(--accent-strong);
+}
+
+.wz-pfeil {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+.wz-auswahl {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  max-width: 120px;
+}
+
+.wz-absatz {
+  max-width: 140px;
+}
+
+.wz-farbknopf {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wz-farbstrich {
+  display: block;
+  width: 16px;
+  height: 4px;
+  margin-top: 2px;
+  border-radius: 2px;
+}
+
+.wz-aufklapp {
+  position: relative;
+}
+
+.wz-feld {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 200px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+}
+
+.wz-farben {
+  display: grid;
+  grid-template-columns: repeat(5, 26px);
+  gap: 6px;
+}
+
+.wz-farbe {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  cursor: pointer;
+}
+
+.wz-farbe:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.wz-text-knopf {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  border: none;
+  background: none;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.wz-liste {
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+}
+
+.wz-liste button {
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.wz-liste button:hover {
+  background: var(--card2);
+}
+
+.wz-eingabe {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.wz-eingabe label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.wz-eingabe .btnp {
+  align-self: flex-start;
+}
+
+.wz-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.wz-raster-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.wz-raster {
+  display: grid;
+  grid-template-columns: repeat(6, 20px);
+  gap: 3px;
+}
+
+.wz-raster button {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--card);
+  cursor: pointer;
+  padding: 0;
+}
+
+.wz-raster button.an {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.wz-tabelle {
+  padding-top: 4px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.wz-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.wz-verlinken-feld {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(340px, 80vw);
+}
+
+.wz-seite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.wz-seite .field {
+  width: 70px;
+  padding: 4px 8px;
+}
+
+.wz-treffer {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.wz-treffer button {
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wz-treffer button:hover,
+.wz-treffer button.an {
+  background: var(--accent-soft);
+}
+
+/* --- Inhalte im Notiz-Editor --- */
+.md-notiz {
+  min-height: 420px;
+}
+
+.md-notiz h1 { font-size: 1.9em; }
+.md-notiz h2 { font-size: 1.5em; }
+.md-notiz h3 { font-size: 1.25em; }
+.md-notiz h4 { font-size: 1.1em; }
+.md-notiz h5 { font-size: 1em; }
+.md-notiz h6 { font-size: 0.9em; color: var(--muted); }
+
+.md-notiz h1,
+.md-notiz h2,
+.md-notiz h3,
+.md-notiz h4,
+.md-notiz h5,
+.md-notiz h6 {
+  margin: 1em 0 0.4em;
+  line-height: 1.25;
+}
+
+.md-notiz blockquote {
+  margin: 0.6em 0;
+  padding: 2px 14px;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+
+.md-notiz hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+
+.md-notiz mark {
+  background: #fef08a;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.md-notiz a[href] {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+.md-notiz img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.md-notiz img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+}
+
+.md-notiz table {
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.md-notiz th,
+.md-notiz td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  vertical-align: top;
+  position: relative;
+}
+
+.md-notiz th {
+  background: var(--card2);
+  font-weight: 600;
+  text-align: left;
+}
+
+.md-notiz td p,
+.md-notiz th p {
+  margin: 0;
+}
+
+.md-notiz .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  pointer-events: none;
+}
+
+.md-notiz .tableWrapper {
+  overflow-x: auto;
+}
+
+/* Callouts wie in Obsidian */
+.md-callout {
+  margin: 0.8em 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 4px solid var(--callout, #3b82f6);
+  background: color-mix(in srgb, var(--callout, #3b82f6) 10%, transparent);
+}
+
+.md-callout[data-callout="tipp"] { --callout: #16a34a; }
+.md-callout[data-callout="merke"] { --callout: #9333ea; }
+.md-callout[data-callout="warnung"] { --callout: #ea580c; }
+.md-callout[data-callout="frage"] { --callout: #0891b2; }
+
+.md-callout-titel {
+  font-weight: 700;
+  font-size: 0.9em;
+  margin-bottom: 4px;
+  color: var(--callout, #3b82f6);
+  user-select: none;
+}
+
+.md-callout-inhalt > :last-child {
+  margin-bottom: 0;
+}
+
+/* Verlinkungen [[…]] */
+.md-wikilink {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: normal;
+}
+
+.md-wikilink:hover {
+  text-decoration: underline;
+}
+
+.md-wikilink-pdf {
+  background: color-mix(in srgb, #dc2626 12%, transparent);
+  color: #b91c1c;
+}
+
+.md-wikilink-fehlt,
+.md-wikilink-pdf-fehlt {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+}
+
+.md-wikilink.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+}
+
+.md-notiz .tiptap-mathematics-render {
+  cursor: pointer;
+}
+
+.md-notiz [data-type="block-math"] {
+  display: block;
+  text-align: center;
+  margin: 0.8em 0;
+}
+
+/* --- Layout der Notizen-App --- */
+.notiz-kopf-aktionen {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.notiz-kopf-aktionen kbd {
+  font-size: 11px;
+  opacity: 0.6;
+  font-family: inherit;
+}
+
+.notiz-neu-gruppe {
+  position: relative;
+  display: inline-flex;
+}
+
+.notiz-neu-gruppe > .btnp:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.notiz-neu-pfeil {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: 1px solid rgb(255 255 255 / 0.3) !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+
+.notiz-vorlagen {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  min-width: 260px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+}
+
+.notiz-vorlagen button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-vorlagen button:hover {
+  background: var(--card2);
+}
+
+.notiz-vorlagen .muted {
+  font-size: 12px;
+}
+
+.notiz-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.notiz-tag {
+  border: 1px solid var(--border-soft);
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.notiz-tag.an {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: transparent;
+}
+
+.notiz-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.notiz-karte {
+  display: flex;
+  flex-direction: column;
+}
+
+.notiz-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.notiz-tab {
+  display: inline-flex;
+  align-items: center;
+  max-width: 200px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px 9px 0 0;
+  background: var(--card2);
+  flex: none;
+}
+
+.notiz-tab.an {
+  background: var(--card);
+  border-color: var(--border);
+  border-bottom-color: var(--card);
+}
+
+.notiz-tab-titel {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  padding: 5px 4px 5px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.notiz-tab:not(.an) .notiz-tab-titel {
+  color: var(--muted);
+}
+
+.notiz-tab-zu {
+  border: none;
+  background: none;
+  color: var(--faint);
+  font-size: 15px;
+  padding: 0 8px 0 2px;
+  cursor: pointer;
+}
+
+.notiz-tab-zu:hover {
+  color: var(--text);
+}
+
+.notiz-arbeitsflaeche {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 18px;
+  align-items: start;
+}
+
+.notiz-seite {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.notiz-seite h4 {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.notiz-seite p {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.notiz-gliederung,
+.notiz-verweise {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.notiz-gliederung button,
+.notiz-verweise button {
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notiz-gliederung button:hover,
+.notiz-verweise button:hover {
+  background: var(--card2);
+}
+
+.notiz-verweise button.fehlt {
+  color: var(--faint);
+}
+
+.notiz-schnellsuche {
+  width: min(560px, 92vw);
+  padding: 12px;
+  margin-top: 12vh;
+}
+
+.notiz-schnellsuche::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.notiz-schnellsuche ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.notiz-schnellsuche li button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.notiz-schnellsuche li button.an,
+.notiz-schnellsuche li button:hover {
+  background: var(--accent-soft);
+}
+
+.pdf-notiz-seiten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 2px 0;
+}
+
+.pdf-notiz-seiten .tag {
+  cursor: pointer;
+  border: none;
+  font: inherit;
+  font-size: 11.5px;
+}
+
+@media (max-width: 1250px) {
+  .notiz-arbeitsflaeche {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notiz-seite {
+    position: static;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wz {
+    position: static;
+  }
+
+  .wz-auswahl {
+    max-width: 100px;
+  }
+}
+
+/* Notizen: Abstände liegen auf der Karte, nicht auf dem Rahmen mit den Tabs */
+.notiz-layout .hub-inhalt.notiz-inhalt {
+  padding: 0;
+  min-height: 0;
+}
+
+.notiz-karte {
+  min-height: 420px;
+  padding: 18px 22px;
+}
+
+@media (max-width: 760px) {
+  .notiz-layout .hub-inhalt.notiz-inhalt {
+    padding: 0;
+  }
+
+  .notiz-karte {
+    padding: 14px;
+  }
+}

@@ -1087,6 +1087,36 @@ export type Database = {
           },
         ]
       }
+      notiz_link: {
+        Row: {
+          erstellt_am: string
+          id: string
+          seite: number | null
+          user_id: string
+          von_notiz_id: string
+          ziel_datei_id: string | null
+          ziel_notiz_id: string | null
+        }
+        Insert: {
+          erstellt_am?: string
+          id?: string
+          seite?: number | null
+          user_id?: string
+          von_notiz_id: string
+          ziel_datei_id?: string | null
+          ziel_notiz_id?: string | null
+        }
+        Update: {
+          erstellt_am?: string
+          id?: string
+          seite?: number | null
+          user_id?: string
+          von_notiz_id?: string
+          ziel_datei_id?: string | null
+          ziel_notiz_id?: string | null
+        }
+        Relationships: []
+      }
       nutzer_blockiert: {
         Row: {
           blockiert_id: string
