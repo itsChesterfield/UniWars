@@ -7,6 +7,8 @@ import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
+import { Kopfleiste } from "@/components/kopfleiste";
+import { BereichUebergang } from "@/components/bereich-uebergang";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
@@ -101,8 +103,18 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "nacht" : "hochschule"}>
-      <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} streak={settings.streak_count} kiVerfuegbar={kiKonfiguriert()} />
-      <GeteilteAnsicht mainKlasse="dashboard-main">
+      <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} theme={settings.theme} kiVerfuegbar={kiKonfiguriert()} />
+      <div className="arbeitsflaeche">
+        <Kopfleiste
+          name={username}
+          avatarUrl={avatarUrl}
+          streak={settings.streak_count}
+          kiVerfuegbar={kiKonfiguriert()}
+          benachrichtigungen={benachrichtigungen ?? []}
+          einladungen={einladungen ?? []}
+        />
+        <GeteilteAnsicht mainKlasse="dashboard-main">
+        <BereichUebergang>
         <Suspense fallback={null}>
           <DashboardContent
             faecher={faecher ?? []}
@@ -129,7 +141,9 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
             bereich={bereich}
           />
         </Suspense>
-      </GeteilteAnsicht>
+        </BereichUebergang>
+        </GeteilteAnsicht>
+      </div>
     </div>
   );
 }

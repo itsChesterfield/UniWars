@@ -86,3 +86,38 @@ export function hubNameAusPfad(href: string): string {
   const hub = WEITERE_HUBS.find((h) => h.href && (pfad === h.href || pfad.startsWith(`${h.href}/`)));
   return hub?.name ?? "Ansicht";
 }
+
+/** Design B3: Gruppen der Symbolleiste (DESIGN.md Abschnitt 4). */
+export const HUB_GRUPPEN: { name: string; hrefs: string[] }[] = [
+  { name: "Täglich", hrefs: ["/", "/work-station", "/karteikarten", "/notizen"] },
+  { name: "Studium", hrefs: ["/pdf-reader", "/lernraum", "/dateiablage", "/literaturverwaltung", "/transkription", "/chat"] },
+  { name: "Werkzeuge", hrefs: ["/textverarbeitung", "/tabellen", "/praesentationen", "/mindmap", "/whiteboard"] },
+];
+
+export type HubEintrag = { name: string; href: string; icon: string };
+
+/** Alle Hubs mit Ziel, in der Reihenfolge der Gruppen. */
+export function hubsInGruppen(): { name: string; hubs: HubEintrag[] }[] {
+  const alle: HubEintrag[] = [ZENTRALER_HUB, ...WEITERE_HUBS.filter((h): h is HubEintrag => Boolean(h.href))];
+  return HUB_GRUPPEN.map((g) => ({
+    name: g.name,
+    hubs: g.hrefs.map((href) => alle.find((h) => h.href === href)).filter((h): h is HubEintrag => Boolean(h)),
+  }));
+}
+
+/** Hub zu einem Pfad (für die Kopfleiste); Unterseiten des Zentralen Hubs zählen zum Zentralen Hub. */
+export function hubAusPfad(pfad: string): { hub: HubEintrag | null; unterseite: string | null } {
+  const sauber = pfad.split(/[?#]/)[0];
+  const bereich = BEREICHE.find((b) => b.href === sauber);
+  if (bereich) return { hub: ZENTRALER_HUB, unterseite: bereich.href === "/" ? null : bereich.name };
+  const hub = WEITERE_HUBS.find((h) => h.href && (sauber === h.href || sauber.startsWith(`${h.href}/`)));
+  return { hub: hub?.href ? (hub as HubEintrag) : null, unterseite: null };
+}
+
+/** Handy: die vier Bereiche in der Tab-Leiste unten (der fünfte Platz öffnet die Befehlspalette). */
+export const MOBIL_HUBS: { kurz: string; href: string }[] = [
+  { kurz: "Hub", href: "/" },
+  { kurz: "Fokus", href: "/work-station" },
+  { kurz: "Karten", href: "/karteikarten" },
+  { kurz: "Notizen", href: "/notizen" },
+];

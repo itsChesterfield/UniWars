@@ -14,6 +14,7 @@ import { groesseText } from "@/lib/dateiablage/dateien";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { gesamtStatus, MAX_DATEI_SEKUNDEN, zeitText, type TeilInfo, type TeilStatus } from "@/lib/transkription/transkript";
+import { OfflineHinweis } from "@/components/offline-hinweis";
 
 export type TranskriptEintrag = {
   id: string;
@@ -194,6 +195,7 @@ export function TranskriptionHub({
   return (
     <>
       <HubKopf titel="Transkription" untertitel="Vorlesungen aufnehmen und in Text umwandeln – mit Zeitstempeln zum Nachhören." />
+      <OfflineHinweis text="Offline. Hochladen und Umwandeln in Text geht wieder, sobald du online bist." />
       {!verfuegbar && <p className="ki-hinweis">Die Umwandlung in Text ist gerade nicht verfügbar. Aufnehmen und Hochladen funktioniert trotzdem.</p>}
       <div className="tra-start-raster">
         <Aufnahme faecher={faecher} verfuegbar={verfuegbar} />

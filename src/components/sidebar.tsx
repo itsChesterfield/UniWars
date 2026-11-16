@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState, type DragEvent } from "react";
-import Link from "next/link";
+import { Fragment, Suspense, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
 import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
@@ -9,207 +9,256 @@ import { InaktivitaetsWaechter } from "@/components/inaktivitaet-waechter";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar } from "@/components/profil-avatar";
+import { NavIcon } from "@/components/nav-icon";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
-import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
-import { alsUhr, restzeit } from "@/lib/work-station/timer";
-import { WEITERE_HUBS, ZENTRALER_HUB } from "@/lib/hubs/navigation";
+import { useTimerZustand } from "@/lib/work-station/timer-store";
+import { MOBIL_HUBS, ZENTRALER_HUB, WEITERE_HUBS, hubsInGruppen } from "@/lib/hubs/navigation";
 import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { HUB_DRAG_TYP } from "@/lib/geteilte-ansicht";
-import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
+import { logout } from "@/app/logout/actions";
+import { setTheme } from "@/app/settings/actions";
+import { abmelden } from "@/lib/analytics";
+import type { Enums } from "@/lib/supabase/types";
+import { NACH_OBEN, NACH_UNTEN } from "@/components/bereich-uebergang";
 
-/** Gleicher Schlüssel wie im Skript in app/layout.tsx (setzt das Attribut vor dem ersten Zeichnen). */
+/** Gleicher Schlüssel wie im Skript in app/layout.tsx. Die Symbolleiste ist immer schmal; der Schlüssel bleibt für ältere Browserstände. */
 export const SIDEBAR_SCHLUESSEL = "uniwars-sidebar-eingeklappt";
 
-/** Hub-Icon an den Rand ziehen → geteilte Ansicht (siehe GeteilteAnsicht). */
+const GRUPPEN = hubsInGruppen();
+/** Reihenfolge der Symbolleiste, für die Richtung des Übergangs */
+const REIHE = GRUPPEN.flatMap((g) => g.hubs.map((h) => h.href));
+
+/**
+ * Meldet eine laufende Navigation an <html data-laedt>. Die Kopfleiste zeigt dann
+ * nach 300 ms die Lichtspur, die alte Ansicht bleibt stehen (DESIGN.md Abschnitt 7).
+ */
+function LadeMelder() {
+  const { pending } = useLinkStatus();
+  useEffect(() => {
+    if (!pending) return;
+    document.documentElement.setAttribute("data-laedt", "");
+    return () => document.documentElement.removeAttribute("data-laedt");
+  }, [pending]);
+  return null;
+}
+
+/** Hub-Symbol an den Rand ziehen → geteilte Ansicht (siehe GeteilteAnsicht). */
 function hubZiehen(e: DragEvent, href: string) {
   e.dataTransfer.setData(HUB_DRAG_TYP, href);
   e.dataTransfer.setData("text/uri-list", new URL(href, window.location.origin).toString());
   e.dataTransfer.effectAllowed = "copyLink";
 }
 
-function NavIcon({ path }: { path: string }) {
-  const parts = path.split("|");
+/** Punkt am Work-Station-Symbol, solange ein Fokus-Timer läuft oder pausiert ist. */
+function TimerPunkt() {
+  const zustand = useTimerZustand();
+  if (!zustand || (!zustand.laeuft && zustand.restMs === zustand.dauerMs)) return null;
+  return <span className="badge" aria-hidden />;
+}
+
+function Funke() {
   return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      {parts.map((part, i) => {
-        if (part.startsWith("rect:")) {
-          const [x, y, w, h, r] = part.slice(5).split(",").map(Number);
-          return <rect key={i} x={x} y={y} width={w} height={h} rx={r} />;
-        }
-        if (part.startsWith("circle:")) {
-          const [cx, cy, r] = part.slice(7).split(",").map(Number);
-          return <circle key={i} cx={cx} cy={cy} r={r} />;
-        }
-        return <path key={i} d={part} />;
-      })}
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8Z" />
+      <path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7Z" />
     </svg>
   );
 }
 
-function TimerRest() {
-  const zustand = useTimerZustand();
-  const jetzt = useJetzt(Boolean(zustand?.laeuft));
-  if (!zustand || (!zustand.laeuft && zustand.restMs === zustand.dauerMs)) return null;
+function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: string; avatarUrl: string | null; theme: Enums<"theme"> }) {
+  const [offen, setOffen] = useState(false);
+  const [laeuft, starte] = useTransition();
+  const rahmen = useRef<HTMLDivElement>(null);
+  const knopf = useRef<HTMLButtonElement>(null);
+  const dunkel = theme === "DUNKEL";
+
+  useEffect(() => {
+    if (!offen) return;
+    function aussen(e: PointerEvent) {
+      if (!rahmen.current?.contains(e.target as Node)) setOffen(false);
+    }
+    function taste(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOffen(false);
+        knopf.current?.focus();
+      }
+    }
+    document.addEventListener("pointerdown", aussen);
+    document.addEventListener("keydown", taste);
+    return () => {
+      document.removeEventListener("pointerdown", aussen);
+      document.removeEventListener("keydown", taste);
+    };
+  }, [offen]);
+
   return (
-    <span className={`navitem-timer mono ${zustand.laeuft ? "" : "navitem-timer-pausiert"}`} title={zustand.laeuft ? "Timer läuft" : "Timer pausiert"}>
-      {alsUhr(restzeit(zustand, jetzt))}
-    </span>
+    <div className="profilmenue" ref={rahmen}>
+      <button
+        ref={knopf}
+        type="button"
+        className="rprofil"
+        aria-haspopup="menu"
+        aria-expanded={offen}
+        aria-label={`Profil, ${name}`}
+        onClick={() => setOffen((o) => !o)}
+      >
+        <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
+      </button>
+      {offen && (
+        <div className="menue" role="menu" aria-label="Profil">
+          <div className="menue-kopf">
+            <ProfilAvatar name={name} url={avatarUrl} groesse={32} />
+            <span>
+              <b>{name}</b>
+              <small>{email}</small>
+            </span>
+          </div>
+          <Link role="menuitem" href="/einstellungen" className="menue-eintrag" onClick={() => setOffen(false)}>
+            Einstellungen
+          </Link>
+          <button
+            role="menuitem"
+            type="button"
+            className="menue-eintrag"
+            disabled={laeuft}
+            onClick={() => starte(() => setTheme(dunkel ? "HELL" : "DUNKEL"))}
+          >
+            {dunkel ? "Hochschule verwenden" : "Sternenhimmel verwenden"}
+          </button>
+          <form action={logout} className="menue-trenn">
+            <button role="menuitem" type="submit" className="menue-eintrag" onClick={() => abmelden()}>
+              Abmelden
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
   );
 }
 
+/**
+ * Design B3: schmale Symbolleiste links (Desktop) und Tab-Leiste unten (Handy).
+ * Der Name bleibt "Sidebar", damit beide Gerüste (Hubs und Zentraler Hub) sie unverändert einbinden.
+ */
 export function Sidebar({
   name,
   email,
   avatarUrl = null,
-  streak,
+  theme = "HELL",
   kiVerfuegbar = false,
 }: {
   /** Anzeigename (Nutzername) */
   name: string;
   email: string;
   avatarUrl?: string | null;
-  streak: number;
-  /** KI-12: Mistral-Key gesetzt → schwebender ✨-Knopf (Strg+J) */
+  theme?: Enums<"theme">;
+  /** KI-12: Mistral-Key gesetzt → Knopf für UniVerse Studio (Strg+J) */
   kiVerfuegbar?: boolean;
 }) {
   const pfad = usePathname();
-  const [menueOffen, setMenueOffen] = useState(false);
-  const eingeklappt = useBrowserWert(SIDEBAR_SCHLUESSEL, "0") === "1";
-
-  function einklappenUmschalten() {
-    const neu = !eingeklappt;
-    document.documentElement.toggleAttribute("data-sidebar-eingeklappt", neu);
-    browserWertSchreiben(SIDEBAR_SCHLUESSEL, neu ? "1" : null);
-  }
   // Die Bereiche des Zentralen Hubs (Termine, Noten …) gehören zum Zentralen Hub
   const istAktiv = (href: string) =>
     href === "/" ? BEREICHE.some((b) => b.href === pfad) : pfad === href || pfad.startsWith(`${href}/`);
+  const mobilAktiv = MOBIL_HUBS.some((m) => istAktiv(m.href));
+  const aktuell = REIHE.findIndex((href) => istAktiv(href));
+  // Ziel unter dem aktuellen Bereich → neue Ansicht kommt von unten, sonst von oben
+  const richtung = (href: string) => [REIHE.indexOf(href) > aktuell ? NACH_UNTEN : NACH_OBEN];
 
   return (
-    <aside className="sidebar" data-menue-offen={menueOffen}>
-      <TimerWaechter />
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-mark">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
-            <path d="M9 12.5l2 2 4-4.5" />
+    <>
+      <nav className="rail" aria-label="Bereiche">
+        <TimerWaechter />
+        <Link href="/" className="rmarke" aria-label="UniVerse, Zentraler Hub">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="4.5" />
+            <path d="M3.5 14.5c2.5 3.5 14.5-1.5 17-6" />
           </svg>
-        </div>
-        <div className="sidebar-brand-name">UniWars</div>
-        <button
-          type="button"
-          className="sidebar-einklappen"
-          aria-expanded={!eingeklappt}
-          aria-label={eingeklappt ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
-          title={eingeklappt ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"}
-          onClick={einklappenUmschalten}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
-            <path d="M9 4.5v15" />
-            <path d={eingeklappt ? "m13 10 2 2-2 2" : "m15 10-2 2 2 2"} />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="sidebar-menue-knopf"
-          aria-expanded={menueOffen}
-          aria-label={menueOffen ? "Menü schließen" : "Menü öffnen"}
-          onClick={() => setMenueOffen((o) => !o)}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            {menueOffen ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-          </svg>
-        </button>
-      </div>
-
-      {/* Strg/⌘+O: suchen, öffnen, erstellen (antippbar fürs Handy) */}
-      <button
-        type="button"
-        className="sidebar-suche"
-        onClick={() => {
-          setMenueOffen(false);
-          befehleOeffnen();
-        }}
-        title="Suchen, öffnen, erstellen (Strg+O)"
-        aria-label="Suchen, öffnen, erstellen"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="m20 20-4.2-4.2" />
-        </svg>
-        <span className="sidebar-suche-text">Suchen</span>
-        <span className="sidebar-suche-taste">
-          <kbd>Strg</kbd>
-          <kbd>O</kbd>
-        </span>
-      </button>
-
-      <nav className="sidebar-nav" onClick={() => setMenueOffen(false)}>
-        <Link href="/" className={`navitem ${istAktiv("/") ? "active" : ""}`} draggable onDragStart={(e) => hubZiehen(e, "/")}>
-          <NavIcon path={ZENTRALER_HUB.icon} />
-          <span className="navitem-text">{ZENTRALER_HUB.name}</span>
         </Link>
-        {WEITERE_HUBS.map((hub) =>
-          hub.href ? (
-            <Link
-              key={hub.name}
-              href={hub.href}
-              className={`navitem ${istAktiv(hub.href) ? "active" : ""}`}
-              draggable
-              title={`${hub.name} – zum Teilen des Bildschirms an den Rand ziehen`}
-              onDragStart={(e) => hubZiehen(e, hub.href!)}
-            >
-              <NavIcon path={hub.icon} />
-              <span className="navitem-text">{hub.name}</span>
-              {hub.href === "/work-station" && <TimerRest />}
-              {hub.href === "/chat" && <ChatPunkt />}
-            </Link>
-          ) : (
-            <span key={hub.name} className="navitem disabled" title="Demnächst verfügbar">
-              <NavIcon path={hub.icon} />
-              {hub.name}
+
+        {GRUPPEN.map((gruppe, gi) => (
+          <Fragment key={gruppe.name}>
+            {gi > 0 && <span className="rtrenn" aria-hidden />}
+            <ul className="rgruppe" aria-label={gruppe.name}>
+              {gruppe.hubs.map((hub) => {
+                const aktiv = istAktiv(hub.href);
+                return (
+                  <li key={hub.href}>
+                    <Link
+                      href={hub.href}
+                      className="rpunkt"
+                      aria-label={hub.name}
+                      aria-current={aktiv ? "page" : undefined}
+                      draggable
+                      onDragStart={(e) => hubZiehen(e, hub.href)}
+                      transitionTypes={aktiv ? undefined : richtung(hub.href)}
+                    >
+                      <LadeMelder />
+                      <NavIcon path={hub.icon} />
+                      {hub.href === "/work-station" && <TimerPunkt />}
+                      {hub.href === "/chat" && <ChatPunkt />}
+                      <span className="tip" aria-hidden>
+                        {hub.name}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </Fragment>
+        ))}
+
+        <div className="rfuss">
+          {kiVerfuegbar && (
+            <button type="button" className="rpunkt" aria-label="UniVerse Studio, Strg+J" onClick={() => studioOeffnen()}>
+              <Funke />
+              <span className="tip" aria-hidden>
+                UniVerse Studio <kbd>Strg</kbd> <kbd>J</kbd>
+              </span>
+            </button>
+          )}
+          <Link
+            href="/einstellungen"
+            className="rpunkt"
+            aria-label="Einstellungen"
+            aria-current={pfad.startsWith("/einstellungen") ? "page" : undefined}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+            </svg>
+            <span className="tip" aria-hidden>
+              Einstellungen
             </span>
-          ),
-        )}
+          </Link>
+          <ProfilMenue name={name} email={email} avatarUrl={avatarUrl} theme={theme} />
+        </div>
       </nav>
 
-      <div className="sidebar-footer">
-        {streak > 0 && (
-          <div className="streak-badge">
-            🔥 {streak} {streak === 1 ? "Tag" : "Tage"}
-          </div>
-        )}
-
-        {/* UniVerse Studio: kein KI-Knopf, nur der Hinweis aufs Tastenkürzel (antippbar fürs Handy) */}
-        {kiVerfuegbar && (
-          <button type="button" className="studio-hinweis" onClick={() => studioOeffnen()} title="UniVerse Studio öffnen">
-            <span>✨ UniVerse Studio</span>
-            <span className="studio-hinweis-taste">
-              <kbd>Strg</kbd>
-              <kbd>J</kbd>
-            </span>
-          </button>
-        )}
-
-        {/* Profil → Einstellungen (Name, Bild, Konto, Design, KI, Abmelden) */}
-        <Link
-          href="/einstellungen"
-          className={`sidebar-profil ${pfad === "/einstellungen" ? "active" : ""}`}
-          title="Profil und Einstellungen"
-          onClick={() => setMenueOffen(false)}
-        >
-          <ProfilAvatar name={name} url={avatarUrl} groesse={34} />
-          <span className="sidebar-profil-text">
-            <span className="sidebar-profil-name">{name}</span>
-            <span className="sidebar-profil-mail">{email}</span>
-          </span>
-          <svg className="sidebar-profil-zahnrad" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+      <nav className="mobilnav" aria-label="Bereiche">
+        {MOBIL_HUBS.map((m) => {
+          const hub = m.href === "/" ? ZENTRALER_HUB : WEITERE_HUBS.find((h) => h.href === m.href);
+          return (
+            <Link
+              key={m.href}
+              href={m.href}
+              aria-current={istAktiv(m.href) ? "page" : undefined}
+              transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
+            >
+              <LadeMelder />
+              {hub && <NavIcon path={hub.icon} groesse={20} />}
+              {m.kurz}
+            </Link>
+          );
+        })}
+        <button type="button" onClick={() => befehleOeffnen()} aria-current={mobilAktiv ? undefined : "page"}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden>
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="m20 20-4.2-4.2" />
           </svg>
-        </Link>
-      </div>
+          Alles
+        </button>
+      </nav>
+
       {kiVerfuegbar && (
         <Suspense fallback={null}>
           <AssistentStarter />
@@ -217,6 +266,6 @@ export function Sidebar({
       )}
       <Befehlspalette kiVerfuegbar={kiVerfuegbar} />
       <InaktivitaetsWaechter />
-    </aside>
+    </>
   );
 }

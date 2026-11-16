@@ -11891,3 +11891,829 @@ html[data-eingebettet] .notiz-karte {
 .studio-panel.gross .ki-blase {
   max-width: 82%;
 }
+
+/* ==========================================================================
+   Design B3 – Gerüst (DESIGN.md Abschnitt 4)
+   Symbolleiste links, eingelassene Arbeitsfläche mit Kopfleiste, am Handy
+   Tab-Leiste unten. Die Kontextspalte folgt mit dem Hub (Schritt 4).
+   ========================================================================== */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zahl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.nur-mobil,
+.mobilnav {
+  display: none;
+}
+
+/* Symbolleiste */
+.rail {
+  position: sticky;
+  top: 0;
+  flex: none;
+  width: 64px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.rmarke {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-m);
+  color: var(--akzent-text);
+}
+
+.rmarke:hover {
+  background: var(--hover);
+}
+
+.rgruppe {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rpunkt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.rpunkt:hover {
+  background: var(--hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rpunkt:active {
+  background: var(--aktiv);
+}
+
+.rpunkt[aria-current] {
+  background: var(--aktiv);
+  color: var(--akzent-text);
+}
+
+.rpunkt .badge,
+.rpunkt .navitem-punkt {
+  position: absolute;
+  right: 7px;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--akzent);
+}
+
+.rpunkt .navitem-punkt {
+  background: var(--color-error);
+}
+
+.rpunkt .tip {
+  position: fixed;
+  left: 68px;
+  z-index: var(--z-modal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-s);
+  background: var(--text);
+  color: var(--grund);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.rpunkt .tip kbd {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: color-mix(in srgb, var(--grund) 18%, transparent);
+  color: inherit;
+}
+
+.rpunkt:hover .tip,
+.rpunkt:focus-visible .tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rtrenn {
+  flex: none;
+  width: 20px;
+  height: 1px;
+  margin: var(--space-2) 0;
+  background: var(--linie-2);
+}
+
+.rfuss {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Profil-Menü */
+.profilmenue {
+  position: relative;
+  margin-top: var(--space-1);
+}
+
+.rprofil {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.rprofil .avatar {
+  transition: box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.rprofil:hover .avatar,
+.rprofil[aria-expanded="true"] .avatar {
+  box-shadow: 0 0 0 2px var(--linie-2);
+}
+
+.menue {
+  position: fixed;
+  left: 68px;
+  bottom: var(--space-3);
+  z-index: var(--z-modal);
+  width: 248px;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -20px var(--schatten);
+}
+
+.menue-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--linie);
+  min-width: 0;
+}
+
+.menue-kopf > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menue-kopf b {
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--text);
+}
+
+.menue-kopf small {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menue-eintrag {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.menue-eintrag:hover {
+  background: var(--hover);
+  text-decoration: none;
+}
+
+.menue-eintrag:active {
+  background: var(--aktiv);
+}
+
+.menue-eintrag:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.menue-trenn {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--linie);
+}
+
+/* Eingelassene Arbeitsfläche */
+.arbeitsflaeche {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--space-4));
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-radius: var(--radius-s);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie),
+    0 12px 32px -16px var(--schatten);
+}
+
+.arbeitsflaeche > .split-rahmen,
+.arbeitsflaeche > .dashboard-main {
+  flex: 1;
+}
+
+.arbeitsflaeche .split-rahmen[data-aktiv] {
+  top: 52px;
+  height: calc(100dvh - 52px - var(--space-4));
+}
+
+/* Kopfleiste */
+.kopfleiste {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: none;
+  height: 52px;
+  padding: 0 var(--space-8);
+  border-bottom: 1px solid var(--linie);
+  border-radius: var(--radius-s) var(--radius-s) 0 0;
+  background: color-mix(in srgb, var(--flaeche) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.kopfleiste .pfad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  font-size: var(--text-md);
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.kopfleiste .pfad > span,
+.kopfleiste .pfad > a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kopfleiste .status {
+  flex: none;
+}
+
+.kopfleiste .pfad svg {
+  flex: none;
+  color: var(--akzent-text);
+}
+
+.kopfleiste .pfad-zurueck {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.kopfleiste .pfad-zurueck:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.kopfleiste .pfad-trenn {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.kopfleiste .suchpille {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  margin-left: auto;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--hover);
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.kopfleiste .suchpille:hover {
+  background: var(--aktiv);
+  color: var(--text-2);
+}
+
+.kopfleiste .suchpille:active {
+  transform: scale(0.99);
+}
+
+.kopfleiste .suchpille-text {
+  margin-right: var(--space-4);
+}
+
+.kopfleiste .suchpille kbd,
+.rpunkt .tip kbd {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+.kopfleiste .suchpille kbd {
+  border: 0;
+  padding: 0 var(--space-1);
+  background: var(--flaeche-3);
+  color: var(--text-3);
+}
+
+.kopfleiste .status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.kopfleiste .timerstatus {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  font-size: var(--text-sm);
+}
+
+.kopfleiste .timerstatus:hover {
+  background: color-mix(in srgb, var(--akzent) 22%, transparent);
+  text-decoration: none;
+}
+
+.kopfleiste .timerstatus[data-pausiert] {
+  background: var(--hover);
+  color: var(--text-2);
+}
+
+.kopfleiste .serie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.kopfleiste .serie svg {
+  color: var(--warnung);
+}
+
+.kopfleiste .trenn {
+  width: 1px;
+  height: 16px;
+  background: var(--linie-2);
+}
+
+.kopfleiste .heute {
+  min-width: 10ch;
+  white-space: nowrap;
+}
+
+.kopfleiste .icon-btn,
+.kopfleiste .symbolknopf {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  box-shadow: none;
+  color: var(--text-2);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.kopfleiste .icon-btn:hover,
+.kopfleiste .symbolknopf:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.kopfleiste .icon-btn:active,
+.kopfleiste .symbolknopf:active {
+  background: var(--aktiv);
+}
+
+.kopfleiste .notification-count {
+  top: 5px;
+  right: 5px;
+  border-color: var(--flaeche);
+}
+
+/* Geteilte Ansicht: zweiter Bereich ohne eigenes Gerüst */
+html[data-eingebettet] .rail,
+html[data-eingebettet] .kopfleiste,
+html[data-eingebettet] .mobilnav {
+  display: none;
+}
+
+html[data-eingebettet] .arbeitsflaeche {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100dvh;
+}
+
+/* Handy: Tab-Leiste unten, Studio und Profil in der Kopfleiste */
+@media (max-width: 760px) {
+  .rail {
+    display: none;
+  }
+
+  .arbeitsflaeche {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100dvh;
+    padding-bottom: 64px;
+  }
+
+  .kopfleiste {
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+    border-radius: 0;
+  }
+
+  .kopfleiste .suchpille,
+  .kopfleiste .trenn,
+  .kopfleiste .heute,
+  .kopfleiste .serie-text {
+    display: none;
+  }
+
+  .kopfleiste .status {
+    margin-left: auto;
+    gap: var(--space-2);
+  }
+
+  .kopfleiste .nur-mobil {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .kopf-profil {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobilnav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-sticky);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--linie);
+    background: color-mix(in srgb, var(--flaeche) 92%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobilnav a,
+  .mobilnav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-3);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .mobilnav a:hover {
+    text-decoration: none;
+  }
+
+  .mobilnav [aria-current] {
+    color: var(--text);
+  }
+
+  .mobilnav [aria-current] svg {
+    color: var(--akzent-text);
+  }
+}
+
+@media print {
+  .rail,
+  .kopfleiste,
+  .mobilnav {
+    display: none !important;
+  }
+
+  .arbeitsflaeche {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpunkt,
+  .rpunkt .tip,
+  .menue-eintrag,
+  .kopfleiste .suchpille,
+  .kopfleiste .icon-btn,
+  .kopfleiste .symbolknopf {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Design B3 – Übergänge und Zustände (DESIGN.md Abschnitt 7 und 8)
+   ========================================================================== */
+:root {
+  --ease-in: cubic-bezier(0.4, 0, 0.9, 0.5);
+}
+
+/* Symbolleiste, Kopfleiste und Tab-Leiste stehen beim Bereichswechsel still */
+.rail {
+  view-transition-name: rail;
+}
+
+.kopfleiste {
+  view-transition-name: kopfleiste;
+}
+
+.mobilnav {
+  view-transition-name: mobilnav;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(rail),
+::view-transition-group(kopfleiste),
+::view-transition-group(mobilnav),
+::view-transition-new(rail),
+::view-transition-new(kopfleiste),
+::view-transition-new(mobilnav) {
+  animation: none;
+}
+
+::view-transition-group(kopfleiste),
+::view-transition-group(mobilnav) {
+  z-index: 2;
+}
+
+::view-transition-old(rail),
+::view-transition-old(kopfleiste),
+::view-transition-old(mobilnav) {
+  display: none;
+}
+
+/* Mit Richtung: alt 100 ms aus, neu 60 ms später 200 ms ein, 12 px aus der Klickrichtung */
+::view-transition-old(.uv-aus) {
+  animation: 100ms var(--ease-in) both uv-aus;
+}
+
+::view-transition-new(.uv-ein) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-ein;
+}
+
+::view-transition-new(.uv-von-unten) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-von-unten;
+}
+
+::view-transition-new(.uv-von-oben) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-von-oben;
+}
+
+@keyframes uv-aus {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes uv-ein {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes uv-von-unten {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes uv-von-oben {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* Reduzierte Bewegung: nur Überblenden in 120 ms */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.uv-aus),
+  ::view-transition-new(.uv-ein),
+  ::view-transition-new(.uv-von-unten),
+  ::view-transition-new(.uv-von-oben) {
+    animation: var(--dur-micro) linear both uv-ein;
+  }
+
+  ::view-transition-old(.uv-aus) {
+    animation-name: uv-aus;
+  }
+}
+
+/* Laden: Lichtspur unter der Kopfleiste und gedämpfte alte Ansicht, beides erst nach 300 ms */
+.kopfleiste .ladespur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kopfleiste .ladespur i {
+  display: block;
+  width: 30%;
+  height: 100%;
+  background: var(--akzent);
+  transform: translateX(-100%);
+}
+
+html[data-laedt] .kopfleiste .ladespur {
+  opacity: 1;
+  transition: opacity var(--dur-short) var(--ease-out) 300ms;
+}
+
+html[data-laedt] .kopfleiste .ladespur i {
+  animation: lichtspur 1.1s var(--ease-out) 300ms infinite;
+}
+
+html[data-laedt] .arbeitsflaeche .dashboard-main {
+  opacity: 0.6;
+  transition: opacity var(--dur-short) var(--ease-out) 300ms;
+}
+
+@keyframes lichtspur {
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-laedt] .kopfleiste .ladespur i {
+    animation: none;
+    width: 100%;
+    transform: none;
+    opacity: 0.6;
+  }
+}
+
+/* Offline */
+.kopfleiste .offline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--warnung) 14%, transparent);
+  color: var(--text);
+  font-weight: 550;
+}
+
+.kopfleiste .offline svg {
+  color: var(--warnung);
+}
+
+.offline-hinweis {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--warnung) 12%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.offline-hinweis svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--warnung);
+}
+
+/* Fehler, Leer: was ist los, was ist nicht betroffen, genau eine Aktion */
+.zustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 52ch;
+  margin: var(--space-12) auto;
+  padding: var(--space-8);
+}
+
+.zustand svg {
+  color: var(--text-3);
+}
+
+.zustand.z-fehler svg {
+  color: var(--color-error);
+}
+
+.zustand h1,
+.zustand h2 {
+  font-size: var(--text-xl);
+  letter-spacing: -0.01em;
+}
+
+.zustand p {
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.zustand .btnp {
+  margin-top: var(--space-2);
+}
+
+.zustand .btnp[aria-busy="true"] {
+  cursor: progress;
+}
+
+.zustand .zustand-detail {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}

@@ -9,6 +9,7 @@ import { ChatVerlauf } from "@/components/chat/chat-verlauf";
 import { CHAT_GELESEN_EVENT } from "@/components/chat/chat-punkt";
 import type { Database } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { OfflineHinweis } from "@/components/offline-hinweis";
 
 type Uebersicht = Database["public"]["Functions"]["chat_uebersicht"]["Returns"][number];
 
@@ -121,6 +122,7 @@ export function ChatHub({
   return (
     <>
       <HubKopf titel="Chat" untertitel="Absprachen mit Kommilitonen – vor allem für Gruppenarbeiten." aktionen={knoepfe} />
+      <OfflineHinweis text="Offline. Neue Nachrichten senden und empfangen geht wieder, sobald du online bist." />
 
       {chats.length === 0 ? (
         <LeererZustand

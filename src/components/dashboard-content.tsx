@@ -27,7 +27,6 @@ import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschrit
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
-import { NotificationBell } from "@/components/notification-bell";
 import { TagesBriefing } from "@/components/ki/tages-briefing";
 import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { DetailAnsicht } from "@/components/detail-ansicht";
@@ -36,8 +35,6 @@ import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
 import { HauptNotch } from "@/components/haupt-notch";
-import { ProfilAvatar } from "@/components/profil-avatar";
-import Link from "next/link";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;
@@ -74,14 +71,11 @@ export function DashboardContent({
   stundenplanEintraege,
   notenschnitt,
   lernSessions,
-  benachrichtigungen,
-  einladungen,
   settings,
   username,
   userId,
   kalender,
   bereich = "uebersicht",
-  avatarUrl = null,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -374,12 +368,6 @@ export function DashboardContent({
         <div className="dashboard-toolbar">
           <SearchBar />
           <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
-          <div className="dashboard-toolbar-rechts">
-            <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
-            <Link href="/einstellungen" className="avatar-link" title="Profil und Einstellungen" aria-label="Profil und Einstellungen">
-              <ProfilAvatar name={name} url={avatarUrl} />
-            </Link>
-          </div>
         </div>
       </div>
 

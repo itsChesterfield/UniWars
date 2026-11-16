@@ -16,20 +16,14 @@ export default function Fehler({
 
   return (
     <main className="auth-page">
-      <div className="auth-form">
-        <h1>Da ist etwas schiefgelaufen</h1>
-        <p className="muted">
-          Der Fehler wurde gemeldet. Versuch es noch einmal – meistens klappt es beim zweiten Mal.
-        </p>
-        {error.digest && (
-          <p className="faint" style={{ fontSize: 12 }}>
-            Fehler-ID: {error.digest}
-          </p>
-        )}
-        <button type="button" onClick={() => retry()}>
+      <section className="zustand z-fehler" role="alert">
+        <h1>Da ist etwas schiefgelaufen.</h1>
+        <p>Der Fehler wurde gemeldet. Versuch es noch einmal, meistens klappt es beim zweiten Mal.</p>
+        <button type="button" className="btnp" onClick={() => retry()}>
           Erneut versuchen
         </button>
-      </div>
+        {error.digest && <p className="zustand-detail">Fehler-ID: {error.digest}</p>}
+      </section>
     </main>
   );
 }
