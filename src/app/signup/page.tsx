@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { signup } from "./actions";
 import { TrackEvent } from "@/components/track-event";
+import { AktivitaetZuruecksetzen } from "@/components/aktivitaet-zuruecksetzen";
 
 export default async function SignupPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function SignupPage({
 
   return (
     <main className="auth-page">
+      <AktivitaetZuruecksetzen />
       <form className="auth-form">
         <h1>Registrieren</h1>
 

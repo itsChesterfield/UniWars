@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { login } from "./actions";
 import { TrackEvent } from "@/components/track-event";
+import { AktivitaetZuruecksetzen } from "@/components/aktivitaet-zuruecksetzen";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function LoginPage({
 
   return (
     <main className="auth-page">
+      <AktivitaetZuruecksetzen />
       <form className="auth-form">
         <h1>Anmelden</h1>
 

@@ -28,6 +28,8 @@ export function InaktivitaetsWaechter() {
   const [rest, setRest] = useState<number | null>(null);
   const letzte = useRef(0);
   const abgemeldet = useRef(false);
+  /** Erst prüfen, wenn klar ist, ob gerade frisch angemeldet wurde */
+  const bereit = useRef(false);
 
   const merken = useCallback(() => {
     const jetzt = Date.now();
@@ -43,7 +45,7 @@ export function InaktivitaetsWaechter() {
   }, []);
 
   const pruefen = useCallback(() => {
-    if (abgemeldet.current) return;
+    if (abgemeldet.current || !bereit.current) return;
     const jetzt = Date.now();
     const z = timerLesen();
     const timerLaeuft = Boolean(z?.laeuft && z.endetUm && z.endetUm > jetzt);
@@ -72,18 +74,39 @@ export function InaktivitaetsWaechter() {
     if (istEingebettet()) return;
     const jetzt = Date.now();
     // Seite nach längerer Pause wieder geöffnet → sofort prüfen, sonst Aktivität merken
-    letzte.current = letzteLesen(jetzt);
-    if (jetzt - letzte.current >= INAKTIV_MS) {
-      pruefen();
-      return;
+    const gespeichert = letzteLesen(jetzt);
+    let aus = false;
+    const starten = () => {
+      if (aus) return;
+      letzte.current = 0;
+      merken();
+      bereit.current = true;
+    };
+    if (jetzt - gespeichert >= INAKTIV_MS) {
+      // Alter Zeitstempel: frisch angemeldet (dann zählt die Anmeldung als Aktivität) oder wirklich lange weg?
+      void createClient()
+        .auth.getUser()
+        .then(({ data }) => {
+          if (aus) return;
+          // Ohne Antwort (z. B. Netzwerk) lieber nicht abmelden
+          if (!data.user?.last_sign_in_at) return starten();
+          if (new Date(data.user.last_sign_in_at).getTime() > gespeichert) starten();
+          else {
+            letzte.current = gespeichert;
+            bereit.current = true;
+            pruefen();
+          }
+        })
+        .catch(() => starten());
+    } else {
+      starten();
     }
-    letzte.current = 0;
-    merken();
     for (const e of EREIGNISSE) window.addEventListener(e, merken, { passive: true, capture: true });
     const sichtbar = () => document.visibilityState === "visible" && pruefen();
     document.addEventListener("visibilitychange", sichtbar);
     const takt = window.setInterval(pruefen, 1000);
     return () => {
+      aus = true;
       for (const e of EREIGNISSE) window.removeEventListener(e, merken, { capture: true });
       document.removeEventListener("visibilitychange", sichtbar);
       window.clearInterval(takt);
