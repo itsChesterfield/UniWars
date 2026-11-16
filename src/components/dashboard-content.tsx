@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { AnalyticsNutzer } from "@/components/analytics-nutzer";
 import { NoteManager } from "@/components/note-manager";
 import { KalenderButton } from "@/components/kalender-button";
-import { SearchBar } from "@/components/search-bar";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
 import { NaechsterTermin } from "@/components/naechster-termin";
@@ -27,14 +26,14 @@ import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschrit
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
-import { TagesBriefing } from "@/components/ki/tages-briefing";
-import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
-import { HauptNotch } from "@/components/haupt-notch";
+import { HubKontext } from "@/components/hub/hub-kontext";
+import { HubUebersicht } from "@/components/hub/hub-uebersicht";
+import type { FaelligeKarten } from "@/components/hub/hub-bausteine";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;
@@ -43,16 +42,7 @@ type Note = Tables<"note">;
 type Pruefung = Tables<"pruefung">;
 type Eintrag = Tables<"stundenplan_eintrag">;
 type LernSession = Tables<"lern_session">;
-type Benachrichtigung = Tables<"benachrichtigung">;
-type Einladung = Tables<"einladung">;
 type Settings = Tables<"settings">;
-
-function begruessung(): string {
-  const stunde = new Date().getHours();
-  if (stunde < 11) return "Guten Morgen";
-  if (stunde < 18) return "Guten Tag";
-  return "Guten Abend";
-}
 
 function heutigesDatum(): string {
   return new Date().toLocaleDateString("de-DE", {
@@ -75,6 +65,7 @@ export function DashboardContent({
   username,
   userId,
   kalender,
+  karten,
   bereich = "uebersicht",
 }: {
   faecher: Fach[];
@@ -85,18 +76,14 @@ export function DashboardContent({
   stundenplanEintraege: Eintrag[];
   notenschnitt: number | null;
   lernSessions: LernSession[];
-  benachrichtigungen: Benachrichtigung[];
-  einladungen: Einladung[];
-  /** früher „Dashboard anpassen“ – die Übersicht zeigt jetzt fest „Dein Tag“ und Termine */
-  sichtbareWidgets?: string[];
   settings: Settings;
   username: string;
   userId: string;
   kalender: { konfiguriert: boolean; verbunden: boolean; probleme: string[] };
-  kiVerfuegbar?: boolean;
-  /** Übersicht oder ein einzelner Bereich als eigene Seite (Notch) */
+  /** heute fällige Karteikarten, für die Übersicht */
+  karten: FaelligeKarten;
+  /** Übersicht oder ein einzelner Bereich als eigene Seite (Kontextspalte) */
   bereich?: Bereich;
-  avatarUrl?: string | null;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -131,18 +118,6 @@ export function DashboardContent({
   }
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
-
-  const name = username;
-
-  const stats = useMemo(() => {
-    const heute = new Date().toISOString().slice(0, 10);
-    const termineHeute = deadlines.filter((d) => d.faellig_am.slice(0, 10) === heute).length;
-    const naechsteDeadline = [...deadlines]
-      .filter((d) => !d.erledigt)
-      .sort((a, b) => new Date(a.faellig_am).getTime() - new Date(b.faellig_am).getTime())[0];
-    const offeneTodos = todos.filter((t) => !t.erledigt).length;
-    return { termineHeute, naechsteDeadline, offeneTodos };
-  }, [deadlines, todos]);
 
   const gesamtEcts = faecher.reduce((sum, f) => sum + (f.ects ?? 0), 0);
 
@@ -346,57 +321,56 @@ export function DashboardContent({
   return (
     <>
       <AnalyticsNutzer userId={userId} username={username} />
-      <div className="dashboard-header-row">
-        <div className="dashboard-greeting">
-          {bereich === "uebersicht" ? (
-            <>
-              <DashboardUeberschrift name={name} standard={`${begruessung()}, ${name}`} />
-              <p>
-                {heutigesDatum()}
-                {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
-                {stats.offeneTodos > 0 && ` · ${stats.offeneTodos} offene To-Do${stats.offeneTodos === 1 ? "" : "s"}`}
-              </p>
-            </>
-          ) : (
-            <>
+      <HubKontext aktiv={bereich} faecher={faecher} deadlines={deadlines} pruefungen={pruefungen} mobil />
+
+      {bereich === "uebersicht" ? (
+        <>
+          <HubUebersicht
+            d={{
+              name: username,
+              faecher,
+              deadlines,
+              todos,
+              pruefungen,
+              stundenplan: stundenplanEintraege,
+              lernSessions,
+              streak: settings.streak_count,
+              karten,
+            }}
+            layoutRoh={settings.hub_layout}
+          />
+          <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} ohneKnopf />
+        </>
+      ) : (
+        <div className="hubseite">
+          <header className="seitenkopf">
+            <div>
               <h1>{info.name}</h1>
               <p>{info.untertitel}</p>
-            </>
+            </div>
+            <div className="rechts">
+              <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
+            </div>
+          </header>
+
+          {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
+
+          {bereich === "termine" && <div className="dashboard-grid">{terminKarte("span-12")}</div>}
+          {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12", false)}</div>}
+          {bereich === "noten" && <div className="dashboard-grid">{notenBlock("span-12")}</div>}
+          {bereich === "fortschritt" && (
+            <div className="dashboard-grid">
+              {fortschrittKarte("span-12")}
+              {bachelorKarte}
+            </div>
           )}
-        </div>
-
-        <div className="dashboard-toolbar">
-          <SearchBar />
-          <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
-        </div>
-      </div>
-
-      <HauptNotch aktiv={bereich} />
-
-      {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
-
-      {bereich === "termine" && <div className="dashboard-grid">{terminKarte("span-12")}</div>}
-      {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12", false)}</div>}
-      {bereich === "noten" && <div className="dashboard-grid">{notenBlock("span-12")}</div>}
-      {bereich === "fortschritt" && (
-        <div className="dashboard-grid">
-          {fortschrittKarte("span-12")}
-          {bachelorKarte}
-        </div>
-      )}
-      {bereich === "faecher" && (
-        <div className="dashboard-grid">
-          <div className="span-12">
-            <FachManager initialFaecher={faecher} />
-          </div>
-        </div>
-      )}
-
-      {/* Übersicht: nur das Wichtigste – alles andere liegt in den Bereichen der Notch */}
-      {bereich === "uebersicht" && (
-        <div className="dashboard-grid">
-          <TagesBriefing />
-          {terminKarte("span-12")}
+          {bereich === "faecher" && (
+            <div className="dashboard-grid">
+              <div className="span-12">
+                <FachManager initialFaecher={faecher} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 

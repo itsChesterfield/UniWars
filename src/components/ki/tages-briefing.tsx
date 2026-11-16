@@ -21,7 +21,7 @@ function melden(b: Briefing) {
 }
 
 /**
- * „Dein Tag“ auf dem Dashboard: immer eine Begrüßung und Vorschläge für heute.
+ * „Dein Tag“ im Zentralen Hub (Baustein der Übersicht): immer eine Begrüßung und Vorschläge für heute.
  * Erst sofort aus den Daten, dann – falls noch nicht da – persönlich von der KI formuliert.
  */
 export function TagesBriefing() {
@@ -54,17 +54,13 @@ export function TagesBriefing() {
     };
   }, []);
 
-  if (fehlt) return null;
-
   return (
-    <section className="card span-12 tb-karte" aria-labelledby="tb-titel" aria-busy={!b || schreibt}>
-      <div className="ch">
-        <span className="ct" id="tb-titel">
-          ✨ Dein Tag
-        </span>
+    <section className="vorschlag" aria-labelledby="tb-titel" aria-busy={!fehlt && (!b || schreibt)}>
+      <div className="kopfzeile">
+        <h2 id="tb-titel">Dein Tag</h2>
         <button
           type="button"
-          className="link-knopf"
+          className="link rechts"
           onClick={() => {
             track("briefing_studio");
             studioOeffnen("Plan mit mir meinen Tag: Was sollte ich heute in welcher Reihenfolge machen – mit Zeiten?");
@@ -73,40 +69,36 @@ export function TagesBriefing() {
           Mit Studio planen
         </button>
       </div>
-      {!b ? (
-        <p className="muted tb-gruss tb-laedt">Ich schaue mir deinen Tag an …</p>
+      {fehlt ? (
+        <p className="vleer">Die Vorschläge für heute lassen sich gerade nicht laden.</p>
+      ) : !b ? (
+        <p className="tb-gruss tb-laedt">Ich schaue mir deinen Tag an …</p>
       ) : (
         <>
           <p className={`tb-gruss ${schreibt ? "tb-schreibt" : ""}`} key={b.gruss}>
             {b.gruss}
           </p>
           {b.vorschlaege.length > 0 && (
-            <ul className="tb-liste">
+            <ul className="vliste">
               {b.vorschlaege.map((v) => {
                 const inhalt = (
                   <>
-                    <span className="tb-icon" aria-hidden>
-                      {v.icon}
-                    </span>
-                    <span className="tb-text">
-                      <span className="tb-titel">{v.titel}</span>
-                      <span className="tb-grund">{v.grund}</span>
-                    </span>
-                    <span className="tb-pfeil" aria-hidden>
-                      {v.href ? "→" : "✨"}
+                    <span className="balken" aria-hidden />
+                    <span>
+                      <strong>{v.titel}</strong>
+                      <span className="meta">{v.grund}</span>
                     </span>
                   </>
                 );
                 return (
                   <li key={v.id}>
                     {v.href ? (
-                      <Link href={v.href} className="tb-vorschlag" onClick={() => track("briefing_vorschlag", { art: v.id.split("-")[0] })}>
+                      <Link href={v.href} onClick={() => track("briefing_vorschlag", { art: v.id.split("-")[0] })}>
                         {inhalt}
                       </Link>
                     ) : (
                       <button
                         type="button"
-                        className="tb-vorschlag"
                         onClick={() => {
                           track("briefing_vorschlag", { art: v.id.split("-")[0] });
                           if (v.frage) studioOeffnen(v.frage);
@@ -120,7 +112,7 @@ export function TagesBriefing() {
               })}
             </ul>
           )}
-          {schreibt && <p className="faint tb-fuss">UniVerse Studio formuliert deine Vorschläge …</p>}
+          {schreibt && <p className="vfuss tb-fuss">UniVerse Studio formuliert deine Vorschläge …</p>}
         </>
       )}
     </section>

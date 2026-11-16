@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
+import { HubKontext } from "@/components/hub/hub-kontext";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
@@ -18,7 +19,7 @@ import { profilbildUrl } from "@/lib/profilbild";
 /**
  * Zentraler Hub: lädt alles und zeigt je nach Bereich die ganze Übersicht oder
  * nur einen Teil als eigene Seite (Termine, Aufgaben, Noten, Fortschritt, Fächer –
- * erreichbar über die Notch oben).
+ * erreichbar über die Kontextspalte).
  */
 export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
   const supabase = await createClient();
@@ -48,6 +49,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: settingsRoh, error: settingsError },
     { data: einladungen, error: einladungenError },
     { data: kalenderVerbindung },
+    { data: faelligeKarten },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -74,6 +76,10 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
       .select("zuletzt_abgeglichen")
       .eq("user_id", user.id)
       .maybeSingle(),
+    // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Ohne Karteikarten-Tabelle bleibt es bei 0.
+    bereich === "uebersicht"
+      ? supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000)
+      : Promise.resolve({ data: null }),
   ]);
 
   const error =
@@ -98,12 +104,23 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     abgleichNachLadenPlanen(session.access_token, user.id, kalenderVerbindung.zuletzt_abgeglichen);
   }
 
+  const proStapel = new Map<string, { id: string; name: string; anzahl: number }>();
+  for (const k of faelligeKarten ?? []) {
+    const s = proStapel.get(k.stapel_id) ?? { id: k.stapel_id, name: (k.stapel as { name?: string } | null)?.name ?? "Karteikarten", anzahl: 0 };
+    s.anzahl++;
+    proStapel.set(k.stapel_id, s);
+  }
+  const karten = { anzahl: faelligeKarten?.length ?? 0, stapel: [...proStapel.values()].sort((a, b) => b.anzahl - a.anzahl) };
+
   const username = anzeigeName(settings, user);
   const avatarUrl = await profilbildUrl(supabase, settings.avatar_pfad);
 
   return (
     <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "nacht" : "hochschule"}>
       <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} theme={settings.theme} kiVerfuegbar={kiKonfiguriert()} />
+      <Suspense fallback={null}>
+        <HubKontext aktiv={bereich} faecher={faecher ?? []} deadlines={deadlines ?? []} pruefungen={pruefungen ?? []} />
+      </Suspense>
       <div className="arbeitsflaeche">
         <Kopfleiste
           name={username}
@@ -113,7 +130,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
           benachrichtigungen={benachrichtigungen ?? []}
           einladungen={einladungen ?? []}
         />
-        <GeteilteAnsicht mainKlasse="dashboard-main">
+        <GeteilteAnsicht mainKlasse={bereich === "uebersicht" ? "dashboard-main hub-zentral hub-randlos" : "dashboard-main hub-zentral"}>
         <BereichUebergang>
         <Suspense fallback={null}>
           <DashboardContent
@@ -125,19 +142,15 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
             stundenplanEintraege={stundenplanEintraege ?? []}
             notenschnitt={notenschnitt}
             lernSessions={lernSessions ?? []}
-            benachrichtigungen={benachrichtigungen ?? []}
-            einladungen={einladungen ?? []}
-            sichtbareWidgets={(settings.sichtbare_widgets as string[]) ?? []}
             settings={settings}
             username={username}
-            avatarUrl={avatarUrl}
             userId={user.id}
             kalender={{
               konfiguriert: kalenderKonfiguriert,
               verbunden: Boolean(kalenderVerbindung),
               probleme: kalenderProbleme,
             }}
-            kiVerfuegbar={kiKonfiguriert()}
+            karten={karten}
             bereich={bereich}
           />
         </Suspense>
