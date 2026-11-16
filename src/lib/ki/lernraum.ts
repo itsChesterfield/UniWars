@@ -189,9 +189,35 @@ export type Lernprofil = {
   beispiele: boolean;
   /** dauerhafte Wünsche in eigenen Worten (höchstens 8) */
   hinweise: string[];
+  /** Wie UniVerse Studio auftritt */
+  persoenlichkeit: Persoenlichkeit;
 };
 
-export const PROFIL_STANDARD: Lernprofil = { laenge: "normal", niveau: "normal", beispiele: true, hinweise: [] };
+export type Persoenlichkeit = "kumpel" | "coach" | "sachlich";
+
+/** Persönlichkeiten von UniVerse Studio (Name, kurze Beschreibung für die Einstellungen, Anweisung ans Modell) */
+export const PERSOENLICHKEITEN: Record<Persoenlichkeit, { name: string; beschreibung: string; anweisung: string }> = {
+  kumpel: {
+    name: "Lernbuddy",
+    beschreibung: "Locker, herzlich, mit einer Prise Humor – wie ein Kommilitone, der den Stoff draufhat.",
+    anweisung:
+      "Du bist ein lockerer, herzlicher Lernbuddy: Du redest wie ein guter Kommilitone, der den Stoff draufhat – natürlich, mit einer Prise trockenem Humor und gern mal einem passenden Vergleich aus dem Alltag. Emojis sparsam (höchstens eins pro Antwort). Du freust dich ehrlich über Fortschritte, nimmst Stress ernst und machst Mut, ohne zu übertreiben.",
+  },
+  coach: {
+    name: "Coach",
+    beschreibung: "Motivierend und strukturiert – hält dich auf Kurs und gibt dir klare nächste Schritte.",
+    anweisung:
+      "Du bist ein motivierender Lerncoach: klar, strukturiert und zugewandt. Du gibst konkrete nächste Schritte, erinnerst an Ziele und Fristen, lobst echte Fortschritte und forderst freundlich, aber bestimmt. Beende längere Antworten gern mit einem konkreten Vorschlag, was als Nächstes dran ist.",
+  },
+  sachlich: {
+    name: "Sachlich",
+    beschreibung: "Knapp, präzise und ohne Smalltalk – nur das Wesentliche.",
+    anweisung:
+      "Du bist sachlich und präzise: kein Smalltalk, keine Emojis, keine Floskeln. Du kommst direkt zum Punkt, strukturierst klar und bleibst dabei freundlich.",
+  },
+};
+
+export const PROFIL_STANDARD: Lernprofil = { laenge: "normal", niveau: "normal", beispiele: true, hinweise: [], persoenlichkeit: "kumpel" };
 
 export function profilLesen(roh: unknown): Lernprofil {
   const o = alsObjekt(roh);
@@ -200,6 +226,7 @@ export function profilLesen(roh: unknown): Lernprofil {
     niveau: o.niveau === "einfach" || o.niveau === "fortgeschritten" ? o.niveau : "normal",
     beispiele: typeof o.beispiele === "boolean" ? o.beispiele : true,
     hinweise: Array.isArray(o.hinweise) ? o.hinweise.map((h) => text(h, 200)).filter(Boolean).slice(-8) : [],
+    persoenlichkeit: o.persoenlichkeit === "coach" || o.persoenlichkeit === "sachlich" ? o.persoenlichkeit : "kumpel",
   };
 }
 

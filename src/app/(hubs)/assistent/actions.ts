@@ -61,7 +61,7 @@ export async function unterhaltungLaden(id: string): Promise<KiErgebnis<{ titel:
     const { supabase } = await kiNutzer();
     const [{ data: u }, { data: n, error }] = await Promise.all([
       supabase.from("ki_unterhaltung").select("titel").eq("id", id).maybeSingle(),
-      supabase.from("ki_nachricht").select("id, rolle, inhalt, werkzeug_daten, erstellt_am").eq("unterhaltung_id", id).neq("rolle", "werkzeug").order("erstellt_am").limit(400),
+      supabase.from("ki_nachricht").select("id, rolle, inhalt, werkzeug_daten, erstellt_am").eq("unterhaltung_id", id).neq("rolle", "werkzeug").order("erstellt_am", { ascending: false }).limit(60),
     ]);
     if (error) throw new Error(error.message);
     if (!u) throw new KiEingabe("Unterhaltung nicht gefunden.");
@@ -69,7 +69,8 @@ export async function unterhaltungLaden(id: string): Promise<KiErgebnis<{ titel:
       ok: true,
       daten: {
         titel: u.titel,
-        nachrichten: (n ?? []).map((x) => ({
+        // nur die letzten 60 Nachrichten – der eine Chat wächst sonst endlos und lädt immer länger
+        nachrichten: (n ?? []).reverse().map((x) => ({
           id: x.id,
           rolle: x.rolle === "nutzer" ? "nutzer" : "assistent",
           inhalt: x.inhalt,

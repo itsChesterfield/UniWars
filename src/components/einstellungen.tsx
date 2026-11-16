@@ -14,6 +14,8 @@ import {
 import { AbmeldenButton } from "@/components/sidebar-aktionen";
 import { AnalyticsEinstellung } from "@/components/analytics-einstellung";
 import { KiEinstellung } from "@/components/ki/ki-einstellung";
+import { PersoenlichkeitWahl } from "@/components/ki/persoenlichkeit-wahl";
+import type { Lernprofil } from "@/lib/ki/lernraum";
 import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
 import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
 import { ProfilAvatar } from "@/components/profil-avatar";
@@ -66,6 +68,7 @@ export function Einstellungen({
   kiEingewilligt,
   audioEingewilligt,
   kiVerfuegbar,
+  kiProfil,
 }: {
   name: string;
   email: string;
@@ -76,6 +79,7 @@ export function Einstellungen({
   kiEingewilligt: boolean;
   audioEingewilligt: boolean;
   kiVerfuegbar: boolean;
+  kiProfil: Lernprofil;
 }) {
   const router = useRouter();
   const [laeuft, startTransition] = useTransition();
@@ -307,6 +311,7 @@ export function Einstellungen({
           <KiEinstellung startEingewilligt={kiEingewilligt} />
           <KiEinstellung art="audio" startEingewilligt={audioEingewilligt} />
           {kiEingewilligt && <KiKontingentAnzeige />}
+          {kiVerfuegbar && <PersoenlichkeitWahl startProfil={kiProfil} />}
           {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
           {kiVerfuegbar && <KiVerlaufLoeschen />}
         </div>

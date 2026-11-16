@@ -27,17 +27,19 @@ const umgebung = (name: string) => process.env[name]?.trim() || undefined;
  */
 export type ModellZweck = "standard" | "schnell" | "stark" | "chat" | "lang" | "bild";
 
-/** Stärkstes Modell (Mistral Large 4); KI_MODELL_STARK überschreibt. */
-export const STARK_STANDARD = "mistral-large-4";
-/** Ersatz, falls das starke Modell nicht erreichbar ist oder den Namen nicht kennt */
-export const ERSATZ_STANDARD = "mistral-large-latest";
+/** Stärkstes Modell (immer das neueste Mistral Large); KI_MODELL_STARK überschreibt. */
+export const STARK_STANDARD = "mistral-large-latest";
+/** Schnelles, gutes Modell für den Chat (antwortet deutlich schneller als Large); KI_MODELL_CHAT überschreibt. */
+export const CHAT_STANDARD = "mistral-medium-latest";
+/** Ersatz, falls das gewünschte Modell nicht erreichbar ist oder den Namen nicht kennt */
+export const ERSATZ_STANDARD = "mistral-medium-latest";
 
 /** Modell pro Zweck */
 export function kiModell(zweck: ModellZweck = "standard"): string {
   const standard = umgebung("KI_MODELL") ?? "mistral-small-latest";
   const stark = umgebung("KI_MODELL_STARK") ?? STARK_STANDARD;
   if (zweck === "stark") return stark;
-  if (zweck === "chat") return umgebung("KI_MODELL_CHAT") ?? stark;
+  if (zweck === "chat") return umgebung("KI_MODELL_CHAT") ?? CHAT_STANDARD;
   if (zweck === "lang") return umgebung("KI_MODELL_LANG") ?? stark;
   if (zweck === "schnell") return umgebung("KI_MODELL_SCHNELL") ?? "mistral-small-latest";
   // Bilder (z. B. Stundenplan-Foto) brauchen ein Modell mit Bildverständnis
@@ -48,7 +50,7 @@ export function kiModell(zweck: ModellZweck = "standard"): string {
 /** Ersatzmodell für die starken Zwecke (sonst keins) */
 export function ersatzModell(zweck: ModellZweck): string | null {
   if (zweck !== "stark" && zweck !== "chat" && zweck !== "lang") return null;
-  const ersatz = umgebung("KI_MODELL_ERSATZ") ?? ERSATZ_STANDARD;
+  const ersatz = umgebung("KI_MODELL_ERSATZ") ?? (kiModell(zweck) === ERSATZ_STANDARD ? STARK_STANDARD : ERSATZ_STANDARD);
   return ersatz === kiModell(zweck) ? null : ersatz;
 }
 
