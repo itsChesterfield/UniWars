@@ -4,6 +4,7 @@ import { Suspense, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
+import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar } from "@/components/profil-avatar";
@@ -121,6 +122,28 @@ export function Sidebar({
         </button>
       </div>
 
+      {/* Strg/⌘+O: suchen, öffnen, erstellen (antippbar fürs Handy) */}
+      <button
+        type="button"
+        className="sidebar-suche"
+        onClick={() => {
+          setMenueOffen(false);
+          befehleOeffnen();
+        }}
+        title="Suchen, öffnen, erstellen (Strg+O)"
+        aria-label="Suchen, öffnen, erstellen"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m20 20-4.2-4.2" />
+        </svg>
+        <span className="sidebar-suche-text">Suchen</span>
+        <span className="sidebar-suche-taste">
+          <kbd>Strg</kbd>
+          <kbd>O</kbd>
+        </span>
+      </button>
+
       <nav className="sidebar-nav" onClick={() => setMenueOffen(false)}>
         <Link href="/" className={`navitem ${istAktiv("/") ? "active" : ""}`} draggable onDragStart={(e) => hubZiehen(e, "/")}>
           <NavIcon path={ZENTRALER_HUB.icon} />
@@ -191,6 +214,7 @@ export function Sidebar({
           <AssistentStarter />
         </Suspense>
       )}
+      <Befehlspalette kiVerfuegbar={kiVerfuegbar} />
     </aside>
   );
 }

@@ -10881,3 +10881,242 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
     padding: 16px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Befehlspalette (Strg/⌘+O): suchen, öffnen, erstellen
+   --------------------------------------------------------------------------- */
+.sidebar-suche {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: -8px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--sidebar-border, var(--border));
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-suche:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.sidebar-suche-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-suche-taste {
+  display: inline-flex;
+  gap: 3px;
+}
+
+@media (min-width: 761px) {
+  html[data-sidebar-eingeklappt] .sidebar-suche {
+    justify-content: center;
+    padding: 9px 0;
+  }
+
+  html[data-sidebar-eingeklappt] .sidebar-suche > :not(svg) {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar[data-menue-offen="false"] .sidebar-suche {
+    display: none;
+  }
+
+  .sidebar-suche {
+    margin: 10px 0 0;
+  }
+}
+
+.bp-hintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh 16px 16px;
+  background: rgb(20 16 10 / 0.35);
+  backdrop-filter: blur(2px);
+  animation: bp-ein 0.12s ease-out;
+}
+
+@keyframes bp-ein {
+  from {
+    opacity: 0;
+  }
+}
+
+.bp-fenster {
+  width: min(640px, 100%);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgb(20 16 10 / 0.28);
+  overflow: hidden;
+}
+
+.bp-eingabe {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bp-eingabe input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+}
+
+.bp-laedt {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: bp-dreh 0.7s linear infinite;
+}
+
+@keyframes bp-dreh {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bp-fehler {
+  margin: 8px 16px 0;
+}
+
+.bp-liste {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.bp-leer {
+  padding: 16px;
+  margin: 0;
+  text-align: center;
+}
+
+.bp-gruppe {
+  padding: 10px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bp-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bp-eintrag.aktiv {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.bp-eintrag:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.bp-icon {
+  flex: none;
+  width: 26px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.bp-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-titel,
+.bp-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bp-info {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bp-enter {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bp-fuss {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.bp-fuss kbd {
+  margin-right: 2px;
+}
+
+@media (max-width: 760px) {
+  .bp-hintergrund {
+    padding-top: 8px;
+  }
+
+  .bp-fenster {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .bp-fuss {
+    display: none;
+  }
+}
+
+@media print {
+  .bp-hintergrund,
+  .sidebar-suche {
+    display: none !important;
+  }
+}

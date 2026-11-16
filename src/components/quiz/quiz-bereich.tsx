@@ -24,6 +24,16 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
   const [neu, setNeu] = useState(false);
   const router = useRouter();
 
+  // Aus der Befehlspalette (Strg+O): „…?neu=quiz“ öffnet gleich den Dialog
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("neu") !== "quiz" || !kiVerfuegbar) return;
+    url.searchParams.delete("neu");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    const id = window.setTimeout(() => setNeu(true), 0);
+    return () => window.clearTimeout(id);
+  }, [kiVerfuegbar]);
+
   return (
     <section className="qz-bereich" aria-labelledby="qz-titel">
       <div className="qz-kopf">
