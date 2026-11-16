@@ -6,6 +6,20 @@ import { tagesbriefing, tagesbriefingKi, type Briefing } from "@/app/(hubs)/assi
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { track } from "@/lib/analytics";
 
+/** Ereignis: neues Briefing (Überschrift im Dashboard-Kopf hört mit) */
+export const BRIEFING_EREIGNIS = "uniwars-briefing";
+
+let erstesBriefing: Promise<Briefing | null> | null = null;
+/** Einmal pro Seitenaufruf laden – Kopf und Karte teilen sich das Ergebnis */
+export function briefingHolen(): Promise<Briefing | null> {
+  erstesBriefing ??= tagesbriefing().catch(() => null);
+  return erstesBriefing;
+}
+
+function melden(b: Briefing) {
+  window.dispatchEvent(new CustomEvent(BRIEFING_EREIGNIS, { detail: b }));
+}
+
 /**
  * „Dein Tag“ auf dem Dashboard: immer eine Begrüßung und Vorschläge für heute.
  * Erst sofort aus den Daten, dann – falls noch nicht da – persönlich von der KI formuliert.
@@ -17,16 +31,19 @@ export function TagesBriefing() {
 
   useEffect(() => {
     let ab = false;
-    tagesbriefing()
+    briefingHolen()
       .then((erst) => {
         if (ab) return;
         if (!erst) return setFehlt(true);
         setB(erst);
+        melden(erst);
         if (!erst.kiMoeglich) return;
         setSchreibt(true);
         tagesbriefingKi()
           .then((ki) => {
-            if (!ab && ki) setB(ki);
+            if (ab || !ki) return;
+            setB(ki);
+            melden(ki);
           })
           .catch(() => undefined)
           .finally(() => !ab && setSchreibt(false));

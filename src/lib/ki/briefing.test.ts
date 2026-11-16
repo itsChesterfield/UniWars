@@ -43,3 +43,14 @@ test("briefingLesen und anwenden", () => {
   assert.equal(a[0].grund, "Zwei kleine Dinge – schnell weg damit");
   assert.equal(briefingLesen("kaputt", v), null);
 });
+
+test("Überschriften: Name eingesetzt, Lage berücksichtigt, nie zweimal hintereinander", async () => {
+  const { ueberschriftenFuer, ueberschriftWaehlen, einsetzen } = await import("./briefing.ts");
+  const l = ueberschriftenFuer({ ...leer, stunde: 23, wochentagName: "Freitag", pruefungen: [{ id: "p", titel: "K", fach: "Statistik", tageBis: 2 }] });
+  assert.ok(l.includes("Gute Nacht, Max 🌙"));
+  assert.ok(l.includes("Endspurt für Statistik, Max! 💪"));
+  assert.ok(!l.some((t) => t.includes("Wochenende")), "nachts keine Wochentags-Sprüche");
+  assert.ok(l.every((t) => !t.includes("{name}")));
+  for (let i = 0; i < 20; i++) assert.notEqual(ueberschriftWaehlen(["a", "b"], "a", Math.random()), "a");
+  assert.equal(einsetzen("Kaffee und Uni, {name}?", ""), "Kaffee und Uni?");
+});

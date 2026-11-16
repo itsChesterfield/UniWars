@@ -11787,3 +11787,7 @@ html[data-eingebettet] .notiz-karte {
     align-items: stretch;
   }
 }
+
+.dashboard-ueberschrift {
+  animation: tb-ein 0.35s ease-out;
+}
