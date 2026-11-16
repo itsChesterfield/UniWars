@@ -11120,3 +11120,152 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
     display: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Mehr Platz für PDF und Notizen (auch in der geteilten Ansicht)
+   --------------------------------------------------------------------------- */
+
+/* PDF: kaum Rand, die Seite bekommt den Platz */
+.pdf-reader {
+  container-type: inline-size;
+}
+
+.dashboard-main:has(> .pdf-reader) {
+  padding: 6px 10px;
+}
+
+.dashboard-main > .pdf-reader {
+  height: calc(100vh - 12px);
+  height: calc(100dvh - 12px);
+  gap: 5px;
+}
+
+.pdf-reader .pdf-flaeche {
+  padding: 0 4px;
+  border: none;
+  border-radius: 10px;
+}
+
+.pdf-seite {
+  margin: 5px auto;
+}
+
+/* Schmale Ansicht (geteilter Bildschirm): Leiste bleibt einzeilig */
+@container (max-width: 760px) {
+  .pdf-reader .pdf-leiste {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    align-self: stretch;
+    justify-content: flex-start;
+  }
+
+  .pdf-reader .pdf-leiste::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pdf-reader .pdf-name {
+    display: none;
+  }
+
+  .pdf-reader .pdf-leiste > *,
+  .pdf-reader .pdf-gruppe {
+    flex: none;
+  }
+}
+
+/* Geteilte Ansicht: weniger Innenabstand in beiden Hälften */
+@media (min-width: 901px) {
+  .split-rahmen[data-aktiv] > .split-haupt {
+    padding: 14px 16px 24px;
+  }
+
+  .split-rahmen[data-aktiv] > .split-haupt:has(> .pdf-reader) {
+    padding: 6px 8px;
+  }
+}
+
+.split-kopf {
+  padding: 2px 6px 2px 12px;
+  min-height: 30px;
+}
+
+html[data-eingebettet] .dashboard-main {
+  padding: 8px 10px 16px;
+  gap: 10px;
+}
+
+html[data-eingebettet] .dashboard-main:has(> .pdf-reader) {
+  padding: 4px 6px;
+}
+
+html[data-eingebettet] .dashboard-main > .pdf-reader {
+  height: calc(100vh - 8px);
+  height: calc(100dvh - 8px);
+}
+
+/* Notizen in der zweiten Ansicht: Überschrift weg, sobald eine Notiz offen ist – der Text zählt */
+html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf {
+  display: none;
+}
+
+html[data-eingebettet] .notiz-karte {
+  padding: 10px 12px;
+  border: none;
+  box-shadow: none;
+}
+
+html[data-eingebettet] .notiz-inhalt {
+  gap: 4px;
+}
+
+/* Notizen: die Karte füllt die Höhe des Fensters */
+.notiz-karte {
+  min-height: calc(100vh - 190px);
+}
+
+html[data-eingebettet] .notiz-karte {
+  min-height: calc(100vh - 60px);
+}
+
+/* Notizliste eingeklappt: die offene Notiz nutzt die ganze Breite */
+@media (min-width: 761px) {
+  .notiz-layout[data-liste="zu"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notiz-layout[data-liste="zu"] > .hub-liste {
+    display: none;
+  }
+}
+
+.notiz-liste-zu {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notiz-liste-zu:hover {
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .notiz-liste-zu,
+  .notiz-liste-auf {
+    display: none;
+  }
+}
+
+/* Offene Notiz: kompakte Kopfzeile */
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf .muted {
+  display: none;
+}
+
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf h1 {
+  font-size: 22px;
+}

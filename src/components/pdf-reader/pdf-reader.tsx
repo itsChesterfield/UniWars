@@ -27,7 +27,8 @@ import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { notizZuPdfAnlegen } from "@/app/(hubs)/notizen/actions";
 import { AuswahlMenue, FarbPunkte, MarkierungMenue, MarkierungsListe, type MenuePosition } from "@/components/pdf-reader/markier-menue";
 
-type Zoom = "breite" | "seite" | number;
+/** auto: Folien (Querformat) ganz sichtbar, Hochformat auf Seitenbreite */
+type Zoom = "auto" | "breite" | "seite" | number;
 type Masse = { breite: number; hoehe: number };
 type Treffer = { seite: number; nr: number };
 type Erfasst = { seite: number; rechtecke: Rechteck[]; text: string };
@@ -57,8 +58,8 @@ function menuePosition(r: { left: number; top: number; width: number; bottom: nu
 const ZOOM_STUFEN = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2;
-const SEITEN_ABSTAND = 16;
-const RAND = 32;
+const SEITEN_ABSTAND = 10;
+const RAND = 12;
 
 let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
 
@@ -104,7 +105,7 @@ export function PdfReader({
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [masse, setMasse] = useState<Masse[]>([]);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
-  const [zoom, setZoom] = useState<Zoom>("breite");
+  const [zoom, setZoom] = useState<Zoom>("auto");
   const [flaeche, setFlaeche] = useState<Masse>({ breite: 0, hoehe: 0 });
   const [seite, setSeite] = useState(startSeite);
   const [seiteEingabe, setSeiteEingabe] = useState(String(startSeite));
@@ -188,8 +189,10 @@ export function PdfReader({
     (m: Masse) => {
       if (typeof zoom === "number") return zoom;
       const breite = Math.max(100, flaeche.breite - RAND) / m.breite;
+      const ganz = Math.min(breite, Math.max(100, flaeche.hoehe - SEITEN_ABSTAND * 2) / m.hoehe);
       if (zoom === "breite") return breite;
-      return Math.min(breite, Math.max(100, flaeche.hoehe - SEITEN_ABSTAND * 2) / m.hoehe);
+      if (zoom === "auto") return m.breite > m.hoehe ? ganz : breite;
+      return ganz;
     },
     [zoom, flaeche],
   );
@@ -239,7 +242,7 @@ export function PdfReader({
   function ansichtUmschalten() {
     const neu: Ansicht = seitenweise ? "fliessend" : "seitenweise";
     // Seite für Seite liest sich am besten, wenn die ganze Seite passt
-    if (neu === "seitenweise" && zoom === "breite") setZoom("seite");
+    if (neu === "seitenweise" && (zoom === "breite" || zoom === "auto")) setZoom("seite");
     browserWertSchreiben(ANSICHT_SPEICHER, neu === "seitenweise" ? neu : null);
     track("pdf_ansicht", { ansicht: neu });
   }
@@ -740,9 +743,10 @@ export function PdfReader({
             value={zoomWert}
             onChange={(e) => {
               const w = e.target.value;
-              setZoom(w === "breite" || w === "seite" ? w : Number(w));
+              setZoom(w === "auto" || w === "breite" || w === "seite" ? w : Number(w));
             }}
           >
+            <option value="auto">Automatisch</option>
             <option value="breite">Seitenbreite</option>
             <option value="seite">Ganze Seite</option>
             {zoomOptionen.map((z) => (
