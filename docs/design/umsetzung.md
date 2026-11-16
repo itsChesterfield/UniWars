@@ -7,7 +7,7 @@ Dieser Branch (`design/b3-referenz`) enthält nur Unterlagen, keinen App-Code. E
 | Thema | Im Repo heute | Im Design | Vorschlag |
 |---|---|---|---|
 | Schrift | Inter (Commit „Schlichtere Schrift“) | Bricolage Grotesque, JetBrains Mono für Zahlen | Bricolage über `next/font` |
-| Befehlspalette | Strg/⌘+O | ⌘K | ⌘K als Hauptkürzel, Strg+O bleibt zusätzlich |
+| Befehlspalette | Strg/⌘+O | Strg/⌘+O | entschieden: Strg/⌘+O bleibt das einzige Kürzel |
 | Dashboard-Überschrift | wechselnde persönliche Überschrift („Kaffee und Uni, Max?“) als h1 | h1 = nächste Aufgabe („Statistik-Übung abgeben.“); die Begrüßung steht als erster Satz in „Dein Tag“ | Begrüßung in „Dein Tag“ verschieben |
 | Übersicht | „Dein Tag“ und Termine | Raster mit Als Nächstes, Überblick, Heute, Dein Tag, Diese Woche, anpassbar | `settings.hub_layout` statt `sichtbare_widgets` |
 | Hub-Bereiche | Notch oben (Übersicht, Termine, Aufgaben, Noten, Fortschritt, Fächer) | dieselben Seiten in der Kontextspalte | Inhalte bleiben, nur der Ort ändert sich |

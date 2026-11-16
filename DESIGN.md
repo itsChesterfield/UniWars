@@ -46,7 +46,7 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - **Kontextspalte** 272 px je Bereich (Navigation innerhalb des Bereichs, zum Beispiel Hub-Unterseiten, Notizenliste, Fächer im Lernraum).
 - **Kopfleiste** in der Arbeitsfläche: Pfad, Fokus-Timer, Sync-Status (Synchron, Wird abgeglichen, Offline), Benachrichtigungen, Uhrzeit. **Kein Design-Schalter** (Standard aus, in der Personalisierung einschaltbar).
 - **UniVerse Studio** (⌘J): eine Leiste rechts, der Inhalt rückt zur Seite. Zeigt „Sieht gerade …“, nimmt markierten Text mit, Neuer Chat, Privater Chat, Groß/Klein. Am Handy als Vollbild.
-- **Befehlspalette** ⌘K (⌘O als zweites Kürzel), **Schnell erfassen** mit Q.
+- **Befehlspalette** Strg/⌘+O (einziges Kürzel), **Schnell erfassen** mit Q.
 - **Geteilte Ansicht:** Bereich aus der Symbolleiste an den rechten oder unteren Rand ziehen, oder ohne Ziehen über die Palette „… daneben öffnen“. Kopf der zweiten Ansicht: Bereich wählen, drehen, als Hauptansicht öffnen, schließen. Trenner per Maus, Pfeiltasten, Doppelklick 50/50.
 - **Handy (unter 60 rem):** Tab-Leiste unten (die ersten vier Bereiche der Symbolleiste plus „Alles“), Kontextspalte als aufklappbare Leiste oben, Studio und Avatar in der Kopfleiste.
 
