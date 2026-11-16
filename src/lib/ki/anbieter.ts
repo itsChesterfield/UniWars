@@ -27,12 +27,12 @@ const umgebung = (name: string) => process.env[name]?.trim() || undefined;
  */
 export type ModellZweck = "standard" | "schnell" | "stark" | "chat" | "lang" | "bild";
 
-/** Stärkstes Modell (immer das neueste Mistral Large); KI_MODELL_STARK überschreibt. */
-export const STARK_STANDARD = "mistral-large-latest";
-/** Schnelles, gutes Modell für den Chat (antwortet deutlich schneller als Large); KI_MODELL_CHAT überschreibt. */
-export const CHAT_STANDARD = "mistral-medium-latest";
+/** Stärkstes Modell (Mistral Large 4 – „mistral-large-latest“ zeigt noch auf Large 3); KI_MODELL_STARK überschreibt. */
+export const STARK_STANDARD = "mistral-large-4";
+/** Chat (UniVerse Studio): ebenfalls das stärkste Modell – Premium; KI_MODELL_CHAT überschreibt. */
+export const CHAT_STANDARD = STARK_STANDARD;
 /** Ersatz, falls das gewünschte Modell nicht erreichbar ist oder den Namen nicht kennt */
-export const ERSATZ_STANDARD = "mistral-medium-latest";
+export const ERSATZ_STANDARD = "mistral-large-latest";
 
 /** Modell pro Zweck */
 export function kiModell(zweck: ModellZweck = "standard"): string {

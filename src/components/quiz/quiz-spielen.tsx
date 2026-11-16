@@ -255,7 +255,15 @@ function Durchgang({
               <span className="muted">Musterlösung:</span> {frage.musterloesung}
             </p>
           )}
-          {frage.erklaerung && <p className="muted">{frage.erklaerung}</p>}
+          {frage.erklaerung && (
+            <div className="qz-erklaerung">
+              {frage.erklaerung.split("\n\n").map((absatz, i) => (
+                <p key={i} className={absatz.startsWith("Ergänzend:") ? "qz-ergaenzend" : ""}>
+                  {absatz}
+                </p>
+              ))}
+            </div>
+          )}
           {quelle && (
             <button
               type="button"

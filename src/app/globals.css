@@ -11298,3 +11298,58 @@ html[data-eingebettet] .notiz-karte {
 .search-bar-knopf:hover {
   border-color: var(--accent);
 }
+
+/* Lesbarere Antworten: Quiz-Feedback und UniVerse Studio */
+.qz-frage {
+  font-size: 22px;
+}
+
+.qz-option {
+  font-size: 16px;
+}
+
+.qz-feedback {
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 14px 16px;
+}
+
+.qz-erklaerung {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qz-erklaerung p {
+  margin: 0;
+}
+
+.qz-ergaenzend {
+  padding-left: 10px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.qz-falsch-liste {
+  font-size: 15px;
+}
+
+.ki-blase {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.ki-blase .md-inhalt {
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.studio-panel {
+  width: 460px;
+}
+
+@media (min-width: 761px) {
+  html[data-studio-offen] .dashboard {
+    padding-right: 460px;
+  }
+}
