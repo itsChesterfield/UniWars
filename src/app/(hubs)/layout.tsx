@@ -8,8 +8,9 @@ import { QuickAdd } from "@/components/quick-add";
 import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
+import { Kopfleiste } from "@/components/kopfleiste";
 
-// Gemeinsamer Rahmen aller Hubs: Sidebar, Theme, Streak (ALL-01: nur eingeloggt).
+// Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
   const {
@@ -19,24 +20,42 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   if (!user) redirect("/login");
 
   // Schnell erfassen (Taste Q) gibt es in der ganzen App – dafür die Auswahllisten laden
-  const [{ data: settingsRoh }, { data: faecher }, { data: todos }, { data: pruefungen }] = await Promise.all([
+  const [
+    { data: settingsRoh },
+    { data: faecher },
+    { data: todos },
+    { data: pruefungen },
+    { data: benachrichtigungen },
+    { data: einladungen },
+  ] = await Promise.all([
     supabase.from("settings").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("todo").select("id, titel, erledigt, parent_id").eq("erledigt", false).order("erstellt_am", { ascending: true }).limit(200),
     supabase.from("pruefung").select("id, titel").order("datum", { ascending: true }).limit(100),
+    // Glocke in der Kopfleiste (Design B3): in allen Bereichen, nicht nur im Zentralen Hub
+    supabase.from("benachrichtigung").select("*").order("erstellt_am", { ascending: false }).limit(20),
+    supabase.from("einladung").select("*").eq("an_user_id", user.id).eq("status", "OFFEN").order("erstellt_am", { ascending: false }),
   ]);
   const settings = settingsRoh ? await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh) : null;
 
+  const name = anzeigeName(settings, user);
+  const avatarUrl = await profilbildUrl(supabase, settings?.avatar_pfad);
+  const kiVerfuegbar = kiKonfiguriert();
+
   return (
     <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "nacht" : "hochschule"}>
-      <Sidebar
-        name={anzeigeName(settings, user)}
-        email={user.email ?? ""}
-        avatarUrl={await profilbildUrl(supabase, settings?.avatar_pfad)}
-        streak={settings?.streak_count ?? 0}
-        kiVerfuegbar={kiKonfiguriert()}
-      />
-      <GeteilteAnsicht mainKlasse="dashboard-main hub-main">{children}</GeteilteAnsicht>
+      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={settings?.theme} kiVerfuegbar={kiVerfuegbar} />
+      <div className="arbeitsflaeche">
+        <Kopfleiste
+          name={name}
+          avatarUrl={avatarUrl}
+          streak={settings?.streak_count ?? 0}
+          kiVerfuegbar={kiVerfuegbar}
+          benachrichtigungen={benachrichtigungen ?? []}
+          einladungen={einladungen ?? []}
+        />
+        <GeteilteAnsicht mainKlasse="dashboard-main hub-main">{children}</GeteilteAnsicht>
+      </div>
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
     </div>
   );

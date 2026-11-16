@@ -11891,3 +11891,587 @@ html[data-eingebettet] .notiz-karte {
 .studio-panel.gross .ki-blase {
   max-width: 82%;
 }
+
+/* ==========================================================================
+   Design B3 – Gerüst (DESIGN.md Abschnitt 4)
+   Symbolleiste links, eingelassene Arbeitsfläche mit Kopfleiste, am Handy
+   Tab-Leiste unten. Die Kontextspalte folgt mit dem Hub (Schritt 4).
+   ========================================================================== */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zahl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.nur-mobil,
+.mobilnav {
+  display: none;
+}
+
+/* Symbolleiste */
+.rail {
+  position: sticky;
+  top: 0;
+  flex: none;
+  width: 64px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.rmarke {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-m);
+  color: var(--akzent-text);
+}
+
+.rmarke:hover {
+  background: var(--hover);
+}
+
+.rgruppe {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rpunkt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.rpunkt:hover {
+  background: var(--hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rpunkt:active {
+  background: var(--aktiv);
+}
+
+.rpunkt[aria-current] {
+  background: var(--aktiv);
+  color: var(--akzent-text);
+}
+
+.rpunkt .badge,
+.rpunkt .navitem-punkt {
+  position: absolute;
+  right: 7px;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--akzent);
+}
+
+.rpunkt .navitem-punkt {
+  background: var(--color-error);
+}
+
+.rpunkt .tip {
+  position: fixed;
+  left: 68px;
+  z-index: var(--z-modal);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-s);
+  background: var(--text);
+  color: var(--grund);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.rpunkt .tip kbd {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: color-mix(in srgb, var(--grund) 18%, transparent);
+  color: inherit;
+}
+
+.rpunkt:hover .tip,
+.rpunkt:focus-visible .tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rtrenn {
+  flex: none;
+  width: 20px;
+  height: 1px;
+  margin: var(--space-2) 0;
+  background: var(--linie-2);
+}
+
+.rfuss {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Profil-Menü */
+.profilmenue {
+  position: relative;
+  margin-top: var(--space-1);
+}
+
+.rprofil {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.rprofil .avatar {
+  transition: box-shadow var(--dur-micro) var(--ease-out);
+}
+
+.rprofil:hover .avatar,
+.rprofil[aria-expanded="true"] .avatar {
+  box-shadow: 0 0 0 2px var(--linie-2);
+}
+
+.menue {
+  position: fixed;
+  left: 68px;
+  bottom: var(--space-3);
+  z-index: var(--z-modal);
+  width: 248px;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -20px var(--schatten);
+}
+
+.menue-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--linie);
+  min-width: 0;
+}
+
+.menue-kopf > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menue-kopf b {
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--text);
+}
+
+.menue-kopf small {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menue-eintrag {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.menue-eintrag:hover {
+  background: var(--hover);
+  text-decoration: none;
+}
+
+.menue-eintrag:active {
+  background: var(--aktiv);
+}
+
+.menue-eintrag:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.menue-trenn {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--linie);
+}
+
+/* Eingelassene Arbeitsfläche */
+.arbeitsflaeche {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--space-4));
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-radius: var(--radius-s);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie),
+    0 12px 32px -16px var(--schatten);
+}
+
+.arbeitsflaeche > .split-rahmen,
+.arbeitsflaeche > .dashboard-main {
+  flex: 1;
+}
+
+.arbeitsflaeche .split-rahmen[data-aktiv] {
+  top: 52px;
+  height: calc(100dvh - 52px - var(--space-4));
+}
+
+/* Kopfleiste */
+.kopfleiste {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: none;
+  height: 52px;
+  padding: 0 var(--space-8);
+  border-bottom: 1px solid var(--linie);
+  border-radius: var(--radius-s) var(--radius-s) 0 0;
+  background: color-mix(in srgb, var(--flaeche) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.kopfleiste .pfad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-md);
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.kopfleiste .pfad svg {
+  flex: none;
+  color: var(--akzent-text);
+}
+
+.kopfleiste .pfad-zurueck {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.kopfleiste .pfad-zurueck:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.kopfleiste .pfad-trenn {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.kopfleiste .suchpille {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  margin-left: auto;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--hover);
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
+}
+
+.kopfleiste .suchpille:hover {
+  background: var(--aktiv);
+  color: var(--text-2);
+}
+
+.kopfleiste .suchpille:active {
+  transform: scale(0.99);
+}
+
+.kopfleiste .suchpille-text {
+  margin-right: var(--space-4);
+}
+
+.kopfleiste .suchpille kbd,
+.rpunkt .tip kbd {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+.kopfleiste .suchpille kbd {
+  border: 0;
+  padding: 0 var(--space-1);
+  background: var(--flaeche-3);
+  color: var(--text-3);
+}
+
+.kopfleiste .status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.kopfleiste .timerstatus {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  font-size: var(--text-sm);
+}
+
+.kopfleiste .timerstatus:hover {
+  background: color-mix(in srgb, var(--akzent) 22%, transparent);
+  text-decoration: none;
+}
+
+.kopfleiste .timerstatus[data-pausiert] {
+  background: var(--hover);
+  color: var(--text-2);
+}
+
+.kopfleiste .serie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.kopfleiste .serie svg {
+  color: var(--warnung);
+}
+
+.kopfleiste .trenn {
+  width: 1px;
+  height: 16px;
+  background: var(--linie-2);
+}
+
+.kopfleiste .heute {
+  min-width: 10ch;
+  white-space: nowrap;
+}
+
+.kopfleiste .icon-btn,
+.kopfleiste .symbolknopf {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  box-shadow: none;
+  color: var(--text-2);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.kopfleiste .icon-btn:hover,
+.kopfleiste .symbolknopf:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.kopfleiste .icon-btn:active,
+.kopfleiste .symbolknopf:active {
+  background: var(--aktiv);
+}
+
+.kopfleiste .notification-count {
+  top: 5px;
+  right: 5px;
+  border-color: var(--flaeche);
+}
+
+/* Geteilte Ansicht: zweiter Bereich ohne eigenes Gerüst */
+html[data-eingebettet] .rail,
+html[data-eingebettet] .kopfleiste,
+html[data-eingebettet] .mobilnav {
+  display: none;
+}
+
+html[data-eingebettet] .arbeitsflaeche {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 100dvh;
+}
+
+/* Handy: Tab-Leiste unten, Studio und Profil in der Kopfleiste */
+@media (max-width: 760px) {
+  .rail {
+    display: none;
+  }
+
+  .arbeitsflaeche {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100dvh;
+    padding-bottom: 64px;
+  }
+
+  .kopfleiste {
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+    border-radius: 0;
+  }
+
+  .kopfleiste .suchpille,
+  .kopfleiste .trenn,
+  .kopfleiste .heute,
+  .kopfleiste .serie-text {
+    display: none;
+  }
+
+  .kopfleiste .status {
+    margin-left: auto;
+    gap: var(--space-2);
+  }
+
+  .kopfleiste .nur-mobil {
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .kopf-profil {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobilnav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-sticky);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: 64px;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--linie);
+    background: color-mix(in srgb, var(--flaeche) 92%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobilnav a,
+  .mobilnav button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-3);
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .mobilnav a:hover {
+    text-decoration: none;
+  }
+
+  .mobilnav [aria-current] {
+    color: var(--text);
+  }
+
+  .mobilnav [aria-current] svg {
+    color: var(--akzent-text);
+  }
+}
+
+@media print {
+  .rail,
+  .kopfleiste,
+  .mobilnav {
+    display: none !important;
+  }
+
+  .arbeitsflaeche {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpunkt,
+  .rpunkt .tip,
+  .menue-eintrag,
+  .kopfleiste .suchpille,
+  .kopfleiste .icon-btn,
+  .kopfleiste .symbolknopf {
+    transition: none;
+  }
+}
