@@ -34,6 +34,8 @@ export type PdfOption = { id: string; name: string };
 
 const OHNE_TITEL = "Unbenannte Notiz";
 const TABS_SCHLUESSEL = "uniwars-notiz-tabs";
+/** Notizliste neben einer offenen Notiz anzeigen? (Standard: eingeklappt – die Notiz bekommt den Platz) */
+const LISTE_SCHLUESSEL = "uniwars-notiz-liste";
 const MAX_TABS = 8;
 
 // NOT-03: angepinnt zuerst, dann zuletzt geändert (ALL-06)
@@ -96,6 +98,8 @@ export function NotizenHub({
   const [vorlagenOffen, setVorlagenOffen] = useState(false);
 
   const tabs = tabsLesen(useBrowserWert(TABS_SCHLUESSEL, "[]")).filter((id) => notizen.some((n) => n.id === id));
+  const listeOffen = useBrowserWert(LISTE_SCHLUESSEL, "0") === "1";
+  const listeUmschalten = () => browserWertSchreiben(LISTE_SCHLUESSEL, listeOffen ? null : "1");
 
   const fachVon = (id: string | null) => faecher.find((f) => f.id === id) ?? null;
 
@@ -141,18 +145,6 @@ export function NotizenHub({
     },
     [pfad, router, searchParams],
   );
-
-  // Strg+O / ⌘+O: Schnellsuche (wie in Obsidian); Alt+←/→: zurück/vor
-  useEffect(() => {
-    const taste = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "o") {
-        e.preventDefault();
-        setSchnellsuche(true);
-      }
-    };
-    window.addEventListener("keydown", taste);
-    return () => window.removeEventListener("keydown", taste);
-  }, []);
 
   function aktualisieren(id: string, teil: Partial<Notiz>) {
     setNotizen((liste) => sortieren(liste.map((n) => (n.id === id ? { ...n, ...teil } : n))));
@@ -276,8 +268,8 @@ export function NotizenHub({
         untertitel="Mitschriften mit Formatierungen wie in Word – und Verlinkungen zwischen Notizen und PDFs."
         aktionen={
           <div className="notiz-kopf-aktionen">
-            <button type="button" className="btng" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (Strg+O)">
-              🔍 Öffnen <kbd>Strg+O</kbd>
+            <button type="button" className="btng" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (alles andere: Strg+O)">
+              🔍 Öffnen
             </button>
             <div className="notiz-neu-gruppe">
               <button type="button" className="btnp" onClick={() => neu()} disabled={isPending}>
@@ -322,8 +314,13 @@ export function NotizenHub({
           }
         />
       ) : (
-        <div className="hub-zweispaltig notiz-layout" data-ansicht={auswahl ? "inhalt" : "liste"}>
+        <div className="hub-zweispaltig notiz-layout" data-ansicht={auswahl ? "inhalt" : "liste"} data-liste={auswahl && !listeOffen ? "zu" : "auf"}>
           <section className="card hub-liste" aria-label="Notizliste">
+            {auswahl && (
+              <button type="button" className="notiz-liste-zu" onClick={listeUmschalten} title="Liste einklappen – mehr Platz für die Notiz">
+                « Liste einklappen
+              </button>
+            )}
             <input type="search" className="field" placeholder="Notizen durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
             {alleTags.length > 0 && (
               <div className="notiz-tags" aria-label="Tags">
@@ -381,8 +378,13 @@ export function NotizenHub({
           </section>
 
           <section className="hub-inhalt notiz-inhalt" aria-label="Notiz">
-            {tabs.length > 0 && (
+            {(tabs.length > 0 || auswahl) && (
               <div className="notiz-tabs" role="tablist" aria-label="Geöffnete Notizen">
+                {auswahl && !listeOffen && (
+                  <button type="button" className="icon-knopf notiz-liste-auf" title="Alle Notizen anzeigen" aria-label="Notizliste anzeigen" onClick={listeUmschalten}>
+                    ☰
+                  </button>
+                )}
                 <button type="button" className="icon-knopf" title="Zurück (wie im Browser)" aria-label="Zurück" onClick={() => router.back()}>
                   ←
                 </button>
