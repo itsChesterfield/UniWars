@@ -62,7 +62,7 @@ export async function quizErzeugen(
     nutzer: p.nutzer,
     json: true,
     temperatur: 0.5,
-    maxTokens: Math.min(12_000, 900 + einstellungen.anzahl * 400),
+    maxTokens: Math.min(16_000, 1000 + einstellungen.anzahl * 650),
     timeoutMs: 110_000,
   });
   const ergebnis = quizLesen(a.text);

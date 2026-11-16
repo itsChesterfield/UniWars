@@ -100,7 +100,7 @@ export async function freiBewerten(quizId: string, frageId: string, antwort: str
     if (!frage || frage.typ !== "frei") throw new KiEingabe("Frage nicht gefunden.");
     const bewertung = await mitBuchung(supabase, userId, "quiz_bewertung", "chat", async (anfrage) => {
       const p = bewertungPrompt(frage, text);
-      const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0, maxTokens: 300, timeoutMs: 25_000 });
+      const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0, maxTokens: 600, timeoutMs: 30_000 });
       return bewertungLesen(a.text);
     });
     return { ok: true, daten: bewertung };
