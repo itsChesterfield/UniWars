@@ -28,7 +28,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   const settings = settingsRoh ? await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh) : null;
 
   return (
-    <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "dark" : "light"}>
+    <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "nacht" : "hochschule"}>
       <Sidebar
         name={anzeigeName(settings, user)}
         email={user.email ?? ""}

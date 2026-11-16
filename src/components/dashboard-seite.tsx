@@ -100,7 +100,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
   const avatarUrl = await profilbildUrl(supabase, settings.avatar_pfad);
 
   return (
-    <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "dark" : "light"}>
+    <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "nacht" : "hochschule"}>
       <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} streak={settings.streak_count} kiVerfuegbar={kiKonfiguriert()} />
       <GeteilteAnsicht mainKlasse="dashboard-main">
         <Suspense fallback={null}>

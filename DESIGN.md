@@ -24,9 +24,10 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 | `--akzent` / `--akzent-text` | #E8BE6A / #EBC575 | #1f4e8c / #1f4e8c |
 | `--auf-akzent` | #17110a | #ffffff |
 | `--ok` / `--color-error` | #5fd39a / #e5484d | #1d8a57 / #c62a2f |
+| `--warnung` | #E8BE6A | #946318 |
 | Fachfarben `--f1`…`--f4` | #7FBFB6 #CFAE7A #8EA3C9 #A99CC4 | #2f7d74 #946318 #3d5f9e #6b4f9a |
 
-- Umschalten über `data-theme="nacht" | "hochschule"` auf `<html>`. Datenbank: `settings.theme` HELL = Hochschule, DUNKEL = Sternenhimmel, dazu SYSTEM (Migration `20261116222117_design_b3_einstellungen`).
+- Umschalten über `data-theme="nacht" | "hochschule"` (heute auf `.dashboard`, später auf `<html>`). Datenbank: `settings.theme` HELL = Hochschule, DUNKEL = Sternenhimmel, dazu SYSTEM (Migration `20261116222117_design_b3_einstellungen`).
 - Sternenhimmel hat leisen, unbewegten Sternenstaub im Grund, Hochschule nicht.
 - Der Akzent markiert nur Hauptaktion, Auswahl und Zustand.
 

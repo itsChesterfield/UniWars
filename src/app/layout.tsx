@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AnalyticsBanner } from "@/components/analytics-banner";
 import { FRAME_NAME } from "@/lib/geteilte-ansicht";
 
-// Eine schlichte Schrift für alles – Überschriften und Zahlen nutzen sie über
-// --font-display / --font-mono (globals.css); nur Code bleibt Monospace.
-const schrift = Inter({
+// Design B3 (DESIGN.md Abschnitt 3): Bricolage Grotesque für alles,
+// JetBrains Mono nur für Zahlen und Zeiten (--font-mono in globals.css).
+const schrift = Bricolage_Grotesque({
   variable: "--font-body",
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
+});
+
+const zahlen = JetBrains_Mono({
+  variable: "--font-zahl",
   subsets: ["latin", "latin-ext"],
 });
 
@@ -22,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="de"
       suppressHydrationWarning
-      className={`${schrift.variable}`}
+      className={`${schrift.variable} ${zahlen.variable}`}
     >
       <body>
         {/* Vor dem ersten Zeichnen: zweiter Hub der geteilten Ansicht ohne Sidebar, eingeklappte Sidebar */}

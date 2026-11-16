@@ -1,70 +1,148 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full */
+/* ==========================================================================
+   Design B3 – Token (DESIGN.md Abschnitt 2 und 3)
+   Komponenten nutzen nur Token. Die alten Namen (--card, --muted …) zeigen
+   unten auf die neuen, bis die Bereiche einzeln umgestellt sind.
+   ========================================================================== */
 :root {
-  /* Überschriften nutzen dieselbe schlichte Schrift wie der Text (Inter) */
+  /* Schrift: Bricolage Grotesque für alles, JetBrains Mono nur für Zahlen und Zeiten */
   --font-display: var(--font-body);
-  /* Zahlen (Timer, Noten, Streak) ebenfalls in Inter – mit gleich breiten Ziffern */
-  --font-mono: var(--font-body);
+  --font-mono: var(--font-zahl), ui-monospace, monospace;
   --font-code: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* Helles Gegenstück zur dunklen Design-Palette: gleiche Akzentfarben
-     (Gold/Blau/Lila/Grün/Rot), aber warmes Creme statt Espresso-Braun. */
-  --page-bg: #f7f3ea;
-  --bg: #faf9f5;
-  --card: #fffdf8;
-  --card2: #f4efe2;
-  --border: #e6ddc7;
-  --border-soft: #efe8d8;
-  --text: #2a2318;
-  --muted: #7a6d51;
-  --faint: #a89a7a;
-  --accent: #b9822a;
-  --accent-strong: #96661d;
-  --accent-soft: #f2e4c4;
-  --sidebar: #faf9f5;
-  --sidebar-border: #e6ddc7;
-  --danger: #c14e34;
-  --danger-soft: #f6e1da;
-  --warn: #b9822a;
-  --warn-soft: #f2e4c4;
-  --btn-bg: #b9822a;
-  --btn-fg: #fffdf8;
-  --blue: #4f74b0;
-  --purple: #7c5ba8;
-  --success: #3f8a52;
-  --shadow: 0 1px 2px rgba(42, 35, 24, 0.05), 0 3px 10px rgba(42, 35, 24, 0.05);
-  --radius: 16px;
+
+  /* 4-px-Raster */
+  --space-half: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Schriftgrößen */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-lead: 18px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-3xl: 40px;
+
+  /* Formen: 6 px Flächen und Karten, 8 px Bedienelemente, Pillen für Knöpfe */
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Bewegung */
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-long: 420ms;
+  --ease-out: cubic-bezier(0.22, 0.9, 0.24, 1);
+
+  --z-raised: 10;
+  --z-sticky: 200;
+  --z-modal: 400;
+
+  /* Hochschule (hell) – Standard, solange nichts anderes gewählt ist */
+  --grund: #ecece9;
+  --flaeche: #ffffff;
+  --flaeche-2: #f7f7f5;
+  --flaeche-3: #efefec;
+  --hover: rgba(10, 20, 40, 0.04);
+  --aktiv: rgba(10, 20, 40, 0.07);
+  --linie: rgba(12, 18, 28, 0.09);
+  --linie-2: rgba(12, 18, 28, 0.16);
+  --text: #111419;
+  --text-2: #4f555e;
+  --text-3: #676d76;
+  --akzent: #1f4e8c;
+  --akzent-text: #1f4e8c;
+  --auf-akzent: #ffffff;
+  --fokus: #1f4e8c;
+  --ok: #1d8a57;
+  --warnung: #946318;
+  --color-error: #c62a2f;
+  --f1: #2f7d74;
+  --f2: #946318;
+  --f3: #3d5f9e;
+  --f4: #6b4f9a;
+  --schatten: rgba(20, 30, 50, 0.14);
+  --stern: transparent;
+  --shadow: 0 1px 2px rgba(20, 30, 50, 0.06), 0 2px 8px rgba(20, 30, 50, 0.04);
   color-scheme: light;
 }
 
-.dashboard[data-theme="dark"] {
-  /* 1:1 aus dem Zentraler-Hub-Design übernommen. */
-  --page-bg: #15120d;
-  --bg: #1c1811;
-  --card: #211c14;
-  --card2: #2a2318;
-  --border: #3a3020;
-  --border-soft: #2a2418;
-  --text: #f5f0e6;
-  --muted: #ab9d82;
-  --faint: #6f6650;
-  --accent: #d9a441;
-  --accent-strong: #d9a441;
-  --accent-soft: rgba(217, 164, 65, 0.16);
-  --sidebar: #15120d;
-  --sidebar-border: #2a2418;
-  --danger: #e0654a;
-  --danger-soft: rgba(224, 101, 74, 0.16);
-  --warn: #d9a441;
-  --warn-soft: rgba(217, 164, 65, 0.16);
-  --btn-bg: #d9a441;
-  --btn-fg: #1c1811;
-  --blue: #7c9fd8;
-  --purple: #a689d0;
-  --success: #6fae7c;
+/* Sternenhimmel (dunkel). Das Attribut sitzt heute auf .dashboard,
+   später auf <html> (DESIGN.md Abschnitt 2). */
+[data-theme="nacht"] {
+  --grund: #08090b;
+  --flaeche: #0e1013;
+  --flaeche-2: #15181c;
+  --flaeche-3: #1d2126;
+  --hover: rgba(255, 255, 255, 0.045);
+  --aktiv: rgba(255, 255, 255, 0.08);
+  --linie: rgba(255, 255, 255, 0.075);
+  --linie-2: rgba(255, 255, 255, 0.13);
+  --text: #ededef;
+  --text-2: #a8acb3;
+  --text-3: #8a8f98;
+  --akzent: #e8be6a;
+  --akzent-text: #ebc575;
+  --auf-akzent: #17110a;
+  --fokus: #ebc575;
+  --ok: #5fd39a;
+  --warnung: #e8be6a;
+  --color-error: #e5484d;
+  --f1: #7fbfb6;
+  --f2: #cfae7a;
+  --f3: #8ea3c9;
+  --f4: #a99cc4;
+  --schatten: rgba(0, 0, 0, 0.55);
+  --stern: rgba(255, 255, 255, 0.32);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 3px 12px rgba(0, 0, 0, 0.4);
   color-scheme: dark;
 }
 
-.dashboard[data-theme="light"] {
+[data-theme="hochschule"] {
   color-scheme: light;
+}
+
+/* Alte Namen → B3-Token. Steht auf jedem Element, das ein Design setzt,
+   damit die Verweise dort mit den Farben des Designs aufgelöst werden. */
+:root,
+[data-theme] {
+  --page-bg: var(--grund);
+  --bg: var(--grund);
+  --card: var(--flaeche);
+  --card2: var(--flaeche-3);
+  --border: var(--linie-2);
+  --border-soft: var(--linie);
+  --muted: var(--text-2);
+  --faint: var(--text-3);
+  --accent: var(--akzent);
+  --accent-strong: var(--akzent-text);
+  --accent-soft: color-mix(in srgb, var(--akzent) 14%, transparent);
+  --sidebar: var(--grund);
+  --sidebar-border: var(--linie);
+  --danger: var(--color-error);
+  --danger-soft: color-mix(in srgb, var(--color-error) 14%, transparent);
+  --warn: var(--warnung);
+  --warn-soft: color-mix(in srgb, var(--warnung) 14%, transparent);
+  --btn-bg: var(--akzent);
+  --btn-fg: var(--auf-akzent);
+  --blue: var(--f3);
+  --purple: var(--f4);
+  --success: var(--ok);
+  --radius: var(--radius-m);
 }
 
 * {
@@ -103,6 +181,7 @@ h4 {
   color: var(--text);
   letter-spacing: -0.02em;
   font-weight: 650;
+  text-wrap: balance;
 }
 
 .mono {
@@ -123,6 +202,12 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+/* Fokusring für alle Bedienelemente; Bereiche dürfen ihn verfeinern */
+:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
 }
 
 /* --- Auth --- */
@@ -170,7 +255,7 @@ textarea {
   width: 100%;
   min-width: 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card2);
   color: var(--text);
@@ -180,7 +265,7 @@ textarea {
 .auth-form button {
   margin-top: 12px;
   padding: 11px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: none;
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -261,7 +346,7 @@ textarea {
   align-items: center;
   gap: 12px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   color: var(--muted);
   font-size: 14px;
   font-weight: 500;
@@ -329,7 +414,7 @@ textarea {
   gap: 10px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 9px 12px;
   cursor: pointer;
   color: var(--muted);
@@ -442,7 +527,7 @@ textarea {
   font-size: 11px;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   letter-spacing: 0.02em;
   background: var(--card2);
   color: var(--faint);
@@ -472,7 +557,7 @@ select.field {
   width: 100%;
   border: 1px solid var(--border);
   background: var(--card2);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 10px 12px;
   font-family: inherit;
   font-size: 14px;
@@ -503,7 +588,7 @@ select.field {
   background: var(--btn-bg);
   color: var(--btn-fg);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
@@ -517,7 +602,7 @@ select.field {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 8px 13px;
   font-size: 13px;
   font-weight: 600;
@@ -550,7 +635,7 @@ select.field {
   gap: 3px;
   background: var(--card2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   padding: 4px;
   flex-wrap: wrap;
 }
@@ -562,7 +647,7 @@ select.field {
   font-size: 13px;
   font-weight: 600;
   padding: 7px 14px;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -623,7 +708,7 @@ input[type="checkbox"] {
   position: relative;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
@@ -643,7 +728,7 @@ input[type="checkbox"] {
 .search-bar input {
   width: 100%;
   padding: 12px 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -670,7 +755,7 @@ input[type="checkbox"] {
   font-weight: 600;
   color: var(--faint);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   padding: 3px 7px;
   background: var(--card2);
 }
@@ -683,7 +768,7 @@ input[type="checkbox"] {
   z-index: 30;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   padding: 8px 0;
   max-height: 360px;
   overflow-y: auto;
@@ -745,7 +830,7 @@ input[type="checkbox"] {
   z-index: 30;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   min-width: 300px;
   max-height: 360px;
   overflow-y: auto;
@@ -791,7 +876,7 @@ input[type="checkbox"] {
   z-index: 30;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -859,7 +944,7 @@ input[type="checkbox"] {
 .locked-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--border);
   display: flex;
   align-items: center;
@@ -910,7 +995,7 @@ input[type="checkbox"] {
   align-items: center;
   gap: 16px;
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--accent-soft);
   margin-bottom: 18px;
 }
@@ -921,7 +1006,7 @@ input[type="checkbox"] {
 
 .naechster-termin-leer {
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   margin-bottom: 18px;
 }
@@ -957,7 +1042,7 @@ input[type="checkbox"] {
 
 .entry-row.entry-dringend {
   background: var(--danger-soft);
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   border-bottom: none;
   padding-left: 12px;
   padding-right: 12px;
@@ -1038,7 +1123,7 @@ input[type="checkbox"] {
 
 .entry-actions button {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -1081,7 +1166,7 @@ input[type="checkbox"] {
   padding: 16px;
   background: var(--card2);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
 }
 
 .crud-form label {
@@ -1092,7 +1177,7 @@ input[type="checkbox"] {
 .crud-form input,
 .crud-form select {
   padding: 9px 11px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
@@ -1106,7 +1191,7 @@ input[type="checkbox"] {
 
 .crud-form-actions button {
   padding: 9px 14px;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -1165,7 +1250,7 @@ input[type="checkbox"] {
 
 .fach-card-actions button {
   padding: 5px 9px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -1219,7 +1304,7 @@ input[type="checkbox"] {
 
 .heute-item.entry-dringend {
   background: var(--danger-soft);
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   border-bottom: none;
   padding-left: 12px;
   padding-right: 12px;
@@ -1245,7 +1330,7 @@ input[type="checkbox"] {
   color: var(--faint);
   border: 1px solid var(--border);
   background: var(--card2);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   padding: 3px 8px;
 }
 
@@ -1294,7 +1379,7 @@ input[type="checkbox"] {
   position: absolute;
   left: 1px;
   right: 1px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: none;
   padding: 6px 8px;
   color: #fff;
@@ -1317,7 +1402,7 @@ input[type="checkbox"] {
   position: absolute;
   left: 1px;
   right: 1px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   padding: 3px 5px;
   font-size: 10px;
   font-weight: 600;
@@ -1358,7 +1443,7 @@ input[type="checkbox"] {
 
 .rechner-ergebnis {
   padding: 13px 15px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--accent-soft);
   color: var(--accent-strong);
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -1451,7 +1536,7 @@ input[type="checkbox"] {
 .quick-add-modal {
   background: var(--card);
   color: var(--text);
-  border-radius: 16px;
+  border-radius: var(--radius-m);
   padding: 20px;
   width: 100%;
   max-width: 380px;
@@ -1478,7 +1563,7 @@ dialog.card {
 .quick-add-modal select,
 .quick-add-modal input {
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card2);
   color: var(--text);
@@ -1515,7 +1600,7 @@ dialog.card {
   align-items: center;
   gap: 10px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   font-size: 12px;
 }
@@ -1543,7 +1628,7 @@ dialog.card {
   border: 1px dashed var(--border);
   background: transparent;
   color: var(--muted);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   padding: 6px 12px;
   font-size: 12px;
   cursor: pointer;
@@ -1554,7 +1639,7 @@ dialog.card {
   flex-direction: column;
   gap: 6px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -1562,7 +1647,7 @@ dialog.card {
 .unteraufgabe-form select,
 .unteraufgabe-form textarea {
   padding: 7px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
@@ -1576,7 +1661,7 @@ dialog.card {
   flex-direction: column;
   gap: 5px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -1644,7 +1729,7 @@ dialog.card {
 
 .deadline-teilen-btn {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -1660,7 +1745,7 @@ dialog.card {
   width: 240px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -1670,7 +1755,7 @@ dialog.card {
 
 .deadline-teilen-input {
   padding: 7px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card2);
   color: var(--text);
@@ -1702,7 +1787,7 @@ dialog.card {
 
 .deadline-teilen-treffer button {
   padding: 4px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--accent-strong);
   color: #fff;
@@ -1743,7 +1828,7 @@ dialog.card {
   flex-direction: column;
   gap: 12px;
   padding: 16px 18px;
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
@@ -1783,7 +1868,7 @@ dialog.card {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -1799,7 +1884,7 @@ dialog.card {
   align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--accent);
   background: var(--accent-soft);
   color: var(--text);
@@ -1825,7 +1910,7 @@ dialog.card {
   right: 2px;
   z-index: 0;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   padding: 2px 5px;
   font-size: 10px;
   color: var(--muted);
@@ -1845,7 +1930,7 @@ dialog.card {
   flex-direction: column;
   gap: 4px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--warn);
   background: var(--warn-soft);
   color: var(--text);
@@ -1945,7 +2030,7 @@ dialog.card {
   border: 1px solid var(--accent);
   background: var(--accent-soft);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   padding: 10px 14px;
   font-size: 13px;
   cursor: pointer;
@@ -1996,7 +2081,7 @@ a.btng:hover {
   height: 30px;
   flex: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--faint);
   cursor: pointer;
@@ -2025,7 +2110,7 @@ a.btng:hover {
   display: flex;
   flex-direction: column;
   padding: 5px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -2037,7 +2122,7 @@ a.btng:hover {
   background: none;
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   font-size: 13px;
   cursor: pointer;
 }
@@ -2069,7 +2154,7 @@ kbd {
   font-family: var(--font-code);
   font-size: 11px;
   padding: 1px 6px;
-  border-radius: 5px;
+  border-radius: var(--radius-s);
   border: 1px solid var(--border);
   background: var(--card2);
   color: var(--muted);
@@ -2130,7 +2215,7 @@ kbd {
   flex-direction: column;
   gap: 3px;
   padding: 9px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -2234,7 +2319,7 @@ kbd {
   gap: 3px;
   padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   align-self: flex-start;
 }
@@ -2244,7 +2329,7 @@ kbd {
   height: 28px;
   padding: 0 7px;
   border: none;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--muted);
   font-size: 13px;
@@ -2292,7 +2377,7 @@ kbd {
   min-height: 90px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -2368,14 +2453,14 @@ kbd {
   font-size: 0.88em;
   background: var(--card2);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: var(--radius-s);
   padding: 0.05em 0.35em;
 }
 
 .md-inhalt pre {
   background: var(--card2);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 12px 14px;
   overflow-x: auto;
   margin: 0 0 0.8em;
@@ -2487,7 +2572,7 @@ kbd {
   border: none;
   background: none;
   padding: 4px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   color: var(--text);
   cursor: pointer;
 }
@@ -2583,7 +2668,7 @@ kbd {
   text-align: center;
   gap: 12px;
   padding: 36px 32px;
-  border-radius: 20px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -2625,7 +2710,7 @@ kbd {
   justify-content: center;
   gap: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -3031,7 +3116,7 @@ label.ws-ton {
   font-size: 11px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
@@ -3046,7 +3131,7 @@ label.ws-ton {
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 6px 8px;
   cursor: pointer;
 }
@@ -3186,7 +3271,7 @@ label.ws-ton {
   gap: 9px;
   padding: 8px 10px;
   border: 1px dashed transparent;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   background: none;
   color: var(--text);
   font-size: 13.5px;
@@ -3252,7 +3337,7 @@ label.ws-ton {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--accent-soft) 85%, transparent);
   color: var(--accent-strong);
   font-weight: 700;
@@ -3276,7 +3361,7 @@ label.ws-ton {
   gap: 10px;
   font-size: 13px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -3427,7 +3512,7 @@ dialog.dat-vorschau {
   max-width: 100%;
   max-height: 75vh;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   align-self: center;
 }
 
@@ -3465,7 +3550,7 @@ dialog.dat-vorschau {
 .pdf-liste-zeile:hover {
   background: var(--card2);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
 }
 
 .pdf-liste-name {
@@ -3497,7 +3582,7 @@ dialog.dat-vorschau {
   flex-wrap: wrap;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -3614,7 +3699,7 @@ dialog.dat-vorschau {
   overflow-y: auto;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -3697,7 +3782,7 @@ dialog.dat-vorschau {
   border: none;
   padding: 0 5px;
   margin: 0 1px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--accent-soft);
   color: var(--accent);
   font: inherit;
@@ -3741,7 +3826,7 @@ dialog.dat-vorschau {
   overflow-y: auto;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -3762,7 +3847,7 @@ dialog.dat-vorschau {
   border: none;
   background: none;
   padding: 7px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
@@ -3776,7 +3861,7 @@ dialog.dat-vorschau {
 .pdf-flaeche {
   position: relative;
   overflow: auto;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   border: 1px solid var(--border);
   padding: 8px 16px;
@@ -3875,7 +3960,7 @@ dialog.dat-vorschau {
 
 .pdf-marker {
   position: absolute;
-  border-radius: 5px;
+  border-radius: var(--radius-s);
 }
 
 .pdf-marker.aktiv {
@@ -3944,7 +4029,7 @@ dialog.dat-vorschau {
   align-items: center;
   gap: 8px;
   padding: 7px 9px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -3976,7 +4061,7 @@ dialog.dat-vorschau {
   font-size: 13px;
   font-weight: 600;
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -4023,7 +4108,7 @@ dialog.dat-vorschau {
 .pdf-markier-liste li {
   position: relative;
   border-left: 4px solid var(--marker);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--card2);
 }
 
@@ -4099,7 +4184,7 @@ dialog.dat-vorschau {
 .lit-verzeichnis {
   border: 1px solid var(--accent);
   background: var(--accent-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   padding: 14px 16px;
 }
 
@@ -4199,7 +4284,7 @@ dialog.dat-vorschau {
   margin: 0;
   font-size: 13px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -4368,7 +4453,7 @@ select.field.txt-fach {
   gap: 3px;
   padding: 6px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   box-shadow: var(--shadow);
 }
@@ -4452,7 +4537,7 @@ select.field.txt-block {
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   font-size: 14px;
 }
@@ -4500,7 +4585,7 @@ select.field.txt-block {
   gap: 6px;
   padding: 10px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
 }
 
 .txt-ki-alternativen li p {
@@ -4518,7 +4603,7 @@ select.field.txt-block {
   text-align: left;
   padding: 10px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card);
   color: var(--text);
   font: inherit;
@@ -4588,7 +4673,7 @@ select.field.txt-block {
   overflow-y: auto;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -4609,7 +4694,7 @@ select.field.txt-block {
   border: none;
   background: none;
   padding: 5px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
@@ -4641,7 +4726,7 @@ select.field.txt-block {
   padding: 56px 64px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   box-shadow: var(--shadow);
 }
 
@@ -4668,7 +4753,7 @@ select.field.txt-block {
 .txt-inhalt img {
   max-width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   display: block;
   margin: 0.6em 0;
 }
@@ -4755,7 +4840,7 @@ dialog.bild-auswahl {
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   cursor: pointer;
   color: var(--text);
@@ -4770,7 +4855,7 @@ dialog.bild-auswahl {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--card);
 }
 
@@ -4908,7 +4993,7 @@ dialog.bild-auswahl {
 .tab-farbe {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   border: 1px solid var(--border);
   cursor: pointer;
   padding: 0;
@@ -4939,7 +5024,7 @@ dialog.bild-auswahl {
   min-width: 64px;
   padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--card);
   font-size: 13px;
   font-weight: 700;
@@ -5129,7 +5214,7 @@ dialog.bild-auswahl {
   overflow-y: auto;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -5146,7 +5231,7 @@ dialog.bild-auswahl {
   display: flex;
   gap: 6px;
   align-items: flex-start;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   border-top: 3px solid transparent;
 }
 
@@ -5167,7 +5252,7 @@ dialog.bild-auswahl {
   min-width: 0;
   padding: 0;
   border: 2px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: none;
   cursor: pointer;
   overflow: hidden;
@@ -5219,7 +5304,7 @@ dialog.bild-auswahl {
 .prae-buehne > .folie {
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
 }
 
 .prae-buehne-leiste {
@@ -5453,7 +5538,7 @@ textarea.folie-punkte {
   border: 1px solid rgba(255, 255, 255, 0.4);
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   padding: 4px 10px;
   cursor: pointer;
 }
@@ -5544,7 +5629,7 @@ textarea.folie-punkte {
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -5593,7 +5678,7 @@ textarea.folie-punkte {
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   outline: none;
   touch-action: none;
@@ -5624,7 +5709,7 @@ textarea.folie-punkte {
   width: 100%;
   height: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   padding: 0 8px;
   font: 600 15px var(--font-body), system-ui, sans-serif;
   text-align: center;
@@ -5658,7 +5743,7 @@ textarea.folie-punkte {
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   overflow-y: auto;
 }
@@ -5671,7 +5756,7 @@ textarea.folie-punkte {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--muted);
   font-size: 16px;
@@ -5732,7 +5817,7 @@ textarea.folie-punkte {
   background: #fffdf8;
 }
 
-.dashboard[data-theme="dark"] .wb-flaeche {
+.dashboard[data-theme="nacht"] .wb-flaeche {
   background: #fffdf8;
 }
 
@@ -5824,7 +5909,7 @@ textarea.folie-punkte {
   gap: 10px;
   padding: 9px 8px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: none;
   color: var(--text);
   text-align: left;
@@ -5997,7 +6082,7 @@ textarea.folie-punkte {
   flex-direction: column;
   gap: 4px;
   padding: 8px 12px 6px;
-  border-radius: 16px;
+  border-radius: var(--radius-m);
   font-size: 14.5px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -6035,7 +6120,7 @@ textarea.folie-punkte {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: rgba(255, 255, 255, 0.85);
   color: #2a2318;
   text-decoration: none;
@@ -6108,7 +6193,7 @@ a.chat-karte:hover {
   justify-content: space-between;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--accent-soft);
   font-size: 13px;
 }
@@ -6152,7 +6237,7 @@ dialog.chat-dialog {
   gap: 10px;
   padding: 7px 8px;
   border: none;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   background: none;
   color: var(--text);
   font: inherit;
@@ -6321,7 +6406,7 @@ dialog.ki-dialog-klein {
   margin: 0;
   font-size: 13px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--warn-soft);
   color: var(--text);
 }
@@ -6341,7 +6426,7 @@ dialog.ki-dialog-klein {
   align-items: start;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -6485,7 +6570,7 @@ dialog.ki-dialog-klein {
 .ki-luecken li {
   font-size: 13px;
   padding: 7px 10px;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   border-left: 3px solid var(--warn);
 }
@@ -6534,7 +6619,7 @@ dialog.ki-dialog-klein {
   gap: 6px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -6613,7 +6698,7 @@ dialog.ki-dialog-klein {
 
 .ki-formel-vorschlag {
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card2);
 }
@@ -6641,7 +6726,7 @@ dialog.ki-dialog-klein {
 
 .kk-erklaerung-text {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   background: color-mix(in srgb, var(--accent-soft) 45%, var(--card));
   font-size: 14px;
@@ -6840,7 +6925,7 @@ dialog.ki-dialog-klein {
   gap: 6px 12px;
   padding: 11px 6px;
   color: var(--text);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
 }
 
 .tra-eintrag:hover {
@@ -7001,7 +7086,7 @@ dialog.ki-dialog-klein {
   gap: 8px;
   align-items: start;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
 }
 
 .tra-absatz.aktiv {
@@ -7018,7 +7103,7 @@ dialog.ki-dialog-klein {
   font-variant-numeric: tabular-nums;
   text-align: left;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
 }
 
 .tra-zeitstempel:hover {
@@ -7034,7 +7119,7 @@ dialog.ki-dialog-klein {
   font-size: 15px;
   line-height: 1.6;
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   resize: none;
   field-sizing: content;
 }
@@ -7054,7 +7139,7 @@ dialog.ki-dialog-klein {
   overflow-y: auto;
   padding: 4px 12px;
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
 }
 
 .tra-mitschrift-text {
@@ -7237,7 +7322,7 @@ dialog.ki-dialog-klein {
 .ki-blase {
   max-width: 92%;
   padding: 9px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-m);
   font-size: 14.5px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -7322,7 +7407,7 @@ dialog.ki-dialog-klein {
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--accent);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
 }
 
@@ -7435,7 +7520,7 @@ dialog.ki-dialog-klein {
   display: flex;
   align-items: center;
   gap: 2px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
 }
 
 .ki-seite-liste li.aktiv,
@@ -7599,7 +7684,7 @@ dialog.ki-dialog-klein {
   gap: 4px;
   padding: 8px 10px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   font-size: 13.5px;
 }
 
@@ -7895,7 +7980,7 @@ dialog.ki-dialog-klein {
   position: absolute;
   pointer-events: none;
   border: 2px solid var(--accent);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--accent) 22%, transparent);
   margin: 8px;
   transition: all 0.12s ease-out;
@@ -7936,7 +8021,7 @@ html[data-eingebettet] .dashboard-main {
 .md-editor.zitat-ziel .md-inhalt {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
 }
 
 .pdf-markier-liste li[draggable="true"] {
@@ -7980,7 +8065,7 @@ html[data-eingebettet] .dashboard-main {
   gap: 2px;
   padding: 2px 8px;
   min-height: 34px;
-  border-radius: 18px;
+  border-radius: var(--radius-m);
   font-size: 12.5px;
   box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
 }
@@ -8054,7 +8139,7 @@ html[data-eingebettet] .dashboard-main {
 }
 
 .pdf-reader.vollbild .pdf-flaeche {
-  border-radius: 8px;
+  border-radius: var(--radius-m);
 }
 
 /* --- Sidebar einklappen (nur am Desktop; am Handy ist sie oben eine Leiste) --- */
@@ -8068,7 +8153,7 @@ html[data-eingebettet] .dashboard-main {
   height: 28px;
   flex: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--faint);
   cursor: pointer;
@@ -8138,7 +8223,7 @@ html[data-eingebettet] .dashboard-main {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   outline: 2px dashed transparent;
   outline-offset: 6px;
   transition: outline-color 0.1s;
@@ -8167,7 +8252,7 @@ html[data-eingebettet] .dashboard-main {
   font-weight: 600;
   color: var(--muted);
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -8197,7 +8282,7 @@ button.pdf-pfad-teil:hover {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   min-height: 112px;
   transition: border-color 0.1s, background 0.1s, transform 0.1s;
@@ -8235,7 +8320,7 @@ button.pdf-pfad-teil:hover {
   color: var(--text);
   text-align: left;
   cursor: pointer;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
 }
 
 .pdf-ordner-name {
@@ -8384,7 +8469,7 @@ button.pdf-pfad-teil:hover {
 
 .sp-foto-bild {
   width: 100%;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -8514,7 +8599,7 @@ button.pdf-pfad-teil:hover {
   text-align: left;
   padding: 8px 10px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card);
   color: var(--text);
   font: inherit;
@@ -8595,7 +8680,7 @@ button.pdf-pfad-teil:hover {
     overflow-x: auto;
     justify-content: flex-start;
     align-self: stretch;
-    border-radius: 14px;
+    border-radius: var(--radius-m);
   }
 }
 
@@ -8605,7 +8690,7 @@ button.pdf-pfad-teil:hover {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   color: var(--text);
   text-decoration: none;
   border: 1px solid transparent;
@@ -8809,7 +8894,7 @@ button.pdf-pfad-teil:hover {
   gap: 4px;
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card2);
 }
 
@@ -8843,7 +8928,7 @@ button.pdf-pfad-teil:hover {
   height: 30px;
   padding: 0 6px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -8890,7 +8975,7 @@ button.pdf-pfad-teil:hover {
   height: 30px;
   padding: 0 6px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   background: var(--card);
   color: var(--text);
   font: inherit;
@@ -8930,7 +9015,7 @@ button.pdf-pfad-teil:hover {
   min-width: 200px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
 }
@@ -8944,7 +9029,7 @@ button.pdf-pfad-teil:hover {
 .wz-farbe {
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   border: 1px solid rgb(0 0 0 / 0.15);
   cursor: pointer;
 }
@@ -8981,7 +9066,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13.5px;
   color: var(--text);
   padding: 6px 8px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -9089,7 +9174,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13.5px;
   color: var(--text);
   padding: 6px 8px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9150,7 +9235,7 @@ button.pdf-pfad-teil:hover {
 
 .md-notiz img {
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
 }
 
 .md-notiz img.ProseMirror-selectednode {
@@ -9199,7 +9284,7 @@ button.pdf-pfad-teil:hover {
 .md-callout {
   margin: 0.8em 0;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border-left: 4px solid var(--callout, #3b82f6);
   background: color-mix(in srgb, var(--callout, #3b82f6) 10%, transparent);
 }
@@ -9225,7 +9310,7 @@ button.pdf-pfad-teil:hover {
 .md-wikilink {
   display: inline;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--accent-soft);
   color: var(--accent-strong);
   font-weight: 600;
@@ -9320,7 +9405,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13.5px;
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   text-align: left;
   cursor: pointer;
 }
@@ -9471,7 +9556,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13px;
   color: var(--text);
   padding: 4px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9517,7 +9602,7 @@ button.pdf-pfad-teil:hover {
   font-size: 14px;
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -9622,7 +9707,7 @@ button.pdf-pfad-teil:hover {
   font-weight: 600;
   color: var(--muted);
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   cursor: pointer;
   position: relative;
 }
@@ -9669,7 +9754,7 @@ button.pdf-pfad-teil:hover {
   line-height: 1;
   width: 26px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   cursor: pointer;
 }
 
@@ -9693,7 +9778,7 @@ button.pdf-pfad-teil:hover {
   height: 26px;
   padding: 0 5px;
   font-size: 13px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
 }
 
 .wz .wz-knopf.breit {
@@ -9839,7 +9924,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13px;
   color: var(--text);
   padding: 5px 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9860,7 +9945,7 @@ button.pdf-pfad-teil:hover {
 .lr-ueberblick {
   margin: 4px 0 8px 26px;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   font-size: 13px;
   display: flex;
@@ -9886,7 +9971,7 @@ button.pdf-pfad-teil:hover {
   font-size: 12.5px;
   text-align: left;
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -9909,7 +9994,7 @@ button.pdf-pfad-teil:hover {
   gap: 10px;
   align-items: flex-end;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card2);
   font-size: 12.5px;
 }
@@ -9949,7 +10034,7 @@ button.pdf-pfad-teil:hover {
 .lr-hinweis {
   margin: 0;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: var(--accent-soft);
   color: var(--accent-strong);
   font-size: 13px;
@@ -10098,7 +10183,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13px;
   font-weight: 600;
   padding: 10px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   cursor: pointer;
   text-align: left;
 }
@@ -10144,7 +10229,7 @@ button.pdf-pfad-teil:hover {
   font-size: 13px;
   text-align: left;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
@@ -10182,7 +10267,7 @@ button.pdf-pfad-teil:hover {
 
 .lr-karte {
   border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   padding: 7px 10px;
   font-size: 13px;
 }
@@ -10240,7 +10325,7 @@ kbd,
   padding: 1px 6px;
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 5px;
+  border-radius: var(--radius-s);
   background: var(--bg);
   color: var(--muted);
   font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -10256,7 +10341,7 @@ kbd,
   padding: 7px 10px;
   margin-bottom: 6px;
   border: 1px dashed var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--muted);
   font-size: 13px;
@@ -10321,7 +10406,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-m);
   background: color-mix(in srgb, #3c8a4e 10%, transparent);
 }
 
@@ -10349,7 +10434,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   margin-top: 8px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -10451,7 +10536,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   max-height: 220px;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -10464,7 +10549,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   align-items: center;
   gap: 8px;
   padding: 5px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   font-size: 13px;
   cursor: pointer;
 }
@@ -10586,7 +10671,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   gap: 10px;
   padding: 12px 14px;
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--card);
   color: var(--text);
   font: inherit;
@@ -10624,7 +10709,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: var(--radius-m);
   background: var(--bg);
   font-size: 12px;
   font-weight: 700;
@@ -10653,7 +10738,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   font-size: 14px;
 }
 
@@ -10671,7 +10756,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 
 .qz-feedback {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   border-left: 4px solid var(--muted);
   background: var(--bg);
   font-size: 14px;
@@ -10752,7 +10837,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   flex-direction: column;
   gap: 2px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--bg);
 }
 
@@ -10837,7 +10922,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -10893,7 +10978,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   margin: -8px 0 12px;
   padding: 8px 10px;
   border: 1px solid var(--sidebar-border, var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--card);
   color: var(--muted);
   font: inherit;
@@ -10967,7 +11052,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   flex-direction: column;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-m);
   box-shadow: 0 24px 60px rgb(20 16 10 / 0.28);
   overflow: hidden;
 }
@@ -11037,7 +11122,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   width: 100%;
   padding: 8px 10px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -11143,7 +11228,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 .pdf-reader .pdf-flaeche {
   padding: 0 4px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
 }
 
 .pdf-seite {
@@ -11276,7 +11361,7 @@ html[data-eingebettet] .notiz-karte {
   align-items: center;
   width: 100%;
   padding: 12px 74px 12px 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -11373,7 +11458,7 @@ html[data-eingebettet] .notiz-karte {
   flex-wrap: wrap;
   gap: 6px;
   padding: 5px 9px;
-  border-radius: 9px;
+  border-radius: var(--radius-m);
   background: color-mix(in srgb, #7c5cff 10%, transparent);
 }
 
@@ -11423,7 +11508,7 @@ html[data-eingebettet] .notiz-karte {
   gap: 8px;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--accent) 7%, var(--card));
   font-size: 14px;
 }
@@ -11552,7 +11637,7 @@ html[data-eingebettet] .notiz-karte {
   align-items: center;
   gap: 10px;
   padding: 7px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--bg);
 }
 
@@ -11625,7 +11710,7 @@ html[data-eingebettet] .notiz-karte {
 }
 
 .gd-thema.wackelt .gd-ampel {
-  background: #d9a441;
+  background: var(--warnung);
 }
 
 .gd-thema.fehlt .gd-ampel {
@@ -11708,7 +11793,7 @@ html[data-eingebettet] .notiz-karte {
   height: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--bg);
   color: var(--text);
   font: inherit;
@@ -11768,7 +11853,7 @@ html[data-eingebettet] .notiz-karte {
   gap: 14px;
   padding: 12px 16px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-m);
   background: var(--card);
   box-shadow: 0 16px 40px rgb(20 16 10 / 0.25);
   font-size: 14px;
