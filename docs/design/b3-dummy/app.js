@@ -263,7 +263,7 @@ function markiere(b) {
   if (a) { m.style.transform = `translateY(${a.offsetTop}px)`; if (!('bereit' in m.dataset)) requestAnimationFrame(() => requestAnimationFrame(() => { m.dataset.bereit = ''; })); }
 }
 function kontextSetzen(b, k) {
-  kontext.innerHTML = `<div class="ktitel"><h2>${b.n}</h2></div><button class="suchpille breit" type="button" data-suche>${ic('suche')}<span>Suchen</span><kbd>⌘K</kbd></button>${k}`;
+  kontext.innerHTML = `<div class="ktitel"><h2>${b.n}</h2></div><button class="suchpille breit" type="button" data-suche>${ic('suche')}<span>Suchen</span><kbd>⌘O</kbd></button>${k}`;
   kMobil.innerHTML = k;
   $('#kontextMobil summary span').textContent = KMOBIL[b.s] || 'Fächer';
 }
@@ -1166,7 +1166,7 @@ feld.oninput = e => { wahl = 0; liste(e.target.value); };
 pal.onclick = e => { if (e.target === pal) zu(); };
 $('#mehr').onclick = auf;
 addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && ['k', 'o'].includes(e.key.toLowerCase())) { e.preventDefault(); pal.classList.contains('offen') ? zu() : auf(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); pal.classList.contains('offen') ? zu() : auf(); return; }
   if (!pal.classList.contains('offen')) return;
   const n = treffer.length;
   if (e.key === 'Escape') zu();
@@ -1307,7 +1307,7 @@ VIEWS.hub = r => {
 };
 
 /* ---------- Geteilte Ansicht: zwei Bereiche nebeneinander oder übereinander (wie im Repo) ----------
-   Ziehen aus der Symbolleiste an einen Rand, oder ohne Ziehen über ⌘K „Daneben öffnen“ (WCAG 2.5.7). */
+   Ziehen aus der Symbolleiste an einen Rand, oder ohne Ziehen über ⌘O „Daneben öffnen“ (WCAG 2.5.7). */
 const EINGEBETTET = PARAM.has('eingebettet');
 if (EINGEBETTET) document.documentElement.dataset.eingebettet = '';
 S.split = null;
