@@ -66,3 +66,13 @@ test("podcastLesen teilt lange Beiträge", () => {
   assert.ok(p.segmente.every((s) => s.text.length <= 700));
   assert.equal(p.segmente.at(-1)?.sprecher, 1);
 });
+
+test("abgeschnittene Antworten werden gerettet", () => {
+  const podcast = '{"titel":"Statistik \\"kurz\\"","segmente":[{"sprecher":1,"text":"Hallo, heute: Lagemaße."},{"sprecher":2,"text":"Was ist der Median, {genau}?"},{"sprecher":1,"text":"Der mittlere Wert."},{"sprecher":2,"text":"Und der Mo';
+  const p = podcastLesen(podcast);
+  assert.equal(p.titel, 'Statistik "kurz"');
+  assert.equal(p.segmente.length, 3);
+  assert.equal(p.segmente[1].text, "Was ist der Median, {genau}?");
+  const quiz = '{"titel":"T","fragen":[{"typ":"wf","frage":"A ist B.","richtig":true},{"typ":"wf","frage":"C ist';
+  assert.equal(quizLesen(quiz).fragen.length, 1);
+});

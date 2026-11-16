@@ -62,7 +62,7 @@ export async function quizErzeugen(
     nutzer: p.nutzer,
     json: true,
     temperatur: 0.5,
-    maxTokens: Math.min(16_000, 1000 + einstellungen.anzahl * 650),
+    maxTokens: Math.min(24_000, 1500 + einstellungen.anzahl * 900),
     timeoutMs: 60_000,
   });
   const ergebnis = quizLesen(a.text);
@@ -77,7 +77,7 @@ export async function podcastErzeugen(
   fokus: string,
 ): Promise<{ titel: string; segmente: PodcastSegment[] }> {
   const p = podcastPrompt(laenge, material.info, material.text, fokus);
-  const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0.7, maxTokens: laenge === "lang" ? 9000 : laenge === "normal" ? 6000 : 3500, timeoutMs: 60_000 });
+  const a = await anfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0.7, maxTokens: laenge === "lang" ? 16_000 : laenge === "normal" ? 10_000 : 6000, timeoutMs: 60_000 });
   const ergebnis = podcastLesen(a.text);
   if (ergebnis.segmente.length < 3) throw new KiEingabe("Der Podcast ließ sich nicht erstellen. Versuch es noch einmal.");
   return ergebnis;

@@ -4,7 +4,7 @@
  * Freitext (von der KI bewertet). Schwächen ergeben sich aus den bisherigen Versuchen.
  */
 import { MATERIAL_REGEL, markerEntschaerfen } from "./material.ts";
-import { alsObjekt, jsonLesen, text, textListe } from "./json.ts";
+import { alsObjekt, arrayElementeRetten, jsonLesen, text, textFeldRetten, textListe } from "./json.ts";
 
 // ---------------------------------------------------------------------------
 // Typen
@@ -154,8 +154,10 @@ function frageLesen(r: unknown): QuizFrage | null {
 /** KI-Antwort → Titel + gültige Fragen (ungültige werden verworfen) */
 export function quizLesen(antwort: string): { titel: string; fragen: QuizFrage[] } {
   const o = alsObjekt(jsonLesen(antwort));
-  const fragen = (Array.isArray(o.fragen) ? o.fragen : []).map(frageLesen).filter((f): f is QuizFrage => f !== null).slice(0, 40);
-  return { titel: text(o.titel, 120), fragen };
+  // Abgeschnittene Antwort (Token-Limit): vollständige Fragen trotzdem übernehmen
+  const roh = Array.isArray(o.fragen) ? o.fragen : arrayElementeRetten(antwort, "fragen");
+  const fragen = roh.map(frageLesen).filter((f): f is QuizFrage => f !== null).slice(0, 40);
+  return { titel: text(o.titel, 120) || text(textFeldRetten(antwort, "titel"), 120), fragen };
 }
 
 /** Gespeicherte Fragen (jsonb) lesen */
@@ -334,7 +336,9 @@ export function podcastPrompt(laenge: PodcastLaenge, quellen: { nr: number; tite
 /** Segmente lesen; zu lange Beiträge werden an Satzgrenzen geteilt (Vorlesen max. 800 Zeichen je Stück) */
 export function podcastLesen(antwort: string): { titel: string; segmente: PodcastSegment[] } {
   const o = alsObjekt(jsonLesen(antwort));
-  return { titel: text(o.titel, 120), segmente: segmenteLesen(o.segmente) };
+  // Abgeschnittene Antwort (Token-Limit): vollständige Redebeiträge trotzdem übernehmen
+  const roh = Array.isArray(o.segmente) ? o.segmente : arrayElementeRetten(antwort, "segmente");
+  return { titel: text(o.titel, 120) || text(textFeldRetten(antwort, "titel"), 120), segmente: segmenteLesen(roh) };
 }
 
 export function segmenteLesen(roh: unknown): PodcastSegment[] {

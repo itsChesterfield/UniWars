@@ -41,3 +41,56 @@ export function textListe(wert: unknown, max: number, anzahl: number): string[] 
   }
   return liste;
 }
+
+/**
+ * Rettet die vollständigen Objekte aus einem JSON-Array, auch wenn die Antwort mittendrin
+ * abgeschnitten ist (z. B. Token-Limit erreicht): `{"segmente":[{…},{…},{…` → die ersten beiden.
+ */
+export function arrayElementeRetten(text: string, feld: string): unknown[] {
+  const start = text.search(new RegExp(`"${feld}"\\s*:\\s*\\[`));
+  if (start === -1) return [];
+  let i = text.indexOf("[", start) + 1;
+  const ergebnis: unknown[] = [];
+  while (i < text.length) {
+    while (i < text.length && /[\s,]/.test(text[i])) i++;
+    if (text[i] !== "{") break;
+    // passende schließende Klammer suchen (Zeichenketten beachten)
+    let tiefe = 0;
+    let inString = false;
+    let ende = -1;
+    for (let j = i; j < text.length; j++) {
+      const z = text[j];
+      if (inString) {
+        if (z === "\\") j++;
+        else if (z === '"') inString = false;
+      } else if (z === '"') inString = true;
+      else if (z === "{") tiefe++;
+      else if (z === "}") {
+        tiefe--;
+        if (tiefe === 0) {
+          ende = j;
+          break;
+        }
+      }
+    }
+    if (ende === -1) break;
+    try {
+      ergebnis.push(JSON.parse(text.slice(i, ende + 1)));
+    } catch {
+      break;
+    }
+    i = ende + 1;
+  }
+  return ergebnis;
+}
+
+/** Einen einfachen Text-Wert aus (evtl. abgeschnittenem) JSON lesen */
+export function textFeldRetten(text: string, feld: string): string {
+  const m = new RegExp(`"${feld}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`).exec(text);
+  if (!m) return "";
+  try {
+    return JSON.parse(`"${m[1]}"`) as string;
+  } catch {
+    return m[1];
+  }
+}
