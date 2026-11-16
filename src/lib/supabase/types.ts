@@ -1379,6 +1379,44 @@ export type Database = {
           },
         ]
       }
+      podcast: {
+        Row: {
+          erstellt_am: string
+          fach_id: string | null
+          id: string
+          quellen: Json
+          skript: Json
+          titel: string
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          fach_id?: string | null
+          id?: string
+          quellen?: Json
+          skript?: Json
+          titel: string
+          user_id?: string
+        }
+        Update: {
+          erstellt_am?: string
+          fach_id?: string | null
+          id?: string
+          quellen?: Json
+          skript?: Json
+          titel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "podcast_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       praesentation: {
         Row: {
           design: string
@@ -1534,6 +1572,91 @@ export type Database = {
             columns: ["notiz_id"]
             isOneToOne: false
             referencedRelation: "notiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz: {
+        Row: {
+          einstellungen: Json
+          erstellt_am: string
+          fach_id: string | null
+          fragen: Json
+          geaendert_am: string
+          id: string
+          quellen: Json
+          titel: string
+          user_id: string
+        }
+        Insert: {
+          einstellungen?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          fragen?: Json
+          geaendert_am?: string
+          id?: string
+          quellen?: Json
+          titel: string
+          user_id?: string
+        }
+        Update: {
+          einstellungen?: Json
+          erstellt_am?: string
+          fach_id?: string | null
+          fragen?: Json
+          geaendert_am?: string
+          id?: string
+          quellen?: Json
+          titel?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_versuch: {
+        Row: {
+          antworten: Json
+          erstellt_am: string
+          id: string
+          max_punkte: number
+          modus: string
+          punkte: number
+          quiz_id: string
+          user_id: string
+        }
+        Insert: {
+          antworten?: Json
+          erstellt_am?: string
+          id?: string
+          max_punkte?: number
+          modus?: string
+          punkte?: number
+          quiz_id: string
+          user_id?: string
+        }
+        Update: {
+          antworten?: Json
+          erstellt_am?: string
+          id?: string
+          max_punkte?: number
+          modus?: string
+          punkte?: number
+          quiz_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_versuch_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quiz"
             referencedColumns: ["id"]
           },
         ]

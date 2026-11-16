@@ -25,6 +25,9 @@ export function transkribieren(datei: Blob, sprache: "de" | "en", optionen: { da
   return transkribierenMit(audioKonfig(), { datei, sprache, dateiname: optionen.dateiname ?? "aufnahme.webm", zeitstempel: optionen.zeitstempel, geschaetzteSekunden: optionen.geschaetzteSekunden });
 }
 
-export function sprechen(text: string, optionen: { format?: TtsFormat; signal?: AbortSignal } = {}) {
-  return sprechenMit(audioKonfig(), { text, format: optionen.format ?? "mp3", stream: true, signal: optionen.signal });
+/** Vorlesen; `sprecher: 2` nutzt die zweite Stimme (KI_AUDIO_STIMME_2) – für den Lern-Podcast */
+export function sprechen(text: string, optionen: { format?: TtsFormat; signal?: AbortSignal; sprecher?: 1 | 2 } = {}) {
+  const konfig = audioKonfig();
+  const stimme = optionen.sprecher === 2 ? (umgebung("KI_AUDIO_STIMME_2") ?? konfig.stimme) : konfig.stimme;
+  return sprechenMit({ ...konfig, stimme }, { text, format: optionen.format ?? "mp3", stream: true, signal: optionen.signal });
 }

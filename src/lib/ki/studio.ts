@@ -11,7 +11,7 @@ export type QuellInfo = { nr: number; art: "pdf" | "notiz"; id: string; titel: s
 /** Etwas, das die KI ausgeführt hat (mit Rückgängig) */
 export type Erledigt = {
   id: string;
-  art: "deadline" | "todo" | "notiz" | "pruefung" | "stapel" | "todo_erledigt" | "deadline_verschoben" | "notiz_ergaenzt";
+  art: "deadline" | "todo" | "notiz" | "pruefung" | "stapel" | "quiz" | "podcast" | "todo_erledigt" | "deadline_verschoben" | "notiz_ergaenzt";
   text: string;
   link: string | null;
   status: "ok" | "rueckgaengig";
@@ -64,7 +64,8 @@ export const STUDIO_SYSTEM = [
   "- Brauchst du Text aus einer PDF oder Notiz, die nicht im Material steht: Werkzeug quelle_lesen.",
   "",
   "Handeln:",
-  "- Du kannst selbst handeln: öffnen (PDF, Notiz, Stapel, Lernraum, Bereiche), anlegen (Deadline, To-do, Prüfung, Notiz, Karteikarten), To-dos abhaken, Deadlines verschieben, Text in die offene Notiz einfügen, Lernmaterial erstellen (studio_erstellen: Lernzettel, FAQ, Briefing, Zeitleiste, Quiz, Karteikarten).",
+  "- Du kannst selbst handeln: öffnen (PDF, Notiz, Stapel, Lernraum, Bereiche), anlegen (Deadline, To-do, Prüfung, Notiz, Karteikarten), To-dos abhaken, Deadlines verschieben, Text in die offene Notiz einfügen, Lernmaterial erstellen (studio_erstellen: Lernzettel, FAQ, Briefing, Zeitleiste, kurzes Quiz im Chat, Karteikarten).",
+  "- Will der Nutzer ein richtiges Quiz zum Üben (mehrere Fragetypen, Bewertung, Schwächen): quiz_anlegen – es landet bei den Karteikarten. Will er sich den Stoff anhören: podcast_anlegen – der Lern-Podcast landet in der Transkription.",
   "- Tu es direkt, wenn der Nutzer es möchte – es wird sofort ausgeführt und er kann es rückgängig machen. Frag nur nach, wenn Wichtiges fehlt (z. B. das Datum einer Deadline).",
   "- Behaupte nur, was ein Werkzeug bestätigt hat. Löschen kannst du nicht.",
   "- Nach studio_erstellen sieht der Nutzer das Ergebnis schon im Chat: Wiederhole den Inhalt nicht, sag in einem Satz, was du erstellt hast.",
@@ -94,6 +95,10 @@ export const BEREICHE_ZUM_OEFFNEN: Record<string, string> = {
   dateiablage: "/dateiablage",
   notizen: "/notizen",
   karteikarten: "/karteikarten",
+  quiz: "/karteikarten",
+  quizze: "/karteikarten",
+  podcast: "/transkription",
+  podcasts: "/transkription",
   "pdf reader": "/pdf-reader",
   pdfs: "/pdf-reader",
   lernraum: "/lernraum",

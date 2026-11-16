@@ -13,6 +13,9 @@ import { kartenLesen, kontextBauen, MAX_KONTEXT_GANZ, quizLesen, STUDIO, studioP
 import { quellenListe, quellenTexte } from "@/lib/ki/lernraum-server";
 import { bereichPfad, type Aktion, type Block, type Erledigt } from "@/lib/ki/studio";
 import { createPruefung } from "@/app/pruefung/actions";
+import { materialLaden, podcastErzeugen, quizErzeugen, type QuellAuswahl } from "@/lib/ki/quiz-server";
+import { einstellungenLesen, FRAGE_TYPEN } from "@/lib/ki/quiz";
+import type { Json } from "@/lib/supabase/types";
 
 /** Höchstens so viele Einträge legt die KI pro Antwort direkt an – darüber nur als Vorschlag */
 export const MAX_DIREKT = 5;
@@ -21,6 +24,7 @@ export type Sammlung = { erledigt: Erledigt[]; bloecke: Block[]; aktionen: Aktio
 
 type Umfeld = {
   supabase: Supabase;
+  userId: string;
   faecher: FachRef[];
   stapel: StapelRef[];
   jetzt: Date;
@@ -58,6 +62,14 @@ async function finden(supabase: Supabase, tabelle: "datei" | "notiz" | "kk_stape
 }
 
 export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
+  /** Material für Quiz/Podcast: genanntes Fach > offene PDF/Notiz > Fach des Kontexts */
+  const materialAuswahl = (a: Record<string, unknown>) => {
+    const genannt = a.fach ? (fachFinden(u.faecher, a.fach)?.id ?? null) : null;
+    if (genannt) return { fachId: genannt, auswahl: [] as QuellAuswahl[] };
+    const auswahl = u.quellen.map((q) => ({ art: q.art, id: q.id }));
+    if (!auswahl.length && !u.fachId) throw new KiEingabe("Dafür brauche ich Material: Öffne eine PDF oder Notiz oder nenn das Fach.");
+    return { fachId: u.fachId, auswahl };
+  };
   const angelegt = () => s.erledigt.filter((e) => ["deadline", "todo", "notiz", "pruefung", "stapel"].includes(e.art)).length;
 
   /** Anlegen: direkt ausführen – oder (zu viele) als Vorschlag */
@@ -332,6 +344,64 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         if (!antwort.text.trim()) throw new KiEingabe("Es kam keine Antwort – bitte noch einmal.");
         s.bloecke.push({ id: crypto.randomUUID(), typ: "markdown", titel, markdown: antwort.text.trim() });
         return { erstellt: titel, hinweis: "Der Nutzer sieht das Ergebnis im Chat. Wiederhole den Inhalt nicht." };
+      },
+    },
+    {
+      name: "quiz_anlegen",
+      beschreibung:
+        "Legt ein richtiges Übungs-Quiz bei den Karteikarten an (Multiple Choice, Wahr/Falsch, Lückentext, Zuordnen, freie Antworten mit KI-Bewertung, Schwächen üben) – aus der offenen PDF/Notiz, sonst aus dem Fach – und öffnet es.",
+      parameter: {
+        type: "object",
+        properties: {
+          ...FACH,
+          anzahl: { type: "integer", description: "Anzahl Fragen (5–30, Standard 10)" },
+          schwierigkeit: { type: "string", enum: ["leicht", "mittel", "schwer"] },
+          typen: { type: "array", items: { type: "string", enum: [...FRAGE_TYPEN] }, description: "Fragetypen (optional)" },
+        },
+      },
+      statusText: "Erstelle dein Quiz …",
+      ausfuehren: async (a) => {
+        const { fachId, auswahl } = materialAuswahl(a);
+        const einstellungen = einstellungenLesen({ anzahl: a.anzahl, schwierigkeit: a.schwierigkeit, typen: a.typen });
+        const material = await materialLaden(u.supabase, u.userId, auswahl, fachId);
+        const quiz = await quizErzeugen((o) => kiAnfrage(o, "stark"), material, einstellungen);
+        const titel = (quiz.titel || `Quiz ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
+        const { data, error } = await u.supabase
+          .from("quiz")
+          .insert({ user_id: u.userId, titel, fach_id: fachId, quellen: material.info as unknown as Json, fragen: quiz.fragen as unknown as Json, einstellungen: einstellungen as unknown as Json })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        const href = `/karteikarten/quiz/${data.id}`;
+        s.erledigt.push({ id: crypto.randomUUID(), art: "quiz", text: `Quiz „${titel}“ mit ${quiz.fragen.length} Fragen erstellt`, link: href, status: "ok", ziel: data.id });
+        s.aktionen.push({ art: "oeffnen", href, daneben: false, titel });
+        return { erstellt: titel, fragen: quiz.fragen.length, hinweis: "Das Quiz wird geöffnet. Wünsch kurz viel Erfolg, verrate keine Lösungen." };
+      },
+    },
+    {
+      name: "podcast_anlegen",
+      beschreibung: "Erstellt einen Lern-Podcast (Gespräch zweier Stimmen zum Anhören) aus der offenen PDF/Notiz, sonst aus dem Fach. Er landet in der Transkription und wird geöffnet.",
+      parameter: {
+        type: "object",
+        properties: { ...FACH, laenge: { type: "string", enum: ["kurz", "normal", "lang"] }, fokus: { type: "string", description: "Schwerpunkt (optional)" } },
+      },
+      statusText: "Schreibe deinen Podcast …",
+      ausfuehren: async (a) => {
+        const { fachId, auswahl } = materialAuswahl(a);
+        const laenge = a.laenge === "kurz" || a.laenge === "lang" ? a.laenge : "normal";
+        const material = await materialLaden(u.supabase, u.userId, auswahl, fachId, 120_000);
+        const p = await podcastErzeugen((o) => kiAnfrage(o, "stark"), material, laenge, t(a.fokus, 300));
+        const titel = (p.titel || `Podcast ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
+        const { data, error } = await u.supabase
+          .from("podcast")
+          .insert({ user_id: u.userId, titel, fach_id: fachId, quellen: material.info as unknown as Json, skript: p.segmente as unknown as Json })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        const href = `/transkription/podcast/${data.id}`;
+        s.erledigt.push({ id: crypto.randomUUID(), art: "podcast", text: `Podcast „${titel}“ erstellt`, link: href, status: "ok", ziel: data.id });
+        s.aktionen.push({ art: "oeffnen", href, daneben: false, titel });
+        return { erstellt: titel, abschnitte: p.segmente.length, hinweis: "Der Podcast wird geöffnet." };
       },
     },
     {
