@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useSearchParams } from "next/navigation";
 import { AssistentChat } from "@/components/assistent/assistent-chat";
 import { kontextAusPfad, type KontextEingabe } from "@/lib/ki/assistent";
@@ -98,7 +99,8 @@ export function AssistentStarter() {
 
   const kontext = aktuellerKontext(pfad, suche.toString(), markiert);
 
-  return (
+  // Direkt an <body>, damit keine Seitenebene (Seitenleiste, Dashboard) darüber liegt
+  return createPortal(
     <aside className="ki-panel studio-panel" aria-label={STUDIO_NAME}>
       <div className="ki-panel-kopf">
         <h2>✨ {STUDIO_NAME}</h2>
@@ -118,6 +120,7 @@ export function AssistentStarter() {
         onMarkierungEntfernen={() => setMarkiert(null)}
         startFrage={startFrage}
       />
-    </aside>
+    </aside>,
+    document.body,
   );
 }

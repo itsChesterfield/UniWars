@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { allesSuchen } from "@/app/(hubs)/suche-actions";
 import { notizAnlegen } from "@/app/(hubs)/notizen/actions";
@@ -360,7 +361,8 @@ export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
   }
 
   let letzteGruppe = "";
-  return (
+  // Direkt an <body>: sonst liegt die Palette in der Ebene der Seitenleiste und Dashboard-Elemente überdecken sie
+  return createPortal(
     <div className="bp-hintergrund" onMouseDown={(e) => e.target === e.currentTarget && schliessen()}>
       <div className="bp-fenster" role="dialog" aria-modal="true" aria-label="Suchen, öffnen, erstellen">
         <div className="bp-eingabe">
@@ -439,6 +441,7 @@ export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
