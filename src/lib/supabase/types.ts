@@ -1758,6 +1758,8 @@ export type Database = {
       settings: {
         Row: {
           avatar_pfad: string | null
+          darstellung: Json
+          hub_layout: Json | null
           ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
           ki_gedaechtnis_an: boolean
@@ -1767,6 +1769,7 @@ export type Database = {
           streak_count: number
           streak_freezes: number
           streak_last_active: string | null
+          symbolleiste: Json | null
           theme: Database["public"]["Enums"]["theme"]
           user_id: string
           username: string | null
@@ -1774,6 +1777,8 @@ export type Database = {
         }
         Insert: {
           avatar_pfad?: string | null
+          darstellung?: Json
+          hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
           ki_gedaechtnis_an?: boolean
@@ -1783,6 +1788,7 @@ export type Database = {
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null
+          symbolleiste?: Json | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id: string
           username?: string | null
@@ -1790,6 +1796,8 @@ export type Database = {
         }
         Update: {
           avatar_pfad?: string | null
+          darstellung?: Json
+          hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
           ki_gedaechtnis_an?: boolean
@@ -1799,6 +1807,7 @@ export type Database = {
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null
+          symbolleiste?: Json | null
           theme?: Database["public"]["Enums"]["theme"]
           user_id?: string
           username?: string | null
@@ -2238,7 +2247,7 @@ export type Database = {
       prioritaet: "HOCH" | "MITTEL" | "NIEDRIG"
       pruefung_status: "ANSTEHEND" | "BESTANDEN" | "NICHT_BESTANDEN"
       quelle: "MANUELL" | "EXTERN"
-      theme: "HELL" | "DUNKEL"
+      theme: "HELL" | "DUNKEL" | "SYSTEM"
       wochentag: "MO" | "DI" | "MI" | "DO" | "FR" | "SA" | "SO"
     }
     CompositeTypes: {
@@ -2373,7 +2382,7 @@ export const Constants = {
       prioritaet: ["HOCH", "MITTEL", "NIEDRIG"],
       pruefung_status: ["ANSTEHEND", "BESTANDEN", "NICHT_BESTANDEN"],
       quelle: ["MANUELL", "EXTERN"],
-      theme: ["HELL", "DUNKEL"],
+      theme: ["HELL", "DUNKEL", "SYSTEM"],
       wochentag: ["MO", "DI", "MI", "DO", "FR", "SA", "SO"],
     },
   },

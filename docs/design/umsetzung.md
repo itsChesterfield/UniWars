@@ -13,7 +13,7 @@ Dieser Branch (`design/b3-referenz`) enthält nur Unterlagen, keinen App-Code. E
 | Hub-Bereiche | Notch oben (Übersicht, Termine, Aufgaben, Noten, Fortschritt, Fächer) | dieselben Seiten in der Kontextspalte | Inhalte bleiben, nur der Ort ändert sich |
 | Studio | Leiste rechts per Strg+J, Hinweis in der Seitenleiste | Leiste rechts als eigene eingelassene Fläche, Knopf in der Symbolleiste, „Sieht gerade …“ | Komponente behalten, Hülle neu |
 | Geteilte Ansicht | iframe, Ziehen an den Rand | gleich, plus „Daneben öffnen“ in der Palette (Weg ohne Ziehen) | Palette-Befehl ergänzen |
-| Design-Einstellung | Hell, Dunkel, Seitenleiste eingeklappt | Sternenhimmel, Hochschule, Wie das System; persönliche Darstellung | Migrationsentwurf unten |
+| Design-Einstellung | Hell, Dunkel, Seitenleiste eingeklappt | Sternenhimmel, Hochschule, Wie das System; persönliche Darstellung | Spalten sind angelegt, siehe Datenbank |
 | Benachrichtigungen | Glocke im Dashboard-Kopf | Glocke in der Kopfleiste aller Bereiche | Komponente wiederverwenden |
 
 ## Schritte als kleine Pull Requests
@@ -23,12 +23,15 @@ Jeder Schritt auf eigenem Branch, Vercel-Vorschau, `npm run lint`, `npm test`, H
 2. **Gerüst** – `src/app/(hubs)/layout.tsx`, `src/components/sidebar.tsx`: Symbolleiste, Kontextspalte, eingelassene Arbeitsfläche, Kopfleiste mit Sync, Glocke, Fokus-Timer. Studio-Knopf und Profil-Menü. Handy-Tab-Leiste.
 3. **Übergänge und Zustände** – View Transitions zwischen Bereichen (Next.js/React bieten dafür eigene Unterstützung; vorher in `node_modules/next/dist/docs/` prüfen, siehe AGENTS.md), Skelett nach 300 ms, Leer- und Fehlerzustände je Bereich, Offline-Status.
 4. **Zentraler Hub** – Unterseiten in die Kontextspalte, Übersicht als Raster mit S/M/L, Bearbeiten-Modus (Bibliothek: `@dnd-kit/sortable` mit Tastatur-Sensor), „Dein Tag“ zusammenführen.
-5. **Personalisierung** – Einstellungsseite, Migration (unten) anwenden, Symbolleiste-Reihenfolge, Darstellung.
+5. **Personalisierung** – Einstellungsseite auf die neuen Spalten umstellen, Symbolleiste-Reihenfolge, Darstellung.
 6. **Bereiche einzeln** – Karteikarten (inkl. Quiz), Notizen, PDF Reader, Lernraum, Transkription (inkl. Podcast), dann die übrigen.
 
-## Datenbank (Entwurf, noch nicht angewendet)
-`docs/design/entwurf-migration-b3.sql` – liegt bewusst nicht in `supabase/migrations`.
-- Stand 16.11., 23:15: Datenbank und Repo haben dieselben 39 Migrationen.
+## Datenbank
+`supabase/migrations/20261116222117_design_b3_einstellungen.sql` ist angewendet (16.11.2026, 23:21). Nur hinzufügend:
+- `settings.theme` kennt zusätzlich `SYSTEM` (HELL = Hochschule, DUNKEL = Sternenhimmel).
+- Neue Spalten `settings.hub_layout` (jsonb, Liste), `settings.symbolleiste` (jsonb, Objekt), `settings.darstellung` (jsonb, mit Standardwerten). Der App-Code nutzt sie noch nicht.
+- `settings.sichtbare_widgets` wird nach der Umstellung auf `hub_layout` nicht mehr gebraucht; erst dann entfernen.
+- Datenbank und Repo haben damit 40 Migrationen.
 - `settings` hat RLS „eigene Zeile“ für alle Befehle; neue Spalten sind damit abgedeckt.
 - Offen und unabhängig vom Design (Supabase-Advisor): `ist_username_verfuegbar` anonym aufrufbar, 22 SECURITY-DEFINER-Funktionen per RPC aufrufbar (darunter die KI-Kontingent-Buchung), Schutz gegen geleakte Passwörter aus.
 

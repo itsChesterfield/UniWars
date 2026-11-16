@@ -1,7 +1,6 @@
--- ENTWURF, NICHT ANWENDEN ohne Absprache mit Max.
 -- Design B3: Design-Wahl "Wie das System", Hub-Anordnung, Symbolleiste und persönliche Darstellung.
--- Liegt bewusst nicht in supabase/migrations. Zum Anwenden als neue Migration mit aktuellem Zeitstempel anlegen.
--- RLS: settings hat bereits Policies "eigene Zeile" für SELECT, INSERT, UPDATE, DELETE; neue Spalten sind abgedeckt.
+-- Nur hinzufügend. RLS: settings hat bereits Policies "eigene Zeile" für SELECT, INSERT, UPDATE, DELETE.
+-- Angewendet am 16.11.2026 (Version 20261116222117).
 
 -- HELL = Hochschule, DUNKEL = Sternenhimmel, SYSTEM = folgt dem Gerät
 alter type public.theme add value if not exists 'SYSTEM';
@@ -23,4 +22,3 @@ alter table public.settings
 comment on column public.settings.hub_layout is 'Design B3: Bausteine der Hub-Übersicht als [id, sichtbar, Größe S|M|L]';
 comment on column public.settings.symbolleiste is 'Design B3: Reihenfolge und ausgeblendete Bereiche der Symbolleiste';
 comment on column public.settings.darstellung is 'Design B3: Schriftgröße, Dichte, Bewegung, Design-Schalter in der Kopfleiste';
--- settings.sichtbare_widgets wird danach nicht mehr gebraucht; erst nach der Umstellung entfernen.
