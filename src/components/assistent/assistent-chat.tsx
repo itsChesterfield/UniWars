@@ -8,7 +8,7 @@ import { BlockAnzeige, ErledigtListe, KontextLeiste, StudioAntwort } from "@/com
 import { GemerktListe, KennenlernKarte, RueckblickKarte, RueckmeldungKnoepfe } from "@/components/assistent/persoenlich-bausteine";
 import { studioPersoenlich, type StudioPersoenlich } from "@/app/(hubs)/einstellungen/gedaechtnis-actions";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
-import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
+import { NOTIZ_EINFUEGEN, STUDIO_NEU } from "@/lib/ki/studio-kontext";
 import { STUDIO_NAME, type Aktion, type Block, type Erledigt, type Gemerkt, type QuellInfo } from "@/lib/ki/studio";
 import { AktionskarteAnzeige } from "@/components/assistent/aktionskarte";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
@@ -109,6 +109,8 @@ export function AssistentChat({
   const feld = useRef<HTMLTextAreaElement>(null);
   /** Von diesem Chat selbst angelegte Unterhaltung – deren Verlauf liegt schon lokal vor */
   const selbstAngelegt = useRef<string | null>(null);
+  /** „Neuer Chat“ gedrückt: die nächste Nachricht beginnt eine neue Unterhaltung */
+  const neuErzwingen = useRef(false);
   /** Persönliches Modell: Kennenlernen, Semester-Auffrischen, Monatsrückblick */
   const [persoenlich, setPersoenlich] = useState<StudioPersoenlich | null>(null);
   const [kennenlernenZu, setKennenlernenZu] = useState(false);
@@ -121,6 +123,22 @@ export function AssistentChat({
       setAutoVorlesen(einstellungLesen(SPRACH_EINSTELLUNGEN.automatischVorlesen));
     }, 0);
     return () => window.clearTimeout(id);
+  }, []);
+
+  // „Neuer Chat“: Verlauf leeren, nächste Nachricht startet eine neue Unterhaltung
+  useEffect(() => {
+    const neu = () => {
+      abbruch.current?.abort();
+      neuErzwingen.current = true;
+      selbstAngelegt.current = null;
+      setId(null);
+      setNachrichten([]);
+      setLaufend(null);
+      setVerlaufLaedt(false);
+      setFehler(null);
+    };
+    window.addEventListener(STUDIO_NEU, neu);
+    return () => window.removeEventListener(STUDIO_NEU, neu);
   }, []);
 
   // Status + Fächer einmal laden
@@ -232,7 +250,7 @@ export function AssistentChat({
         const antwort = await fetch("/api/ki/assistent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ unterhaltungId: id, frage, kontext: kontextHolen?.() ?? kontext, eingabeArt: art, privat }),
+          body: JSON.stringify({ unterhaltungId: id, frage, kontext: kontextHolen?.() ?? kontext, eingabeArt: art, privat, neu: !id && neuErzwingen.current }),
           signal: steuerung.signal,
         });
         if (!antwort.ok || !antwort.body) {
@@ -257,6 +275,7 @@ export function AssistentChat({
           for (const e of ereignisse) {
             if (e.typ === "start" && typeof e.unterhaltungId === "string") {
               gespraech = e.unterhaltungId;
+              neuErzwingen.current = false;
               if (Array.isArray(e.quellen)) setzen({ quellen: e.quellen as QuellInfo[] });
               if (!id) {
                 selbstAngelegt.current = e.unterhaltungId;

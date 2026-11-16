@@ -6,7 +6,7 @@ import { werkzeugDatenLesen, type Aktionskarte, type KartenStatus } from "@/lib/
 import { KiEingabe } from "@/lib/ki/fehler";
 import { alsFehler, chatStatus, kiNutzer, type KiErgebnis, type Supabase, type TextStatus } from "@/lib/ki/server";
 import type { Json } from "@/lib/supabase/types";
-import { studioDatenLesen, type StudioDaten } from "@/lib/ki/studio";
+import { chatNochAktuell, studioDatenLesen, type StudioDaten } from "@/lib/ki/studio";
 import { belegeAlsWikilinks } from "@/lib/ki/lernraum";
 import { deleteDeadline } from "@/app/deadline/actions";
 import { deleteTodo, toggleTodoErledigt } from "@/app/todo/actions";
@@ -37,9 +37,9 @@ export async function assistentStart(): Promise<KiErgebnis<{ status: TextStatus;
       chatStatus(supabase, userId),
       supabase.from("fach").select("id, name").eq("aktiv", true).order("name"),
       // UniVerse Studio: ein gemeinsamer Chat – die zuletzt genutzte Unterhaltung
-      supabase.from("ki_unterhaltung").select("id").order("geaendert_am", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("ki_unterhaltung").select("id, geaendert_am").order("geaendert_am", { ascending: false }).limit(1).maybeSingle(),
     ]);
-    return { ok: true, daten: { status, faecher: faecher ?? [], hauptId: haupt?.id ?? null } };
+    return { ok: true, daten: { status, faecher: faecher ?? [], hauptId: haupt && chatNochAktuell(haupt.geaendert_am) ? haupt.id : null } };
   } catch (err) {
     return alsFehler(err);
   }
