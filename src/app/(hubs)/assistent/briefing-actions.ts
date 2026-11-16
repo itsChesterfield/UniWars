@@ -3,7 +3,7 @@
 import { kiAnfrage, kiKonfiguriert } from "@/lib/ki/anbieter";
 import { kiNutzer, textEingewilligt, type Supabase } from "@/lib/ki/server";
 import { persoenlichKontext } from "@/lib/ki/gedaechtnis-server";
-import { anwenden, briefingLesen, briefingPrompt, standardGruss, tageszeit, vorschlaegeBerechnen, type KiBriefing, type Lage, type Vorschlag } from "@/lib/ki/briefing";
+import { anwenden, briefingLesen, briefingPrompt, standardGruss, tageszeit, ueberschriftenFuer, vorschlaegeBerechnen, type KiBriefing, type Lage, type Vorschlag } from "@/lib/ki/briefing";
 import { PERSOENLICHKEITEN, profilLesen } from "@/lib/ki/lernraum";
 import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag } from "@/lib/zeit";
 import type { Json } from "@/lib/supabase/types";
@@ -17,6 +17,8 @@ export type Briefing = {
   /** KI-Text kann (noch) erzeugt werden */
   kiMoeglich: boolean;
   vorschlaege: Vorschlag[];
+  /** Überschriften zur Auswahl (bei jedem Öffnen eine andere) */
+  ueberschriften: string[];
 };
 
 type Speicher = { typ: "briefing"; texte: Record<string, { sig: string; ki: KiBriefing }> };
@@ -103,6 +105,7 @@ export async function tagesbriefing(): Promise<Briefing | null> {
       vonKi: Boolean(passt),
       kiMoeglich: kiErlaubt && !passt,
       vorschlaege: anwenden(vorschlaege, passt ? gespeichert.ki : null),
+      ueberschriften: passt && (gespeichert.ki.ueberschriften?.length ?? 0) >= 3 ? gespeichert.ki.ueberschriften : ueberschriftenFuer(lage),
     };
   } catch {
     return null;
@@ -133,7 +136,7 @@ export async function tagesbriefingKi(): Promise<Briefing | null> {
       await supabase.from("ki_tagesvorschlag").delete().lt("datum", berlinDatum(new Date()));
       await supabase.from("ki_tagesvorschlag").insert({ user_id: userId, datum: berlinDatum(new Date()), status: "fertig", vorschlaege: neu as unknown as Json });
     }
-    return { gruss: ki.gruss, vonKi: true, kiMoeglich: false, vorschlaege: anwenden(vorschlaege, ki) };
+    return { gruss: ki.gruss, vonKi: true, kiMoeglich: false, vorschlaege: anwenden(vorschlaege, ki), ueberschriften: ki.ueberschriften.length >= 3 ? ki.ueberschriften : ueberschriftenFuer(lage) };
   } catch {
     return null;
   }

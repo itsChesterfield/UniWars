@@ -30,6 +30,7 @@ import { QuickAdd } from "@/components/quick-add";
 import { NotificationBell } from "@/components/notification-bell";
 import { WidgetToggle, istWidgetSichtbar } from "@/components/widget-toggle";
 import { TagesBriefing } from "@/components/ki/tages-briefing";
+import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
@@ -358,9 +359,7 @@ export function DashboardContent({
         <div className="dashboard-greeting">
           {bereich === "uebersicht" ? (
             <>
-              <h1>
-                {begruessung()}, {name}
-              </h1>
+              <DashboardUeberschrift name={name} standard={`${begruessung()}, ${name}`} />
               <p>
                 {heutigesDatum()}
                 {stats.termineHeute > 0 && ` · ${stats.termineHeute} Deadline${stats.termineHeute === 1 ? "" : "s"} heute fällig`}
