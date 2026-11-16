@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { aktivHalten } from "@/lib/inaktivitaet";
 import { assistentStart, notizAnhaengen, unterhaltungLaden, type AssistentNachricht } from "@/app/(hubs)/assistent/actions";
 import { useRouter } from "next/navigation";
 import { BlockAnzeige, ErledigtListe, KontextLeiste, StudioAntwort } from "@/components/assistent/studio-bausteine";
@@ -91,6 +92,10 @@ export function AssistentChat({
   const [verlaufLaedt, setVerlaufLaedt] = useState(Boolean(unterhaltungId));
 
   const [laufend, setLaufend] = useState<Laufend | null>(null);
+  useEffect(() => {
+    aktivHalten("studio", laufend !== null);
+    return () => aktivHalten("studio", false);
+  }, [laufend]);
   const [eingabe, setEingabe] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
   const [eingabeArt, setEingabeArt] = useState<"text" | "sprache">("text");

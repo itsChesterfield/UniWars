@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { aktivHalten } from "@/lib/inaktivitaet";
 import Link from "next/link";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import { SPRECHER_NAME, type PodcastSegment } from "@/lib/ki/quiz";
@@ -12,6 +13,10 @@ type Fehler = { fehler: string; typ: string; art?: "text" | "audio" };
 export function PodcastPlayer({ titel, segmente, vorlesen }: { titel: string; segmente: PodcastSegment[]; vorlesen: boolean }) {
   const [aktuell, setAktuell] = useState(0);
   const [spielt, setSpielt] = useState(false);
+  useEffect(() => {
+    aktivHalten("podcast", spielt);
+    return () => aktivHalten("podcast", false);
+  }, [spielt]);
   const [laedt, setLaedt] = useState(false);
   const [tempo, setTempo] = useState(1);
   const [fehler, setFehler] = useState<string | null>(null);
