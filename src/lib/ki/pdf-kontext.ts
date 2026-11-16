@@ -10,7 +10,8 @@ import { einbetten, MATERIAL_REGEL, markerEntschaerfen } from "./material.ts";
 
 export type PdfSeite = { seite: number; text: string };
 
-export const MAX_KONTEXT_ZEICHEN = 15_000;
+/** ≈ 17.000 Tokens – mit dem starken Modell (256k Kontext) unkritisch, reicht für ganze Kapitel */
+export const MAX_KONTEXT_ZEICHEN = 60_000;
 /** Ab so wenig Text gilt ein PDF als gescannt (kein lesbarer Text) */
 export const MIN_TEXT_JE_SEITE = 20;
 export const MAX_FRAGE_ZEICHEN = 500;
@@ -139,7 +140,7 @@ export function pdfFragePrompt(titel: string, frage: string, seiten: PdfSeite[])
     "Du beantwortest Fragen von Studierenden zu ihrem Skript.",
     "Antworte nur aus den mitgeschickten Seiten. Steht die Antwort nicht darin, sag ehrlich: „Dazu steht auf den gelesenen Seiten nichts.“ und erfinde nichts.",
     SEITEN_REGEL,
-    "Antworte kurz und konkret in der Sprache der Frage. Markdown sparsam (Fettdruck, Aufzählungen).",
+    "Antworte verständlich und vollständig in der Sprache der Frage: erst die direkte Antwort, dann die Erklärung, wo hilfreich mit Beispiel. Markdown (Fettdruck, Aufzählungen).",
     MATERIAL_REGEL,
   ].join("\n");
   const nutzer = `Dokument: ${markerEntschaerfen(titel)}\n\n${seitenEinbetten(seiten)}\n\nFrage:\n${einbetten(frage.trim().slice(0, MAX_FRAGE_ZEICHEN), "quelle")}`;

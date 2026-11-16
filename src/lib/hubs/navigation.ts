@@ -26,6 +26,11 @@ export const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
     icon: "M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z|M14 3v5h5|M8.5 15.5h2v3M13 13.5h2v5M8.5 12.5h1.5",
   },
   {
+    name: "Lernraum",
+    href: "/lernraum",
+    icon: "M4 19.5V6a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2Z|M8 4v8l2.5-1.5L13 12V4|M17.5 14.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z",
+  },
+  {
     name: "Work Station",
     href: "/work-station",
     icon: "circle:12,13,7|M12 13V9.5M9.5 3.5h5M12 3.5V6",

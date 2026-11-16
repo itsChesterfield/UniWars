@@ -82,6 +82,7 @@ export async function karteikartenVorschlagen(
     const prompt = promptBauen(notiz, anzahl);
     const { ergebnis, verbleibend } = await textAnfrageAusfuehren({
       supabase,
+      zweck: "stark",
       funktion: "karteikarten",
       optionen: { system: prompt.system, nutzer: prompt.nutzer, json: true, temperatur: 0.3, maxTokens: 2000 },
       parsen: (a) => kartenParsen(a.text, anzahl),
@@ -169,6 +170,7 @@ export async function zusammenfassungVorschlagen(
     const prompt = zusammenfassungPromptBauen(notiz);
     const { ergebnis, verbleibend } = await textAnfrageAusfuehren({
       supabase,
+      zweck: "stark",
       funktion: "zusammenfassung",
       optionen: { system: prompt.system, nutzer: prompt.nutzer, json: true, temperatur: 0.2, maxTokens: 1500 },
       parsen: (a) => zusammenfassungParsen(a.text),
@@ -225,6 +227,7 @@ export async function mindmapVorschlagen(notizId: string): Promise<KiErgebnis<Mi
     const prompt = mindmapPromptBauen(notiz);
     const { ergebnis, verbleibend } = await textAnfrageAusfuehren({
       supabase,
+      zweck: "stark",
       funktion: "mindmap",
       optionen: { system: prompt.system, nutzer: prompt.nutzer, json: true, temperatur: 0.3, maxTokens: 1500 },
       parsen: (a) => mindmapParsen(a.text, notiz.titel),

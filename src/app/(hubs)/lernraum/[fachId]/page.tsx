@@ -1,0 +1,46 @@
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { HubKopf } from "@/components/hubs/hub-bausteine";
+import { Lernraum, type LernNachricht } from "@/components/lernraum/lernraum";
+import { lernraumSichern, quellenListe } from "@/lib/ki/lernraum-server";
+import { profilLesen } from "@/lib/ki/lernraum";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
+
+export const metadata = { title: "Lernraum · UniWars" };
+
+export default async function LernraumSeite({ params }: { params: Promise<{ fachId: string }> }) {
+  const { fachId } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) notFound();
+  const { data: fach, error } = await supabase.from("fach").select("id, name, farbe").eq("id", fachId).maybeSingle();
+  if (error?.code === "22P02" || !fach) notFound();
+
+  const lernraumId = await lernraumSichern(supabase, user.id, fach.id);
+  const [quellen, { data: verlauf }, { data: settings }, { data: pdfs }, { data: notizen }] = await Promise.all([
+    quellenListe(supabase, lernraumId, fach.id),
+    supabase.from("lernraum_nachricht").select("id, rolle, inhalt, meta").eq("lernraum_id", lernraumId).order("erstellt_am", { ascending: true }).limit(100),
+    supabase.from("settings").select("ki_profil").eq("user_id", user.id).maybeSingle(),
+    supabase.from("datei").select("id, name, fach_id").eq("mime_typ", "application/pdf").order("name"),
+    supabase.from("notiz").select("id, titel, fach_id").order("geaendert_am", { ascending: false }).limit(300),
+  ]);
+
+  return (
+    <>
+      <HubKopf titel={`Lernraum · ${fach.name}`} untertitel={kiKonfiguriert() ? "Antworten aus deinen Quellen – mit Belegen, Ergänzungen und auf Wunsch Web-Recherche." : "Die KI ist gerade nicht eingerichtet."} />
+      <Lernraum
+        lernraumId={lernraumId}
+        fach={fach}
+        startQuellen={quellen.map(({ art, id, titel, herkunft, aktiv, seiten }) => ({ art, id, titel, herkunft, aktiv, seiten }))}
+        weitere={[
+          ...(pdfs ?? []).filter((p) => p.fach_id !== fach.id).map((p) => ({ art: "pdf" as const, id: p.id, titel: p.name })),
+          ...(notizen ?? []).filter((n) => n.fach_id !== fach.id).map((n) => ({ art: "notiz" as const, id: n.id, titel: n.titel || "Unbenannte Notiz" })),
+        ]}
+        startVerlauf={(verlauf ?? []).map((n) => ({ id: n.id, rolle: n.rolle === "ki" ? "ki" : "nutzer", inhalt: n.inhalt, meta: (n.meta ?? {}) as LernNachricht["meta"] }))}
+        startProfil={profilLesen(settings?.ki_profil)}
+      />
+    </>
+  );
+}

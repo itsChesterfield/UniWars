@@ -45,6 +45,8 @@ export type KiOptionen = {
   json?: boolean;
   /** Bilder (Data-URLs) zur Nutzernachricht `nutzer` – braucht ein Modell mit Bildverständnis */
   bilder?: string[];
+  /** Eigene Zeitgrenze (z. B. bei sehr großem Kontext); sonst Standard der Umgebung */
+  timeoutMs?: number;
   /** Abbruch durch den Nutzer (z. B. "Stopp") */
   signal?: AbortSignal;
 };
@@ -178,7 +180,7 @@ type Versuch = { ok: true; antwort: KiAntwort } | { ok: false; fehler: Error; wi
 
 async function einVersuch(konfig: KiKonfig, optionen: KiOptionen, u: KiUmgebung): Promise<Versuch> {
   const start = Date.now();
-  const abbruch = abbruchSteuerung(u.timeoutMs, optionen.signal);
+  const abbruch = abbruchSteuerung(optionen.timeoutMs ?? u.timeoutMs, optionen.signal);
   let status = 0;
   try {
     const antwort = await u.fetch(`${konfig.basisUrl.replace(/\/+$/, "")}/chat/completions`, {
@@ -299,7 +301,7 @@ export async function* kiAnfrageStreamMit(
   const u = { ...STANDARD_UMGEBUNG, ...umgebung };
   konfigPruefen(konfig);
   const start = Date.now();
-  const abbruch = abbruchSteuerung(u.timeoutMs, optionen.signal);
+  const abbruch = abbruchSteuerung(optionen.timeoutMs ?? u.timeoutMs, optionen.signal);
   let status = 0;
   let text = "";
   let usage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
@@ -371,5 +373,90 @@ export async function* kiAnfrageStreamMit(
       tokens_geschaetzt: !usage,
       dauer_ms: Date.now() - start,
     });
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// Websuche über die Conversations-API (Werkzeug "web_search"; Chat-Completions kann das nicht)
+// ---------------------------------------------------------------------------
+
+export type WebQuelle = { titel: string; url: string };
+export type WebAntwort = { text: string; quellen: WebQuelle[]; tokensEin: number; tokensAus: number };
+
+/**
+ * Antwort der Conversations-API lesen. Robust gegen Varianten: Ausgaben stehen in
+ * `outputs` (Typ "message.output"), Inhalt ist Text oder eine Liste von Stücken
+ * ("text" bzw. "tool_reference" mit url/title).
+ */
+export function websucheAuswerten(json: unknown): WebAntwort {
+  const o = (json ?? {}) as Record<string, unknown>;
+  const ausgaben = Array.isArray(o.outputs) ? o.outputs : Array.isArray(o.entries) ? o.entries : [];
+  let text = "";
+  const quellen: WebQuelle[] = [];
+  const quelleMerken = (q: Record<string, unknown>) => {
+    const url = typeof q.url === "string" ? q.url : "";
+    if (!/^https?:\/\//i.test(url) || quellen.some((x) => x.url === url)) return;
+    quellen.push({ titel: typeof q.title === "string" && q.title.trim() ? q.title.trim() : new URL(url).hostname, url });
+  };
+  for (const a of ausgaben as Record<string, unknown>[]) {
+    if (a?.type !== "message.output" && a?.role !== "assistant") continue;
+    const inhalt = a.content;
+    if (typeof inhalt === "string") text += inhalt;
+    else if (Array.isArray(inhalt)) {
+      for (const stueck of inhalt as Record<string, unknown>[]) {
+        if (stueck?.type === "text" && typeof stueck.text === "string") text += stueck.text;
+        else if (stueck?.type === "tool_reference") quelleMerken(stueck);
+      }
+    }
+  }
+  const nutzung = (o.usage ?? {}) as Record<string, unknown>;
+  return {
+    text: text.trim(),
+    quellen,
+    tokensEin: Number(nutzung.prompt_tokens ?? nutzung.input_tokens ?? 0) || tokensSchaetzen(JSON.stringify(o.inputs ?? "")),
+    tokensAus: Number(nutzung.completion_tokens ?? nutzung.output_tokens ?? 0) || tokensSchaetzen(text),
+  };
+}
+
+/** Eine Anfrage mit eingebauter Websuche (Mistral entscheidet selbst, ob und was es sucht). */
+export async function kiWebsucheMit(konfig: KiKonfig, optionen: KiOptionen, umgebung: Partial<KiUmgebung> = {}): Promise<WebAntwort> {
+  konfigPruefen(konfig);
+  const u = { ...STANDARD_UMGEBUNG, ...umgebung };
+  const abbruch = abbruchSteuerung(optionen.timeoutMs ?? 60_000, optionen.signal);
+  const start = Date.now();
+  const modell = optionen.modell || konfig.modell;
+  try {
+    const nachrichten = nachrichtenBauen({ ...optionen, system: undefined }).map((n) => ({
+      role: (n as { role: string }).role === "tool" ? "user" : (n as { role: string }).role,
+      content: (n as { content: unknown }).content,
+    }));
+    const antwort = await u.fetch(`${konfig.basisUrl.replace(/\/$/, "")}/conversations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${konfig.apiKey}` },
+      body: JSON.stringify({
+        model: modell,
+        instructions: optionen.system ?? "",
+        inputs: nachrichten,
+        tools: [{ type: "web_search" }],
+        completion_args: { temperature: optionen.temperatur, max_tokens: optionen.maxTokens },
+        store: false,
+        stream: false,
+      }),
+      signal: abbruch.signal,
+    });
+    const fehler = statusFehler(antwort.status);
+    u.log({ art: "websuche", modell, status: antwort.status, ms: Date.now() - start });
+    if (fehler) throw fehler.fehler;
+    const ergebnis = websucheAuswerten(await antwort.json());
+    if (!ergebnis.text) throw new KiNichtVerfuegbar("Websuche ohne Antwort");
+    return ergebnis;
+  } catch (err) {
+    if (err instanceof KiFehler) throw err;
+    if (abbruch.timeout()) throw new KiZeitueberschreitung();
+    if (optionen.signal?.aborted) throw new KiAbgebrochen("Websuche abgebrochen");
+    throw new KiNichtVerfuegbar(err instanceof Error ? err.message : "Netzwerkfehler");
+  } finally {
+    abbruch.aufraeumen();
   }
 }

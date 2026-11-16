@@ -29,6 +29,7 @@ export async function pdfKartenVorschlagen(
     const prompt = kartenPromptBauen({ titel: datei.name, text, quelle: "pdf" }, anzahl);
     const { ergebnis, verbleibend } = await textAnfrageAusfuehren({
       supabase,
+      zweck: "stark",
       funktion: "pdf_karteikarten",
       optionen: { system: prompt.system, nutzer: prompt.nutzer, json: true, temperatur: 0.3, maxTokens: 2000 },
       parsen: (a) => kartenParsen(a.text, anzahl),
