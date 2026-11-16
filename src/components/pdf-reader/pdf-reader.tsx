@@ -77,7 +77,7 @@ function vorkommen(text: string, suche: string): number[] {
   return positionen;
 }
 
-export type PdfNotiz = { id: string; titel: string; vorschau: string };
+export type PdfNotiz = { id: string; titel: string; vorschau: string; seiten?: number[] };
 
 export function PdfReader({
   datei,
@@ -547,7 +547,7 @@ export function PdfReader({
     setNotizLaeuft(true);
     try {
       const n = await notizZuPdfAnlegen(datei.id);
-      setNotizen((l) => [{ id: n.id, titel: n.titel, vorschau: "" }, ...l]);
+      setNotizen((l) => [{ id: n.id, titel: n.titel, vorschau: "", seiten: [] }, ...l]);
       track("pdf_notiz_angelegt");
       inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts");
     } catch (err) {
@@ -906,7 +906,7 @@ export function PdfReader({
                 </button>
                 {notizen.length === 0 ? (
                   <p className="empty-state">
-                    Noch keine Notizen zu dieser PDF. Leg eine an – sie öffnet sich daneben, und du kannst Markierungen hineinziehen.
+                    Noch keine Notiz verlinkt diese PDF. Leg eine an – oder verlinke die PDF in einer Notiz über „[[ ]] Verlinken“.
                   </p>
                 ) : (
                   <ul>
@@ -916,6 +916,15 @@ export function PdfReader({
                           <span className="pdf-notiz-titel">{n.titel || "Unbenannte Notiz"}</span>
                           {n.vorschau && <span className="pdf-notiz-vorschau">{n.vorschau}</span>}
                         </button>
+                        {n.seiten && n.seiten.length > 0 && (
+                          <span className="pdf-notiz-seiten">
+                            {n.seiten.map((s) => (
+                              <button key={s} type="button" className={`tag ${s === seite ? "tag-accent" : ""}`} title={`Zu Seite ${s} springen`} onClick={() => zuSeite(s, "smooth")}>
+                                S. {s}
+                              </button>
+                            ))}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>

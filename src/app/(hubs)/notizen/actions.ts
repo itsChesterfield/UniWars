@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { berlinDatum, datumDeutsch } from "@/lib/zeit";
 import type { Tables } from "@/lib/supabase/types";
+import { istPdfName, linksUmbenennen, wikilinksFinden } from "@/lib/notizen/wikilinks";
+import { vorlageInhalt, type VorlageId } from "@/lib/notizen/vorlagen";
 
 export type Notiz = Tables<"notiz">;
 
@@ -16,12 +18,48 @@ async function nutzer() {
   return { supabase, userId: user.id };
 }
 
-/** NOT-01 */
-export async function notizAnlegen(fachId: string | null): Promise<Notiz> {
+type Supabase = Awaited<ReturnType<typeof nutzer>>["supabase"];
+
+/**
+ * Verlinkungen einer Notiz aus ihrem Text neu aufbauen ([[Notiz]], [[Skript.pdf#S12]]).
+ * Notizen werden über den Titel gefunden, PDFs über den Dateinamen.
+ */
+async function linksAbgleichen(supabase: Supabase, userId: string, notizId: string, inhalt: string) {
+  const links = wikilinksFinden(inhalt);
+  const { error: loeschFehler } = await supabase.from("notiz_link").delete().eq("von_notiz_id", notizId);
+  if (loeschFehler) {
+    console.error("[notiz_link] löschen", loeschFehler.message);
+    return;
+  }
+  if (links.length === 0) return;
+  const [{ data: notizen }, { data: pdfs }] = await Promise.all([
+    supabase.from("notiz").select("id, titel"),
+    supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf"),
+  ]);
+  const zeilen: { user_id: string; von_notiz_id: string; ziel_notiz_id?: string; ziel_datei_id?: string; seite: number | null }[] = [];
+  for (const l of links) {
+    const name = l.name.toLowerCase();
+    if (istPdfName(l.name)) {
+      const pdf = (pdfs ?? []).find((p) => p.name.toLowerCase() === name);
+      if (pdf) zeilen.push({ user_id: userId, von_notiz_id: notizId, ziel_datei_id: pdf.id, seite: l.seite });
+    } else {
+      const ziel = (notizen ?? []).find((n) => n.titel.trim().toLowerCase() === name);
+      if (ziel && ziel.id !== notizId) zeilen.push({ user_id: userId, von_notiz_id: notizId, ziel_notiz_id: ziel.id, seite: null });
+    }
+  }
+  if (zeilen.length) {
+    const { error } = await supabase.from("notiz_link").insert(zeilen);
+    if (error) console.error("[notiz_link] speichern", error.message);
+  }
+}
+
+/** NOT-01 – leer oder aus einer Vorlage */
+export async function notizAnlegen(fachId: string | null, vorlage: VorlageId = "leer", titel?: string): Promise<Notiz> {
   const { supabase, userId } = await nutzer();
+  const start = vorlageInhalt(vorlage);
   const { data, error } = await supabase
     .from("notiz")
-    .insert({ user_id: userId, fach_id: fachId || null })
+    .insert({ user_id: userId, fach_id: fachId || null, titel: (titel ?? start.titel).slice(0, 300), inhalt: start.inhalt })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -67,15 +105,46 @@ export async function mitschriftAnlegen(stundenplanEintragId: string): Promise<N
   return data;
 }
 
-/** NOT-02 / ALL-08: Autospeichern von Titel und Text. */
-export async function notizSpeichern(id: string, aenderung: { titel?: string; inhalt?: string }): Promise<string> {
-  const { supabase } = await nutzer();
+export type SpeicherErgebnis = {
+  geaendertAm: string;
+  /** Andere Notizen, deren Links nach einer Umbenennung angepasst wurden */
+  angepasst: { id: string; inhalt: string }[];
+};
+
+/** NOT-02 / ALL-08: Autospeichern von Titel und Text – inkl. Verlinkungen. */
+export async function notizSpeichern(id: string, aenderung: { titel?: string; inhalt?: string }): Promise<SpeicherErgebnis> {
+  const { supabase, userId } = await nutzer();
   const update: { titel?: string; inhalt?: string } = {};
   if (typeof aenderung.titel === "string") update.titel = aenderung.titel.slice(0, 300);
   if (typeof aenderung.inhalt === "string") update.inhalt = aenderung.inhalt;
+
+  // Vor dem Umbenennen den alten Titel merken – Links in anderen Notizen ziehen mit
+  let alterTitel: string | null = null;
+  if (update.titel !== undefined) {
+    const { data: vorher } = await supabase.from("notiz").select("titel").eq("id", id).maybeSingle();
+    alterTitel = vorher?.titel ?? null;
+  }
+
   const { data, error } = await supabase.from("notiz").update(update).eq("id", id).select("geaendert_am").single();
   if (error) throw new Error(error.message);
-  return data.geaendert_am;
+
+  if (update.inhalt !== undefined) await linksAbgleichen(supabase, userId, id, update.inhalt);
+
+  const angepasst: { id: string; inhalt: string }[] = [];
+  if (alterTitel && update.titel && alterTitel.trim() && alterTitel.trim() !== update.titel.trim()) {
+    const { data: verweise } = await supabase.from("notiz_link").select("von_notiz_id").eq("ziel_notiz_id", id);
+    const quellen = [...new Set((verweise ?? []).map((v) => v.von_notiz_id))];
+    if (quellen.length) {
+      const { data: texte } = await supabase.from("notiz").select("id, inhalt").in("id", quellen);
+      for (const t of texte ?? []) {
+        const neu = linksUmbenennen(t.inhalt, alterTitel, update.titel);
+        if (neu === t.inhalt) continue;
+        const { error: e } = await supabase.from("notiz").update({ inhalt: neu }).eq("id", t.id);
+        if (!e) angepasst.push({ id: t.id, inhalt: neu });
+      }
+    }
+  }
+  return { geaendertAm: data.geaendert_am, angepasst };
 }
 
 /** NOT-05 */
@@ -100,18 +169,6 @@ export async function notizLoeschen(id: string) {
   revalidatePath("/notizen");
 }
 
-/** Notiz mit einer PDF verknüpfen (oder lösen) – der PDF Reader zeigt sie dann in der Seitenleiste. */
-export async function notizPdfSetzen(id: string, dateiId: string | null) {
-  const { supabase } = await nutzer();
-  if (dateiId) {
-    const { data: datei } = await supabase.from("datei").select("id, mime_typ").eq("id", dateiId).maybeSingle();
-    if (!datei || datei.mime_typ !== "application/pdf") throw new Error("PDF nicht gefunden.");
-  }
-  const { error } = await supabase.from("notiz").update({ datei_id: dateiId }).eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath(`/pdf-reader/${dateiId ?? ""}`);
-}
-
 /** Neue Notiz direkt aus dem PDF Reader – mit der PDF verknüpft und im Fach der PDF. */
 export async function notizZuPdfAnlegen(dateiId: string): Promise<Notiz> {
   const { supabase, userId } = await nutzer();
@@ -123,12 +180,14 @@ export async function notizZuPdfAnlegen(dateiId: string): Promise<Notiz> {
     .insert({
       user_id: userId,
       fach_id: datei.fach_id,
-      datei_id: datei.id,
       titel: `Notizen zu ${datei.name.replace(/\.pdf$/i, "")}`.slice(0, 300),
+      // Die Verbindung zur PDF ist ein normaler Link im Text – wie jeder andere
+      inhalt: `Bezug: [[${datei.name}]]\n\n`,
     })
     .select()
     .single();
   if (error) throw new Error(error.message);
+  await linksAbgleichen(supabase, userId, data.id, data.inhalt);
   revalidatePath("/notizen");
   revalidatePath(`/pdf-reader/${dateiId}`);
   return data;
