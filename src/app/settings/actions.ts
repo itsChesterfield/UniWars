@@ -5,33 +5,57 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums, Json } from "@/lib/supabase/types";
 import { hubLayoutLesen } from "@/lib/hub-layout";
+import { darstellungLesen, istTheme, symbolleisteLesen } from "@/lib/personalisierung";
 
-export async function setTheme(theme: Enums<"theme">) {
+export async function setTheme(theme: Enums<"theme">): Promise<{ ok: boolean }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht angemeldet");
+  if (!istTheme(theme)) return { ok: false };
 
   const { error } = await supabase.from("settings").update({ theme }).eq("user_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) return { ok: false };
   // Auch die Hubs nutzen das Theme -> ganzes Layout neu rendern.
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
-export async function setSichtbareWidgets(widgets: string[]) {
+/** Design B3, Personalisierung: Reihenfolge und ausgeblendete Bereiche der Symbolleiste. */
+export async function symbolleisteSpeichern(roh: unknown): Promise<{ ok: boolean }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Nicht angemeldet");
 
+  const symbolleiste = symbolleisteLesen(roh);
   const { error } = await supabase
     .from("settings")
-    .update({ sichtbare_widgets: widgets })
+    .update({ symbolleiste: symbolleiste as unknown as Json })
     .eq("user_id", user.id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/");
+  if (error) return { ok: false };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** Design B3, Personalisierung: Schriftgröße, Dichte, Bewegung, Design-Schalter in der Kopfleiste. */
+export async function darstellungSpeichern(roh: unknown): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Nicht angemeldet");
+
+  const darstellung = darstellungLesen(roh);
+  const { error } = await supabase
+    .from("settings")
+    .update({ darstellung: darstellung as unknown as Json })
+    .eq("user_id", user.id);
+  if (error) return { ok: false };
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 /**

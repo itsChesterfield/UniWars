@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { allesSuchen } from "@/app/(hubs)/suche-actions";
 import { notizAnlegen } from "@/app/(hubs)/notizen/actions";
 import { stapelAnlegen } from "@/app/(hubs)/karteikarten/actions";
@@ -19,6 +19,9 @@ import { WEITERE_HUBS } from "@/lib/hubs/navigation";
 import { inZweiterAnsichtOeffnen, istEingebettet } from "@/lib/geteilte-ansicht";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { HUB_ANORDNEN } from "@/lib/hub-layout";
+import { DESIGN_NAMEN, THEMES, type Theme } from "@/lib/personalisierung";
+import { designWaehlen, usePersoenlich } from "@/lib/personalisierung-store";
 
 /** Ereignis: Befehlspalette öffnen (z. B. Knopf in der Seitenleiste) */
 export const BEFEHLE_OEFFNEN = "uniwars-befehle-oeffnen";
@@ -31,7 +34,7 @@ export function befehleOeffnen() {
 
 type Eintrag = {
   schluessel: string;
-  gruppe: "Zuletzt" | "Erstellen" | "Öffnen" | "Gefunden" | "In PDFs" | "KI";
+  gruppe: "Zuletzt" | "Erstellen" | "Öffnen" | "Einstellen" | "Gefunden" | "In PDFs" | "KI";
   icon: string;
   titel: string;
   info?: string;
@@ -45,7 +48,8 @@ const SEITEN: { name: string; href: string; icon: string; woerter?: string }[] =
   { name: "Zentraler Hub", href: "/", icon: "🏠", woerter: "dashboard start übersicht home" },
   ...BEREICHE.filter((b) => b.href !== "/").map((b) => ({ name: b.name, href: b.href, icon: "📌", woerter: b.untertitel })),
   ...WEITERE_HUBS.filter((h) => h.href).map((h) => ({ name: h.name, href: h.href!, icon: "🧩" })),
-  { name: "Einstellungen", href: "/einstellungen", icon: "⚙️", woerter: "profil konto design passwort" },
+  { name: "Einstellungen", href: "/einstellungen", icon: "⚙️", woerter: "profil konto passwort e-mail abmelden" },
+  { name: "Personalisierung", href: "/einstellungen/personalisierung", icon: "⚙️", woerter: "design aussehen symbolleiste schrift dichte bewegung theme" },
   { name: "Was Studio über dich weiß", href: "/einstellungen/gedaechtnis", icon: "🧠", woerter: "gedächtnis über mich wissen persönlich kennenlernen wissensstand" },
 ];
 
@@ -77,8 +81,10 @@ const SCHNELL: ErstellArt[] = ["abgabe", "pruefung", "todo", "notiz", "stapel", 
  * Strg/⌘+O: eine Suchleiste für alles – Bereiche öffnen, PDFs/Notizen/Stapel … finden (auch im Text der PDFs),
  * Deadlines, Prüfungen, To-dos, Notizen, Whiteboards … erstellen. Strg+J bleibt die KI.
  */
-export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
+export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar: boolean; theme?: Theme }) {
   const router = useRouter();
+  const pfad = usePathname();
+  const design = usePersoenlich("theme", theme);
   const [offen, setOffen] = useState(false);
   const [q, setQ] = useState("");
   const [gefunden, setGefunden] = useState<{ fuer: string; liste: SuchTreffer[] }>({ fuer: "", liste: [] });
@@ -275,10 +281,42 @@ export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
       },
     });
 
+    // Personalisierung: Hub anordnen und Design wechseln (DESIGN.md Abschnitt 6)
+    const einstellen: (Eintrag & { woerter: string })[] = [
+      {
+        schluessel: "hub-anordnen",
+        gruppe: "Einstellen",
+        icon: "🏠",
+        titel: "Hub anordnen",
+        info: "Zentraler Hub",
+        woerter: "hub anordnen anpassen bausteine layout verschieben ausblenden",
+        ausfuehren: () => {
+          schliessen();
+          track("hub_anordnen_gestartet", { ort: "befehlspalette" });
+          if (pfad === "/") window.dispatchEvent(new CustomEvent(HUB_ANORDNEN));
+          else router.push("/?anordnen");
+        },
+      },
+      ...THEMES.filter((t) => t !== design).map((t) => ({
+        schluessel: `design-${t}`,
+        gruppe: "Einstellen" as const,
+        icon: "🎨",
+        titel: `${DESIGN_NAMEN[t]} verwenden`,
+        info: "Design",
+        woerter: `design theme aussehen ${t === "DUNKEL" ? "dunkel nacht" : t === "HELL" ? "hell weiß" : "system automatisch gerät"}`,
+        ausfuehren: async () => {
+          schliessen();
+          track("theme_gewechselt", { theme: t, ort: "befehlspalette" });
+          await designWaehlen(t);
+        },
+      })),
+    ];
+
     if (!suche) {
       for (const t of zuletzt) liste.push(trefferEintrag(t, "Zuletzt"));
       for (const a of SCHNELL) liste.push(erstellEintrag(a, ""));
       for (const s of SEITEN) liste.push(seitenEintrag(s));
+      liste.push(...einstellen);
       return liste;
     }
 
@@ -305,6 +343,7 @@ export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
     if (besteSeite >= 80) for (const x of seiten) liste.push(seitenEintrag(x.s));
     for (const x of objekte) liste.push(trefferEintrag(x.t, "Gefunden"));
     if (besteSeite < 80) for (const x of seiten) liste.push(seitenEintrag(x.s));
+    liste.push(...einstellen.filter((e) => Math.max(bewertung(e.titel, suche), bewertung(e.woerter, suche) * 0.6) >= 35));
     for (const t of fundstellen) liste.push(trefferEintrag(t, "In PDFs"));
 
     // 4. Erstellen-Befehle, die zum Suchwort passen („whiteboard“ → Whiteboard erstellen)
@@ -334,7 +373,7 @@ export function Befehlspalette({ kiVerfuegbar }: { kiVerfuegbar: boolean }) {
       });
     }
     return liste;
-  }, [q, gefunden, zuletzt, kiVerfuegbar, erstellen, gehe, merken, schliessen]);
+  }, [q, gefunden, zuletzt, kiVerfuegbar, erstellen, gehe, merken, schliessen, design, pfad, router]);
 
   const aktivIndex = Math.min(aktiv, Math.max(0, eintraege.length - 1));
 

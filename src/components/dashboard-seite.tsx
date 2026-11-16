@@ -14,6 +14,8 @@ import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
+import { DesignRahmen } from "@/components/design-rahmen";
+import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 
 
 /**
@@ -114,10 +116,18 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
 
   const username = anzeigeName(settings, user);
   const avatarUrl = await profilbildUrl(supabase, settings.avatar_pfad);
+  const darstellung = darstellungLesen(settings.darstellung);
 
   return (
-    <div className="dashboard" data-theme={settings.theme === "DUNKEL" ? "nacht" : "hochschule"}>
-      <Sidebar name={username} email={user.email ?? ""} avatarUrl={avatarUrl} theme={settings.theme} kiVerfuegbar={kiKonfiguriert()} />
+    <DesignRahmen theme={settings.theme} darstellung={darstellung}>
+      <Sidebar
+        name={username}
+        email={user.email ?? ""}
+        avatarUrl={avatarUrl}
+        theme={settings.theme}
+        symbolleiste={symbolleisteLesen(settings.symbolleiste)}
+        kiVerfuegbar={kiKonfiguriert()}
+      />
       <Suspense fallback={null}>
         <HubKontext aktiv={bereich} faecher={faecher ?? []} deadlines={deadlines ?? []} pruefungen={pruefungen ?? []} />
       </Suspense>
@@ -127,6 +137,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
           avatarUrl={avatarUrl}
           streak={settings.streak_count}
           kiVerfuegbar={kiKonfiguriert()}
+          theme={settings.theme}
+          darstellung={darstellung}
           benachrichtigungen={benachrichtigungen ?? []}
           einladungen={einladungen ?? []}
         />
@@ -157,6 +169,6 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         </BereichUebergang>
         </GeteilteAnsicht>
       </div>
-    </div>
+    </DesignRahmen>
   );
 }

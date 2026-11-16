@@ -25,13 +25,14 @@ Jeder Schritt auf eigenem Branch, Vercel-Vorschau, `npm run lint`, `npm test`, H
 4. **Zentraler Hub** – Unterseiten in die Kontextspalte, Übersicht als Raster mit S/M/L, Bearbeiten-Modus (Bibliothek: `@dnd-kit/sortable` mit Tastatur-Sensor), „Dein Tag“ zusammenführen.
    Umgesetzt in `src/components/hub/` und `src/lib/hub-layout.ts`. Die Anordnung liegt in `settings.hub_layout`. Start des Bearbeiten-Modus: „Anpassen“ in der Kopfleiste, das Ereignis `uniwars-hub-anordnen` oder der Link `/?anordnen`.
 5. **Personalisierung** – Einstellungsseite auf die neuen Spalten umstellen, Symbolleiste-Reihenfolge, Darstellung.
+   Umgesetzt: Seite `/einstellungen/personalisierung` mit Kontextspalte der Einstellungen, Logik in `src/lib/personalisierung.ts`, sofortige Wirkung über `src/lib/personalisierung-store.ts` und `src/components/design-rahmen.tsx` (Attribute auf `.dashboard` und `<html>`). „Wie das System“ ist reines CSS (`prefers-color-scheme`). „Hub anordnen“ und Designwechsel stehen auch in der Befehlspalette.
 6. **Bereiche einzeln** – Karteikarten (inkl. Quiz), Notizen, PDF Reader, Lernraum, Transkription (inkl. Podcast), dann die übrigen.
 
 ## Datenbank
 `supabase/migrations/20261116222117_design_b3_einstellungen.sql` ist angewendet (16.11.2026, 23:21). Nur hinzufügend:
 - `settings.theme` kennt zusätzlich `SYSTEM` (HELL = Hochschule, DUNKEL = Sternenhimmel).
 - Neue Spalten `settings.hub_layout` (jsonb, Liste), `settings.symbolleiste` (jsonb, Objekt), `settings.darstellung` (jsonb, mit Standardwerten). Der App-Code nutzt sie noch nicht.
-- `settings.sichtbare_widgets` wird nach der Umstellung auf `hub_layout` nicht mehr gebraucht; erst dann entfernen.
+- `settings.sichtbare_widgets` wird nicht mehr gebraucht. `supabase/migrations/20261117010000_design_b3_sichtbare_widgets_entfernen.sql` entfernt die Spalte (Schritt 5, nach dem Zusammenführen einspielen).
 - Datenbank und Repo haben damit 40 Migrationen.
 - `settings` hat RLS „eigene Zeile“ für alle Befehle; neue Spalten sind damit abgedeckt.
 - Offen und unabhängig vom Design (Supabase-Advisor): `ist_username_verfuegbar` anonym aufrufbar, 22 SECURITY-DEFINER-Funktionen per RPC aufrufbar (darunter die KI-Kontingent-Buchung), Schutz gegen geleakte Passwörter aus.

@@ -12,21 +12,18 @@ import { ProfilAvatar } from "@/components/profil-avatar";
 import { NavIcon } from "@/components/nav-icon";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
-import { MOBIL_HUBS, ZENTRALER_HUB, WEITERE_HUBS, hubsInGruppen } from "@/lib/hubs/navigation";
+import { KURZNAMEN, hubVonId, hubsInGruppen } from "@/lib/hubs/navigation";
 import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { HUB_DRAG_TYP } from "@/lib/geteilte-ansicht";
 import { logout } from "@/app/logout/actions";
-import { setTheme } from "@/app/settings/actions";
-import { abmelden } from "@/lib/analytics";
+import { abmelden, track } from "@/lib/analytics";
 import type { Enums } from "@/lib/supabase/types";
 import { NACH_OBEN, NACH_UNTEN } from "@/components/bereich-uebergang";
+import { designWaehlen, usePersoenlich, useSystemDunkel } from "@/lib/personalisierung-store";
+import { DESIGN_NAMEN, bereichHref, sichtbaresDesign, tabLeiste, type Symbolleiste } from "@/lib/personalisierung";
 
 /** Gleicher Schlüssel wie im Skript in app/layout.tsx. Die Symbolleiste ist immer schmal; der Schlüssel bleibt für ältere Browserstände. */
 export const SIDEBAR_SCHLUESSEL = "uniwars-sidebar-eingeklappt";
-
-const GRUPPEN = hubsInGruppen();
-/** Reihenfolge der Symbolleiste, für die Richtung des Übergangs */
-const REIHE = GRUPPEN.flatMap((g) => g.hubs.map((h) => h.href));
 
 /**
  * Meldet eine laufende Navigation an <html data-laedt>. Die Kopfleiste zeigt dann
@@ -70,7 +67,8 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
   const [laeuft, starte] = useTransition();
   const rahmen = useRef<HTMLDivElement>(null);
   const knopf = useRef<HTMLButtonElement>(null);
-  const dunkel = theme === "DUNKEL";
+  // Gewechselt wird zum anderen der beiden Designs; „Wie das System“ zählt als das, was gerade zu sehen ist
+  const anderes = sichtbaresDesign(usePersoenlich("theme", theme), useSystemDunkel()) === "DUNKEL" ? "HELL" : "DUNKEL";
 
   useEffect(() => {
     if (!offen) return;
@@ -113,18 +111,26 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
               <small>{email}</small>
             </span>
           </div>
-          <Link role="menuitem" href="/einstellungen" className="menue-eintrag" onClick={() => setOffen(false)}>
-            Einstellungen
+          <Link role="menuitem" href="/einstellungen/personalisierung" className="menue-eintrag" onClick={() => setOffen(false)}>
+            Personalisierung
           </Link>
           <button
             role="menuitem"
             type="button"
             className="menue-eintrag"
             disabled={laeuft}
-            onClick={() => starte(() => setTheme(dunkel ? "HELL" : "DUNKEL"))}
+            onClick={() =>
+              starte(async () => {
+                track("theme_gewechselt", { theme: anderes, ort: "profilmenue" });
+                await designWaehlen(anderes);
+              })
+            }
           >
-            {dunkel ? "Hochschule verwenden" : "Sternenhimmel verwenden"}
+            {DESIGN_NAMEN[anderes]} verwenden
           </button>
+          <Link role="menuitem" href="/einstellungen" className="menue-eintrag" onClick={() => setOffen(false)}>
+            Einstellungen
+          </Link>
           <form action={logout} className="menue-trenn">
             <button role="menuitem" type="submit" className="menue-eintrag" onClick={() => abmelden()}>
               Abmelden
@@ -145,6 +151,7 @@ export function Sidebar({
   email,
   avatarUrl = null,
   theme = "HELL",
+  symbolleiste,
   kiVerfuegbar = false,
 }: {
   /** Anzeigename (Nutzername) */
@@ -152,17 +159,24 @@ export function Sidebar({
   email: string;
   avatarUrl?: string | null;
   theme?: Enums<"theme">;
+  /** Reihenfolge und ausgeblendete Bereiche (Personalisierung) */
+  symbolleiste: Symbolleiste;
   /** KI-12: Mistral-Key gesetzt → Knopf für UniVerse Studio (Strg+J) */
   kiVerfuegbar?: boolean;
 }) {
   const pfad = usePathname();
+  const leiste = usePersoenlich("symbolleiste", symbolleiste);
+  const gruppen = hubsInGruppen(leiste);
+  /** Reihenfolge der Symbolleiste, für die Richtung des Übergangs */
+  const reihe = gruppen.flatMap((g) => g.hubs.map((h) => h.href));
+  const tabs = tabLeiste(leiste).map((id) => ({ id, href: bereichHref(id), hub: hubVonId(id) }));
   // Die Bereiche des Zentralen Hubs (Termine, Noten …) gehören zum Zentralen Hub
   const istAktiv = (href: string) =>
     href === "/" ? BEREICHE.some((b) => b.href === pfad) : pfad === href || pfad.startsWith(`${href}/`);
-  const mobilAktiv = MOBIL_HUBS.some((m) => istAktiv(m.href));
-  const aktuell = REIHE.findIndex((href) => istAktiv(href));
+  const mobilAktiv = tabs.some((m) => istAktiv(m.href));
+  const aktuell = reihe.findIndex((href) => istAktiv(href));
   // Ziel unter dem aktuellen Bereich → neue Ansicht kommt von unten, sonst von oben
-  const richtung = (href: string) => [REIHE.indexOf(href) > aktuell ? NACH_UNTEN : NACH_OBEN];
+  const richtung = (href: string) => [reihe.indexOf(href) > aktuell ? NACH_UNTEN : NACH_OBEN];
 
   return (
     <>
@@ -175,7 +189,7 @@ export function Sidebar({
           </svg>
         </Link>
 
-        {GRUPPEN.map((gruppe, gi) => (
+        {gruppen.map((gruppe, gi) => (
           <Fragment key={gruppe.name}>
             {gi > 0 && <span className="rtrenn" aria-hidden />}
             <ul className="rgruppe" aria-label={gruppe.name}>
@@ -235,21 +249,18 @@ export function Sidebar({
       </nav>
 
       <nav className="mobilnav" aria-label="Bereiche">
-        {MOBIL_HUBS.map((m) => {
-          const hub = m.href === "/" ? ZENTRALER_HUB : WEITERE_HUBS.find((h) => h.href === m.href);
-          return (
-            <Link
-              key={m.href}
-              href={m.href}
-              aria-current={istAktiv(m.href) ? "page" : undefined}
-              transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
-            >
-              <LadeMelder />
-              {hub && <NavIcon path={hub.icon} groesse={20} />}
-              {m.kurz}
-            </Link>
-          );
-        })}
+        {tabs.map((m) => (
+          <Link
+            key={m.href}
+            href={m.href}
+            aria-current={istAktiv(m.href) ? "page" : undefined}
+            transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
+          >
+            <LadeMelder />
+            {m.hub && <NavIcon path={m.hub.icon} groesse={20} />}
+            {KURZNAMEN[m.id] ?? m.hub?.name}
+          </Link>
+        ))}
         <button type="button" onClick={() => befehleOeffnen()} aria-current={mobilAktiv ? undefined : "page"}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden>
             <circle cx="11" cy="11" r="6.5" />
@@ -264,7 +275,7 @@ export function Sidebar({
           <AssistentStarter />
         </Suspense>
       )}
-      <Befehlspalette kiVerfuegbar={kiVerfuegbar} />
+      <Befehlspalette kiVerfuegbar={kiVerfuegbar} theme={theme} />
       <InaktivitaetsWaechter />
     </>
   );

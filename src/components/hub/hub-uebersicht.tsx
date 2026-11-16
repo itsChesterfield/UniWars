@@ -46,6 +46,7 @@ import {
   type Platz,
   type Voreinstellung,
 } from "@/lib/hub-layout";
+import { bewegungReduziert } from "@/lib/personalisierung-store";
 
 const MAX_RUECKGAENGIG = 30;
 
@@ -83,7 +84,8 @@ const kollision: CollisionDetection = (args) => {
 const ZURUECK_TASTEN = ["ArrowUp", "ArrowLeft"];
 const VOR_TASTEN = ["ArrowDown", "ArrowRight"];
 
-const ruhig = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** Vom System oder in der Personalisierung reduziert */
+const ruhig = bewegungReduziert;
 
 /** Bausteine gleiten an ihren neuen Platz, statt zu springen (FLIP). */
 function useGleiten(ref: React.RefObject<HTMLElement | null>, schluessel: string) {

@@ -10,6 +10,9 @@ import { profilbildUrl } from "@/lib/profilbild";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
+import { DesignRahmen } from "@/components/design-rahmen";
+import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
+import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 
 // Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
@@ -42,16 +45,22 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   const name = anzeigeName(settings, user);
   const avatarUrl = await profilbildUrl(supabase, settings?.avatar_pfad);
   const kiVerfuegbar = kiKonfiguriert();
+  const theme = settings?.theme ?? "HELL";
+  const darstellung = darstellungLesen(settings?.darstellung);
+  const symbolleiste = symbolleisteLesen(settings?.symbolleiste);
 
   return (
-    <div className="dashboard" data-theme={settings?.theme === "DUNKEL" ? "nacht" : "hochschule"}>
-      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={settings?.theme} kiVerfuegbar={kiVerfuegbar} />
+    <DesignRahmen theme={theme} darstellung={darstellung}>
+      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
+      <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
       <div className="arbeitsflaeche">
         <Kopfleiste
           name={name}
           avatarUrl={avatarUrl}
           streak={settings?.streak_count ?? 0}
           kiVerfuegbar={kiVerfuegbar}
+          theme={theme}
+          darstellung={darstellung}
           benachrichtigungen={benachrichtigungen ?? []}
           einladungen={einladungen ?? []}
         />
@@ -60,6 +69,6 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
         </GeteilteAnsicht>
       </div>
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
-    </div>
+    </DesignRahmen>
   );
 }
