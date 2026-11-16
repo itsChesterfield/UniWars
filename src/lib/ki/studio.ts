@@ -31,6 +31,14 @@ export type Block =
 /** Aktionen, die der Browser ausführt */
 export type Aktion = { art: "oeffnen"; href: string; daneben: boolean; titel: string } | { art: "notiz_einfuegen"; notizId: string; text: string };
 
+/** Nach so langer Pause beginnt Studio einen neuen Chat (das Gedächtnis bleibt) */
+export const NEUER_CHAT_NACH_MS = 3 * 60 * 60_000;
+
+/** Ist die zuletzt genutzte Unterhaltung noch „dieselbe Sitzung“? */
+export function chatNochAktuell(geaendertAm: string | null | undefined, jetzt = Date.now()): boolean {
+  return Boolean(geaendertAm) && jetzt - new Date(geaendertAm as string).getTime() < NEUER_CHAT_NACH_MS;
+}
+
 /** Was Studio aus einer Nachricht über die Person gelernt hat (Chip unter der Antwort) */
 export type Gemerkt = { id: string; inhalt: string; status: "aktiv" | "vorschlag"; art: "neu" | "geaendert" | "vergessen" };
 

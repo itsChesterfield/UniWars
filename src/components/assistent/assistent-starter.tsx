@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { AssistentChat } from "@/components/assistent/assistent-chat";
 import { kontextAusPfad, type KontextEingabe } from "@/lib/ki/assistent";
 import { aufteilungLesen, istEingebettet } from "@/lib/geteilte-ansicht";
-import { markierterText, STUDIO_OEFFNEN, studioZustand } from "@/lib/ki/studio-kontext";
+import { markierterText, STUDIO_NEU, STUDIO_OEFFNEN, studioZustand } from "@/lib/ki/studio-kontext";
 import { STUDIO_NAME } from "@/lib/ki/studio";
 import { track } from "@/lib/analytics";
 
@@ -49,6 +49,22 @@ export function AssistentStarter() {
   const [startFrage, setStartFrage] = useState<{ text: string; nr: number } | null>(null);
   /** Privater Chat: Studio lernt nichts aus diesem Gespräch (gilt bis zum Neuladen) */
   const [privat, setPrivat] = useState(false);
+  /** Große Ansicht (breite Leiste) – auf diesem Gerät gemerkt */
+  const [gross, setGross] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      try {
+        setGross(window.localStorage.getItem("uniwars-studio-gross") === "1");
+      } catch {
+        // egal
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-studio-gross", gross);
+    return () => document.documentElement.removeAttribute("data-studio-gross");
+  }, [gross]);
   const eingebettet = istEingebettet();
 
   const umschalten = useCallback((weg: string) => {
@@ -103,10 +119,41 @@ export function AssistentStarter() {
 
   // Direkt an <body>, damit keine Seitenebene (Seitenleiste, Dashboard) darüber liegt
   return createPortal(
-    <aside className="ki-panel studio-panel" aria-label={STUDIO_NAME}>
+    <aside className={`ki-panel studio-panel ${gross ? "gross" : ""}`} aria-label={STUDIO_NAME}>
       <div className="ki-panel-kopf">
         <h2>✨ {STUDIO_NAME}</h2>
         <span className="ki-panel-knoepfe">
+          <button
+            type="button"
+            className="icon-knopf"
+            title="Neuer Chat (Studio behält, was es über dich weiß)"
+            aria-label="Neuer Chat"
+            onClick={() => {
+              window.dispatchEvent(new Event(STUDIO_NEU));
+              track("studio_neuer_chat");
+            }}
+          >
+            ＋
+          </button>
+          <button
+            type="button"
+            className="icon-knopf"
+            title={gross ? "Kleiner" : "Größer"}
+            aria-label={gross ? "Studio verkleinern" : "Studio vergrößern"}
+            aria-pressed={gross}
+            onClick={() => {
+              const neu = !gross;
+              setGross(neu);
+              try {
+                window.localStorage.setItem("uniwars-studio-gross", neu ? "1" : "0");
+              } catch {
+                // egal
+              }
+              track("studio_groesse", { gross: neu });
+            }}
+          >
+            {gross ? "⤡" : "⤢"}
+          </button>
           <button
             type="button"
             className={`icon-knopf studio-privat ${privat ? "an" : ""}`}

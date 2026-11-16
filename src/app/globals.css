@@ -11791,3 +11791,18 @@ html[data-eingebettet] .notiz-karte {
 .dashboard-ueberschrift {
   animation: tb-ein 0.35s ease-out;
 }
+
+/* UniVerse Studio groß */
+.studio-panel.gross {
+  width: min(880px, 62vw);
+}
+
+@media (min-width: 761px) {
+  html[data-studio-offen][data-studio-gross] .dashboard {
+    padding-right: min(880px, 62vw);
+  }
+}
+
+.studio-panel.gross .ki-blase {
+  max-width: 82%;
+}

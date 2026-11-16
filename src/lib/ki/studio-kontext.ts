@@ -25,6 +25,9 @@ export const STUDIO_OEFFNEN = "uniwars-studio-oeffnen";
 /** Ereignis an den Notiz-Editor: Text an der aktuellen Stelle einfügen (von der KI) */
 export const NOTIZ_EINFUEGEN = "uniwars-notiz-einfuegen";
 
+/** Ereignis: neuen Chat beginnen (Knopf in der Studio-Leiste) */
+export const STUDIO_NEU = "uniwars-studio-neu";
+
 /** UniVerse Studio öffnen – optional gleich mit einer Frage */
 export function studioOeffnen(frage?: string) {
   window.dispatchEvent(new CustomEvent(STUDIO_OEFFNEN, { detail: { frage: frage ?? null } }));

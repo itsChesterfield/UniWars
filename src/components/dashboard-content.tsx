@@ -28,7 +28,6 @@ import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
 import { QuickAdd } from "@/components/quick-add";
 import { NotificationBell } from "@/components/notification-bell";
-import { WidgetToggle, istWidgetSichtbar } from "@/components/widget-toggle";
 import { TagesBriefing } from "@/components/ki/tages-briefing";
 import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { DetailAnsicht } from "@/components/detail-ansicht";
@@ -77,12 +76,10 @@ export function DashboardContent({
   lernSessions,
   benachrichtigungen,
   einladungen,
-  sichtbareWidgets,
   settings,
   username,
   userId,
   kalender,
-  kiVerfuegbar = false,
   bereich = "uebersicht",
   avatarUrl = null,
 }: {
@@ -96,7 +93,8 @@ export function DashboardContent({
   lernSessions: LernSession[];
   benachrichtigungen: Benachrichtigung[];
   einladungen: Einladung[];
-  sichtbareWidgets: string[];
+  /** früher „Dashboard anpassen“ – die Übersicht zeigt jetzt fest „Dein Tag“ und Termine */
+  sichtbareWidgets?: string[];
   settings: Settings;
   username: string;
   userId: string;
@@ -139,7 +137,6 @@ export function DashboardContent({
   }
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
-  const sichtbar = (key: string) => istWidgetSichtbar(sichtbareWidgets, key);
 
   const name = username;
 
@@ -378,7 +375,6 @@ export function DashboardContent({
           <SearchBar />
           <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
           <div className="dashboard-toolbar-rechts">
-            {bereich === "uebersicht" && <WidgetToggle initialSichtbareWidgets={sichtbareWidgets} kiVerfuegbar={kiVerfuegbar} />}
             <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
             <Link href="/einstellungen" className="avatar-link" title="Profil und Einstellungen" aria-label="Profil und Einstellungen">
               <ProfilAvatar name={name} url={avatarUrl} />
@@ -389,7 +385,7 @@ export function DashboardContent({
 
       <HauptNotch aktiv={bereich} />
 
-      {bereich !== "fortschritt" && bereich !== "faecher" && <FachFilterChips faecher={faecher} />}
+      {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
 
       {bereich === "termine" && <div className="dashboard-grid">{terminKarte("span-12")}</div>}
       {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12", false)}</div>}
@@ -408,34 +404,11 @@ export function DashboardContent({
         </div>
       )}
 
+      {/* Übersicht: nur das Wichtigste – alles andere liegt in den Bereichen der Notch */}
       {bereich === "uebersicht" && (
         <div className="dashboard-grid">
-        {sichtbar("ki") && <TagesBriefing />}
-
-        {sichtbar("heute") && terminKarte("span-12")}
-
-        {sichtbar("aufgaben") && aufgabenKarte("span-5", true)}
-
-        {sichtbar("aufgaben") && notenBlock("span-7")}
-
-        {sichtbar("fortschritt") && fortschrittKarte("span-7")}
-
-        <div className="span-5" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <LockedCard
-            icon={
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="6" width="13" height="14" rx="2" />
-                <path d="M8 3h9a2 2 0 0 1 2 2v11" />
-              </svg>
-            }
-            title="Karteikarten"
-            description="Eigener Hub folgt — noch nicht Teil des Main Hub."
-          />
-
-          {sichtbar("faecher") && <FachManager initialFaecher={faecher} />}
-        </div>
-
-        {bachelorKarte}
+          <TagesBriefing />
+          {terminKarte("span-12")}
         </div>
       )}
 

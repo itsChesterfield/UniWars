@@ -22,7 +22,7 @@ import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
 import { handlungswerkzeuge, type Sammlung } from "@/lib/ki/werkzeuge/handeln";
 import { studioQuellen } from "@/lib/ki/lernraum-server";
 import { absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_GANZ, PERSOENLICHKEITEN, profilLesen, profilText } from "@/lib/ki/lernraum";
-import { STUDIO_SYSTEM, type Gemerkt } from "@/lib/ki/studio";
+import { chatNochAktuell, STUDIO_SYSTEM, type Gemerkt } from "@/lib/ki/studio";
 import { ausGespraechLernen, persoenlichKontext, zusammenfassenWennNoetig } from "@/lib/ki/gedaechtnis-server";
 import { einbetten, MATERIAL_REGEL } from "@/lib/ki/material";
 import type { Json } from "@/lib/supabase/types";
@@ -119,14 +119,18 @@ export async function POST(request: Request) {
       if (!data) throw new KiEingabe("Unterhaltung nicht gefunden.");
       unterhaltung = data;
     } else {
-      // Ein gemeinsamer Chat: ohne Angabe die zuletzt genutzte Unterhaltung weiterführen
-      const { data } = await supabase
-        .from("ki_unterhaltung")
-        .select("id, zusammenfassung, zusammengefasst_bis")
-        .order("geaendert_am", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      unterhaltung = data ?? { id: "", zusammenfassung: null, zusammengefasst_bis: null };
+      // Ohne Angabe: die zuletzt genutzte Unterhaltung weiterführen – außer nach längerer Pause
+      // oder wenn ausdrücklich ein neuer Chat gewünscht ist (das Gedächtnis bleibt so oder so)
+      const { data } =
+        body.neu === true
+          ? { data: null }
+          : await supabase
+              .from("ki_unterhaltung")
+              .select("id, zusammenfassung, zusammengefasst_bis, geaendert_am")
+              .order("geaendert_am", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+      unterhaltung = data && chatNochAktuell(data.geaendert_am) ? data : { id: "", zusammenfassung: null, zusammengefasst_bis: null };
     }
 
     // Erst buchen (Limit vorab), dann speichern
