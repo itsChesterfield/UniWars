@@ -4,8 +4,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { CALLOUTS, type CalloutTyp } from "@/components/notizen/editor-erweiterungen";
 import { zielText } from "@/lib/notizen/wikilinks";
+import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 
 export type LinkZiel = { id: string; name: string; art: "notiz" | "pdf" };
+
+type Registerkarte = "start" | "einfuegen" | "absatz" | "tabelle";
+const TAB_SCHLUESSEL = "uniwars-notiz-leiste-tab";
+const EINGEKLAPPT_SCHLUESSEL = "uniwars-notiz-leiste-zu";
 
 const SCHRIFTFARBEN = ["#1f2937", "#6b7280", "#b91c1c", "#c2410c", "#a16207", "#15803d", "#0369a1", "#1d4ed8", "#7e22ce", "#be185d"];
 const MARKERFARBEN = ["#fef08a", "#bbf7d0", "#bae6fd", "#fbcfe8", "#fed7aa", "#ddd6fe", "#e5e7eb"];
@@ -197,229 +202,294 @@ export function Werkzeugleiste({
   });
 
   const c = () => editor.chain().focus();
+  const tabWahl = (useBrowserWert(TAB_SCHLUESSEL, "start") as Registerkarte) || "start";
+  const eingeklappt = useBrowserWert(EINGEKLAPPT_SCHLUESSEL, "0") === "1";
+
+  // Registerkarten wie in Word: nur eine Gruppe sichtbar, Leiste einklappbar
+  const tab: Registerkarte = tabWahl === "tabelle" && !z.tabelle ? "start" : tabWahl;
+
+  function tabKlick(t: Registerkarte) {
+    if (eingeklappt) browserWertSchreiben(EINGEKLAPPT_SCHLUESSEL, null);
+    else if (t === tab) {
+      browserWertSchreiben(EINGEKLAPPT_SCHLUESSEL, "1");
+      return;
+    }
+    browserWertSchreiben(TAB_SCHLUESSEL, t);
+  }
+
+  const reiter: { id: Registerkarte; name: string }[] = [
+    { id: "start", name: "Start" },
+    { id: "einfuegen", name: "Einfügen" },
+    { id: "absatz", name: "Absatz" },
+    ...(z.tabelle ? [{ id: "tabelle" as const, name: "Tabelle" }] : []),
+  ];
 
   return (
-    <div className="wz" role="toolbar" aria-label="Formatierung">
-      <div className="wz-zeile">
-        <div className="wz-gruppe" aria-label="Verlauf">
+    <div className={`wz ${eingeklappt ? "wz-zu" : ""}`} role="toolbar" aria-label="Formatierung">
+      <div className="wz-reiter" role="tablist">
+        <span className="wz-schnell">
           <Knopf titel="Rückgängig (Strg+Z)" deaktiviert={!z.kannRueck} onClick={() => c().undo().run()}>
-            <Icon d={ICONS.rueck} />
+            <Icon d={ICONS.rueck} groesse={14} />
           </Knopf>
           <Knopf titel="Wiederholen (Strg+Y)" deaktiviert={!z.kannVor} onClick={() => c().redo().run()}>
-            <Icon d={ICONS.vor} />
+            <Icon d={ICONS.vor} groesse={14} />
           </Knopf>
-        </div>
-        <Trenner />
-
-        <div className="wz-gruppe" aria-label="Schrift">
-          <select className="wz-auswahl wz-absatz" title="Absatzformat" aria-label="Absatzformat" value={z.absatz} onChange={(e) => absatzSetzen(editor, e.target.value as Absatz)}>
-            {ABSATZFORMATE.map((a) => (
-              <option key={a.wert} value={a.wert}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="wz-auswahl"
-            title="Schriftart"
-            aria-label="Schriftart"
-            value={z.schrift}
-            onChange={(e) => (e.target.value ? c().setFontFamily(e.target.value).run() : c().unsetFontFamily().removeEmptyTextStyle().run())}
+        </span>
+        {reiter.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="tab"
+            aria-selected={!eingeklappt && tab === r.id}
+            className={`wz-reiter-knopf ${!eingeklappt && tab === r.id ? "an" : ""} ${r.id === "tabelle" ? "kontext" : ""}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => tabKlick(r.id)}
           >
-            {SCHRIFTARTEN.map((s) => (
-              <option key={s.name} value={s.wert}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="wz-auswahl"
-            title="Schriftgröße"
-            aria-label="Schriftgröße"
-            value={z.groesse}
-            onChange={(e) => (e.target.value ? c().setFontSize(e.target.value).run() : c().unsetFontSize().removeEmptyTextStyle().run())}
-          >
-            {SCHRIFTGROESSEN.map((s) => (
-              <option key={s.name} value={s.wert}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Trenner />
-
-        <div className="wz-gruppe" aria-label="Zeichen">
-          <Knopf titel="Fett (Strg+B)" aktiv={z.fett} onClick={() => c().toggleBold().run()}>
-            <b>F</b>
-          </Knopf>
-          <Knopf titel="Kursiv (Strg+I)" aktiv={z.kursiv} onClick={() => c().toggleItalic().run()}>
-            <i>K</i>
-          </Knopf>
-          <Knopf titel="Unterstrichen (Strg+U)" aktiv={z.unterstrichen} onClick={() => c().toggleUnderline().run()}>
-            <u>U</u>
-          </Knopf>
-          <Knopf titel="Durchgestrichen" aktiv={z.durch} onClick={() => c().toggleStrike().run()}>
-            <s>ab</s>
-          </Knopf>
-          <Knopf titel="Hochgestellt (x²)" aktiv={z.hoch} onClick={() => c().toggleSuperscript().run()}>
-            x<sup>2</sup>
-          </Knopf>
-          <Knopf titel="Tiefgestellt (x₂)" aktiv={z.tief} onClick={() => c().toggleSubscript().run()}>
-            x<sub>2</sub>
-          </Knopf>
-          <Knopf titel="Code im Text" aktiv={z.code} onClick={() => c().toggleCode().run()}>
-            <Icon d={ICONS.code} />
-          </Knopf>
-          <Aufklapp
-            titel="Schriftfarbe"
-            aktiv={Boolean(z.farbe)}
-            knopf={
-              <span className="wz-farbknopf">
-                A<span className="wz-farbstrich" style={{ background: z.farbe ?? "#b91c1c" }} />
-              </span>
-            }
-          >
-            {(zu) => (
-              <div className="wz-farben">
-                {SCHRIFTFARBEN.map((f) => (
-                  <button key={f} type="button" title={f} className="wz-farbe" style={{ background: f }} onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setColor(f).run(), zu())} />
-                ))}
-                <button type="button" className="wz-text-knopf" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().unsetColor().removeEmptyTextStyle().run(), zu())}>
-                  Automatisch
-                </button>
-              </div>
-            )}
-          </Aufklapp>
-          <Aufklapp
-            titel="Texthervorhebungsfarbe (Textmarker)"
-            aktiv={Boolean(z.hintergrund) || editor.isActive("highlight")}
-            knopf={
-              <span className="wz-farbknopf">
-                🖍<span className="wz-farbstrich" style={{ background: z.hintergrund ?? "#fef08a" }} />
-              </span>
-            }
-          >
-            {(zu) => (
-              <div className="wz-farben">
-                {MARKERFARBEN.map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    title={f}
-                    className="wz-farbe"
-                    style={{ background: f }}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => (c().unsetHighlight().setBackgroundColor(f).run(), zu())}
-                  />
-                ))}
-                <button
-                  type="button"
-                  className="wz-text-knopf"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => (c().unsetHighlight().unsetBackgroundColor().removeEmptyTextStyle().run(), zu())}
-                >
-                  Keine Farbe
-                </button>
-              </div>
-            )}
-          </Aufklapp>
-          <Knopf titel="Formatierung löschen" onClick={() => c().unsetAllMarks().clearNodes().run()}>
-            <Icon d={ICONS.radierer} />
-          </Knopf>
-        </div>
-        <Trenner />
-
-        <div className="wz-gruppe" aria-label="Absatz">
-          <Knopf titel="Aufzählung" aktiv={z.aufzaehlung} onClick={() => c().toggleBulletList().run()}>
-            <Icon d={ICONS.aufzaehlung} />
-          </Knopf>
-          <Knopf titel="Nummerierung" aktiv={z.nummer} onClick={() => c().toggleOrderedList().run()}>
-            <Icon d={ICONS.nummer} />
-          </Knopf>
-          <Knopf titel="Checkliste" aktiv={z.check} onClick={() => c().toggleTaskList().run()}>
-            <Icon d={ICONS.check} />
-          </Knopf>
-          <Knopf titel="Einzug verkleinern (Umschalt+Tab)" deaktiviert={!z.inListe} onClick={() => c().liftListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run()}>
-            <Icon d={ICONS.einzugMinus} />
-          </Knopf>
-          <Knopf titel="Einzug vergrößern (Tab)" deaktiviert={!z.inListe} onClick={() => c().sinkListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run()}>
-            <Icon d={ICONS.einzugPlus} />
-          </Knopf>
-          <Knopf titel="Linksbündig" aktiv={z.ausrichtung === "left"} onClick={() => c().unsetTextAlign().run()}>
-            <Icon d={ICONS.links} />
-          </Knopf>
-          <Knopf titel="Zentriert" aktiv={z.ausrichtung === "center"} onClick={() => c().setTextAlign("center").run()}>
-            <Icon d={ICONS.mitte} />
-          </Knopf>
-          <Knopf titel="Rechtsbündig" aktiv={z.ausrichtung === "right"} onClick={() => c().setTextAlign("right").run()}>
-            <Icon d={ICONS.rechts} />
-          </Knopf>
-          <Knopf titel="Blocksatz" aktiv={z.ausrichtung === "justify"} onClick={() => c().setTextAlign("justify").run()}>
-            <Icon d={ICONS.block} />
-          </Knopf>
-        </div>
-        <Trenner />
-
-        <div className="wz-gruppe" aria-label="Einfügen">
-          <VerlinkenKnopf editor={editor} ziele={ziele} />
-          <Aufklapp titel="Weblink" aktiv={z.link} knopf={<Icon d={ICONS.link} />}>
-            {(zu) => <WeblinkFeld editor={editor} zu={zu} />}
-          </Aufklapp>
-          <Aufklapp titel="Tabelle einfügen" aktiv={z.tabelle} knopf={<Icon d={ICONS.tabelle} />}>
-            {(zu) => <TabellenRaster onWahl={(zeilen, spalten) => (c().insertTable({ rows: zeilen, cols: spalten, withHeaderRow: true }).run(), zu())} />}
-          </Aufklapp>
-          <Aufklapp titel="Bild einfügen" knopf={<Icon d={ICONS.bild} />}>
-            {(zu) => (
-              <EingabeFeld
-                beschriftung="Bildadresse (https://…)"
-                knopf="Einfügen"
-                onFertig={(url) => {
-                  if (/^https?:\/\//i.test(url)) c().setImage({ src: url }).run();
-                  zu();
-                }}
-              />
-            )}
-          </Aufklapp>
-          <Knopf titel="Trennlinie" onClick={() => c().setHorizontalRule().run()}>
-            <Icon d={ICONS.linie} />
-          </Knopf>
-          <Aufklapp titel="Hinweisbox (Callout)" aktiv={z.callout} knopf={<span className="wz-text">💬</span>}>
-            {(zu) => (
-              <div className="wz-liste">
-                {(Object.keys(CALLOUTS) as CalloutTyp[]).map((t) => (
-                  <button key={t} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setCallout(t).run(), zu())}>
-                    {CALLOUTS[t].icon} {CALLOUTS[t].name}
-                  </button>
-                ))}
-                {z.callout && (
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().lift("callout").run(), zu())}>
-                    ✕ Box entfernen
-                  </button>
-                )}
-              </div>
-            )}
-          </Aufklapp>
-          <Aufklapp titel="Formel (LaTeX)" knopf={<span className="wz-text">∑</span>}>
-            {(zu) => <FormelFeld editor={editor} zu={zu} />}
-          </Aufklapp>
-          <Knopf titel="Code-Block" aktiv={z.absatz === "code"} onClick={() => c().toggleCodeBlock().run()}>
-            <span className="wz-text">{"{ }"}</span>
-          </Knopf>
-          <Knopf titel="Zitat" aktiv={z.absatz === "zitat"} onClick={() => absatzSetzen(editor, "zitat")}>
-            <Icon d={ICONS.zitat} />
-          </Knopf>
-        </div>
-        {extra && (
-          <>
-            <Trenner />
-            <div className="wz-gruppe">{extra}</div>
-          </>
+            {r.name}
+          </button>
+        ))}
+        {eingeklappt && (
+          <span className="wz-mini">
+            <Knopf titel="Fett (Strg+B)" aktiv={z.fett} onClick={() => c().toggleBold().run()}>
+              <b>F</b>
+            </Knopf>
+            <Knopf titel="Kursiv (Strg+I)" aktiv={z.kursiv} onClick={() => c().toggleItalic().run()}>
+              <i>K</i>
+            </Knopf>
+            <Knopf titel="Unterstrichen (Strg+U)" aktiv={z.unterstrichen} onClick={() => c().toggleUnderline().run()}>
+              <u>U</u>
+            </Knopf>
+            <VerlinkenKnopf editor={editor} ziele={ziele} />
+          </span>
         )}
+        <button
+          type="button"
+          className="wz-einklappen"
+          title={eingeklappt ? "Leiste ausklappen" : "Leiste einklappen (nur Registerkarten)"}
+          aria-label={eingeklappt ? "Leiste ausklappen" : "Leiste einklappen"}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => browserWertSchreiben(EINGEKLAPPT_SCHLUESSEL, eingeklappt ? null : "1")}
+        >
+          {eingeklappt ? "⌄" : "⌃"}
+        </button>
       </div>
 
-      {z.tabelle && (
-        <div className="wz-zeile wz-tabelle" aria-label="Tabelle">
-          <span className="wz-label">Tabelle:</span>
+      {!eingeklappt && tab === "start" && (
+        <div className="wz-zeile" role="tabpanel">
+          <div className="wz-gruppe" aria-label="Schrift">
+            <select className="wz-auswahl wz-absatz" title="Absatzformat" aria-label="Absatzformat" value={z.absatz} onChange={(e) => absatzSetzen(editor, e.target.value as Absatz)}>
+              {ABSATZFORMATE.map((a) => (
+                <option key={a.wert} value={a.wert}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="wz-auswahl"
+              title="Schriftart"
+              aria-label="Schriftart"
+              value={z.schrift}
+              onChange={(e) => (e.target.value ? c().setFontFamily(e.target.value).run() : c().unsetFontFamily().removeEmptyTextStyle().run())}
+            >
+              {SCHRIFTARTEN.map((s) => (
+                <option key={s.name} value={s.wert}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="wz-auswahl"
+              title="Schriftgröße"
+              aria-label="Schriftgröße"
+              value={z.groesse}
+              onChange={(e) => (e.target.value ? c().setFontSize(e.target.value).run() : c().unsetFontSize().removeEmptyTextStyle().run())}
+            >
+              {SCHRIFTGROESSEN.map((s) => (
+                <option key={s.name} value={s.wert}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Trenner />
+          <div className="wz-gruppe" aria-label="Zeichen">
+            <Knopf titel="Fett (Strg+B)" aktiv={z.fett} onClick={() => c().toggleBold().run()}>
+              <b>F</b>
+            </Knopf>
+            <Knopf titel="Kursiv (Strg+I)" aktiv={z.kursiv} onClick={() => c().toggleItalic().run()}>
+              <i>K</i>
+            </Knopf>
+            <Knopf titel="Unterstrichen (Strg+U)" aktiv={z.unterstrichen} onClick={() => c().toggleUnderline().run()}>
+              <u>U</u>
+            </Knopf>
+            <Knopf titel="Durchgestrichen" aktiv={z.durch} onClick={() => c().toggleStrike().run()}>
+              <s>ab</s>
+            </Knopf>
+            <Knopf titel="Hochgestellt (x²)" aktiv={z.hoch} onClick={() => c().toggleSuperscript().run()}>
+              x<sup>2</sup>
+            </Knopf>
+            <Knopf titel="Tiefgestellt (x₂)" aktiv={z.tief} onClick={() => c().toggleSubscript().run()}>
+              x<sub>2</sub>
+            </Knopf>
+            <Knopf titel="Code im Text" aktiv={z.code} onClick={() => c().toggleCode().run()}>
+              <Icon d={ICONS.code} />
+            </Knopf>
+            <Aufklapp
+              titel="Schriftfarbe"
+              aktiv={Boolean(z.farbe)}
+              knopf={
+                <span className="wz-farbknopf">
+                  A<span className="wz-farbstrich" style={{ background: z.farbe ?? "#b91c1c" }} />
+                </span>
+              }
+            >
+              {(zu) => (
+                <div className="wz-farben">
+                  {SCHRIFTFARBEN.map((f) => (
+                    <button key={f} type="button" title={f} className="wz-farbe" style={{ background: f }} onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setColor(f).run(), zu())} />
+                  ))}
+                  <button type="button" className="wz-text-knopf" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().unsetColor().removeEmptyTextStyle().run(), zu())}>
+                    Automatisch
+                  </button>
+                </div>
+              )}
+            </Aufklapp>
+            <Aufklapp
+              titel="Texthervorhebungsfarbe (Textmarker)"
+              aktiv={Boolean(z.hintergrund) || editor.isActive("highlight")}
+              knopf={
+                <span className="wz-farbknopf">
+                  🖍<span className="wz-farbstrich" style={{ background: z.hintergrund ?? "#fef08a" }} />
+                </span>
+              }
+            >
+              {(zu) => (
+                <div className="wz-farben">
+                  {MARKERFARBEN.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      title={f}
+                      className="wz-farbe"
+                      style={{ background: f }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => (c().unsetHighlight().setBackgroundColor(f).run(), zu())}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    className="wz-text-knopf"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => (c().unsetHighlight().unsetBackgroundColor().removeEmptyTextStyle().run(), zu())}
+                  >
+                    Keine Farbe
+                  </button>
+                </div>
+              )}
+            </Aufklapp>
+            <Knopf titel="Formatierung löschen" onClick={() => c().unsetAllMarks().clearNodes().run()}>
+              <Icon d={ICONS.radierer} />
+            </Knopf>
+          </div>
+        </div>
+      )}
+
+      {!eingeklappt && tab === "absatz" && (
+        <div className="wz-zeile" role="tabpanel">
+          <div className="wz-gruppe" aria-label="Absatz">
+            <Knopf titel="Aufzählung" aktiv={z.aufzaehlung} onClick={() => c().toggleBulletList().run()}>
+              <Icon d={ICONS.aufzaehlung} />
+            </Knopf>
+            <Knopf titel="Nummerierung" aktiv={z.nummer} onClick={() => c().toggleOrderedList().run()}>
+              <Icon d={ICONS.nummer} />
+            </Knopf>
+            <Knopf titel="Checkliste" aktiv={z.check} onClick={() => c().toggleTaskList().run()}>
+              <Icon d={ICONS.check} />
+            </Knopf>
+            <Knopf titel="Einzug verkleinern (Umschalt+Tab)" deaktiviert={!z.inListe} onClick={() => c().liftListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run()}>
+              <Icon d={ICONS.einzugMinus} />
+            </Knopf>
+            <Knopf titel="Einzug vergrößern (Tab)" deaktiviert={!z.inListe} onClick={() => c().sinkListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run()}>
+              <Icon d={ICONS.einzugPlus} />
+            </Knopf>
+            <Knopf titel="Linksbündig" aktiv={z.ausrichtung === "left"} onClick={() => c().unsetTextAlign().run()}>
+              <Icon d={ICONS.links} />
+            </Knopf>
+            <Knopf titel="Zentriert" aktiv={z.ausrichtung === "center"} onClick={() => c().setTextAlign("center").run()}>
+              <Icon d={ICONS.mitte} />
+            </Knopf>
+            <Knopf titel="Rechtsbündig" aktiv={z.ausrichtung === "right"} onClick={() => c().setTextAlign("right").run()}>
+              <Icon d={ICONS.rechts} />
+            </Knopf>
+            <Knopf titel="Blocksatz" aktiv={z.ausrichtung === "justify"} onClick={() => c().setTextAlign("justify").run()}>
+              <Icon d={ICONS.block} />
+            </Knopf>
+          </div>
+        </div>
+      )}
+
+      {!eingeklappt && tab === "einfuegen" && (
+        <div className="wz-zeile" role="tabpanel">
+          <div className="wz-gruppe" aria-label="Einfügen">
+            <VerlinkenKnopf editor={editor} ziele={ziele} />
+            <Aufklapp titel="Weblink" aktiv={z.link} knopf={<Icon d={ICONS.link} />}>
+              {(zu) => <WeblinkFeld editor={editor} zu={zu} />}
+            </Aufklapp>
+            <Aufklapp titel="Tabelle einfügen" aktiv={z.tabelle} knopf={<Icon d={ICONS.tabelle} />}>
+              {(zu) => <TabellenRaster onWahl={(zeilen, spalten) => (c().insertTable({ rows: zeilen, cols: spalten, withHeaderRow: true }).run(), zu())} />}
+            </Aufklapp>
+            <Aufklapp titel="Bild einfügen" knopf={<Icon d={ICONS.bild} />}>
+              {(zu) => (
+                <EingabeFeld
+                  beschriftung="Bildadresse (https://…)"
+                  knopf="Einfügen"
+                  onFertig={(url) => {
+                    if (/^https?:\/\//i.test(url)) c().setImage({ src: url }).run();
+                    zu();
+                  }}
+                />
+              )}
+            </Aufklapp>
+            <Knopf titel="Trennlinie" onClick={() => c().setHorizontalRule().run()}>
+              <Icon d={ICONS.linie} />
+            </Knopf>
+            <Aufklapp titel="Hinweisbox (Callout)" aktiv={z.callout} knopf={<span className="wz-text">💬</span>}>
+              {(zu) => (
+                <div className="wz-liste">
+                  {(Object.keys(CALLOUTS) as CalloutTyp[]).map((t) => (
+                    <button key={t} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setCallout(t).run(), zu())}>
+                      {CALLOUTS[t].icon} {CALLOUTS[t].name}
+                    </button>
+                  ))}
+                  {z.callout && (
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().lift("callout").run(), zu())}>
+                      ✕ Box entfernen
+                    </button>
+                  )}
+                </div>
+              )}
+            </Aufklapp>
+            <Aufklapp titel="Formel (LaTeX)" knopf={<span className="wz-text">∑</span>}>
+              {(zu) => <FormelFeld editor={editor} zu={zu} />}
+            </Aufklapp>
+            <Knopf titel="Code-Block" aktiv={z.absatz === "code"} onClick={() => c().toggleCodeBlock().run()}>
+              <span className="wz-text">{"{ }"}</span>
+            </Knopf>
+            <Knopf titel="Zitat" aktiv={z.absatz === "zitat"} onClick={() => absatzSetzen(editor, "zitat")}>
+              <Icon d={ICONS.zitat} />
+            </Knopf>
+          </div>
+          {extra && (
+            <>
+              <Trenner />
+              <div className="wz-gruppe">{extra}</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {!eingeklappt && tab === "tabelle" && (
+        <div className="wz-zeile" role="tabpanel">
           <Knopf breit titel="Zeile darüber" onClick={() => c().addRowBefore().run()}>
             + Zeile oben
           </Knopf>
