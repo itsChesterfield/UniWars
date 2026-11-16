@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     supabase = nutzer.supabase;
     await audioVoraussetzungen(supabase, nutzer.userId, "vorlesen");
 
-    const body = (await request.json().catch(() => ({}))) as { text?: unknown };
+    const body = (await request.json().catch(() => ({}))) as { text?: unknown; sprecher?: unknown };
     const text = typeof body.text === "string" ? body.text.replace(/\s+/g, " ").trim() : "";
     if (!text) throw new KiEingabe("Es gibt nichts vorzulesen.");
     if (text.length > MAX_STUECK) throw new KiEingabe("Der Abschnitt ist zu lang zum Vorlesen.");
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const db = supabase;
     const abbruch = new AbortController();
     request.signal.addEventListener("abort", () => abbruch.abort(), { once: true });
-    const { audio, mime } = await sprechen(text, { format: "mp3", signal: abbruch.signal });
+    const { audio, mime } = await sprechen(text, { format: "mp3", signal: abbruch.signal, sprecher: body.sprecher === 2 ? 2 : 1 });
     const verbleibend = Math.max(0, kiLimits().tts.limit - (await ttsMonatGenutzt(db)));
 
     // Nutzung abschließen, sobald der Audiostrom durch ist (oder abgebrochen wurde)

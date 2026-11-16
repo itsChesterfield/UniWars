@@ -225,7 +225,7 @@ export async function POST(request: Request) {
       const sammlung: Sammlung = { erledigt: [], bloecke: [], aktionen: [], karten };
       const werkzeuge = [
         ...lesewerkzeuge(supabase, jetzt),
-        ...handlungswerkzeuge({ supabase, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil }, sammlung),
+        ...handlungswerkzeuge({ supabase, userId, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil }, sammlung),
       ];
       const nachrichten = modellNachrichten({
         kontext: zusatz,

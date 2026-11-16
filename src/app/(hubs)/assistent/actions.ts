@@ -205,6 +205,16 @@ export async function erledigtRueckgaengig(nachrichtId: string, eintragId: strin
         if (error) throw new Error(error.message);
         break;
       }
+      case "quiz": {
+        const { error } = await supabase.from("quiz").delete().eq("id", e.ziel!);
+        if (error) throw new Error(error.message);
+        break;
+      }
+      case "podcast": {
+        const { error } = await supabase.from("podcast").delete().eq("id", e.ziel!);
+        if (error) throw new Error(error.message);
+        break;
+      }
       case "todo_erledigt":
         await toggleTodoErledigt(e.ziel!, false);
         break;
