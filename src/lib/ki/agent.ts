@@ -120,29 +120,52 @@ export async function* agentLauf({
     verlauf.push(assistent);
     neue.push(assistent);
 
-    for (const aufruf of aufrufe) {
-      const werkzeug = nachName.get(aufruf.name);
-      const argumente = argumenteLesen(aufruf.argumente);
-      let ergebnis: unknown;
-      let fehler: string | undefined;
-      if (!werkzeug) {
-        fehler = `Unbekanntes Werkzeug: ${aufruf.name}`;
-      } else if (!argumente) {
-        fehler = "Die Parameter waren kein gültiges JSON-Objekt.";
-      } else {
-        yield { typ: "status", text: werkzeug.statusText ?? "Schaue in deinen Daten nach …", werkzeug: werkzeug.name };
-        try {
-          ergebnis = await werkzeug.ausfuehren(argumente);
-        } catch (err) {
-          // Das Modell bekommt den Fehler zurück und kann reagieren (z. B. andere Parameter)
-          fehler = err instanceof KiFehler ? err.nutzerMeldung : "Das Werkzeug ist fehlgeschlagen.";
-        }
-      }
-      yield { typ: "werkzeug", name: aufruf.name, argumente: argumente ?? {}, ergebnis, fehler };
+    // Werkzeuge einer Runde: Lesen gleichzeitig (schneller), alles andere der Reihe nach
+    const vorbereitet = aufrufe.map((aufruf) => ({ aufruf, werkzeug: nachName.get(aufruf.name), argumente: argumenteLesen(aufruf.argumente) }));
+    const gueltig = vorbereitet.filter((v) => v.werkzeug && v.argumente);
+    if (gueltig.length) {
+      const erster = gueltig[0].werkzeug!;
+      const namen = new Set(gueltig.map((v) => v.werkzeug!.name));
+      yield { typ: "status", text: namen.size > 1 ? "Schaue in deinen Daten nach …" : (erster.statusText ?? "Schaue in deinen Daten nach …"), werkzeug: erster.name };
+    }
+    type Ausgang = { ergebnis?: unknown; fehler?: string };
+    const istLesen = (name: string) => /_(lesen|auflisten|status|suchen)$/.test(name);
+    const ausfuehren = (v: (typeof vorbereitet)[number]): Promise<Ausgang> => {
+      if (!v.werkzeug) return Promise.resolve({ fehler: `Unbekanntes Werkzeug: ${v.aufruf.name}` });
+      if (!v.argumente) return Promise.resolve({ fehler: "Die Parameter waren kein gültiges JSON-Objekt." });
+      return v.werkzeug.ausfuehren(v.argumente).then(
+        (ergebnis) => ({ ergebnis }),
+        // Das Modell bekommt den Fehler zurück und kann reagieren (z. B. andere Parameter)
+        (err: unknown) => ({ fehler: err instanceof KiFehler ? err.nutzerMeldung : "Das Werkzeug ist fehlgeschlagen." }),
+      );
+    };
+    let ergebnisse: Ausgang[];
+    if (vorbereitet.every((v) => istLesen(v.aufruf.name))) {
+      // Nur Lesen: alles gleichzeitig, identische Aufrufe nur einmal
+      const laufend = new Map<string, Promise<Ausgang>>();
+      ergebnisse = await Promise.all(
+        vorbereitet.map((v) => {
+          const schluessel = `${v.aufruf.name}:${v.aufruf.argumente}`;
+          let p = laufend.get(schluessel);
+          if (!p) {
+            p = ausfuehren(v);
+            laufend.set(schluessel, p);
+          }
+          return p;
+        }),
+      );
+    } else {
+      // Anlegen, Ändern …: der Reihe nach (Reihenfolge und Grenzen zählen)
+      ergebnisse = [];
+      for (const v of vorbereitet) ergebnisse.push(await ausfuehren(v));
+    }
+    for (const [i, v] of vorbereitet.entries()) {
+      const { ergebnis, fehler } = ergebnisse[i];
+      yield { typ: "werkzeug", name: v.aufruf.name, argumente: v.argumente ?? {}, ergebnis, fehler };
       const nachricht: Nachricht = {
         role: "tool",
-        tool_call_id: aufruf.id,
-        name: aufruf.name,
+        tool_call_id: v.aufruf.id,
+        name: v.aufruf.name,
         content: ergebnisAlsText(fehler ? { fehler } : ergebnis),
       };
       verlauf.push(nachricht);
