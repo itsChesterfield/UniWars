@@ -22,6 +22,7 @@ import { vorschlagChips, MAX_FRAGE_ZEICHEN, type Aktionskarte, type KontextEinga
 import type { TextStatus } from "@/lib/ki/ergebnis";
 import { kiFehlerTracken, kiGestartet } from "@/lib/ki/tracking";
 import { track } from "@/lib/analytics";
+import { OfflineHinweis } from "@/components/offline-hinweis";
 
 type Laufend = {
   frage: string;
@@ -457,6 +458,7 @@ export function AssistentChat({
       </div>
 
       <KiFehlerMeldung meldung={fehler} />
+      <OfflineHinweis text="Offline. Studio antwortet wieder, sobald du online bist. Deine Frage kannst du schon schreiben." />
       <form
         className="ki-chat-eingabe"
         onSubmit={(e) => {

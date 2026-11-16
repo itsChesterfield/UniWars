@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, Suspense, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
 import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
@@ -19,11 +19,28 @@ import { logout } from "@/app/logout/actions";
 import { setTheme } from "@/app/settings/actions";
 import { abmelden } from "@/lib/analytics";
 import type { Enums } from "@/lib/supabase/types";
+import { NACH_OBEN, NACH_UNTEN } from "@/components/bereich-uebergang";
 
 /** Gleicher Schlüssel wie im Skript in app/layout.tsx. Die Symbolleiste ist immer schmal; der Schlüssel bleibt für ältere Browserstände. */
 export const SIDEBAR_SCHLUESSEL = "uniwars-sidebar-eingeklappt";
 
 const GRUPPEN = hubsInGruppen();
+/** Reihenfolge der Symbolleiste, für die Richtung des Übergangs */
+const REIHE = GRUPPEN.flatMap((g) => g.hubs.map((h) => h.href));
+
+/**
+ * Meldet eine laufende Navigation an <html data-laedt>. Die Kopfleiste zeigt dann
+ * nach 300 ms die Lichtspur, die alte Ansicht bleibt stehen (DESIGN.md Abschnitt 7).
+ */
+function LadeMelder() {
+  const { pending } = useLinkStatus();
+  useEffect(() => {
+    if (!pending) return;
+    document.documentElement.setAttribute("data-laedt", "");
+    return () => document.documentElement.removeAttribute("data-laedt");
+  }, [pending]);
+  return null;
+}
 
 /** Hub-Symbol an den Rand ziehen → geteilte Ansicht (siehe GeteilteAnsicht). */
 function hubZiehen(e: DragEvent, href: string) {
@@ -143,6 +160,9 @@ export function Sidebar({
   const istAktiv = (href: string) =>
     href === "/" ? BEREICHE.some((b) => b.href === pfad) : pfad === href || pfad.startsWith(`${href}/`);
   const mobilAktiv = MOBIL_HUBS.some((m) => istAktiv(m.href));
+  const aktuell = REIHE.findIndex((href) => istAktiv(href));
+  // Ziel unter dem aktuellen Bereich → neue Ansicht kommt von unten, sonst von oben
+  const richtung = (href: string) => [REIHE.indexOf(href) > aktuell ? NACH_UNTEN : NACH_OBEN];
 
   return (
     <>
@@ -170,7 +190,9 @@ export function Sidebar({
                       aria-current={aktiv ? "page" : undefined}
                       draggable
                       onDragStart={(e) => hubZiehen(e, hub.href)}
+                      transitionTypes={aktiv ? undefined : richtung(hub.href)}
                     >
+                      <LadeMelder />
                       <NavIcon path={hub.icon} />
                       {hub.href === "/work-station" && <TimerPunkt />}
                       {hub.href === "/chat" && <ChatPunkt />}
@@ -216,7 +238,13 @@ export function Sidebar({
         {MOBIL_HUBS.map((m) => {
           const hub = m.href === "/" ? ZENTRALER_HUB : WEITERE_HUBS.find((h) => h.href === m.href);
           return (
-            <Link key={m.href} href={m.href} aria-current={istAktiv(m.href) ? "page" : undefined}>
+            <Link
+              key={m.href}
+              href={m.href}
+              aria-current={istAktiv(m.href) ? "page" : undefined}
+              transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
+            >
+              <LadeMelder />
               {hub && <NavIcon path={hub.icon} groesse={20} />}
               {m.kurz}
             </Link>

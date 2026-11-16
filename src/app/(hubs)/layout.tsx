@@ -9,6 +9,7 @@ import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
+import { BereichUebergang } from "@/components/bereich-uebergang";
 
 // Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
@@ -54,7 +55,9 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
           benachrichtigungen={benachrichtigungen ?? []}
           einladungen={einladungen ?? []}
         />
-        <GeteilteAnsicht mainKlasse="dashboard-main hub-main">{children}</GeteilteAnsicht>
+        <GeteilteAnsicht mainKlasse="dashboard-main hub-main">
+          <BereichUebergang>{children}</BereichUebergang>
+        </GeteilteAnsicht>
       </div>
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
     </div>

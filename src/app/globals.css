@@ -12206,9 +12206,21 @@ html[data-eingebettet] .notiz-karte {
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
   font-size: var(--text-md);
   font-weight: 550;
   white-space: nowrap;
+}
+
+.kopfleiste .pfad > span,
+.kopfleiste .pfad > a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kopfleiste .status {
+  flex: none;
 }
 
 .kopfleiste .pfad svg {
@@ -12474,4 +12486,234 @@ html[data-eingebettet] .arbeitsflaeche {
   .kopfleiste .symbolknopf {
     transition: none;
   }
+}
+
+/* ==========================================================================
+   Design B3 – Übergänge und Zustände (DESIGN.md Abschnitt 7 und 8)
+   ========================================================================== */
+:root {
+  --ease-in: cubic-bezier(0.4, 0, 0.9, 0.5);
+}
+
+/* Symbolleiste, Kopfleiste und Tab-Leiste stehen beim Bereichswechsel still */
+.rail {
+  view-transition-name: rail;
+}
+
+.kopfleiste {
+  view-transition-name: kopfleiste;
+}
+
+.mobilnav {
+  view-transition-name: mobilnav;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(rail),
+::view-transition-group(kopfleiste),
+::view-transition-group(mobilnav),
+::view-transition-new(rail),
+::view-transition-new(kopfleiste),
+::view-transition-new(mobilnav) {
+  animation: none;
+}
+
+::view-transition-group(kopfleiste),
+::view-transition-group(mobilnav) {
+  z-index: 2;
+}
+
+::view-transition-old(rail),
+::view-transition-old(kopfleiste),
+::view-transition-old(mobilnav) {
+  display: none;
+}
+
+/* Mit Richtung: alt 100 ms aus, neu 60 ms später 200 ms ein, 12 px aus der Klickrichtung */
+::view-transition-old(.uv-aus) {
+  animation: 100ms var(--ease-in) both uv-aus;
+}
+
+::view-transition-new(.uv-ein) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-ein;
+}
+
+::view-transition-new(.uv-von-unten) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-von-unten;
+}
+
+::view-transition-new(.uv-von-oben) {
+  animation: var(--dur-short) var(--ease-out) 60ms both uv-von-oben;
+}
+
+@keyframes uv-aus {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes uv-ein {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes uv-von-unten {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes uv-von-oben {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* Reduzierte Bewegung: nur Überblenden in 120 ms */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.uv-aus),
+  ::view-transition-new(.uv-ein),
+  ::view-transition-new(.uv-von-unten),
+  ::view-transition-new(.uv-von-oben) {
+    animation: var(--dur-micro) linear both uv-ein;
+  }
+
+  ::view-transition-old(.uv-aus) {
+    animation-name: uv-aus;
+  }
+}
+
+/* Laden: Lichtspur unter der Kopfleiste und gedämpfte alte Ansicht, beides erst nach 300 ms */
+.kopfleiste .ladespur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kopfleiste .ladespur i {
+  display: block;
+  width: 30%;
+  height: 100%;
+  background: var(--akzent);
+  transform: translateX(-100%);
+}
+
+html[data-laedt] .kopfleiste .ladespur {
+  opacity: 1;
+  transition: opacity var(--dur-short) var(--ease-out) 300ms;
+}
+
+html[data-laedt] .kopfleiste .ladespur i {
+  animation: lichtspur 1.1s var(--ease-out) 300ms infinite;
+}
+
+html[data-laedt] .arbeitsflaeche .dashboard-main {
+  opacity: 0.6;
+  transition: opacity var(--dur-short) var(--ease-out) 300ms;
+}
+
+@keyframes lichtspur {
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-laedt] .kopfleiste .ladespur i {
+    animation: none;
+    width: 100%;
+    transform: none;
+    opacity: 0.6;
+  }
+}
+
+/* Offline */
+.kopfleiste .offline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--warnung) 14%, transparent);
+  color: var(--text);
+  font-weight: 550;
+}
+
+.kopfleiste .offline svg {
+  color: var(--warnung);
+}
+
+.offline-hinweis {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--warnung) 12%, transparent);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.offline-hinweis svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--warnung);
+}
+
+/* Fehler, Leer: was ist los, was ist nicht betroffen, genau eine Aktion */
+.zustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 52ch;
+  margin: var(--space-12) auto;
+  padding: var(--space-8);
+}
+
+.zustand svg {
+  color: var(--text-3);
+}
+
+.zustand.z-fehler svg {
+  color: var(--color-error);
+}
+
+.zustand h1,
+.zustand h2 {
+  font-size: var(--text-xl);
+  letter-spacing: -0.01em;
+}
+
+.zustand p {
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.zustand .btnp {
+  margin-top: var(--space-2);
+}
+
+.zustand .btnp[aria-busy="true"] {
+  cursor: progress;
+}
+
+.zustand .zustand-detail {
+  font-size: var(--text-xs);
+  color: var(--text-3);
 }

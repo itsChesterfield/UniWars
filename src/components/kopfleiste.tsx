@@ -12,6 +12,7 @@ import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import type { Tables } from "@/lib/supabase/types";
+import { useOnline } from "@/lib/online";
 
 /** Fokus-Timer als Pille, solange er läuft oder pausiert ist – führt zur Work Station. */
 function FokusStatus() {
@@ -60,6 +61,7 @@ export function Kopfleiste({
   einladungen: Tables<"einladung">[];
 }) {
   const pfad = usePathname();
+  const online = useOnline();
   const { hub, unterseite } = hubAusPfad(pfad);
   const titel = hub?.name ?? (pfad.startsWith("/einstellungen") ? "Einstellungen" : "UniVerse");
 
@@ -93,6 +95,15 @@ export function Kopfleiste({
       </button>
 
       <div className="status">
+        {!online && (
+          <span className="offline" role="status" title="Änderungen an Notizen und Aufgaben brauchen eine Verbindung. Studio, Chat und Transkription warten, bis du wieder online bist.">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 3l18 18" />
+              <path d="M8.5 16.5a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 5.2-2.8M19 12.9a10 10 0 0 0-2.2-1.6" />
+            </svg>
+            Offline
+          </span>
+        )}
         <FokusStatus />
         {streak > 0 && (
           <span className="serie" title="Lernserie">
@@ -119,6 +130,9 @@ export function Kopfleiste({
       <Link href="/einstellungen" className="nur-mobil kopf-profil" aria-label={`Profil und Einstellungen, ${name}`}>
         <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
       </Link>
+      <span className="ladespur" aria-hidden>
+        <i />
+      </span>
     </header>
   );
 }

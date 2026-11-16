@@ -8,6 +8,7 @@ import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
+import { BereichUebergang } from "@/components/bereich-uebergang";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
@@ -113,6 +114,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
           einladungen={einladungen ?? []}
         />
         <GeteilteAnsicht mainKlasse="dashboard-main">
+        <BereichUebergang>
         <Suspense fallback={null}>
           <DashboardContent
             faecher={faecher ?? []}
@@ -139,6 +141,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
             bereich={bereich}
           />
         </Suspense>
+        </BereichUebergang>
         </GeteilteAnsicht>
       </div>
     </div>
