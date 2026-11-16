@@ -5,7 +5,7 @@
 import "server-only";
 import type { Werkzeug } from "@/lib/ki/agent";
 import type { Supabase } from "@/lib/ki/server";
-import { kiAnfrage, kiWebsuche } from "@/lib/ki/anbieter";
+import { kiAnfrageGesammelt, kiWebsuche } from "@/lib/ki/anbieter";
 import { karteAusfuehren } from "@/lib/ki/aktionskarten-server";
 import { DEADLINE_TYPEN, PRIORITAETEN, datumAufloesen, datumText, fachFinden, karteBauen, type Aktionskarte, type FachRef, type KarteInhalt, type StapelRef } from "@/lib/ki/assistent";
 import { KiEingabe } from "@/lib/ki/fehler";
@@ -324,8 +324,8 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         const fachName = u.faecher.find((f) => f.id === fachId)?.name ?? quellen[0]?.titel ?? "Lernstoff";
         const kontext = kontextBauen(quellen, fachName, MAX_KONTEXT_GANZ);
         const p = studioPrompt(art, fachName, quellen, kontext.text, u.profil);
-        const antwort = await kiAnfrage(
-          { system: p.system, nutzer: p.nutzer, json: STUDIO[art].json, temperatur: 0.3, maxTokens: 4000, timeoutMs: 110_000 },
+        const antwort = await kiAnfrageGesammelt(
+          { system: p.system, nutzer: p.nutzer, json: STUDIO[art].json, temperatur: 0.3, maxTokens: 4000, timeoutMs: 60_000 },
           "stark",
         );
         const titel = `${STUDIO[art].name} – ${fachName}`;
@@ -364,7 +364,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         const { fachId, auswahl } = materialAuswahl(a);
         const einstellungen = einstellungenLesen({ anzahl: a.anzahl, schwierigkeit: a.schwierigkeit, typen: a.typen });
         const material = await materialLaden(u.supabase, u.userId, auswahl, fachId);
-        const quiz = await quizErzeugen((o) => kiAnfrage(o, "stark"), material, einstellungen);
+        const quiz = await quizErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, einstellungen);
         const titel = (quiz.titel || `Quiz ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
         const { data, error } = await u.supabase
           .from("quiz")
@@ -390,7 +390,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         const { fachId, auswahl } = materialAuswahl(a);
         const laenge = a.laenge === "kurz" || a.laenge === "lang" ? a.laenge : "normal";
         const material = await materialLaden(u.supabase, u.userId, auswahl, fachId, 120_000);
-        const p = await podcastErzeugen((o) => kiAnfrage(o, "stark"), material, laenge, t(a.fokus, 300));
+        const p = await podcastErzeugen((o) => kiAnfrageGesammelt(o, "stark"), material, laenge, t(a.fokus, 300));
         const titel = (p.titel || `Podcast ${material.fachName ?? material.info[0]?.titel ?? ""}`).trim().slice(0, 200);
         const { data, error } = await u.supabase
           .from("podcast")

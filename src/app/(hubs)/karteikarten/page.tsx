@@ -11,7 +11,7 @@ import type { QuellOption } from "@/components/quiz/quellen-wahl";
 import { fragenLesen, schwaechen, versuchAntwortenLesen } from "@/lib/ki/quiz";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export const metadata = { title: "Karteikarten · UniWars" };
 
