@@ -143,3 +143,9 @@ test("Websuche: Antwort der Conversations-API lesen", () => {
   assert.equal(r.tokensEin, 100);
   assert.equal(websucheAuswerten({ outputs: [{ type: "message.output", content: "Nur Text" }] }).text, "Nur Text");
 });
+
+test("Persönlichkeit: Standard Lernbuddy, gültige Werte bleiben", () => {
+  assert.equal(profilLesen({}).persoenlichkeit, "kumpel");
+  assert.equal(profilLesen({ persoenlichkeit: "coach" }).persoenlichkeit, "coach");
+  assert.equal(profilLesen({ persoenlichkeit: "pirat" }).persoenlichkeit, "kumpel");
+});

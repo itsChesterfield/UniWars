@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { agentLauf } from "@/lib/ki/agent";
 import { kiAnfrage, kiAnfrageStream } from "@/lib/ki/anbieter";
 import {
@@ -20,7 +21,7 @@ import { lesewerkzeuge } from "@/lib/ki/werkzeuge/lesen";
 import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
 import { handlungswerkzeuge, type Sammlung } from "@/lib/ki/werkzeuge/handeln";
 import { studioQuellen } from "@/lib/ki/lernraum-server";
-import { absichtLesen, absichtPrompt, absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_AUSWAHL, MAX_KONTEXT_GANZ, profilAnpassen, profilLesen, profilText, type Absicht } from "@/lib/ki/lernraum";
+import { absichtLesen, absichtPrompt, absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_GANZ, PERSOENLICHKEITEN, profilAnpassen, profilLesen, profilText, type Lernprofil } from "@/lib/ki/lernraum";
 import { STUDIO_SYSTEM } from "@/lib/ki/studio";
 import { einbetten, MATERIAL_REGEL } from "@/lib/ki/material";
 import type { Json } from "@/lib/supabase/types";
@@ -37,6 +38,8 @@ import type { Json } from "@/lib/supabase/types";
 export const maxDuration = 120;
 
 const MAX_VERLAUF_LADEN = 200;
+/** Material im normalen Chat (≈ 10.000 Tokens) – hält die Antwortzeit kurz */
+const CHAT_KONTEXT = 40_000;
 
 /** Titel des geöffneten Objekts – der Server lädt es selbst (RLS) und vertraut keinem Client-Inhalt. */
 async function objektTitel(supabase: Supabase, objekt: KontextEingabe["objekt"]): Promise<{ art: ObjektArt; id: string; titel: string } | null> {
@@ -150,85 +153,101 @@ export async function POST(request: Request) {
       .insert({ user_id: userId, unterhaltung_id: unterhaltung.id, rolle: "nutzer", inhalt: frage, eingabe_art: eingabeArt });
     if (frageFehler) throw new Error(frageFehler.message);
 
-    const [{ behalten, neuZusammenfassen }, objekt, zweitesObjekt, laufend, umfeld, material, { data: settings }] = await Promise.all([
-      Promise.resolve(verlaufKuerzen(alte, unterhaltung.zusammengefasst_bis)),
-      objektTitel(supabase, kontext.objekt),
-      objektTitel(supabase, kontext.zweite ? { art: kontext.zweite.art, id: kontext.zweite.id } : null),
-      laufendeVorlesung(supabase, jetzt),
-      umfeldLaden(supabase),
-      studioQuellen(supabase, kontext),
-      supabase.from("settings").select("ki_profil").eq("user_id", userId).maybeSingle(),
-    ]);
-    const zusammenfassung = await zusammenfassungAktualisieren(supabase, unterhaltung, neuZusammenfassen);
-
-    // Absicht erkennen (kleines Modell): Format, ganzes Material?, Recherche?, dauerhafte Wünsche
-    let profil = profilLesen(settings?.ki_profil);
-    let absicht: Absicht;
-    try {
-      const vorherige = [...behalten].reverse().find((n) => n.rolle === "nutzer")?.inhalt ?? null;
-      const p = absichtPrompt(frage, vorherige);
-      const a = await kiAnfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0, maxTokens: 120, timeoutMs: 8000 }, "schnell");
-      absicht = absichtLesen(a.text, frage);
-    } catch {
-      absicht = absichtSchaetzen(frage);
-    }
-    if (absicht.vorliebe) {
-      profil = profilAnpassen(profil, "gut", absicht.vorliebe);
-      await supabase.from("settings").update({ ki_profil: profil as unknown as Json }).eq("user_id", userId);
-    }
-
-    // Material aus den Quellen des Kontexts (mit Kostenbremse)
-    const stoff = kontextBauen(
-      material.quellen,
-      [kontext.markiert, frage].filter(Boolean).join(" "),
-      absicht.ganz ? MAX_KONTEXT_GANZ : MAX_KONTEXT_AUSWAHL,
-      material.bevorzugt,
-    );
-    const quellenInfo = material.quellen.map((q) => ({ nr: q.nr, art: q.art, id: q.id, titel: q.titel }));
-    const zusatz = [
-      kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
-      kontext.objekt?.art === "pdf" && kontext.seite ? `- Der Nutzer ist in der PDF gerade auf Seite ${kontext.seite}.` : "",
-      zweitesObjekt ? `- Daneben (geteilte Ansicht) offen: ${zweitesObjekt.titel} (${zweitesObjekt.art})` : "",
-      material.fehlend.length ? `- Noch nicht eingelesen (Text fehlt): ${material.fehlend.join(", ")}` : "",
-      kontext.karte ? `Gerade gezeigte Karteikarte:\n${einbetten(`Vorderseite: ${kontext.karte.vorderseite}\nRückseite: ${kontext.karte.rueckseite}`, "quelle")}` : "",
-      kontext.markiert ? `Vom Nutzer markierter Text (darauf bezieht sich die Frage vermutlich):\n${einbetten(kontext.markiert, "quelle")}` : "",
-      `Antwortformat: ${FORMAT[absicht.modus]}`,
-      `Erklärweise: ${profilText(profil)}`,
-      absicht.web ? "Der Nutzer möchte eine Recherche: nutze web_recherchieren." : "",
-      quellenInfo.length
-        ? `Quellenliste:\n${quellenInfo.map((q) => `Q${q.nr}: ${q.titel} (${q.art === "pdf" ? "PDF" : "Notiz"})`).join("\n")}\n\n${MATERIAL_REGEL}\n\n${stoff.text}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const karten: Aktionskarte[] = [];
-    const sammlung: Sammlung = { erledigt: [], bloecke: [], aktionen: [], karten };
-    const offeneNotiz = kontext.objekt?.art === "notiz" ? kontext.objekt.id : kontext.zweite?.art === "notiz" ? kontext.zweite.id : null;
-    let fachDesKontexts = kontext.fachId ?? null;
-    if (!fachDesKontexts && offeneNotiz) fachDesKontexts = (await supabase.from("notiz").select("fach_id").eq("id", offeneNotiz).maybeSingle()).data?.fach_id ?? null;
-    if (!fachDesKontexts && kontext.objekt?.art === "pdf") fachDesKontexts = (await supabase.from("datei").select("fach_id").eq("id", kontext.objekt.id).maybeSingle()).data?.fach_id ?? null;
-    const werkzeuge = [
-      ...lesewerkzeuge(supabase, jetzt),
-      ...handlungswerkzeuge(
-        { supabase, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil },
-        sammlung,
-      ),
-    ];
-    const nachrichten = modellNachrichten({
-      kontext: zusatz,
-      zusammenfassung,
-      behalten,
-      frage,
-      system: STUDIO_SYSTEM,
-    });
-    const maxTokens = absicht.modus === "plaudern" ? 500 : profil.laenge === "kurz" ? 1000 : profil.laenge === "ausfuehrlich" ? 3500 : 2000;
-
     const abbruch = new AbortController();
     request.signal.addEventListener("abort", () => abbruch.abort(), { once: true });
     const encoder = new TextEncoder();
     const db = supabase;
     const gespraech = unterhaltung.id;
+    const { behalten, neuZusammenfassen } = verlaufKuerzen(alte, unterhaltung.zusammengefasst_bis);
+
+    // Absicht ohne zusätzlichen KI-Aufruf schätzen (sofort). Die KI-Einordnung läuft parallel
+    // nur noch, um dauerhafte Wünsche („erklär mir immer mit Beispielen“) fürs Profil zu erkennen.
+    const absicht = absichtSchaetzen(frage);
+    const vorliebeSuche: Promise<string | null> = /immer|ab jetzt|in zukunft|künftig|bitte nie|nie wieder|grundsätzlich/i.test(frage)
+      ? (async () => {
+          try {
+            const vorherige = [...behalten].reverse().find((n) => n.rolle === "nutzer")?.inhalt ?? null;
+            const p = absichtPrompt(frage, vorherige);
+            const a = await kiAnfrage({ system: p.system, nutzer: p.nutzer, json: true, temperatur: 0, maxTokens: 120, timeoutMs: 8000 }, "schnell");
+            return absichtLesen(a.text, frage).vorliebe;
+          } catch {
+            return null;
+          }
+        })()
+      : Promise.resolve(null);
+
+    /** Alles laden, was das Modell braucht – läuft schon im Stream, damit sofort etwas zu sehen ist */
+    const vorbereiten = async () => {
+      const offeneNotiz = kontext.objekt?.art === "notiz" ? kontext.objekt.id : kontext.zweite?.art === "notiz" ? kontext.zweite.id : null;
+      const [objekt, zweitesObjekt, laufend, umfeld, material, { data: settings }, fachAusNotiz, fachAusPdf] = await Promise.all([
+        objektTitel(supabase, kontext.objekt),
+        objektTitel(supabase, kontext.zweite ? { art: kontext.zweite.art, id: kontext.zweite.id } : null),
+        laufendeVorlesung(supabase, jetzt),
+        umfeldLaden(supabase),
+        studioQuellen(supabase, kontext),
+        supabase.from("settings").select("ki_profil").eq("user_id", userId).maybeSingle(),
+        !kontext.fachId && offeneNotiz ? supabase.from("notiz").select("fach_id").eq("id", offeneNotiz).maybeSingle() : Promise.resolve({ data: null }),
+        !kontext.fachId && kontext.objekt?.art === "pdf"
+          ? supabase.from("datei").select("fach_id").eq("id", kontext.objekt.id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      const profil = profilLesen(settings?.ki_profil);
+      const fachDesKontexts = kontext.fachId ?? fachAusNotiz.data?.fach_id ?? fachAusPdf.data?.fach_id ?? null;
+
+      // Großes Modell nur, wenn es sich lohnt (viel Material, Zusammenfassung, Prüfung …) – sonst das schnelle
+      const gross = material.quellen.length > 0 && (absicht.ganz || ["zusammenfassen", "vergleich", "pruefung", "lernplan"].includes(absicht.modus));
+      const stoff = kontextBauen(
+        material.quellen,
+        [kontext.markiert, frage].filter(Boolean).join(" "),
+        gross && absicht.ganz ? MAX_KONTEXT_GANZ : CHAT_KONTEXT,
+        material.bevorzugt,
+      );
+      const quellenInfo = material.quellen.map((q) => ({ nr: q.nr, art: q.art, id: q.id, titel: q.titel }));
+      const zusatz = [
+        kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
+        kontext.objekt?.art === "pdf" && kontext.seite ? `- Der Nutzer ist in der PDF gerade auf Seite ${kontext.seite}.` : "",
+        zweitesObjekt ? `- Daneben (geteilte Ansicht) offen: ${zweitesObjekt.titel} (${zweitesObjekt.art})` : "",
+        material.fehlend.length ? `- Noch nicht eingelesen (Text fehlt): ${material.fehlend.join(", ")}` : "",
+        kontext.karte ? `Gerade gezeigte Karteikarte:\n${einbetten(`Vorderseite: ${kontext.karte.vorderseite}\nRückseite: ${kontext.karte.rueckseite}`, "quelle")}` : "",
+        kontext.markiert ? `Vom Nutzer markierter Text (darauf bezieht sich die Frage vermutlich):\n${einbetten(kontext.markiert, "quelle")}` : "",
+        `Persönlichkeit: ${PERSOENLICHKEITEN[profil.persoenlichkeit].anweisung}`,
+        absicht.modus === "frage" ? "" : `Antwortformat: ${FORMAT[absicht.modus]}`,
+        `Erklärweise: ${profilText(profil)}`,
+        absicht.web ? "Der Nutzer möchte eine Recherche: nutze web_recherchieren." : "",
+        quellenInfo.length
+          ? `Quellenliste:\n${quellenInfo.map((q) => `Q${q.nr}: ${q.titel} (${q.art === "pdf" ? "PDF" : "Notiz"})`).join("\n")}\n\n${MATERIAL_REGEL}\n\n${stoff.text}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const karten: Aktionskarte[] = [];
+      const sammlung: Sammlung = { erledigt: [], bloecke: [], aktionen: [], karten };
+      const werkzeuge = [
+        ...lesewerkzeuge(supabase, jetzt),
+        ...handlungswerkzeuge({ supabase, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil }, sammlung),
+      ];
+      const nachrichten = modellNachrichten({
+        kontext: zusatz,
+        zusammenfassung: unterhaltung.zusammenfassung,
+        // noch nicht zusammengefasste ältere Nachrichten (die Kurzfassung entsteht erst nach der Antwort)
+        behalten: [...neuZusammenfassen.slice(-4), ...behalten],
+        frage,
+        system: STUDIO_SYSTEM,
+      });
+      const maxTokens = profil.laenge === "kurz" ? 1000 : profil.laenge === "ausfuehrlich" ? 3500 : 2000;
+      return { profil, quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens, gross, zeichen: stoff.zeichen };
+    };
+
+    // Nach der Antwort (der Nutzer wartet nicht mehr): dauerhafte Wünsche ins Profil, ältere Nachrichten zusammenfassen
+    let profilFuerNachher: Lernprofil | null = null;
+    after(async () => {
+      const vorliebe = await vorliebeSuche;
+      if (vorliebe && profilFuerNachher) {
+        await db.from("settings").update({ ki_profil: profilAnpassen(profilFuerNachher, "gut", vorliebe) as unknown as Json }).eq("user_id", userId);
+      }
+      await zusammenfassungAktualisieren(db, unterhaltung, neuZusammenfassen);
+    });
 
     const strom = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -241,7 +260,23 @@ export async function POST(request: Request) {
             offen = false;
           }
         };
-        senden({ typ: "start", unterhaltungId: gespraech, quellen: quellenInfo });
+        // Sofort ein Lebenszeichen, dann vorbereiten
+        senden({ typ: "start", unterhaltungId: gespraech, quellen: [] });
+        const brauchtMaterial = Boolean(kontext.objekt || kontext.zweite || kontext.fachId);
+        senden({ typ: "status", text: brauchtMaterial ? "Schaue mir an, was du offen hast …" : "Denke nach …" });
+        let v: Awaited<ReturnType<typeof vorbereiten>>;
+        try {
+          v = await vorbereiten();
+        } catch (err) {
+          console.error("[ki] assistent vorbereiten", err instanceof Error ? err.message : err);
+          senden({ typ: "fehler", fehler: "Da ist etwas schiefgelaufen. Bitte versuch es noch einmal." });
+          await nutzungAbschliessen(db, buchung.nutzungId, { tokensEin: 0, tokensAus: 0, erfolgreich: false });
+          senden({ typ: "fertig", nachrichtId: null, verbleibend: Math.max(0, buchung.limit - (await chatHeuteGenutzt(db))) });
+          if (offen) controller.close();
+          return;
+        }
+        const { quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens } = v;
+        if (quellenInfo.length) senden({ typ: "start", unterhaltungId: gespraech, quellen: quellenInfo });
 
         let text = "";
         let tokens = { tokensEin: 0, tokensAus: 0 };
@@ -258,8 +293,8 @@ export async function POST(request: Request) {
         };
         try {
           for await (const e of agentLauf({
-            rufen: (o) => kiAnfrageStream(o, "chat"),
-            optionen: { maxTokens, temperatur: 0.4, signal: abbruch.signal, timeoutMs: stoff.zeichen > 150_000 ? 90_000 : 45_000 },
+            rufen: (o) => kiAnfrageStream(o, v.gross ? "stark" : "chat"),
+            optionen: { maxTokens, temperatur: 0.5, signal: abbruch.signal, timeoutMs: v.zeichen > 150_000 ? 90_000 : 45_000 },
             nachrichten,
             werkzeuge,
           })) {
@@ -310,6 +345,7 @@ export async function POST(request: Request) {
         await nutzungAbschliessen(db, buchung.nutzungId, { ...tokens, erfolgreich });
         const verbleibend = Math.max(0, buchung.limit - (await chatHeuteGenutzt(db)));
         senden({ typ: "fertig", nachrichtId: gespeichert?.id ?? null, verbleibend });
+        profilFuerNachher = v.profil;
         if (offen) controller.close();
       },
       cancel() {

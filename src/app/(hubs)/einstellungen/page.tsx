@@ -5,6 +5,7 @@ import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
 import { HubKopf } from "@/components/hubs/hub-bausteine";
 import { Einstellungen } from "@/components/einstellungen";
+import { profilLesen } from "@/lib/ki/lernraum";
 
 export const metadata = { title: "Einstellungen · UniWars" };
 
@@ -28,6 +29,7 @@ export default async function EinstellungenSeite() {
         kiEingewilligt={Boolean(settings?.ki_einwilligung)}
         audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
         kiVerfuegbar={kiKonfiguriert()}
+        kiProfil={profilLesen(settings?.ki_profil)}
       />
     </>
   );

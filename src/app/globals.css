@@ -10389,3 +10389,9 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
     display: none !important;
   }
 }
+
+.einst-persoenlichkeit {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
