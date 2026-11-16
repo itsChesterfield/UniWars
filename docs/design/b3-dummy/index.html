@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="nacht">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zentraler Hub · UniVerse</title>
+<meta name="description" content="Klickbarer Dummy von UniVerse im Gerüst B3: Symbolleiste, Kontextspalte, eingelassene Arbeitsfläche, UniVerse Studio, geteilte Ansicht und alle 15 Bereiche.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="himmel" aria-hidden="true"></div>
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Bereiche"></nav>
+  <aside class="kontext" id="kontext" aria-label="Zum Bereich"></aside>
+  <div class="arbeit" id="arbeit">
+  <main class="flaeche">
+    <header class="leiste">
+      <div class="pfad" id="pfad"></div>
+      <div class="status">
+        <span class="timerstatus" id="timerStatus" hidden></span>
+        <span class="sync" id="sync" role="status"></span>
+        <button class="symbolknopf glocke" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Benachrichtigungen"><svg class="i" aria-hidden="true"><use href="#i-glocke"/></svg><span class="badge" aria-hidden="true"></span></button>
+        <span class="trenn" aria-hidden="true"></span><span><span class="zahl" data-uhr>13:20</span>, <span data-tag>Montag, 16. November</span></span>
+      </div>
+      <div class="wechsel" role="group" aria-label="Design">
+        <button type="button" data-theme="nacht" aria-pressed="true"><svg class="i" aria-hidden="true"><use href="#i-mond"/></svg><span>Sternenhimmel</span></button>
+        <button type="button" data-theme="hochschule" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-sonne"/></svg><span>Hochschule</span></button>
+      </div>
+      <button class="symbolknopf nur-mobil" type="button" id="studioMobil" aria-pressed="false" aria-label="UniVerse Studio"><svg class="i" aria-hidden="true"><use href="#i-funke"/></svg></button>
+      <button class="avatar nur-mobil" type="button" id="profilMobil" aria-haspopup="menu" aria-label="Profil, Didi Romrod">DR</button>
+      <span class="ladespur" aria-hidden="true"><i></i></span>
+    </header>
+    <details class="kontext-mobil" id="kontextMobil"><summary><span>Fächer</span><svg class="i" aria-hidden="true"><use href="#i-runter"/></svg></summary><div class="innen-k"></div></details>
+    <div class="ansicht" id="ansicht" tabindex="-1">
+      <noscript><p style="padding:32px">Der Dummy braucht JavaScript.</p></noscript>
+    </div>
+  </main>
+  </div>
+  <aside class="studio" id="studio" aria-label="UniVerse Studio" hidden></aside>
+</div>
+<nav class="mobilnav" aria-label="Bereiche">
+  <a href="#/hub" data-b="hub"><svg class="i" aria-hidden="true"><use href="#i-hub"/></svg>Hub</a>
+  <a href="#/work-station" data-b="work-station"><svg class="i" aria-hidden="true"><use href="#i-fokus"/></svg>Fokus</a>
+  <a href="#/karteikarten" data-b="karteikarten"><svg class="i" aria-hidden="true"><use href="#i-karten"/></svg>Karten</a>
+  <a href="#/notizen" data-b="notizen"><svg class="i" aria-hidden="true"><use href="#i-notiz"/></svg>Notizen</a>
+  <button type="button" id="mehr"><svg class="i" aria-hidden="true"><use href="#i-suche"/></svg>Alles</button>
+</nav>
+<div class="palette-hg" id="palette" role="dialog" aria-modal="true" aria-label="Suchen">
+  <div class="palette">
+    <div class="eingabe"><svg class="i" aria-hidden="true"><use href="#i-suche"/></svg><label for="feld" class="vh">Suchen</label><input id="feld" name="suche" type="search" placeholder="Bereich, Notiz oder Befehl suchen" autocomplete="off"><kbd>Esc</kbd></div>
+    <div class="ergebnisse" role="listbox" aria-label="Ergebnisse"></div>
+    <div class="fuss"><span>Öffnen<kbd>↵</kbd></span><span>Auswählen<kbd>↑</kbd><kbd>↓</kbd></span></div>
+  </div>
+</div>
+<p class="vh" id="ansage" aria-live="polite" aria-atomic="true"></p>
+<script src="app.js"></script>
+</body>
+</html>
