@@ -12,7 +12,20 @@ import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag, type Wo
 // ---------------------------------------------------------------------------
 
 export type ObjektArt = "notiz" | "stapel" | "dokument" | "pdf" | "transkript" | "praesentation" | "tabelle" | "mindmap";
-export type KontextEingabe = { hub: string; objekt?: { art: ObjektArt; id: string } | null };
+export type KontextEingabe = {
+  hub: string;
+  objekt?: { art: ObjektArt; id: string } | null;
+  /** aktuelle Seite, wenn eine PDF offen ist */
+  seite?: number | null;
+  /** zweite Ansicht (geteilter Bildschirm) */
+  zweite?: { art: ObjektArt; id: string; seite?: number | null } | null;
+  /** markierter Text (vom Nutzer ausgewählt) */
+  markiert?: string | null;
+  /** gerade gezeigte Karteikarte */
+  karte?: { vorderseite: string; rueckseite: string } | null;
+  /** Fach (z. B. im Lernraum) */
+  fachId?: string | null;
+};
 
 export const HUB_NAMEN: Record<string, string> = {
   dashboard: "Dashboard (Startseite)",
@@ -29,7 +42,14 @@ export const HUB_NAMEN: Record<string, string> = {
   transkription: "Transkription",
   dateiablage: "Dateiablage",
   chat: "Chat",
-  assistent: "Assistent",
+  assistent: "UniVerse Studio",
+  lernraum: "Lernraum",
+  einstellungen: "Einstellungen",
+  termine: "Termine",
+  aufgaben: "Aufgaben",
+  noten: "Noten",
+  fortschritt: "Fortschritt",
+  faecher: "Fächer",
 };
 
 const OBJEKT_PFAD: Record<string, ObjektArt> = {
@@ -53,6 +73,10 @@ export function kontextAusPfad(pfad: string, suche: URLSearchParams | null = nul
     const id = suche?.get("id");
     return { hub, objekt: id && UUID.test(id) ? { art: "notiz", id } : null };
   }
+  if (hub === "lernraum") {
+    const fachId = teile[1];
+    return { hub, objekt: null, fachId: fachId && UUID.test(fachId) ? fachId : null };
+  }
   const art = OBJEKT_PFAD[hub];
   const id = teile[1];
   return { hub, objekt: art && id && UUID.test(id) ? { art, id } : null };
@@ -66,7 +90,26 @@ export function kontextPruefen(roh: unknown): KontextEingabe {
   const arten: ObjektArt[] = ["notiz", "stapel", "dokument", "pdf", "transkript", "praesentation", "tabelle", "mindmap"];
   const objekt =
     obj && typeof obj.id === "string" && UUID.test(obj.id) && arten.includes(obj.art as ObjektArt) ? { art: obj.art as ObjektArt, id: obj.id } : null;
-  return { hub, objekt };
+  const zw = (o.zweite ?? null) as Record<string, unknown> | null;
+  const seiteLesen = (w: unknown) => (Number.isInteger(w) && (w as number) >= 1 && (w as number) <= 100_000 ? (w as number) : null);
+  const zweite =
+    zw && typeof zw.id === "string" && UUID.test(zw.id) && arten.includes(zw.art as ObjektArt)
+      ? { art: zw.art as ObjektArt, id: zw.id, seite: seiteLesen(zw.seite) }
+      : null;
+  const k = (o.karte ?? null) as Record<string, unknown> | null;
+  const karte =
+    k && typeof k.vorderseite === "string" && typeof k.rueckseite === "string"
+      ? { vorderseite: k.vorderseite.slice(0, 2000), rueckseite: k.rueckseite.slice(0, 4000) }
+      : null;
+  return {
+    hub,
+    objekt,
+    seite: seiteLesen(o.seite),
+    zweite,
+    markiert: typeof o.markiert === "string" && o.markiert.trim() ? o.markiert.trim().slice(0, 4000) : null,
+    karte,
+    fachId: typeof o.fachId === "string" && UUID.test(o.fachId) ? o.fachId : null,
+  };
 }
 
 const WOCHENTAG_NAME: Record<Wochentag, string> = { MO: "Montag", DI: "Dienstag", MI: "Mittwoch", DO: "Donnerstag", FR: "Freitag", SA: "Samstag", SO: "Sonntag" };
@@ -188,13 +231,16 @@ export function modellNachrichten({
   zusammenfassung,
   behalten,
   frage,
+  system: grundlage = ASSISTENT_SYSTEM,
 }: {
   kontext: string;
   zusammenfassung: string | null;
   behalten: GespeicherteNachricht[];
   frage: string;
+  /** eigener System-Prompt (UniVerse Studio) */
+  system?: string;
 }): Nachricht[] {
-  const system = [ASSISTENT_SYSTEM, kontext, zusammenfassung ? `Kurzfassung des früheren Verlaufs:\n${zusammenfassung}` : ""].filter(Boolean).join("\n\n");
+  const system = [grundlage, kontext, zusammenfassung ? `Kurzfassung des früheren Verlaufs:\n${zusammenfassung}` : ""].filter(Boolean).join("\n\n");
   return [
     { role: "system", content: system },
     ...behalten.map((n): Nachricht => ({ role: n.rolle === "nutzer" ? "user" : "assistant", content: n.inhalt.slice(0, 8000) })),

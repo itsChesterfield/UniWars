@@ -367,7 +367,6 @@ function QuellenFormular({
   quelle,
   faecher,
   pdfs,
-  kiVerfuegbar,
   startFachId,
   onAbbrechen,
   onGespeichert,
@@ -456,11 +455,6 @@ function QuellenFormular({
       <form className="card hub-formular lit-formular" onSubmit={absenden}>
         <div className="rowb">
           <h2 className="ct">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h2>
-          {!quelle && kiVerfuegbar && (
-            <button type="button" className="btng ki-knopf" onClick={() => setKiDialog(true)}>
-              ✨ <span className="ki-knopf-text">Quellenangabe einfügen</span>
-            </button>
-          )}
         </div>
         {kiFelder.size > 0 && (
           <p className="ki-hinweis lit-ki-hinweis">

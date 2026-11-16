@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { assistentStart, unterhaltungLaden, type AssistentNachricht } from "@/app/(hubs)/assistent/actions";
+import { assistentStart, notizAnhaengen, unterhaltungLaden, type AssistentNachricht } from "@/app/(hubs)/assistent/actions";
+import { useRouter } from "next/navigation";
+import { BlockAnzeige, ErledigtListe, KontextLeiste, StudioAntwort } from "@/components/assistent/studio-bausteine";
+import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
+import { STUDIO_NAME, type Aktion, type Block, type Erledigt, type QuellInfo } from "@/lib/ki/studio";
 import { AktionskarteAnzeige } from "@/components/assistent/aktionskarte";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
 import { DiktatKnopf } from "@/components/ki/diktat-knopf";
@@ -10,13 +15,22 @@ import { einstellungLesen, einstellungSetzen, SPRACH_EINSTELLUNGEN } from "@/com
 import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
 import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
-import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
 import { vorschlagChips, MAX_FRAGE_ZEICHEN, type Aktionskarte, type KontextEingabe } from "@/lib/ki/assistent";
 import type { TextStatus } from "@/lib/ki/ergebnis";
 import { kiFehlerTracken, kiGestartet } from "@/lib/ki/tracking";
 import { track } from "@/lib/analytics";
 
-type Laufend = { frage: string; text: string; status: string | null; karten: Aktionskarte[]; fehler: string | null };
+type Laufend = {
+  frage: string;
+  text: string;
+  status: string | null;
+  karten: Aktionskarte[];
+  fehler: string | null;
+  erledigt: Erledigt[];
+  bloecke: Block[];
+  quellen: QuellInfo[];
+  aktionen: Aktion[];
+};
 type Phase = "laden" | "nicht_verfuegbar" | "einwilligung" | "bereit";
 
 /** SSE-Zeilen ("data: {...}\n\n") aus einem Text-Puffer lesen. */
@@ -43,15 +57,25 @@ function ereignisseLesen(puffer: string): { ereignisse: Record<string, unknown>[
 export function AssistentChat({
   unterhaltungId,
   kontext,
+  kontextHolen,
+  onMarkierungEntfernen,
+  startFrage,
   onUnterhaltung,
   autoFokus = true,
 }: {
+  /** null = der eine gemeinsame Chat (zuletzt genutzte Unterhaltung) */
   unterhaltungId: string | null;
   kontext: KontextEingabe;
+  /** Kontext frisch beim Senden lesen (aktuelle PDF-Seite, Markierung …) */
+  kontextHolen?: () => KontextEingabe;
+  onMarkierungEntfernen?: () => void;
+  /** Frage, die beim Öffnen gleich gesendet wird (z. B. Vorschlag aus dem Lernraum) */
+  startFrage?: { text: string; nr: number } | null;
   /** Neue Unterhaltung wurde angelegt bzw. hat sich geändert (für Verlauf/Adresse) */
   onUnterhaltung?: (id: string) => void;
   autoFokus?: boolean;
 }) {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("laden");
   const [status, setStatus] = useState<TextStatus | null>(null);
   const [faecher, setFaecher] = useState<{ id: string; name: string }[]>([]);
@@ -98,18 +122,23 @@ export function AssistentChat({
         }
         setStatus(a.daten.status);
         setFaecher(a.daten.faecher);
+        // Ein gemeinsamer Chat: ohne Vorgabe die zuletzt genutzte Unterhaltung laden
+        if (!unterhaltungId && a.daten.hauptId) {
+          setId(a.daten.hauptId);
+          setVerlaufLaedt(true);
+        }
         setPhase(!a.daten.status.verfuegbar ? "nicht_verfuegbar" : a.daten.status.eingewilligt ? "bereit" : "einwilligung");
       });
     return () => {
       ab = true;
     };
-  }, []);
+  }, [unterhaltungId]);
 
   // Verlauf einer bestehenden Unterhaltung laden
   useEffect(() => {
-    if (!unterhaltungId || unterhaltungId === selbstAngelegt.current) return;
+    if (!id || id === selbstAngelegt.current) return;
     let ab = false;
-    unterhaltungLaden(unterhaltungId)
+    unterhaltungLaden(id)
       .catch(() => null)
       .then((a) => {
         if (ab) return;
@@ -120,7 +149,7 @@ export function AssistentChat({
     return () => {
       ab = true;
     };
-  }, [unterhaltungId]);
+  }, [id]);
 
   useEffect(() => () => abbruch.current?.abort(), []);
   useEffect(() => {
@@ -132,6 +161,20 @@ export function AssistentChat({
 
   const verbleibend = status ? Math.max(0, status.limit - status.genutzt) : 0;
 
+  /** Aktionen der KI im Browser ausführen (öffnen, in die offene Notiz einfügen) */
+  function aktionAusfuehren(aktion: Aktion) {
+    if (aktion.art === "oeffnen") {
+      track("studio_geoeffnet_durch_ki", { daneben: aktion.daneben });
+      if (aktion.daneben) inZweiterAnsichtOeffnen(aktion.href, "rechts");
+      else router.push(aktion.href);
+      return;
+    }
+    // Ist die Notiz im Editor offen, fügt er ein; sonst wird serverseitig angehängt
+    const detail = { notizId: aktion.notizId, text: aktion.text, erledigt: false };
+    window.dispatchEvent(new CustomEvent(NOTIZ_EINFUEGEN, { detail }));
+    if (!detail.erledigt) void notizAnhaengen(aktion.notizId, aktion.text).then(() => router.refresh());
+  }
+
   const senden = useCallback(
     async (text: string, art: "text" | "sprache" = eingabeArt) => {
       const frage = text.trim();
@@ -141,7 +184,7 @@ export function AssistentChat({
       setEingabeArt("text");
       kiGestartet("ki12");
       const start = performance.now();
-      const neu: Laufend = { frage, text: "", status: null, karten: [], fehler: null };
+      const neu: Laufend = { frage, text: "", status: null, karten: [], fehler: null, erledigt: [], bloecke: [], quellen: [], aktionen: [] };
       setLaufend(neu);
       const steuerung = new AbortController();
       abbruch.current = steuerung;
@@ -157,7 +200,7 @@ export function AssistentChat({
         const antwort = await fetch("/api/ki/assistent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ unterhaltungId: id, frage, kontext, eingabeArt: art }),
+          body: JSON.stringify({ unterhaltungId: id, frage, kontext: kontextHolen?.() ?? kontext, eingabeArt: art }),
           signal: steuerung.signal,
         });
         if (!antwort.ok || !antwort.body) {
@@ -167,7 +210,7 @@ export function AssistentChat({
           if (f?.typ === "einwilligung") return setPhase("einwilligung");
           if (f?.typ === "limit") setStatus((s) => (s ? { ...s, genutzt: s.limit } : s));
           kiFehlerTracken("ki12", (f?.typ as Parameters<typeof kiFehlerTracken>[1]) ?? "technisch");
-          setFehler(f?.fehler ?? "Der Assistent ist gerade nicht verfügbar.");
+          setFehler(f?.fehler ?? `${STUDIO_NAME} ist gerade nicht verfügbar.`);
           return;
         }
         const leser = antwort.body.getReader();
@@ -182,6 +225,7 @@ export function AssistentChat({
           for (const e of ereignisse) {
             if (e.typ === "start" && typeof e.unterhaltungId === "string") {
               gespraech = e.unterhaltungId;
+              if (Array.isArray(e.quellen)) setzen({ quellen: e.quellen as QuellInfo[] });
               if (!id) {
                 selbstAngelegt.current = e.unterhaltungId;
                 setId(e.unterhaltungId);
@@ -194,6 +238,14 @@ export function AssistentChat({
               setzen({ text: aktuell.text + e.text, status: null });
             } else if (e.typ === "karte" && e.karte) {
               setzen({ karten: [...aktuell.karten, e.karte as Aktionskarte] });
+            } else if (e.typ === "erledigt" && e.eintrag) {
+              setzen({ erledigt: [...aktuell.erledigt, e.eintrag as Erledigt] });
+            } else if (e.typ === "block" && e.block) {
+              setzen({ bloecke: [...aktuell.bloecke, e.block as Block] });
+            } else if (e.typ === "aktion" && e.aktion) {
+              const aktion = e.aktion as Aktion;
+              setzen({ aktionen: [...aktuell.aktionen, aktion] });
+              aktionAusfuehren(aktion);
             } else if (e.typ === "fehler" && typeof e.fehler === "string") {
               setzen({ fehler: e.fehler, status: null });
             } else if (e.typ === "fertig") {
@@ -216,8 +268,9 @@ export function AssistentChat({
         {
           id: nachrichtId ?? `a-${jetzt}`,
           rolle: "assistent",
-          inhalt: aktuell.text.trim() || (aktuell.fehler && !aktuell.karten.length ? `_(${aktuell.fehler})_` : steuerung.signal.aborted ? "_(Abgebrochen)_" : ""),
+          inhalt: aktuell.text.trim() || (aktuell.fehler && !aktuell.karten.length && !aktuell.erledigt.length ? `_(${aktuell.fehler})_` : steuerung.signal.aborted ? "_(Abgebrochen)_" : ""),
           karten: aktuell.karten,
+          studio: { erledigt: aktuell.erledigt, bloecke: aktuell.bloecke, quellen: aktuell.quellen, aktionen: aktuell.aktionen },
           erstellt_am: jetzt,
         },
       ]);
@@ -232,8 +285,18 @@ export function AssistentChat({
         if (a?.ok) setNachrichten(a.daten.nachrichten);
       }
     },
-    [id, kontext, laufend, onUnterhaltung, verbleibend, eingabeArt, autoVorlesen],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- aktionAusfuehren nutzt nur stabile Werte (Router)
+    [id, kontext, kontextHolen, laufend, onUnterhaltung, verbleibend, eingabeArt, autoVorlesen],
   );
+
+
+  // Vorschlagsfrage (z. B. aus dem Lernraum) einmal senden, sobald alles bereit ist
+  const gesendeteStartFrage = useRef<number | null>(null);
+  useEffect(() => {
+    if (!startFrage || phase !== "bereit" || verlaufLaedt || laufend || gesendeteStartFrage.current === startFrage.nr) return;
+    gesendeteStartFrage.current = startFrage.nr;
+    void senden(startFrage.text);
+  }, [startFrage, phase, verlaufLaedt, laufend, senden]);
 
   if (phase === "laden") return <KiLadeZustand text="Lädt …" />;
   if (phase === "nicht_verfuegbar") return <p className="ki-chat-hinweis">{startFehler ?? "Der Assistent ist gerade nicht verfügbar."}</p>;
@@ -256,11 +319,15 @@ export function AssistentChat({
 
   return (
     <div className="ki-chat">
+      <KontextLeiste kontext={kontext} onMarkierungEntfernen={onMarkierungEntfernen} />
       <div className="ki-chat-verlauf" aria-live="polite">
         {verlaufLaedt && <KiLadeZustand text="Unterhaltung wird geladen …" />}
         {leer && (
           <div className="ki-chat-start">
-            <p className="ki-chat-gruss">Hi! Ich kenne deinen Stundenplan, deine Deadlines, Karteikarten und Notizen. Wobei kann ich helfen?</p>
+            <p className="ki-chat-gruss">
+              Hi, ich bin {STUDIO_NAME}! Ich kenne deine Unterlagen und sehe, was du gerade offen hast. Ich erkläre, frage ab, erstelle Lernzettel und lege für dich
+              Deadlines, To-dos und Notizen an.
+            </p>
             <div className="ki-chips">
               {vorschlagChips(kontext).map((c) => (
                 <button key={c} type="button" className="ki-chip" onClick={() => void senden(c)} disabled={verbleibend === 0}>
@@ -277,7 +344,11 @@ export function AssistentChat({
             </div>
           ) : (
             <div key={n.id} className="ki-blase ki-blase-ki">
-              {n.inhalt && <MarkdownAnzeige wert={n.inhalt} className="ki-chat-md" />}
+              {n.inhalt && <StudioAntwort text={n.inhalt} quellen={n.studio?.quellen ?? []} />}
+              {n.studio && <ErledigtListe eintraege={n.studio.erledigt} nachrichtId={n.id.startsWith("a-") ? null : n.id} />}
+              {n.studio?.bloecke.map((b) => (
+                <BlockAnzeige key={b.id} block={b} quellen={n.studio?.quellen ?? []} nachrichtId={n.id.startsWith("a-") ? null : n.id} />
+              ))}
               {n.inhalt && !n.id.startsWith("a-") && (
                 <span className="ki-blase-aktionen">
                   <VorlesenKnopf text={n.inhalt} cacheKey={n.id} autoStart={vorleseId === n.id} label="Antwort vorlesen" />
@@ -295,6 +366,10 @@ export function AssistentChat({
             <div className="ki-blase ki-blase-ki">
               {laufend.text ? <p className="ki-chat-roh">{laufend.text}</p> : !laufend.status && !laufend.fehler && <p className="ki-chat-status">Denkt nach …</p>}
               {laufend.status && <p className="ki-chat-status">{laufend.status}</p>}
+              <ErledigtListe key={laufend.erledigt.length} eintraege={laufend.erledigt} nachrichtId={null} />
+              {laufend.bloecke.map((b) => (
+                <BlockAnzeige key={b.id} block={b} quellen={laufend.quellen} nachrichtId={null} />
+              ))}
               {laufend.karten.map((k) => (
                 <AktionskarteAnzeige key={k.id} karte={k} nachrichtId={null} faecher={faecher} />
               ))}
@@ -319,8 +394,8 @@ export function AssistentChat({
           rows={2}
           value={eingabe}
           maxLength={MAX_FRAGE_ZEICHEN}
-          placeholder="Frag den Assistenten …"
-          aria-label="Nachricht an den Assistenten"
+          placeholder={`Frag ${STUDIO_NAME} … (z. B. „Erklär mir das“, „Leg eine Deadline an“, „Öffne das Skript auf Seite 12“)`}
+          aria-label={`Nachricht an ${STUDIO_NAME}`}
           onChange={(e) => {
             setEingabe(e.target.value);
             if (!e.target.value.trim()) setEingabeArt("text");
@@ -396,7 +471,7 @@ export function AssistentChat({
           </label>
         </div>
       )}
-      <p className="faint ki-chat-fusszeile">✨ KI kann sich irren. Gespeichert wird nur, was du übernimmst.</p>
+      <p className="faint ki-chat-fusszeile">✨ KI kann sich irren. Was sie anlegt, kannst du rückgängig machen.</p>
     </div>
   );
 }

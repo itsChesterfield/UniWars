@@ -9,7 +9,6 @@ import type { FachOption } from "@/lib/fach-option";
 export function PraesentationsListe({
   eintraege,
   faecher,
-  kiVerfuegbar,
 }: {
   eintraege: ObjektEintrag[];
   faecher: FachOption[];
@@ -31,18 +30,6 @@ export function PraesentationsListe({
         faecher={faecher}
         anlegen={praesentationAnlegen}
         loeschen={praesentationLoeschen}
-        zusatzAktion={
-          // KI-08: Folien-Gliederung aus Notiz oder Dokument
-          <button
-            type="button"
-            className="btng ki-knopf"
-            disabled={!kiVerfuegbar}
-            title={kiVerfuegbar ? "Folien-Gliederung aus einer Notiz oder einem Dokument" : "KI gerade nicht verfügbar"}
-            onClick={() => setKiOffen(true)}
-          >
-            ✨ <span className="ki-knopf-text">Aus Notiz oder Dokument</span>
-          </button>
-        }
       />
       {kiOffen && <KiFolienDialog onSchliessen={() => setKiOffen(false)} />}
     </>

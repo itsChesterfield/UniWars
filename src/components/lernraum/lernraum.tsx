@@ -1,24 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import Link from "next/link";
-import {
-  alsNotizSpeichern,
-  kartenAlsStapel,
-  lernprofilRueckmeldung,
-  lernprofilSetzen,
-  quelleSeitenSpeichern,
-  quelleSetzen,
-  quelleUeberblick,
-  studioErstellen,
-  verlaufLeeren,
-  type StudioErgebnis,
-} from "@/app/(hubs)/lernraum/actions";
+import { quelleSeitenSpeichern, quelleSetzen, quelleUeberblick } from "@/app/(hubs)/lernraum/actions";
 import { dateiLink } from "@/app/(hubs)/dateiablage/actions";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
-import { MarkdownLesen } from "@/components/lernraum/markdown-lesen";
-import { belegeVerlinken, STUDIO, type Lernprofil, type QuizFrage, type Rueckmeldung, type StudioArt, type Ueberblick } from "@/lib/ki/lernraum";
+import type { Lernprofil, Ueberblick } from "@/lib/ki/lernraum";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type QuelleUi = {
@@ -64,7 +52,6 @@ export function Lernraum({
   fach,
   startQuellen,
   weitere,
-  startVerlauf,
   startProfil,
 }: {
   lernraumId: string;
@@ -72,37 +59,19 @@ export function Lernraum({
   startQuellen: QuelleUi[];
   /** fachfremde PDFs/Notizen zum Dazunehmen */
   weitere: { art: "pdf" | "notiz"; id: string; titel: string }[];
-  startVerlauf: LernNachricht[];
+  /** früher Lernraum-Chat – der Verlauf läuft jetzt in UniVerse Studio */
+  startVerlauf?: LernNachricht[];
   startProfil: Lernprofil;
 }) {
   const [quellen, setQuellen] = useState(startQuellen);
-  const [verlauf, setVerlauf] = useState(startVerlauf);
-  const [profil, setProfil] = useState(startProfil);
-  const [frage, setFrage] = useState("");
-  const [laeuft, setLaeuft] = useState(false);
-  const [fehler, setFehler] = useState<string | null>(null);
+  const profil = startProfil;
   const [einwilligung, setEinwilligung] = useState<string | null>(null);
   const [einlesen, setEinlesen] = useState<Record<string, string>>({});
   const [ueberblick, setUeberblick] = useState<Record<string, Ueberblick | "laedt" | string>>({});
   const [offenerUeberblick, setOffenerUeberblick] = useState<string | null>(null);
   const [hinzufuegen, setHinzufuegen] = useState(false);
-  const [profilOffen, setProfilOffen] = useState(false);
-  const [studio, setStudio] = useState<{ art: StudioArt; laeuft: boolean; ergebnis?: StudioErgebnis; fehler?: string } | null>(null);
-  const [hinweis, setHinweis] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const verlaufEnde = useRef<HTMLDivElement>(null);
-  const abbruch = useRef<AbortController | null>(null);
   const eingelesen = useRef(new Set<string>());
-
-  useEffect(() => {
-    verlaufEnde.current?.scrollIntoView({ block: "end" });
-  }, [verlauf.length]);
-  useEffect(
-    () => () => {
-      abbruch.current?.abort();
-    },
-    [],
-  );
 
   // PDFs, die noch keinen Text haben, im Hintergrund einlesen (einmalig)
   useEffect(() => {
@@ -176,104 +145,6 @@ export function Lernraum({
     });
   }
 
-  async function fragen(text = frage) {
-    const f = text.trim();
-    if (!f || laeuft) return;
-    setFehler(null);
-    setFrage("");
-    setLaeuft(true);
-    const nutzerId = `n-${Date.now()}`;
-    const kiId = `k-${Date.now()}`;
-    setVerlauf((v) => [...v, { id: nutzerId, rolle: "nutzer", inhalt: f, meta: {} }, { id: kiId, rolle: "ki", inhalt: "", meta: {}, laeuft: true }]);
-    const aendern = (teil: Partial<LernNachricht>) => setVerlauf((v) => v.map((n) => (n.id === kiId ? { ...n, ...teil } : n)));
-    const steuerung = new AbortController();
-    abbruch.current = steuerung;
-    track("lernraum_frage", { quellen: aktive.length });
-    try {
-      const antwort = await fetch("/api/ki/lernraum", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lernraumId, frage: f }),
-        signal: steuerung.signal,
-      });
-      if (!antwort.ok || !antwort.body) {
-        const daten = (await antwort.json().catch(() => null)) as { fehler?: string; typ?: string } | null;
-        setVerlauf((v) => v.filter((n) => n.id !== kiId && n.id !== nutzerId));
-        setFrage(f);
-        if (daten?.typ === "einwilligung") setEinwilligung("chat");
-        else setFehler(daten?.fehler ?? "Da ist etwas schiefgelaufen. Bitte versuch es noch einmal.");
-        return;
-      }
-      let meta: Meta = {};
-      try {
-        meta = JSON.parse(decodeURIComponent(antwort.headers.get("X-Lernraum-Meta") ?? "{}")) as Meta;
-      } catch {
-        meta = {};
-      }
-      aendern({ meta });
-      const leser = antwort.body.getReader();
-      const decoder = new TextDecoder();
-      let gesamt = "";
-      for (;;) {
-        const { done, value } = await leser.read();
-        if (done) break;
-        gesamt += decoder.decode(value, { stream: true });
-        aendern({ inhalt: gesamt });
-      }
-      aendern({ inhalt: gesamt, laeuft: false });
-      track("lernraum_antwort", { modus: meta.modus, umfang: meta.umfang, web: Boolean(meta.web?.length) });
-    } catch {
-      if (!steuerung.signal.aborted) setFehler("Die Antwort wurde unterbrochen. Bitte versuch es noch einmal.");
-      aendern({ laeuft: false });
-    } finally {
-      setLaeuft(false);
-    }
-  }
-
-  function belegOeffnen(quellenInfo: QuellInfo[] | undefined, nr: number, seite: number | null) {
-    const q = quellenInfo?.find((x) => x.nr === nr);
-    if (!q) return;
-    track("lernraum_beleg_geoeffnet", { art: q.art });
-    inZweiterAnsichtOeffnen(q.art === "pdf" ? `/pdf-reader/${q.id}${seite ? `?seite=${seite}` : ""}` : `/notizen?id=${q.id}`, "rechts");
-  }
-
-  function rueckmeldung(r: Rueckmeldung) {
-    track("lernraum_rueckmeldung", { art: r });
-    lernprofilRueckmeldung(r)
-      .then((p) => {
-        setProfil(p);
-        setHinweis(r === "gut" || r === "schlecht" ? "Danke für die Rückmeldung!" : `Gemerkt – ab jetzt: ${profilText(p)}`);
-      })
-      .catch(() => undefined);
-  }
-
-  async function speichernAlsNotiz(titel: string, markdown: string, quellenInfo: QuellInfo[] | undefined) {
-    try {
-      const { notizId } = await alsNotizSpeichern(lernraumId, titel, markdown, quellenInfo ?? []);
-      track("lernraum_als_notiz");
-      setHinweis("Als Notiz gespeichert.");
-      inZweiterAnsichtOeffnen(`/notizen?id=${notizId}`, "rechts");
-    } catch (err) {
-      fehlerMelden(err, { ort: "lernraum_notiz" });
-      setHinweis("Speichern hat nicht geklappt.");
-    }
-  }
-
-  function studioStarten(art: StudioArt) {
-    setStudio({ art, laeuft: true });
-    track("lernraum_studio", { art });
-    studioErstellen(lernraumId, art)
-      .then((a) => {
-        if (!a.ok && a.typ === "einwilligung") {
-          setEinwilligung("studio");
-          setStudio(null);
-          return;
-        }
-        setStudio(a.ok ? { art, laeuft: false, ergebnis: a.daten } : { art, laeuft: false, fehler: a.fehler });
-      })
-      .catch(() => setStudio({ art, laeuft: false, fehler: "Das hat nicht geklappt. Bitte versuch es noch einmal." }));
-  }
-
   const letzteVorschlaege = (() => {
     const fragenAusUeberblick = Object.values(ueberblick).flatMap((u) => (typeof u === "object" ? u.fragen : []));
     return fragenAusUeberblick.length ? fragenAusUeberblick.slice(0, 4) : VORSCHLAEGE;
@@ -338,7 +209,7 @@ export function Lernraum({
                           ))}
                         </div>
                         {u.fragen.map((f) => (
-                          <button key={f} type="button" className="lr-vorschlag" onClick={() => void fragen(f)} disabled={laeuft}>
+                          <button key={f} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(f)}>
                             {f}
                           </button>
                         ))}
@@ -381,328 +252,24 @@ export function Lernraum({
         </div>
       </aside>
 
-      {/* Chat */}
-      <section className="card lr-chat" aria-label="Chat">
-        <div className="lr-kopf">
-          <h2>
-            <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-          </h2>
-          <div className="lr-kopf-aktionen">
-            <button type="button" className="btng lr-profil-knopf" onClick={() => setProfilOffen((o) => !o)} title="So erklärt dir die KI – passt sich an deine Rückmeldungen an">
-              🎓 {profilText(profil)}
-            </button>
-            {verlauf.length > 0 && (
-              <button
-                type="button"
-                className="icon-knopf"
-                title="Verlauf leeren"
-                aria-label="Verlauf leeren"
-                onClick={() => {
-                  if (!window.confirm("Den Verlauf in diesem Lernraum löschen?")) return;
-                  setVerlauf([]);
-                  void verlaufLeeren(lernraumId);
-                }}
-              >
-                🗑
-              </button>
-            )}
-          </div>
-        </div>
-        {profilOffen && <ProfilEditor profil={profil} onAendern={(p) => lernprofilSetzen(p).then(setProfil)} />}
-        {hinweis && (
-          <p className="lr-hinweis" onClick={() => setHinweis(null)}>
-            {hinweis}
-          </p>
-        )}
-
-        <div className="lr-verlauf">
-          {verlauf.length === 0 && (
-            <div className="lr-start">
-              <p>
-                Frag alles zu <strong>{fach.name}</strong> – die KI antwortet aus deinen {aktive.length} Quellen und belegt jede Aussage. Fehlt etwas, ergänzt sie es (markiert)
-                und recherchiert auf Wunsch im Web.
-              </p>
-            </div>
-          )}
-          {verlauf.map((n) =>
-            n.rolle === "nutzer" ? (
-              <div key={n.id} className="lr-nachricht nutzer">
-                {n.inhalt}
-              </div>
-            ) : (
-              <div key={n.id} className="lr-nachricht ki">
-                {n.laeuft && !n.inhalt ? (
-                  <p className="muted lr-denkt">Liest deine Quellen …</p>
-                ) : n.laeuft ? (
-                  <div className="lr-stream">{n.inhalt}</div>
-                ) : (
-                  <MarkdownLesen
-                    wert={belegeVerlinken(n.inhalt, (nr) => n.meta.quellen?.find((q) => q.nr === nr)?.titel ?? null)}
-                    onBeleg={(nr, s) => belegOeffnen(n.meta.quellen, nr, s)}
-                  />
-                )}
-                {!n.laeuft && n.meta.web && n.meta.web.length > 0 && (
-                  <div className="lr-web">
-                    <span className="faint">Im Web recherchiert:</span>
-                    {n.meta.web.map((w) => (
-                      <a key={w.url} href={w.url} target="_blank" rel="noopener noreferrer">
-                        🌐 {w.titel}
-                      </a>
-                    ))}
-                  </div>
-                )}
-                {!n.laeuft && n.meta.fehlend && n.meta.fehlend.length > 0 && <p className="faint lr-klein">Noch nicht eingelesen: {n.meta.fehlend.join(", ")}</p>}
-                {!n.laeuft && n.inhalt && (
-                  <div className="lr-aktionen">
-                    <button type="button" title="Hilfreich" onClick={() => rueckmeldung("gut")}>
-                      👍
-                    </button>
-                    <button type="button" title="Nicht hilfreich" onClick={() => rueckmeldung("schlecht")}>
-                      👎
-                    </button>
-                    <button type="button" onClick={() => rueckmeldung("einfacher")}>
-                      Einfacher
-                    </button>
-                    <button type="button" onClick={() => rueckmeldung("ausfuehrlicher")}>
-                      Ausführlicher
-                    </button>
-                    <button type="button" onClick={() => rueckmeldung("kuerzer")}>
-                      Kürzer
-                    </button>
-                    <button type="button" onClick={() => rueckmeldung("beispiele")}>
-                      Mehr Beispiele
-                    </button>
-                    <button type="button" onClick={() => void speichernAlsNotiz(`${fach.name} – ${verlauf[verlauf.indexOf(n) - 1]?.inhalt.slice(0, 60) ?? "KI-Antwort"}`, n.inhalt, n.meta.quellen)}>
-                      📝 Als Notiz
-                    </button>
-                    {n.meta.modus === "quiz" && (
-                      <button type="button" onClick={() => studioStarten("quiz")}>
-                        🎯 Als interaktives Quiz
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ),
-          )}
-          <div ref={verlaufEnde} />
-        </div>
-
-        {fehler && <p className="auth-error">{fehler}</p>}
-        {!laeuft && (
-          <div className="lr-vorschlaege">
-            {letzteVorschlaege.map((v) => (
-              <button key={v} type="button" className="lr-vorschlag" onClick={() => void fragen(v)}>
-                {v}
-              </button>
-            ))}
-          </div>
-        )}
-        <form
-          className="lr-eingabe"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void fragen();
-          }}
-        >
-          <textarea
-            className="field"
-            rows={2}
-            placeholder={`Frag etwas zu ${fach.name} … (z. B. „Erklär mir …“, „Vergleiche …“, „Recherchier …“)`}
-            value={frage}
-            maxLength={2000}
-            onChange={(e) => setFrage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void fragen();
-              }
-            }}
-          />
-          {laeuft ? (
-            <button type="button" className="btng" onClick={() => abbruch.current?.abort()}>
-              Stopp
-            </button>
-          ) : (
-            <button type="submit" className="btnp" disabled={!frage.trim()}>
-              Senden
-            </button>
-          )}
-        </form>
-      </section>
-
-      {/* Studio */}
-      <aside className="card lr-studio" aria-label="Studio">
-        <div className="lr-kopf">
-          <h2>Studio</h2>
-          <span className="faint">aus allen aktiven Quellen</span>
-        </div>
-        <div className="lr-studio-knoepfe">
-          {(Object.keys(STUDIO) as StudioArt[]).map((a) => (
-            <button key={a} type="button" className={`lr-studio-knopf ${studio?.art === a ? "an" : ""}`} disabled={studio?.laeuft} onClick={() => studioStarten(a)}>
-              <span aria-hidden>{STUDIO[a].icon}</span> {STUDIO[a].name}
-            </button>
-          ))}
-        </div>
-        {studio && (
-          <div className="lr-studio-ergebnis">
-            {studio.laeuft ? (
-              <p className="muted">
-                {STUDIO[studio.art].icon} {STUDIO[studio.art].name} wird erstellt … das dauert bei großen Skripten bis zu einer Minute.
-              </p>
-            ) : studio.fehler ? (
-              <p className="auth-error">{studio.fehler}</p>
-            ) : studio.ergebnis?.art === "quiz" ? (
-              <Quiz fragen={studio.ergebnis.fragen} quellen={studio.ergebnis.quellen} onBeleg={(nr, s) => belegOeffnen(studio.ergebnis?.quellen, nr, s)} />
-            ) : studio.ergebnis?.art === "karteikarten" ? (
-              <KartenVorschau lernraumId={lernraumId} karten={studio.ergebnis.karten} />
-            ) : studio.ergebnis && "markdown" in studio.ergebnis ? (
-              <>
-                <MarkdownLesen
-                  wert={belegeVerlinken(studio.ergebnis.markdown, (nr) => studio.ergebnis?.quellen.find((q) => q.nr === nr)?.titel ?? null)}
-                  onBeleg={(nr, s) => belegOeffnen(studio.ergebnis?.quellen, nr, s)}
-                />
-                <button
-                  type="button"
-                  className="btnp"
-                  onClick={() => {
-                    const e = studio.ergebnis;
-                    if (e && "markdown" in e) void speichernAlsNotiz(`${STUDIO[studio.art].name} – ${fach.name}`, e.markdown, e.quellen);
-                  }}
-                >
-                  📝 Als Notiz speichern
-                </button>
-              </>
-            ) : null}
-          </div>
-        )}
-      </aside>
-    </div>
-  );
-}
-
-function ProfilEditor({ profil, onAendern }: { profil: Lernprofil; onAendern: (p: Lernprofil) => void }) {
-  return (
-    <div className="lr-profil">
-      <label>
-        Länge
-        <select className="field" value={profil.laenge} onChange={(e) => onAendern({ ...profil, laenge: e.target.value as Lernprofil["laenge"] })}>
-          <option value="kurz">Kurz</option>
-          <option value="normal">Mittel</option>
-          <option value="ausfuehrlich">Ausführlich</option>
-        </select>
-      </label>
-      <label>
-        Niveau
-        <select className="field" value={profil.niveau} onChange={(e) => onAendern({ ...profil, niveau: e.target.value as Lernprofil["niveau"] })}>
-          <option value="einfach">Einfach</option>
-          <option value="normal">Uni-Niveau</option>
-          <option value="fortgeschritten">Fortgeschritten</option>
-        </select>
-      </label>
-      <label className="lr-check">
-        <input type="checkbox" checked={profil.beispiele} onChange={(e) => onAendern({ ...profil, beispiele: e.target.checked })} /> Mit Beispielen
-      </label>
-      {profil.hinweise.length > 0 && (
-        <div className="lr-hinweise">
-          <span className="faint">Gemerkte Wünsche:</span>
-          {profil.hinweise.map((h) => (
-            <span key={h} className="tag">
-              {h}{" "}
-              <button type="button" aria-label="Wunsch entfernen" onClick={() => onAendern({ ...profil, hinweise: profil.hinweise.filter((x) => x !== h) })}>
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      <p className="faint lr-klein">Die KI passt das auch selbst an – über die Knöpfe unter den Antworten oder wenn du z. B. schreibst „erklär mir immer mit Beispielen“.</p>
-    </div>
-  );
-}
-
-function Quiz({ fragen, onBeleg }: { fragen: QuizFrage[]; quellen: QuellInfo[]; onBeleg: (nr: number, seite: number | null) => void }) {
-  const [antworten, setAntworten] = useState<Record<number, number>>({});
-  const richtig = fragen.filter((f, i) => antworten[i] === f.richtig).length;
-  const fertig = Object.keys(antworten).length === fragen.length;
-  return (
-    <div className="lr-quiz">
-      {fragen.map((f, i) => {
-        const gewaehlt = antworten[i];
-        const beleg = /Q(\d+)(?:\s*S\.\s*(\d+))?/.exec(f.beleg);
-        return (
-          <div key={i} className="lr-quiz-frage">
-            <p>
-              <strong>{i + 1}.</strong> {f.frage}
-            </p>
-            {f.optionen.map((o, j) => (
-              <button
-                key={j}
-                type="button"
-                disabled={gewaehlt !== undefined}
-                className={gewaehlt === undefined ? "" : j === f.richtig ? "richtig" : j === gewaehlt ? "falsch" : ""}
-                onClick={() => setAntworten((a) => ({ ...a, [i]: j }))}
-              >
-                {o}
-              </button>
-            ))}
-            {gewaehlt !== undefined && (
-              <p className="lr-klein">
-                {gewaehlt === f.richtig ? "✅ Richtig! " : "❌ Leider falsch. "}
-                {f.erklaerung}{" "}
-                {beleg && (
-                  <button type="button" className="lr-beleg-knopf" onClick={() => onBeleg(Number(beleg[1]), beleg[2] ? Number(beleg[2]) : null)}>
-                    {f.beleg}
-                  </button>
-                )}
-              </p>
-            )}
-          </div>
-        );
-      })}
-      {fertig && (
-        <p className="lr-quiz-ergebnis">
-          {richtig} von {fragen.length} richtig {richtig === fragen.length ? "🎉" : richtig >= fragen.length / 2 ? "👍" : "– dranbleiben!"}
+      {/* Fragen laufen über UniVerse Studio (ein Chat für die ganze App) */}
+      <section className="card lr-studio-hinweis" aria-label="UniVerse Studio">
+        <h2>
+          <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
+        </h2>
+        <p>
+          Drück <kbd>Strg</kbd> + <kbd>J</kbd> (Mac: <kbd>⌘</kbd> + <kbd>J</kbd>) – <strong>UniVerse Studio</strong> kennt die {aktive.length} aktiven Quellen dieses Fachs, belegt
+          jede Aussage und erstellt dir auf Wunsch Lernzettel, FAQ, Quiz oder Karteikarten.
         </p>
-      )}
-    </div>
-  );
-}
-
-function KartenVorschau({ lernraumId, karten }: { lernraumId: string; karten: { vorderseite: string; rueckseite: string }[] }) {
-  const [stapelId, setStapelId] = useState<string | null>(null);
-  const [laeuft, setLaeuft] = useState(false);
-  return (
-    <div className="lr-karten">
-      {karten.map((k, i) => (
-        <details key={i} className="lr-karte">
-          <summary>{k.vorderseite}</summary>
-          <p>{k.rueckseite}</p>
-        </details>
-      ))}
-      {stapelId ? (
-        <Link href={`/karteikarten/${stapelId}/lernen`} className="btnp">
-          Gespeichert – jetzt lernen
-        </Link>
-      ) : (
-        <button
-          type="button"
-          className="btnp"
-          disabled={laeuft}
-          onClick={() => {
-            setLaeuft(true);
-            kartenAlsStapel(lernraumId, karten)
-              .then((r) => {
-                setStapelId(r.stapelId);
-                track("lernraum_karten_gespeichert", { anzahl: karten.length });
-              })
-              .catch((err) => fehlerMelden(err, { ort: "lernraum_karten" }))
-              .finally(() => setLaeuft(false));
-          }}
-        >
-          🗂️ Als Karteikarten-Stapel speichern
-        </button>
-      )}
+        <div className="lr-vorschlaege">
+          {letzteVorschlaege.map((v) => (
+            <button key={v} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(v)}>
+              {v}
+            </button>
+          ))}
+        </div>
+        <p className="faint lr-klein">Erklärweise: {profilText(profil)} – passt sich an deine Rückmeldungen an (Einstellungen in UniVerse Studio).</p>
+      </section>
     </div>
   );
 }

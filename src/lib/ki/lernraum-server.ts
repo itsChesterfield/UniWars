@@ -95,3 +95,58 @@ export async function quellenTexte(supabase: Supabase, liste: QuellenEintrag[]):
         : notizAbschnitte((notizen ?? []).find((n) => n.id === q.id)?.inhalt ?? ""),
   }));
 }
+
+// ---------------------------------------------------------------------------
+// UniVerse Studio: Material zum aktuellen Kontext (offene PDF/Notiz, zweite Ansicht, Fach)
+// ---------------------------------------------------------------------------
+
+type ObjektRef = { art: string; id: string; seite?: number | null };
+
+/**
+ * Quellen für eine Studio-Anfrage zusammenstellen:
+ * offene PDF (bevorzugt aktuelle Seite ± 1), offene Notiz + darin verlinkte PDFs,
+ * zweite Ansicht, im Lernraum alle aktiven Quellen des Fachs.
+ */
+export async function studioQuellen(
+  supabase: Supabase,
+  kontext: { objekt?: ObjektRef | null; seite?: number | null; zweite?: ObjektRef | null; fachId?: string | null },
+): Promise<{ quellen: LernQuelle[]; bevorzugt: { quelle: number; seiten: number[] }[]; fehlend: string[] }> {
+  const eintraege: QuellenEintrag[] = [];
+  const seitenWunsch = new Map<string, number>();
+  const pdfDazu = async (id: string, seite?: number | null) => {
+    if (eintraege.some((e) => e.id === id)) return;
+    const { data } = await supabase.from("datei").select("id, name, geaendert_am, mime_typ").eq("id", id).maybeSingle();
+    if (!data || data.mime_typ !== "application/pdf") return;
+    const { count } = await supabase.from("quelle_seite").select("seite", { count: "exact", head: true }).eq("datei_id", id);
+    eintraege.push({ art: "pdf", id, titel: data.name, herkunft: "extra", aktiv: true, seiten: count ?? 0, geaendertAm: data.geaendert_am });
+    if (seite) seitenWunsch.set(id, seite);
+  };
+  const notizDazu = async (id: string) => {
+    if (eintraege.some((e) => e.id === id)) return;
+    const { data } = await supabase.from("notiz").select("id, titel, geaendert_am").eq("id", id).maybeSingle();
+    if (!data) return;
+    eintraege.push({ art: "notiz", id, titel: data.titel || "Unbenannte Notiz", herkunft: "extra", aktiv: true, seiten: 0, geaendertAm: data.geaendert_am });
+    // In der Notiz verlinkte PDFs gehören zum Kontext
+    const { data: links } = await supabase.from("notiz_link").select("ziel_datei_id, seite").eq("von_notiz_id", id).not("ziel_datei_id", "is", null).limit(5);
+    for (const l of links ?? []) if (l.ziel_datei_id) await pdfDazu(l.ziel_datei_id, l.seite);
+  };
+  const objektDazu = async (o: ObjektRef | null | undefined, seite?: number | null) => {
+    if (!o) return;
+    if (o.art === "pdf") await pdfDazu(o.id, seite ?? o.seite ?? null);
+    else if (o.art === "notiz") await notizDazu(o.id);
+  };
+  await objektDazu(kontext.objekt, kontext.seite);
+  await objektDazu(kontext.zweite);
+  if (kontext.fachId) {
+    const { data: raum } = await supabase.from("lernraum").select("id").eq("fach_id", kontext.fachId).maybeSingle();
+    if (raum) for (const q of await quellenListe(supabase, raum.id, kontext.fachId)) if (q.aktiv && !eintraege.some((e) => e.id === q.id)) eintraege.push(q);
+  }
+  const quellen = await quellenTexte(supabase, eintraege);
+  const bevorzugt = quellen
+    .filter((q) => seitenWunsch.has(q.id))
+    .map((q) => {
+      const s = seitenWunsch.get(q.id)!;
+      return { quelle: q.nr, seiten: [s, s - 1, s + 1].filter((x) => x >= 1) };
+    });
+  return { quellen, bevorzugt, fehlend: eintraege.filter((e) => e.art === "pdf" && e.seiten === 0).map((e) => e.titel) };
+}

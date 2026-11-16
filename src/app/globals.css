@@ -10219,3 +10219,173 @@ button.pdf-pfad-teil:hover {
     max-height: 40vh;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   UniVerse Studio – ein Chat überall, per Strg+J als Leiste rechts
+   --------------------------------------------------------------------------- */
+@media (min-width: 761px) {
+  html[data-studio-offen] .dashboard {
+    padding-right: 420px;
+  }
+}
+
+.studio-panel {
+  width: 420px;
+  box-shadow: -6px 0 18px rgb(42 35 24 / 0.08);
+}
+
+kbd,
+.studio-kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--muted);
+  font: 600 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.studio-hinweis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.studio-hinweis:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.studio-hinweis-taste {
+  display: inline-flex;
+  gap: 3px;
+}
+
+html[data-sidebar-eingeklappt] .studio-hinweis {
+  display: none;
+}
+
+.studio-kontext {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.studio-kontext-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+}
+
+.studio-kontext-chip button {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.studio-erledigt {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.studio-erledigt li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #3c8a4e 10%, transparent);
+}
+
+.studio-erledigt li.zurueck {
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  color: var(--muted);
+}
+
+.studio-erledigt a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.studio-zurueck {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.studio-block {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studio-block-titel {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.studio-web {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.studio-web a {
+  color: var(--accent);
+}
+
+.lr-studio-hinweis,
+.kk-studio-hinweis {
+  font-size: 13px;
+}
+
+.lr-studio-hinweis {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media print {
+  .studio-hinweis {
+    display: none !important;
+  }
+}

@@ -48,7 +48,6 @@ export function TranskriptAnsicht({
   transkript,
   startStand,
   faecher,
-  kiVerfuegbar,
 }: {
   transkript: Transkript;
   startStand: TranskriptStand;
@@ -458,16 +457,6 @@ export function TranskriptAnsicht({
                 <button type="button" className="btng" onClick={() => void notizSpeichern()} disabled={notizSpeichert || leer}>
                   {notizSpeichert ? "Speichert …" : "In Notizen speichern"}
                 </button>
-              )}
-              {kiVerfuegbar && !leer && (
-                <>
-                  <button type="button" className="btng" onClick={() => void ausstehendSpeichern().then(() => setDialog("karten"))}>
-                    ✨ Karteikarten
-                  </button>
-                  <button type="button" className="btnp" onClick={() => void ausstehendSpeichern().then(() => setDialog("mitschrift"))}>
-                    ✨ Als Notiz aufbereiten
-                  </button>
-                </>
               )}
             </span>
           </div>

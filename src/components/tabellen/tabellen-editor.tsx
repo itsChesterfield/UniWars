@@ -53,7 +53,6 @@ export function TabellenEditor({
   startDaten,
   faecher,
   istNeu,
-  kiVerfuegbar = false,
 }: {
   id: string;
   startTitel: string;
@@ -425,20 +424,6 @@ export function TabellenEditor({
         <span className="tab-fx" aria-hidden>
           fx
         </span>
-        {kiVerfuegbar && (
-          <button
-            type="button"
-            className="icon-knopf ki-formel-knopf"
-            aria-label={`Formel-Helfer für Zelle ${ankerRef}`}
-            title="✨ Formel-Helfer: beschreib, was du berechnen willst"
-            onClick={() => {
-              setBearbeitung(null);
-              setKiFormel(ankerRef);
-            }}
-          >
-            ✨
-          </button>
-        )}
         <input
           className="field mono"
           aria-label="Inhalt bzw. Formel der Zelle"

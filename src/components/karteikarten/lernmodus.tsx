@@ -5,7 +5,7 @@ import Link from "next/link";
 import { karteBeantworten, lernrundeAbschliessen } from "@/app/(hubs)/karteikarten/actions";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
 import { VorlesenKnopf } from "@/components/ki/vorlesen-knopf";
-import { KiErklaerung } from "@/components/karteikarten/ki-erklaerung";
+import { studioMelden } from "@/lib/ki/studio-kontext";
 import {
   BEWERTUNGEN,
   bewerten,
@@ -63,11 +63,17 @@ export function Lernmodus({
   karten: LernKarte[];
   /** KK-04: abgefragt werden nur fällige Karten. */
   faellige: LernKarte[];
-  /** KI-11 "Erklär mir das" */
+  /** KI-14 Vorlesen ("Erklär mir das" läuft jetzt per Strg+J über UniVerse Studio) */
   kiVerfuegbar?: boolean;
 }) {
   const [runde, setRunde] = useState<Runde | null>(() => (faellige.length > 0 ? neueRunde(faellige) : null));
   const [speicherFehler, setSpeicherFehler] = useState(false);
+  // UniVerse Studio kennt die gezeigte Karte (Strg+J → "Erklär mir das")
+  const gezeigt = runde ? runde.karten[runde.index] : null;
+  useEffect(() => {
+    studioMelden({ karte: gezeigt ? { stapelId: stapel.id, vorderseite: gezeigt.vorderseite, rueckseite: gezeigt.rueckseite } : null });
+  }, [gezeigt, stapel.id]);
+  useEffect(() => () => studioMelden({ karte: null }), []);
   // Antworten pro Karte nacheinander speichern ("Nochmal" + spätere Antwort derselben Karte)
   const speicherKette = useRef(new Map<string, Promise<unknown>>());
 
@@ -270,7 +276,7 @@ export function Lernmodus({
         </div>
       )}
 
-      {runde.umgedreht && kiVerfuegbar && <KiErklaerung key={`${karte.id}-${runde.index}`} karteId={karte.id} />}
+      {runde.umgedreht && <p className="faint kk-studio-hinweis">Nicht verstanden? Drück <kbd>Strg</kbd> + <kbd>J</kbd> – UniVerse Studio erklärt dir diese Karte.</p>}
 
       {runde.umgedreht ? (
         <div className="kk-antworten kk-antworten-4" role="group" aria-label="Wie gut wusstest du es?">
