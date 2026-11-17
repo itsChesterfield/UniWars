@@ -34,9 +34,12 @@ test("Darstellung lesen: Standard bei Unbrauchbarem, unbekannte Werte fallen auf
     schrift: "gross",
     dichte: "normal",
     bewegung: "reduziert",
+    leiste: "hover",
     design_schalter: false,
   });
   assert.equal(darstellungLesen({ design_schalter: true }).design_schalter, true);
+  assert.equal(darstellungLesen({ leiste: "offen" }).leiste, "offen");
+  assert.equal(darstellungLesen({ leiste: "breit" }).leiste, "hover");
 });
 
 test("Symbolleiste lesen: Standard, Gruppen bleiben fest, Neues hängt am Gruppenende", () => {

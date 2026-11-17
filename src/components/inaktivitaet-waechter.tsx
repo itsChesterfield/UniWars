@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { inaktivAbmelden } from "@/app/logout/actions";
 import { createClient } from "@/lib/supabase/client";
-import { INAKTIV_MS, inaktivStand, LETZTE_AKTIVITAET, wirdAktivGehalten } from "@/lib/inaktivitaet";
+import { INAKTIV_MS, angemeldetBleiben, inaktivStand, LETZTE_AKTIVITAET, wirdAktivGehalten } from "@/lib/inaktivitaet";
 import { istEingebettet } from "@/lib/geteilte-ansicht";
 import { timerLesen } from "@/lib/work-station/timer-store";
 import { abmelden, track } from "@/lib/analytics";
@@ -70,8 +70,9 @@ export function InaktivitaetsWaechter() {
   }, []);
 
   useEffect(() => {
-    // In der zweiten Ansicht (iframe) entscheidet das Hauptfenster
-    if (istEingebettet()) return;
+    // In der zweiten Ansicht (iframe) entscheidet das Hauptfenster;
+    // bei „Angemeldet bleiben“ wird auf diesem Gerät gar nicht automatisch abgemeldet
+    if (istEingebettet() || angemeldetBleiben()) return;
     const jetzt = Date.now();
     // Seite nach längerer Pause wieder geöffnet → sofort prüfen, sonst Aktivität merken
     const gespeichert = letzteLesen(jetzt);

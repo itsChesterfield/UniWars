@@ -6,6 +6,18 @@ export const INAKTIV_MS = 5 * 60_000;
 /** So lange vorher erscheint der Hinweis „Du wirst gleich abgemeldet“ */
 export const WARNUNG_MS = 30_000;
 export const LETZTE_AKTIVITAET = "uniwars-letzte-aktivitaet";
+/** „Angemeldet bleiben“ auf der Anmeldeseite: auf diesem Gerät nicht automatisch abmelden */
+export const ANGEMELDET_BLEIBEN = "uniwars-angemeldet-bleiben";
+/** Gemerkte E-Mail für die Anmeldeseite (nur mit „Angemeldet bleiben“) */
+export const GEMERKTE_EMAIL = "uniwars-login-email";
+
+export function angemeldetBleiben(): boolean {
+  try {
+    return window.localStorage.getItem(ANGEMELDET_BLEIBEN) === "1";
+  } catch {
+    return false;
+  }
+}
 
 const halter = new Set<string>();
 

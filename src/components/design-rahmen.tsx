@@ -4,7 +4,7 @@ import { useLayoutEffect, type ReactNode } from "react";
 import { usePersoenlich } from "@/lib/personalisierung-store";
 import { designAttribut, type Darstellung, type Theme } from "@/lib/personalisierung";
 
-const ATTRIBUTE = ["data-theme", "data-schrift", "data-dichte", "data-bewegung"] as const;
+const ATTRIBUTE = ["data-theme", "data-schrift", "data-dichte", "data-bewegung", "data-leiste"] as const;
 
 /**
  * Design B3: äußerer Rahmen jeder angemeldeten Seite (`.dashboard`). Trägt Design und Darstellung als Attribute,
@@ -21,6 +21,7 @@ export function DesignRahmen({ theme, darstellung, children }: { theme: Theme; d
     "data-schrift": d.schrift === "gross" ? "gross" : undefined,
     "data-dichte": d.dichte === "kompakt" ? "kompakt" : undefined,
     "data-bewegung": d.bewegung === "reduziert" ? "reduziert" : undefined,
+    "data-leiste": d.leiste,
   };
 
   const schluessel = JSON.stringify(werte);

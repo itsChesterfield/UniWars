@@ -4,7 +4,7 @@
  *
  * Gespeichert in `settings`:
  * - `symbolleiste`: {"reihe": ["hub", "work-station", …], "aus": ["mindmap"]}
- * - `darstellung`: {"schrift": "normal", "dichte": "normal", "bewegung": "system", "design_schalter": false}
+ * - `darstellung`: {"schrift": "normal", "dichte": "normal", "bewegung": "system", "leiste": "hover", "design_schalter": false}
  * Das Design selbst steht in `settings.theme` (HELL, DUNKEL, SYSTEM).
  */
 
@@ -45,16 +45,19 @@ export type Darstellung = {
   schrift: "normal" | "gross";
   dichte: "normal" | "kompakt";
   bewegung: "system" | "reduziert";
+  /** Seitenleiste: beim Drüberfahren ausklappen, immer ausgeklappt oder immer schmal */
+  leiste: "hover" | "offen" | "zu";
   /** Design-Schalter in der Kopfleiste (Standard aus) */
   design_schalter: boolean;
 };
 
-export const STANDARD_DARSTELLUNG: Darstellung = { schrift: "normal", dichte: "normal", bewegung: "system", design_schalter: false };
+export const STANDARD_DARSTELLUNG: Darstellung = { schrift: "normal", dichte: "normal", bewegung: "system", leiste: "hover", design_schalter: false };
 
 const WERTE = {
   schrift: ["normal", "gross"],
   dichte: ["normal", "kompakt"],
   bewegung: ["system", "reduziert"],
+  leiste: ["hover", "offen", "zu"],
 } as const;
 
 /** Liest den gespeicherten Wert. Unbekannte Schlüssel fallen weg, unbekannte Werte werden zum Standard. */
@@ -67,6 +70,7 @@ export function darstellungLesen(roh: unknown): Darstellung {
     dichte: wahl("dichte"),
     // „ruhig“ hieß es im Dummy
     bewegung: o.bewegung === "ruhig" ? "reduziert" : wahl("bewegung"),
+    leiste: wahl("leiste"),
     design_schalter: o.design_schalter === true,
   };
 }

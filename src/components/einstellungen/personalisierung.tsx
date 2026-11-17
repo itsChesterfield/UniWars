@@ -413,6 +413,14 @@ export function Personalisierung({
         <Zeile label="Schriftgröße">
           <Segment label="Schriftgröße" wert={d.schrift} optionen={[["normal", "Normal"], ["gross", "Groß"]]} onWahl={(w) => darstellungSetzen("schrift", w)} />
         </Zeile>
+        <Zeile label="Seitenleiste" info="Wie sich die Leiste links mit den Bereichen verhält.">
+          <Segment
+            label="Seitenleiste"
+            wert={d.leiste}
+            optionen={[["hover", "Beim Drüberfahren"], ["offen", "Ausgeklappt"], ["zu", "Eingeklappt"]]}
+            onWahl={(w) => darstellungSetzen("leiste", w)}
+          />
+        </Zeile>
         <Zeile label="Dichte" info="Kompakt rückt Abstände enger zusammen.">
           <Segment label="Dichte" wert={d.dichte} optionen={[["normal", "Normal"], ["kompakt", "Kompakt"]]} onWahl={(w) => darstellungSetzen("dichte", w)} />
         </Zeile>
