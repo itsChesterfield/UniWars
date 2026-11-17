@@ -6,7 +6,7 @@
 /** Ereignis: Bearbeiten-Modus des Hubs starten (Kopfleiste, später Befehlspalette und Einstellungen). */
 export const HUB_ANORDNEN = "uniwars-hub-anordnen";
 
-export type BausteinId = "naechstes" | "fakten" | "heute" | "vorschlag" | "woche" | "wiederholen";
+export type BausteinId = "naechstes" | "fakten" | "heute" | "vorschlag" | "woche" | "wiederholen" | "mensa";
 export type Groesse = "S" | "M" | "L";
 export type HubEintrag = [id: BausteinId, sichtbar: boolean, groesse: Groesse];
 export type HubLayout = HubEintrag[];
@@ -18,6 +18,7 @@ export const BAUSTEIN_NAMEN: Record<BausteinId, string> = {
   vorschlag: "Dein Tag",
   woche: "Diese Woche",
   wiederholen: "Wiederholen",
+  mensa: "Mensa heute",
 };
 
 /** Jeder Baustein erlaubt nur Größen, in denen sein Inhalt funktioniert. */
@@ -28,6 +29,7 @@ export const GROESSEN: Record<BausteinId, Groesse[]> = {
   vorschlag: ["S", "M", "L"],
   woche: ["M", "L"],
   wiederholen: ["S", "M"],
+  mensa: ["S", "M", "L"],
 };
 
 export const SPANNE: Record<Groesse, number> = { S: 1, M: 2, L: 3 };
@@ -45,6 +47,7 @@ export const VOREINSTELLUNGEN: Record<Voreinstellung, HubLayout> = {
     ["fakten", false, "L"],
     ["woche", false, "L"],
     ["wiederholen", false, "S"],
+    ["mensa", false, "M"],
   ],
   ausgewogen: [
     ["vorschlag", true, "L"],
@@ -53,6 +56,7 @@ export const VOREINSTELLUNGEN: Record<Voreinstellung, HubLayout> = {
     ["heute", true, "L"],
     ["woche", true, "L"],
     ["wiederholen", false, "S"],
+    ["mensa", false, "M"],
   ],
   alles: [
     ["vorschlag", true, "L"],
@@ -61,6 +65,7 @@ export const VOREINSTELLUNGEN: Record<Voreinstellung, HubLayout> = {
     ["wiederholen", true, "S"],
     ["heute", true, "L"],
     ["woche", true, "L"],
+    ["mensa", false, "M"],
   ],
 };
 

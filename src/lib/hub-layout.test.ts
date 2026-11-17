@@ -40,7 +40,7 @@ test("Hub-Layout lesen: Größe korrigieren, Doppeltes verwerfen, Fehlendes ausg
     ["heute", true, "M"],
     ["vorschlag", false, "M"],
   ]);
-  assert.equal(l.length, 6);
+  assert.equal(l.length, 7);
   assert.deepEqual(sichtbare(l), ["heute"]);
 });
 

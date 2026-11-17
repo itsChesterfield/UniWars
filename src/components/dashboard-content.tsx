@@ -26,6 +26,7 @@ import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschrit
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
 import { SchnellErfassenKnopf } from "@/components/quick-add";
+import type { Speiseplan } from "@/lib/mensa";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
@@ -68,6 +69,7 @@ export function DashboardContent({
   karten,
   serverJetzt,
   bereich = "uebersicht",
+  mensa = null,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -87,6 +89,8 @@ export function DashboardContent({
   serverJetzt: string;
   /** Übersicht oder ein einzelner Bereich als eigene Seite (Kontextspalte) */
   bereich?: Bereich;
+  /** Speiseplan der gewählten Mensa (nur Übersicht) */
+  mensa?: Speiseplan | null;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -341,6 +345,8 @@ export function DashboardContent({
               streak: settings.streak_count,
               karten,
               serverJetzt,
+              mensa,
+              mensaGewaehlt: Boolean(settings.mensa_id),
             }}
             layoutRoh={settings.hub_layout}
           />

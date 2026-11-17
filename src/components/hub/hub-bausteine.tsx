@@ -9,6 +9,7 @@ import { SCHNELL_ERFASSEN } from "@/components/quick-add";
 import { track } from "@/lib/analytics";
 import { restzeitGross } from "@/lib/countdown";
 import type { BausteinId } from "@/lib/hub-layout";
+import { preisText, type Speiseplan } from "@/lib/mensa";
 import { faelligText, minutenText, restUhr, wochenTage } from "@/lib/hub-texte";
 import type { Tables } from "@/lib/supabase/types";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
@@ -28,6 +29,9 @@ export type HubDaten = {
   karten: FaelligeKarten;
   /** Zeitpunkt der Anfrage auf dem Server (ISO): Mit ihm zeichnen Server und Browser den ersten Stand gleich */
   serverJetzt: string;
+  /** Speiseplan der gewählten Mensa (null: keine gewählt oder gerade nicht erreichbar) */
+  mensa?: Speiseplan | null;
+  mensaGewaehlt?: boolean;
 };
 
 /**
@@ -459,7 +463,50 @@ function Wiederholen({ d }: { d: HubDaten }) {
   );
 }
 
+/* ---------- Mensa heute ---------- */
+
+function MensaHeute({ d }: { d: HubDaten }) {
+  const plan = d.mensa;
+  const tag = plan?.datum && !plan.heute ? new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${plan.datum}T12:00:00`)) : null;
+  return (
+    <section className="mensa-ab" aria-labelledby="hub-mensa">
+      <div className="kopfzeile">
+        <h2 id="hub-mensa">{plan?.heute === false && plan.datum ? "Mensa" : "Mensa heute"}</h2>
+        {plan && <span className="info">{plan.mensa}{tag ? ` · ${tag}` : ""}</span>}
+        <Link href="/einstellungen" className="link rechts">
+          {d.mensaGewaehlt ? "Ändern" : "Mensa wählen"}
+        </Link>
+      </div>
+      {!d.mensaGewaehlt ? (
+        <p className="vleer">
+          Wähle deine Mensa, dann siehst du hier jeden Tag den Speiseplan. <Link href="/einstellungen" className="link">Mensa wählen</Link>
+        </p>
+      ) : !plan ? (
+        <p className="vleer">Der Speiseplan lässt sich gerade nicht laden.</p>
+      ) : plan.gerichte.length === 0 ? (
+        <p className="vleer">{plan.datum ? "Für diesen Tag ist noch kein Speiseplan eingetragen." : "Die Mensa hat in den nächsten Tagen geschlossen."}</p>
+      ) : (
+        <ul className="mensa-liste">
+          {plan.gerichte.map((g, i) => (
+            <li key={i}>
+              <div>
+                <span className="mensa-gericht">{g.name}</span>
+                <span className="meta">
+                  {g.kategorie}
+                  {g.vegan ? " · vegan" : g.vegetarisch ? " · vegetarisch" : ""}
+                </span>
+              </div>
+              {g.preis !== null && <span className="zahl mensa-preis">{preisText(g.preis)}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function HubBaustein({ id, d }: { id: BausteinId; d: HubDaten }): ReactNode {
+  if (id === "mensa") return <MensaHeute d={d} />;
   if (id === "naechstes") return <Naechstes d={d} />;
   if (id === "fakten") return <Fakten d={d} />;
   if (id === "heute") return <Heute d={d} />;
