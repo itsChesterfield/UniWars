@@ -179,15 +179,11 @@ export function DashboardContent({
         />
   );
 
-  const aufgabenKarte = (klasse: string, scroll: boolean) => (
-        <section className={`card ${klasse}`}>
-          <div className="ch">
-            <span className="ct">Aufgaben &amp; Fristen</span>
-            <span className="muted" style={{ fontSize: 12 }}>Neu anlegen über &quot;Schnell erfassen&quot;</span>
-          </div>
-
-          <div className={scroll ? "aufgaben-scroll" : "aufgaben-voll"}>
-            <h3 className="aufgaben-untertitel">Deadlines &amp; Fristen</h3>
+  // Design B3: keine Karte, drei Abschnitte mit Trennlinien. Neu anlegen über „Schnell erfassen“ im Seitenkopf.
+  const aufgabenKarte = (klasse: string) => (
+        <div className={`aufgaben-seite ${klasse}`}>
+          <section aria-labelledby="abschnitt-deadlines">
+            <h2 id="abschnitt-deadlines" className="abschnitt-titel">Deadlines</h2>
             <DeadlineManager
               key={`deadline-${filterKey}`}
               initialDeadlines={gefilterteDeadlines}
@@ -197,7 +193,9 @@ export function DashboardContent({
               userId={userId}
             />
 
-            <h3 className="aufgaben-untertitel">To-Dos</h3>
+          </section>
+          <section aria-labelledby="abschnitt-todos">
+            <h2 id="abschnitt-todos" className="abschnitt-titel">To-Dos</h2>
             <TodoManager
               key={`todo-${filterKey}`}
               initialTodos={gefilterteTodos}
@@ -208,7 +206,9 @@ export function DashboardContent({
               userId={userId}
             />
 
-            <h3 className="aufgaben-untertitel">Prüfungen</h3>
+          </section>
+          <section aria-labelledby="abschnitt-pruefungen">
+            <h2 id="abschnitt-pruefungen" className="abschnitt-titel">Prüfungen</h2>
             <PruefungManager
               key={`pruefung-${filterKey}`}
               initialPruefungen={gefiltertePruefungen}
@@ -218,8 +218,8 @@ export function DashboardContent({
               versteckeErstellen
               userId={userId}
             />
-          </div>
-        </section>
+          </section>
+        </div>
   );
 
   const notenBlock = (klasse: string) => (
@@ -370,7 +370,7 @@ export function DashboardContent({
           {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
 
           {bereich === "termine" && <div className="dashboard-grid">{terminKarte("span-12")}</div>}
-          {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12", false)}</div>}
+          {bereich === "aufgaben" && <div className="dashboard-grid">{aufgabenKarte("span-12")}</div>}
           {bereich === "noten" && <div className="dashboard-grid">{notenBlock("span-12")}</div>}
           {bereich === "fortschritt" && (
             <div className="dashboard-grid">

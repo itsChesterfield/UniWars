@@ -15,6 +15,9 @@ import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdow
 import { DeadlineTeilen } from "@/components/deadline-teilen";
 import { Unteraufgaben } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
+import { Zustand } from "@/components/zustand";
+import { ErfassenKnopf } from "@/components/erfassen-knopf";
+import { Icon } from "@/components/nav-icon";
 
 type Deadline = Tables<"deadline">;
 
@@ -162,15 +165,34 @@ export function DeadlineManager({
   const inhalt = (
     <>
       {!versteckeErstellen && (
-        <div className="rowb" style={{ marginBottom: 14 }}>
-          <span />
-          <button type="button" onClick={openCreateForm} className="btnp">
-            + Deadline
+        <div className="liste-kopf">
+          <button type="button" onClick={openCreateForm} className="knopf neben klein">
+            <Icon name="plus" groesse={16} />
+            Deadline
           </button>
         </div>
       )}
 
-      {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Deadlines.</p>}
+      {sortiert.length === 0 && !formOpen && (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Keine Deadlines."
+          aktion={
+            versteckeErstellen ? (
+              <ErfassenKnopf modus="ABGABE">Deadline erfassen</ErfassenKnopf>
+            ) : (
+              <button type="button" className="knopf neben klein" onClick={openCreateForm}>
+                <Icon name="plus" groesse={16} />
+                Deadline
+              </button>
+            )
+          }
+        >
+          Abgaben, Fristen und Termine mit Datum stehen hier, die nächste zuerst.
+        </Zustand>
+      )}
 
       <ul className="entry-list">
         {sortiert.map((d) => {
@@ -204,7 +226,7 @@ export function DeadlineManager({
                       absolutesDatum(d.faellig_am),
                     ]
                       .filter(Boolean)
-                      .join(" · ")}
+                      .join(", ")}
                   </span>
                 </div>
                 {!d.erledigt && (() => {
@@ -222,10 +244,10 @@ export function DeadlineManager({
                 })()}
                 <div className="entry-actions">
                   {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
-                  <button type="button" onClick={() => openEditForm(d)}>
+                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(d)}>
                     Bearbeiten
                   </button>
-                  <button type="button" onClick={() => handleDelete(d.id)}>
+                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(d.id)}>
                     Löschen
                   </button>
                 </div>
@@ -347,10 +369,10 @@ export function DeadlineManager({
           )}
 
           <div className="crud-form-actions">
-            <button type="submit" className="btnp" disabled={isPending}>
+            <button type="submit" className="knopf haupt" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
-            <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
+            <button type="button" className="knopf leise" onClick={() => setFormOpen(false)} disabled={isPending}>
               Abbrechen
             </button>
           </div>

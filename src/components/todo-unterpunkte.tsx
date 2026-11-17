@@ -10,6 +10,7 @@ import {
 } from "@/components/unteraufgaben-editor";
 import { absolutesDatum } from "@/lib/countdown";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 import type { Tables } from "@/lib/supabase/types";
 
 type Todo = Tables<"todo">;
@@ -76,8 +77,9 @@ export function TodoUnterpunkte({
 
   if (unterpunkte.length === 0 && !formOpen) {
     return (
-      <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-        + Unterpunkte
+      <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
+        <Icon name="plus" groesse={16} />
+        Unterpunkte
       </button>
     );
   }
@@ -86,9 +88,9 @@ export function TodoUnterpunkte({
     <div className="unteraufgaben">
       {sortiert.map((t) => {
         const name = nameVon(t.zugewiesen_an);
-        const details = [name ? `→ ${name}` : null, t.faellig_am ? absolutesDatum(t.faellig_am) : null]
+        const details = [name ? `Für ${name}` : null, t.faellig_am ? absolutesDatum(t.faellig_am) : null]
           .filter(Boolean)
-          .join(" · ");
+          .join(", ");
         return (
           <div key={t.id} className={`unteraufgabe-row ${t.erledigt ? "entry-erledigt" : ""}`}>
             <input
@@ -99,10 +101,10 @@ export function TodoUnterpunkte({
             />
             <div className="unteraufgabe-info">
               <span>{t.titel}</span>
-              {details && <span className="muted" style={{ fontSize: 11 }}>{details}</span>}
+              {details && <span className="unteraufgabe-meta">{details}</span>}
             </div>
-            <button type="button" onClick={() => handleDelete(t.id)} aria-label="Unterpunkt löschen">
-              ✕
+            <button type="button" className="unteraufgabe-weg" onClick={() => handleDelete(t.id)} aria-label="Unterpunkt löschen">
+              <Icon name="schliessen" groesse={16} />
             </button>
           </div>
         );
@@ -118,8 +120,9 @@ export function TodoUnterpunkte({
           onAbbrechen={() => setFormOpen(false)}
         />
       ) : (
-        <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-          + Unterpunkte
+        <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
+          <Icon name="plus" groesse={16} />
+          Unterpunkte
         </button>
       )}
     </div>

@@ -12,6 +12,9 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { Unteraufgaben } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
+import { Zustand } from "@/components/zustand";
+import { ErfassenKnopf } from "@/components/erfassen-knopf";
+import { Icon } from "@/components/nav-icon";
 
 type Pruefung = Tables<"pruefung">;
 type Deadline = Tables<"deadline">;
@@ -126,15 +129,34 @@ export function PruefungManager({
   const inhalt = (
     <>
       {!versteckeErstellen && (
-        <div className="rowb" style={{ marginBottom: 14 }}>
-          <span />
-          <button type="button" onClick={openCreateForm} className="btnp">
-            + Prüfung
+        <div className="liste-kopf">
+          <button type="button" onClick={openCreateForm} className="knopf neben klein">
+            <Icon name="plus" groesse={16} />
+            Prüfung
           </button>
         </div>
       )}
 
-      {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine Prüfungen.</p>}
+      {sortiert.length === 0 && !formOpen && (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Keine Prüfungen."
+          aktion={
+            versteckeErstellen ? (
+              <ErfassenKnopf modus="PRUEFUNG">Prüfung erfassen</ErfassenKnopf>
+            ) : (
+              <button type="button" className="knopf neben klein" onClick={openCreateForm}>
+                <Icon name="plus" groesse={16} />
+                Prüfung
+              </button>
+            )
+          }
+        >
+          Klausuren und mündliche Prüfungen mit Datum, Raum und Status.
+        </Zustand>
+      )}
 
       <ul className="entry-list">
         {sortiert.map((p) => {
@@ -142,7 +164,6 @@ export function PruefungManager({
           return (
             <li key={p.id} className="entry-row entry-row-mit-unteraufgaben">
               <div className="entry-row-main">
-                <span className={`status-marke status-${p.status.toLowerCase()}`} aria-hidden />
                 <div className="entry-info">
                   <button
                     type="button"
@@ -162,14 +183,14 @@ export function PruefungManager({
                       STATUS_LABEL[p.status],
                     ]
                       .filter(Boolean)
-                      .join(" · ")}
+                      .join(", ")}
                   </span>
                 </div>
                 <div className="entry-actions">
-                  <button type="button" onClick={() => openEditForm(p)}>
+                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(p)}>
                     Bearbeiten
                   </button>
-                  <button type="button" onClick={() => handleDelete(p.id)}>
+                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(p.id)}>
                     Löschen
                   </button>
                 </div>
@@ -246,10 +267,10 @@ export function PruefungManager({
           </select>
 
           <div className="crud-form-actions">
-            <button type="submit" className="btnp" disabled={isPending}>
+            <button type="submit" className="knopf haupt" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
-            <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
+            <button type="button" className="knopf leise" onClick={() => setFormOpen(false)} disabled={isPending}>
               Abbrechen
             </button>
           </div>

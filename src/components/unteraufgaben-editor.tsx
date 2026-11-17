@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 export type UnteraufgabeEingabe = {
   titel: string;
@@ -101,7 +102,7 @@ export function UnteraufgabenEditor({
 
   return (
     <div className="unteraufgabe-form">
-      {error && <p className="auth-error" style={{ fontSize: 12 }}>{error}</p>}
+      {error && <p className="auth-error unteraufgabe-fehler">{error}</p>}
 
       {zeilen.map((z, index) => (
         <div key={z.tempId} className="unteraufgabe-zeile">
@@ -117,10 +118,11 @@ export function UnteraufgabenEditor({
             />
             <button
               type="button"
+              className="unteraufgabe-weg"
               onClick={() => entferneZeile(z.tempId)}
               aria-label={`Unteraufgabe ${index + 1} entfernen`}
             >
-              ✕
+              <Icon name="schliessen" groesse={16} />
             </button>
           </div>
           <div className="unteraufgabe-zeile-felder">
@@ -150,26 +152,16 @@ export function UnteraufgabenEditor({
         </div>
       ))}
 
-      <button type="button" className="unteraufgabe-add" onClick={zeileHinzufuegen}>
-        + Weitere Unteraufgabe
+      <button type="button" className="link unteraufgabe-add" onClick={zeileHinzufuegen}>
+        <Icon name="plus" groesse={16} />
+        Weitere Unteraufgabe
       </button>
 
-      <div className="row" style={{ gap: 6 }}>
-        <button
-          type="button"
-          className="btnp"
-          onClick={speichern}
-          disabled={speichert}
-          style={{ padding: "6px 14px", fontSize: 12 }}
-        >
+      <div className="unteraufgabe-knoepfe">
+        <button type="button" className="knopf haupt klein" onClick={speichern} disabled={speichert} aria-busy={speichert}>
           {speichert ? "Speichern…" : speichernLabel}
         </button>
-        <button
-          type="button"
-          onClick={onAbbrechen}
-          disabled={speichert}
-          style={{ padding: "6px 14px", fontSize: 12 }}
-        >
+        <button type="button" className="knopf leise klein" onClick={onAbbrechen} disabled={speichert}>
           {abbrechenLabel}
         </button>
       </div>

@@ -80,7 +80,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
 
   return (
     <div className="deadline-teilen">
-      <button type="button" onClick={toggleOpen} className="deadline-teilen-btn">
+      <button type="button" onClick={toggleOpen} className="knopf leise klein" aria-expanded={open}>
         Teilen
       </button>
 
@@ -91,9 +91,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
               {mitglieder.map((m) => (
                 <li key={m.user_id}>
                   <span className="tag">{m.username ?? "?"}</span>
-                  <span className="muted" style={{ fontSize: 11 }}>
-                    {m.ist_ersteller ? "Ersteller" : STATUS_LABEL[m.status]}
-                  </span>
+                  <span className="unteraufgabe-meta">{m.ist_ersteller ? "Ersteller" : STATUS_LABEL[m.status]}</span>
                 </li>
               ))}
             </ul>
@@ -102,6 +100,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
           <input
             type="text"
             placeholder="Nutzername suchen…"
+            aria-label="Nutzername suchen"
             value={suchtext}
             onChange={(e) => handleSuchtextChange(e.target.value)}
             className="deadline-teilen-input"
@@ -112,7 +111,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
               {treffer.map((t) => (
                 <li key={t.user_id}>
                   <span>{t.username}</span>
-                  <button type="button" disabled={isPending} onClick={() => einladen(t.username)}>
+                  <button type="button" className="knopf neben klein" disabled={isPending} aria-busy={isPending} onClick={() => einladen(t.username)}>
                     Einladen
                   </button>
                 </li>
@@ -120,8 +119,12 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
             </ul>
           )}
 
-          {error && <p className="auth-error" style={{ fontSize: 12 }}>{error}</p>}
-          {erfolg && <p className="muted" style={{ fontSize: 12 }}>{erfolg}</p>}
+          {error && <p className="auth-error unteraufgabe-fehler">{error}</p>}
+          {erfolg && (
+            <p className="unteraufgabe-meta" role="status">
+              {erfolg}
+            </p>
+          )}
         </div>
       )}
     </div>
