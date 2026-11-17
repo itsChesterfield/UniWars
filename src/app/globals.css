@@ -8697,40 +8697,45 @@ button.pdf-pfad-teil:hover {
   font-size: 12px;
 }
 
-/* --- Zentraler Hub: Notch mit den Bereichen als eigene Seiten --- */
+/* --- Zentraler Hub: Notch mit den Bereichen als eigene Seiten ---
+   Getönt und ohne Rand wie das Segment (DESIGN.md Abschnitt 3). */
 .haupt-notch {
   align-self: center;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-half);
   max-width: 100%;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
+  padding: var(--space-half);
+  border-radius: var(--radius-pill);
+  background: var(--hover);
 }
 
 .haupt-notch a {
-  padding: 5px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-2);
   text-decoration: none;
   white-space: nowrap;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .haupt-notch a:hover {
   color: var(--text);
-  background: var(--card2);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
   text-decoration: none;
 }
 
 .haupt-notch a.an {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
 }
 
 .aufgaben-voll {
@@ -12676,6 +12681,8 @@ html[data-eingebettet] .arbeitsflaeche {
 [data-bewegung="reduziert"] *::before,
 [data-bewegung="reduziert"] *::after {
   transition-duration: 0s !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
 }
 
@@ -12699,16 +12706,18 @@ html[data-eingebettet] .arbeitsflaeche {
   transform: translateX(-100%);
 }
 
-html[data-laedt] .kopfleiste .ladespur {
+/* Zeigt der Bereich schon ein Skelett, ist das die Ladeanzeige. Dann weder Lichtspur
+   noch gedämpfte Fläche daneben (DESIGN.md Abschnitt 7: eine Anzeige pro Ladevorgang). */
+html[data-laedt]:not(:has(.lade-skelett)) .kopfleiste .ladespur {
   opacity: 1;
   transition: opacity var(--dur-short) var(--ease-out) 300ms;
 }
 
-html[data-laedt] .kopfleiste .ladespur i {
+html[data-laedt]:not(:has(.lade-skelett)) .kopfleiste .ladespur i {
   animation: lichtspur 1.1s var(--ease-out) 300ms infinite;
 }
 
-html[data-laedt] .arbeitsflaeche .dashboard-main {
+html[data-laedt] .arbeitsflaeche .dashboard-main:not(:has(.lade-skelett)) {
   opacity: 0.6;
   transition: opacity var(--dur-short) var(--ease-out) 300ms;
 }
@@ -12720,12 +12729,21 @@ html[data-laedt] .arbeitsflaeche .dashboard-main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-laedt] .kopfleiste .ladespur i {
+  html[data-laedt]:not(:has(.lade-skelett)) .kopfleiste .ladespur i {
     animation: none;
     width: 100%;
     transform: none;
     opacity: 0.6;
   }
+}
+
+/* Gleiches Bild über die Einstellung „Bewegung: Reduziert": die Spur steht still,
+   bleibt aber sichtbar, damit das Laden erkennbar ist. */
+html[data-bewegung="reduziert"][data-laedt]:not(:has(.lade-skelett)) .kopfleiste .ladespur i {
+  animation: none !important;
+  width: 100%;
+  transform: none;
+  opacity: 0.6;
 }
 
 /* Offline */
@@ -14491,27 +14509,27 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   margin-top: 2px;
 }
 
-/* Ladeanzeige beim Wechsel zwischen Bereichen */
+/* Ladeanzeige beim Wechsel zwischen Bereichen. Erst nach 300 ms sichtbar, damit schnelle
+   Wechsel nicht flackern (DESIGN.md Abschnitt 7). Bewegung nur über opacity. */
 .lade-skelett {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-8);
-  animation: lade-ein 160ms ease-out 120ms both;
+  animation: lade-ein var(--dur-short) var(--ease-out) 300ms both;
 }
 
 .lade-skelett .lade-zeile,
 .lade-skelett .lade-block {
   display: block;
   border-radius: var(--radius-m);
-  background: linear-gradient(90deg, var(--linie) 0%, color-mix(in srgb, var(--linie) 40%, transparent) 50%, var(--linie) 100%);
-  background-size: 200% 100%;
-  animation: lade-glanz 1.2s ease-in-out infinite;
+  background: var(--linie);
+  animation: lade-puls 1.2s var(--ease-out) 300ms infinite;
 }
 
 .lade-skelett .lade-zeile {
   width: 32%;
-  height: 18px;
+  height: 16px;
 }
 
 .lade-skelett .lade-zeile.breit {
@@ -14533,17 +14551,26 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   height: 240px;
 }
 
-@keyframes lade-glanz {
-  from { background-position: 100% 0; }
-  to { background-position: -100% 0; }
+@keyframes lade-puls {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 
-/* Erst nach kurzer Verzögerung sichtbar: schnelle Wechsel flackern nicht */
 @keyframes lade-ein {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
+/* Ohne Bewegung steht das Skelett still, erscheint aber weiterhin erst nach 300 ms. */
 @media (prefers-reduced-motion: reduce) {
   .lade-skelett .lade-zeile,
   .lade-skelett .lade-block {
@@ -14551,10 +14578,17 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   }
 }
 
-/* Symbolleiste ausgeklappt: Namen neben den Symbolen (Knopf unten in der Leiste) */
-.rail {
-  transition: width var(--dur-micro) var(--ease-out);
+html[data-bewegung="reduziert"] .lade-skelett .lade-zeile,
+html[data-bewegung="reduziert"] .lade-skelett .lade-block {
+  animation: none !important;
 }
+
+html[data-bewegung="reduziert"] .lade-skelett {
+  animation: lade-ein 1ms linear 300ms both !important;
+}
+
+/* Symbolleiste ausgeklappt: Namen neben den Symbolen (Knopf unten in der Leiste).
+   Die Breite wird nicht animiert (DESIGN.md Abschnitt 7), der Wechsel gilt sofort. */
 
 @media (min-width: 761px) {
   html[data-rail-offen] .rail {
@@ -14621,7 +14655,9 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   margin: 0;
   padding: var(--space-1);
   border-radius: var(--radius-m);
-  box-shadow: 0 0 0 1px var(--linie), 0 8px 24px rgb(0 0 0 / 0.08);
+  box-shadow:
+    0 0 0 1px var(--linie),
+    0 8px 24px var(--schatten);
   background: var(--flaeche);
 }
 

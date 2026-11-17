@@ -84,11 +84,11 @@ export function SemesterBlock({
           </dl>
           <div className="hs-gewaehlt">
             {termine.rueckmeldung_bis && termine.rueckmeldung_bis >= heute && (
-              <button type="button" className="btng" disabled={laeuft} onClick={() => ausfuehren(rueckmeldungAlsFrist, "rueckmeldung_als_frist")}>
+              <button type="button" className="knopf neben klein" disabled={laeuft} onClick={() => ausfuehren(rueckmeldungAlsFrist, "rueckmeldung_als_frist")}>
                 Rückmeldung als Frist eintragen
               </button>
             )}
-            <button type="button" className={gepflegt ? "btng" : "btnp"} disabled={laeuft} onClick={() => setBearbeiten(true)}>
+            <button type="button" className={gepflegt ? "knopf leise klein" : "knopf haupt klein"} disabled={laeuft} onClick={() => setBearbeiten(true)}>
               {gepflegt ? "Termine korrigieren" : "Echte Termine eintragen"}
             </button>
           </div>
@@ -114,10 +114,10 @@ export function SemesterBlock({
             </label>
           ))}
           <div className="hs-gewaehlt">
-            <button type="button" className="btng" disabled={laeuft} onClick={() => (setWerte(termine), setBearbeiten(false))}>
+            <button type="button" className="knopf leise" disabled={laeuft} onClick={() => (setWerte(termine), setBearbeiten(false))}>
               Abbrechen
             </button>
-            <button type="submit" className="btnp" disabled={laeuft}>
+            <button type="submit" className="knopf haupt" disabled={laeuft}>
               Für alle speichern
             </button>
           </div>
