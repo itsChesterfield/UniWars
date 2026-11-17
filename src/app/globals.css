@@ -14549,3 +14549,54 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     animation: none;
   }
 }
+
+/* Symbolleiste ausgeklappt: Namen neben den Symbolen (Knopf unten in der Leiste) */
+.rail {
+  transition: width var(--dur-micro) var(--ease-out);
+}
+
+@media (min-width: 761px) {
+  html[data-rail-offen] .rail {
+    width: 216px;
+    align-items: stretch;
+    padding-inline: var(--space-3);
+  }
+
+  html[data-rail-offen] .rmarke {
+    margin-left: 0;
+  }
+
+  html[data-rail-offen] .rpunkt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: 0 11px;
+  }
+
+  html[data-rail-offen] .rpunkt .tip {
+    position: static;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: var(--text-sm);
+    opacity: 1;
+    visibility: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html[data-rail-offen] .rpunkt .tip kbd {
+    display: none;
+  }
+
+  html[data-rail-offen] .rtrenn {
+    width: auto;
+    margin-inline: 11px;
+  }
+
+  html[data-rail-offen] .rfuss {
+    align-items: stretch;
+  }
+}
