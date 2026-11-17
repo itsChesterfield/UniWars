@@ -32,6 +32,8 @@ export type HubDaten = {
   /** Speiseplan der gewählten Mensa (null: keine gewählt oder gerade nicht erreichbar) */
   mensa?: Speiseplan | null;
   mensaGewaehlt?: boolean;
+  /** z. B. „WiSe 2026/27 · Vorlesungswoche 6 von 17“ */
+  semester?: string | null;
 };
 
 /**
@@ -376,6 +378,7 @@ function Woche({ d }: { d: HubDaten }) {
     <section className="woche-ab" aria-labelledby="hub-woche">
       <div className="kopfzeile">
         <h2 id="hub-woche">Diese Woche</h2>
+        {d.semester && <span className="info">{d.semester}</span>}
         <Link href="/termine" className="link rechts">
           Stundenplan
         </Link>

@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { speiseplan } from "@/lib/mensa-server";
+import { semesterLage } from "@/lib/semester-server";
+import { semesterName, semesterStand, datumKurz } from "@/lib/semester";
+import { berlinDatum } from "@/lib/zeit";
 import { googleEinrichtungsProbleme } from "@/lib/kalender/google";
 import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
@@ -93,7 +96,11 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
 
   const username = anzeigeName(settings, user);
   // Speiseplan nur für die Übersicht und nur mit gewählter Mensa (OpenMensa, 30 min zwischengespeichert)
-  const mensa = bereich === "uebersicht" && settings.mensa_id ? await speiseplan(settings.mensa_id, settings.mensa_name ?? "Mensa") : null;
+  const [mensa, sem] = await Promise.all([
+    bereich === "uebersicht" && settings.mensa_id ? speiseplan(settings.mensa_id, settings.mensa_name ?? "Mensa") : null,
+    bereich === "uebersicht" && settings.hochschule_id ? semesterLage(supabase).catch(() => null) : null,
+  ]);
+  const semesterText = sem ? semesterKurz(sem.termine, sem.land) : null;
   // Rahmen (Symbolleiste, Kopfleiste, Glocke) kommt aus app/(hubs)/layout.tsx und bleibt beim Wechsel stehen
   return (
     <Suspense fallback={null}>
@@ -118,7 +125,22 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         serverJetzt={new Date().toISOString()}
         bereich={bereich}
         mensa={mensa}
+        semester={semesterText}
       />
     </Suspense>
   );
+}
+
+/** Kurzinfo für „Diese Woche“, z. B. „WiSe 2026/27 · Vorlesungswoche 6 von 17“ */
+function semesterKurz(t: Parameters<typeof semesterStand>[0], land: string): string {
+  const s = semesterStand(t, berlinDatum(new Date()));
+  const wann =
+    s.phase === "vorlesungen"
+      ? `Vorlesungswoche ${s.woche} von ${s.wochen}`
+      : s.phase === "vor_beginn"
+        ? `Vorlesungen ab ${datumKurz(t.vorlesung_beginn)}`
+        : s.phase === "pruefungen"
+          ? "Prüfungszeit"
+          : "vorlesungsfrei";
+  return `${semesterName(t.semester, land, true)} · ${wann}`;
 }
