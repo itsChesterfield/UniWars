@@ -44,12 +44,15 @@ async function bildVerkleinern(datei: File): Promise<string> {
  */
 export function StundenplanFotoDialog({
   faecher,
+  vorhandene = 0,
   onSchliessen,
   onUebernommen,
 }: {
   faecher: FachOption[];
+  /** Anzahl der Einträge, die schon im Stundenplan stehen */
+  vorhandene?: number;
   onSchliessen: () => void;
-  onUebernommen: (eintraege: Tables<"stundenplan_eintrag">[]) => void;
+  onUebernommen: (eintraege: Tables<"stundenplan_eintrag">[], ersetzt: boolean) => void;
 }) {
   const ki = useKiTextStatus();
   const eingabe = useRef<HTMLInputElement>(null);
@@ -57,6 +60,8 @@ export function StundenplanFotoDialog({
   const [fehler, setFehler] = useState<string | null>(null);
   const [vorschau, setVorschau] = useState<string | null>(null);
   const [zeilen, setZeilen] = useState<Zeile[]>([]);
+  // Ein neues Foto ist meist der ganze Plan: Standard ist, den alten zu ersetzen
+  const [ersetzen, setErsetzen] = useState(vorhandene > 0);
 
   async function lesen(datei: File) {
     setFehler(null);
@@ -116,9 +121,10 @@ export function StundenplanFotoDialog({
           raum: z.raum,
           dozent: z.dozent,
         })),
+        ersetzen && vorhandene > 0,
       );
       track("stundenplan_foto_uebernommen", { eintraege: ergebnis.angelegt, neue_faecher: ergebnis.neueFaecher });
-      onUebernommen(ergebnis.eintraege);
+      onUebernommen(ergebnis.eintraege, ersetzen && vorhandene > 0);
     } catch (err) {
       fehlerMelden(err, { ort: "stundenplan_foto_uebernehmen" });
       setFehler("Speichern hat nicht geklappt. Bitte versuch es noch einmal.");
@@ -158,6 +164,12 @@ export function StundenplanFotoDialog({
               if (datei) void lesen(datei);
             }}
           />
+          {vorhandene > 0 && (
+            <label className="sp-foto-ersetzen">
+              <input type="checkbox" checked={ersetzen} onChange={(e) => setErsetzen(e.target.checked)} />
+              Bisherigen Stundenplan ersetzen ({vorhandene} {vorhandene === 1 ? "Eintrag wird" : "Einträge werden"} entfernt)
+            </label>
+          )}
           <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
             <KiLimitHinweis verbleibend={ki.verbleibend} limit={ki.status?.limit ?? 0} />
@@ -232,6 +244,12 @@ export function StundenplanFotoDialog({
               </table>
             </div>
           </div>
+          {vorhandene > 0 && (
+            <label className="sp-foto-ersetzen">
+              <input type="checkbox" checked={ersetzen} onChange={(e) => setErsetzen(e.target.checked)} />
+              Bisherigen Stundenplan ersetzen ({vorhandene} {vorhandene === 1 ? "Eintrag wird" : "Einträge werden"} entfernt)
+            </label>
+          )}
           <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
             <button type="button" className="btng" disabled={schritt === "speichert"} onClick={() => setSchritt("start")}>
