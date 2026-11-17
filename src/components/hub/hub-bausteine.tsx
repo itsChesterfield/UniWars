@@ -27,11 +27,16 @@ export type HubDaten = {
   lernSessions: Tables<"lern_session">[];
   streak: number;
   karten: FaelligeKarten;
+  /** Zeitpunkt der Anfrage auf dem Server (ISO): Mit ihm zeichnen Server und Browser den ersten Stand gleich */
+  serverJetzt: string;
 };
 
-/** Die Uhr läuft erst im Browser: Server und Browser sehen sonst verschiedene Zeiten. */
-function useJetzt(taktMs: number): Date | null {
-  const [jetzt, setJetzt] = useState<Date | null>(null);
+/**
+ * Die Uhr startet mit der Zeit des Servers, damit „morgen um 23:00“ und der Countdown schon im
+ * Server-HTML stehen und beim Laden nichts nachrutscht. Im Browser läuft sie danach mit der echten Zeit weiter.
+ */
+function useJetzt(taktMs: number, start: string): Date {
+  const [jetzt, setJetzt] = useState<Date>(() => new Date(start));
   useEffect(() => {
     const setzen = () => setJetzt(new Date());
     setzen();
@@ -73,7 +78,7 @@ function naechsterKandidat(d: HubDaten): Kandidat | null {
 }
 
 function Naechstes({ d }: { d: HubDaten }) {
-  const jetzt = useJetzt(1000);
+  const jetzt = useJetzt(1000, d.serverJetzt);
   const { oeffne } = useAufgabenDetail();
   const k = naechsterKandidat(d);
   const gruss = <DashboardUeberschrift name={d.name} standard={`Hallo, ${d.name}`} als="p" />;
@@ -151,7 +156,7 @@ function Naechstes({ d }: { d: HubDaten }) {
 /* ---------- Überblick ---------- */
 
 function Fakten({ d }: { d: HubDaten }) {
-  const jetzt = useJetzt(60_000);
+  const jetzt = useJetzt(60_000, d.serverJetzt);
   const heute = berlinDatum(jetzt ?? new Date());
   const tag = berlinWochentag(jetzt ?? new Date());
   const stunden = d.stundenplan.filter((e) => e.tag === tag).map((e) => e.start_zeit.slice(0, 5));
@@ -229,7 +234,7 @@ type PlanZeile = {
 const MAX_TODOS = 5;
 
 function Heute({ d }: { d: HubDaten }) {
-  const jetzt = useJetzt(60_000);
+  const jetzt = useJetzt(60_000, d.serverJetzt);
   const { oeffne } = useAufgabenDetail();
   const [, start] = useTransition();
   const [erledigt, setErledigt] = useState<Set<string>>(() => new Set(d.deadlines.filter((x) => x.erledigt).map((x) => x.id)));
@@ -360,7 +365,7 @@ const TAGE = ["MO", "DI", "MI", "DO", "FR", "SA", "SO"] as const;
 const TAG_KURZ: Record<(typeof TAGE)[number], string> = { MO: "Mo", DI: "Di", MI: "Mi", DO: "Do", FR: "Fr", SA: "Sa", SO: "So" };
 
 function Woche({ d }: { d: HubDaten }) {
-  const jetzt = useJetzt(600_000);
+  const jetzt = useJetzt(600_000, d.serverJetzt);
   const heute = jetzt ? berlinWochentag(jetzt) : null;
   const daten = jetzt ? wochenTage(jetzt) : null;
   const tage = TAGE.filter((t, i) => i < 5 || d.stundenplan.some((e) => e.tag === t));

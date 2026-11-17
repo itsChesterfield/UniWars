@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "@/components/nav-icon";
 import { NotificationBell } from "@/components/notification-bell";
-import { ProfilAvatar } from "@/components/profil-avatar";
+import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { befehleOeffnen } from "@/components/befehlspalette";
 import { hubAusPfad } from "@/lib/hubs/navigation";
 import { HUB_ANORDNEN } from "@/lib/hub-layout";
@@ -136,14 +136,22 @@ export function Kopfleiste({
         )}
       </div>
 
-      <button type="button" className="suchpille" onClick={() => befehleOeffnen()} aria-label="Suchen, öffnen, erstellen (Strg+O)">
+      <button
+        type="button"
+        className="suchpille"
+        onClick={() => befehleOeffnen()}
+        aria-keyshortcuts="Control+O Meta+O"
+        title="Suchen, öffnen, erstellen (Strg+O)"
+      >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="6.5" />
           <path d="m20 20-4.2-4.2" />
         </svg>
         <span className="suchpille-text">Suchen</span>
-        <kbd>Strg</kbd>
-        <kbd>O</kbd>
+        <span className="suchpille-kbd">
+          <kbd>Strg</kbd>
+          <kbd>O</kbd>
+        </span>
       </button>
 
       <div className="status">
@@ -180,7 +188,7 @@ export function Kopfleiste({
           </svg>
         </button>
       )}
-      <Link href="/einstellungen" className="nur-mobil kopf-profil" aria-label={`Profil und Einstellungen, ${name}`}>
+      <Link href="/einstellungen" className="nur-mobil kopf-profil" aria-label={avatarName(name, avatarUrl, `Profil und Einstellungen, ${name}`)}>
         <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
       </Link>
       <span className="ladespur" aria-hidden>
