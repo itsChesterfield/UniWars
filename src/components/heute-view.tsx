@@ -7,6 +7,9 @@ import { toggleTodoErledigt } from "@/app/todo/actions";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
+import { ErfassenKnopf } from "@/components/erfassen-knopf";
 
 type Deadline = Tables<"deadline">;
 type Todo = Tables<"todo">;
@@ -121,7 +124,9 @@ export function HeuteView({
   return (
     <>
       {timeline.length === 0 ? (
-        <p className="empty-state">Nichts Anstehendes für heute.</p>
+        <Zustand art="leer" region ebene={3} titel="Heute ist nichts geplant." aktion={<ErfassenKnopf modus="TERMIN">Termin erfassen</ErfassenKnopf>}>
+          Unterricht aus dem Stundenplan, Deadlines von heute und offene To-Dos erscheinen hier nach Uhrzeit.
+        </Zustand>
       ) : (
         <ul className="heute-liste">
           {timeline.map((item) => {
@@ -139,26 +144,25 @@ export function HeuteView({
                     aria-label="Erledigt"
                   />
                 ) : (
-                  <span className="heute-icon" aria-hidden>
-                    📅
+                  <span className="heute-icon">
+                    <Icon name="termine" groesse={18} />
                   </span>
                 )}
                 {item.zeit && <span className="heute-zeit">{item.zeit}</span>}
                 {item.ziel ? (
                   <button
                     type="button"
-                    className="entry-title entry-title-link"
-                    style={{ flex: 1 }}
+                    className="entry-title entry-title-link heute-titel"
                     onClick={() => item.ziel && oeffne(item.ziel.zielTyp, item.ziel.zielId)}
                   >
                     {item.titel}
                   </button>
                 ) : (
-                  <span className="entry-title" style={{ flex: 1 }}>
+                  <span className="entry-title heute-titel">
                     {item.titel}
                   </span>
                 )}
-                <span className={`tag ${dringend ? "tag-danger" : ""}`}>{item.typ}</span>
+                <span className={`heute-typ ${dringend ? "dringend" : ""}`}>{item.typ}</span>
               </li>
             );
           })}

@@ -135,6 +135,7 @@ export function DashboardContent({
   const terminKarte = (klasse: string) => (
         <SegmentedCard
           title="Termine"
+          titelVerstecken
           subtitle={heutigesDatum()}
           className={klasse}
           aktion={

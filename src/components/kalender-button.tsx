@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { kalenderJetztAbgleichen, kalenderTrennen } from "@/app/kalender/actions";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 const MELDUNG: Record<string, { text: string; fehler: boolean }> = {
   verbunden: { text: "Google Kalender verbunden – deine Einträge werden übertragen.", fehler: false },
@@ -13,6 +14,7 @@ const MELDUNG: Record<string, { text: string; fehler: boolean }> = {
   fehler: { text: "Verbinden hat nicht geklappt. Bitte erneut versuchen.", fehler: true },
 };
 
+/* Hallmark · answered 48 · Markenfarben des Google-Logos sind vorgegeben, keine Gestaltungsfarben */
 function GoogleIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden>
@@ -75,14 +77,19 @@ export function KalenderButton({
   return (
     <div className="kalender-button">
       {verbunden ? (
-        <button type="button" className="btng kalender-button-an" onClick={() => setMenueOffen((o) => !o)}>
-          <GoogleIcon /> Google Kalender ✓
+        <button
+          type="button"
+          className="knopf leise klein"
+          aria-expanded={menueOffen}
+          onClick={() => setMenueOffen((o) => !o)}
+        >
+          <GoogleIcon /> Kalender verbunden
         </button>
       ) : (
         <a
           href={konfiguriert ? "/kalender/google/verbinden" : undefined}
           aria-disabled={!konfiguriert}
-          className="btng kalender-button-aus"
+          className="knopf leise klein"
           title={konfiguriert ? "Mit Google Kalender verbinden" : "Noch nicht eingerichtet"}
           onClick={(e) => {
             if (!konfiguriert) {
@@ -95,20 +102,20 @@ export function KalenderButton({
             track("kalender_verbinden_geklickt", { anbieter: "google" });
           }}
         >
-          <GoogleIcon /> Mit Google Kalender verbinden
+          <GoogleIcon /> Google Kalender verbinden
         </a>
       )}
 
       {menueOffen && verbunden && (
         <div className="kalender-button-menue">
-          <p className="muted" style={{ fontSize: 12 }}>
+          <p className="kalender-button-text">
             Deine UniWars-Einträge erscheinen im Kalender „UniWars“. Termine aus Google siehst du hier
             nur als „Belegt“.
           </p>
-          <button type="button" className="btng" disabled={isPending} onClick={abgleichen}>
-            {isPending ? "…" : "Jetzt abgleichen"}
+          <button type="button" className="knopf neben klein" disabled={isPending} aria-busy={isPending} onClick={abgleichen}>
+            {isPending ? "Wird abgeglichen …" : "Jetzt abgleichen"}
           </button>
-          <button type="button" className="btng" disabled={isPending} onClick={trennen}>
+          <button type="button" className="knopf gefahr klein" disabled={isPending} onClick={trennen}>
             Verbindung trennen
           </button>
         </div>
@@ -119,13 +126,14 @@ export function KalenderButton({
           <span>{hinweis ?? meldung?.text}</span>
           <button
             type="button"
+            className="unteraufgabe-weg"
             aria-label="Hinweis schließen"
             onClick={() => {
               setHinweis(null);
               if (meldung) meldungSchliessen();
             }}
           >
-            ✕
+            <Icon name="schliessen" groesse={16} />
           </button>
         </div>
       )}
