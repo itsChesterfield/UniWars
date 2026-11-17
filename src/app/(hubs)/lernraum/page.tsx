@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 
-export const metadata = { title: "Lernraum · UniWars" };
+export const metadata = { title: "Lernraum · UniVerse" };
 
 /** Lernraum: ein Raum pro Fach – Quellen sind die PDFs und Notizen des Fachs. */
 export default async function LernraumUebersicht() {

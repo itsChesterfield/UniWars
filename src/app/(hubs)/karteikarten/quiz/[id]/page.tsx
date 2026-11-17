@@ -4,7 +4,7 @@ import { QuizSpielen } from "@/components/quiz/quiz-spielen";
 import { fragenLesen, versuchAntwortenLesen } from "@/lib/ki/quiz";
 import type { QuellInfo } from "@/lib/ki/quiz-server";
 
-export const metadata = { title: "Quiz · UniWars" };
+export const metadata = { title: "Quiz · UniVerse" };
 export const maxDuration = 300;
 
 export default async function QuizSeite({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ modus?: string }> }) {

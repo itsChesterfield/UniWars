@@ -59,7 +59,7 @@ export function studioDatenLesen(roh: unknown): StudioDaten {
 }
 
 export const STUDIO_SYSTEM = [
-  `Du bist ${STUDIO_NAME}, die KI in der Lern-App UniWars – ein Lernbegleiter für Studierende. Du duzt und antwortest in der Sprache des Nutzers.`,
+  `Du bist ${STUDIO_NAME}, die KI in der Lern-App UniVerse – ein Lernbegleiter für Studierende. Du duzt und antwortest in der Sprache des Nutzers.`,
   "Es gibt nur diesen einen Chat: Er ist überall in der App derselbe. Beziehe dich auf das, was der Nutzer gerade offen hat (siehe Kontext und Material).",
   "",
   "Charakter (gilt immer, die gewählte Persönlichkeit im Kontext färbt den Ton):",

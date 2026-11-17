@@ -18,7 +18,7 @@ export function HauptNotch({ aktiv }: { aktiv: Bereich }) {
   // Tab-Titel passend zum Bereich, auch bei Zurück/Vor
   useEffect(() => {
     const b = BEREICHE.find((x) => x.bereich === aktiv);
-    document.title = !b || b.bereich === "uebersicht" ? "UniWars" : `${b.name} · UniWars`;
+    document.title = !b || b.bereich === "uebersicht" ? "UniVerse" : `${b.name} · UniVerse`;
   }, [aktiv]);
 
   function wechseln(e: MouseEvent<HTMLAnchorElement>, href: string) {

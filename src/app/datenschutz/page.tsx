@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Datenschutz · UniWars" };
+export const metadata = { title: "Datenschutz · UniVerse" };
 
 // Öffentlich erreichbar (auch ohne Anmeldung). Abschnitte für die übrigen Dienste
 // (Hosting, Datenbank, Analyse) sowie Verantwortlicher/Kontakt werden noch ergänzt.
@@ -8,7 +8,7 @@ export default function DatenschutzSeite() {
   return (
     <main className="rechtstext">
       <p>
-        <Link href="/">← Zurück zu UniWars</Link>
+        <Link href="/">← Zurück zu UniVerse</Link>
       </p>
       <h1>Datenschutzerklärung</h1>
       <p className="muted">Diese Seite wird gerade vervollständigt. Hier findest du bereits die Angaben zu den KI-Funktionen.</p>
@@ -29,7 +29,7 @@ export default function DatenschutzSeite() {
       <p>
         <strong>Rechtsgrundlage:</strong> deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du erteilst sie vor der ersten Nutzung
         und kannst sie jederzeit in den Einstellungen (Profilbild anklicken) unter „KI-Funktionen“ widerrufen. Der Widerruf gilt sofort und für die Zukunft:
-        Danach werden keine Inhalte mehr an Mistral AI übertragen. Alle anderen Funktionen von UniWars kannst du ohne Einwilligung
+        Danach werden keine Inhalte mehr an Mistral AI übertragen. Alle anderen Funktionen von UniVerse kannst du ohne Einwilligung
         uneingeschränkt nutzen.
       </p>
       <p>

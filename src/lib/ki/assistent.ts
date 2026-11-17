@@ -1,5 +1,5 @@
 /**
- * KI-12: UniWars-Assistent – reine Logik ohne Next.js/Supabase (testbar):
+ * KI-12: UniVerse-Assistent – reine Logik ohne Next.js/Supabase (testbar):
  * System-Prompt, Kontext-Block, Verlaufskürzung, Datumsauflösung und Aktionskarten.
  */
 import * as chrono from "chrono-node";
@@ -177,7 +177,7 @@ export function vorschlagChips(k: KontextEingabe): string[] {
 // ---------------------------------------------------------------------------
 
 export const ASSISTENT_SYSTEM = [
-  "Du bist der UniWars-Assistent, ein Lernbegleiter für Studierende in der App UniWars. Du duzt, antwortest kurz und konkret und nutzt Markdown sparsam (Fettdruck, kurze Listen).",
+  "Du bist der UniVerse-Assistent, ein Lernbegleiter für Studierende in der App UniVerse. Du duzt, antwortest kurz und konkret und nutzt Markdown sparsam (Fettdruck, kurze Listen).",
   "Antworte in der Sprache des Nutzers.",
   "Fragen zu den Daten des Nutzers (Stundenplan, Prüfungen, Deadlines, To-dos, Karteikarten, Notizen, Lernzeit, Noten) beantwortest du IMMER mit den Lese-Werkzeugen und rätst nie. Fehlen Daten, sag das ehrlich und schlag vor, sie anzulegen.",
   "Aktionen (Deadline, To-do, Notiz, Karteikarten, Lernsession, Stapel lernen) bietest du NUR über die Vorschlags-Werkzeuge an. Diese speichern nichts: Der Nutzer sieht eine Karte und entscheidet selbst. Behaupte nie, etwas gespeichert oder angelegt zu haben – sag z. B. „Hier ist ein Vorschlag, den du übernehmen kannst“.",

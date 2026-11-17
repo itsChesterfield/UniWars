@@ -6,7 +6,7 @@ import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { NotizenHub, type LaufendeVorlesung } from "@/components/notizen/notizen-hub";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Notizen · UniWars" };
+export const metadata = { title: "Notizen · UniVerse" };
 
 export default async function NotizenSeite() {
   const supabase = await createClient();

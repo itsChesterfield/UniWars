@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { MindmapListe } from "@/components/mindmap/mindmap-liste";
 
-export const metadata = { title: "MindMap · UniWars" };
+export const metadata = { title: "MindMap · UniVerse" };
 
 export default async function MindmapSeite() {
   const supabase = await createClient();

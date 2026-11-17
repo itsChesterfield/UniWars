@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { DokumentListe } from "@/components/textverarbeitung/dokument-liste";
 
-export const metadata = { title: "Textverarbeitung · UniWars" };
+export const metadata = { title: "Textverarbeitung · UniVerse" };
 
 export default async function TextverarbeitungSeite() {
   const supabase = await createClient();

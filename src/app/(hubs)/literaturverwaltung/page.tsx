@@ -5,7 +5,7 @@ import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { Literaturverwaltung } from "@/components/literatur/literaturverwaltung";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Literaturverwaltung · UniWars" };
+export const metadata = { title: "Literaturverwaltung · UniVerse" };
 
 export default async function LiteraturSeite() {
   const supabase = await createClient();

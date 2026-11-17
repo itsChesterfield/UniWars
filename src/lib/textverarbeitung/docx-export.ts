@@ -152,7 +152,7 @@ export async function alsDocx(titel: string, inhalt: JSONContent): Promise<Blob>
   const kinder = await bloecke(inhalt.content);
   const dokument = new d.Document({
     title: titel,
-    creator: "UniWars",
+    creator: "UniVerse",
     styles: { default: { document: { run: { font: "Calibri", size: 24 } } } },
     numbering: {
       config: [

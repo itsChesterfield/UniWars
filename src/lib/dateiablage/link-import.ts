@@ -203,7 +203,7 @@ export function dateiBestimmen(eingabe: {
 
 /** Meldung für HTTP-Status beim Abruf */
 export function statusMeldung(status: number): string {
-  if (status === 401 || status === 403) return "Auf diese Datei kann UniWars nicht zugreifen – sie ist geschützt (Anmeldung nötig). Lade sie bitte herunter und zieh sie hierher.";
+  if (status === 401 || status === 403) return "Auf diese Datei kann UniVerse nicht zugreifen – sie ist geschützt (Anmeldung nötig). Lade sie bitte herunter und zieh sie hierher.";
   if (status === 404 || status === 410) return "Unter diesem Link wurde keine Datei gefunden.";
   if (status === 429) return "Die Seite lässt gerade keine Downloads zu. Versuch es später noch einmal.";
   return `Die Datei konnte nicht geladen werden (Fehler ${status}).`;

@@ -32,7 +32,7 @@ export function hatDaten(l: Lagebild): boolean {
 
 export function lernplanPrompt(lagebild: Lagebild, heute: string): { system: string; nutzer: string } {
   const system = [
-    "Du bist der Lernplaner in der App UniWars. Schlag dem Studierenden für HEUTE höchstens 3 konkrete, kleine nächste Schritte vor.",
+    "Du bist der Lernplaner in der App UniVerse. Schlag dem Studierenden für HEUTE höchstens 3 konkrete, kleine nächste Schritte vor.",
     "Nutze dafür ausschließlich die Vorschlagswerkzeuge – jeder Vorschlag ein Werkzeugaufruf. Gib in `grund` einen kurzen Satz an, warum gerade jetzt (mit Zahlen aus den Daten, z. B. „Mathe-Klausur in 9 Tagen, 42 Karten fällig“).",
     "Priorität: 1) Prüfungen in den nächsten 21 Tagen mit fälligen Karten oder wenig Lernzeit, 2) offene Deadlines in den nächsten 7 Tagen, 3) Fächer mit wenig Lernzeit in den letzten 7 Tagen.",
     "Erfinde keine Prüfungen, Deadlines, Stapel oder Zahlen. Wenn nichts Sinnvolles ansteht, mach weniger oder keine Vorschläge.",

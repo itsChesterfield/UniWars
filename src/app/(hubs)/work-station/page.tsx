@@ -4,7 +4,7 @@ import { fachVorschlag } from "@/lib/work-station/kontext";
 import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
 import { WorkStation, type TagesEintrag } from "@/components/work-station/work-station";
 
-export const metadata = { title: "Work Station · UniWars" };
+export const metadata = { title: "Work Station · UniVerse" };
 
 export default async function WorkStationSeite({ searchParams }: { searchParams: Promise<{ fach?: string }> }) {
   const { fach: fachAusLink } = await searchParams;
