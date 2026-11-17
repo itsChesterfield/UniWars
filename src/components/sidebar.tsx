@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, Suspense, useEffect, useRef, useState, useSyncExternalStore, useTransition, type DragEvent } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
@@ -24,40 +24,6 @@ import { DESIGN_NAMEN, bereichHref, sichtbaresDesign, tabLeiste, type Symbolleis
 
 /** Gleicher Schlüssel wie im Skript in app/layout.tsx. Die Symbolleiste ist immer schmal; der Schlüssel bleibt für ältere Browserstände. */
 export const SIDEBAR_SCHLUESSEL = "uniwars-sidebar-eingeklappt";
-/** Symbolleiste mit Namen ausgeklappt (gleicher Schlüssel wie im Skript in app/layout.tsx) */
-export const LEISTE_OFFEN_SCHLUESSEL = "uniwars-symbolleiste-offen";
-
-function railAbonnieren(melden: () => void) {
-  const beobachter = new MutationObserver(melden);
-  beobachter.observe(document.documentElement, { attributes: true, attributeFilter: ["data-rail-offen"] });
-  return () => beobachter.disconnect();
-}
-
-/** Knopf zum Aus-/Einklappen der Symbolleiste; Zustand liegt an <html data-rail-offen> und im Browser. */
-function LeisteUmschalten() {
-  // Das Skript im Root-Layout setzt den gespeicherten Zustand schon vor dem ersten Zeichnen
-  const offen = useSyncExternalStore(railAbonnieren, () => document.documentElement.hasAttribute("data-rail-offen"), () => false);
-  function umschalten() {
-    const neu = !offen;
-    document.documentElement.toggleAttribute("data-rail-offen", neu);
-    try {
-      localStorage.setItem(LEISTE_OFFEN_SCHLUESSEL, neu ? "1" : "0");
-    } catch {}
-  }
-  return (
-    <button type="button" className="rpunkt rumschalten" aria-label={offen ? "Leiste einklappen" : "Leiste ausklappen"} aria-expanded={offen} onClick={umschalten}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
-        <path d="M9 4.5v15" />
-        <path d={offen ? "m15.5 10-2 2 2 2" : "m13.5 10 2 2-2 2"} />
-      </svg>
-      <span className="tip" aria-hidden>
-        {offen ? "Einklappen" : "Ausklappen"}
-      </span>
-    </button>
-  );
-}
-
 /**
  * Meldet eine laufende Navigation an <html data-laedt>. Die Kopfleiste zeigt dann
  * nach 300 ms die Lichtspur, die alte Ansicht bleibt stehen (DESIGN.md Abschnitt 7).
@@ -255,7 +221,6 @@ export function Sidebar({
         ))}
 
         <div className="rfuss">
-          <LeisteUmschalten />
           {kiVerfuegbar && (
             <button type="button" className="rpunkt" aria-label="UniVerse Studio, Strg+J" onClick={() => studioOeffnen()}>
               <Funke />

@@ -34,8 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Vor dem ersten Zeichnen: zweiter Hub der geteilten Ansicht ohne Sidebar, eingeklappte Sidebar */}
         <Script id="geteilte-ansicht" strategy="beforeInteractive">
           {`if (window.name === ${JSON.stringify(FRAME_NAME)}) document.documentElement.setAttribute("data-eingebettet", "");
-try { if (localStorage.getItem("uniwars-sidebar-eingeklappt") === "1") document.documentElement.setAttribute("data-sidebar-eingeklappt", ""); } catch (e) {}
-try { if (localStorage.getItem("uniwars-symbolleiste-offen") === "1") document.documentElement.setAttribute("data-rail-offen", ""); } catch (e) {}`}
+try { if (localStorage.getItem("uniwars-sidebar-eingeklappt") === "1") document.documentElement.setAttribute("data-sidebar-eingeklappt", ""); } catch (e) {}`}
         </Script>
         {children}
         <AnalyticsBanner />
