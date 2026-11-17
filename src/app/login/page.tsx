@@ -2,6 +2,7 @@ import Link from "next/link";
 import { login } from "./actions";
 import { TrackEvent } from "@/components/track-event";
 import { AktivitaetZuruecksetzen } from "@/components/aktivitaet-zuruecksetzen";
+import { LoginFelder } from "@/components/login-felder";
 
 export default async function LoginPage({
   searchParams,
@@ -22,29 +23,7 @@ export default async function LoginPage({
         {grund === "inaktiv" && <p className="auth-info">Du wurdest nach 5 Minuten ohne Aktivität abgemeldet – zum Schutz deiner Daten.</p>}
         {reset && <TrackEvent event="passwort_geaendert" />}
 
-        <div className="auth-field">
-          <label htmlFor="email" className="sr-only">E-Mail</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="E-Mail"
-            required
-            autoComplete="email"
-          />
-        </div>
-
-        <div className="auth-field">
-          <label htmlFor="password" className="sr-only">Passwort</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Passwort"
-            required
-            autoComplete="current-password"
-          />
-        </div>
+        <LoginFelder />
 
         <button formAction={login} type="submit">
           Anmelden
