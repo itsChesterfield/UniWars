@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import posthog from "posthog-js";
 import {
   createStundenplanEintrag,
@@ -15,6 +15,8 @@ import type { FachOption } from "@/lib/fach-option";
 import { useRouter } from "next/navigation";
 import { StundenplanFotoDialog } from "@/components/stundenplan-foto-dialog";
 import { spurenVerteilen } from "@/lib/spuren";
+import { Zustand } from "@/components/zustand";
+import { Icon } from "@/components/nav-icon";
 
 type Eintrag = Tables<"stundenplan_eintrag">;
 type Deadline = Tables<"deadline">;
@@ -29,6 +31,15 @@ const TAG_LABEL: Record<Enums<"wochentag">, string> = {
   FR: "Fr",
   SA: "Sa",
   SO: "So",
+};
+const TAG_LABEL_LANG: Record<Enums<"wochentag">, string> = {
+  MO: "Montag",
+  DI: "Dienstag",
+  MI: "Mittwoch",
+  DO: "Donnerstag",
+  FR: "Freitag",
+  SA: "Samstag",
+  SO: "Sonntag",
 };
 const JS_TAG_ZU_WOCHENTAG: Record<number, Enums<"wochentag">> = {
   0: "SO",
@@ -166,6 +177,7 @@ export function StundenplanManager({
     }
     setEditId(null);
     setForm(leeresFormular(faecher[0].id));
+    setError(null);
     setFormOpen(true);
   }
 
@@ -179,6 +191,7 @@ export function StundenplanManager({
       raum: e.raum,
       dozent: e.dozent,
     });
+    setError(null);
     setFormOpen(true);
   }
 
@@ -210,6 +223,7 @@ export function StundenplanManager({
         await deleteStundenplanEintrag(id);
         setEintraege((prev) => prev.filter((x) => x.id !== id));
         posthog.capture("stundenplan_eintrag_geloescht", { eintrag_id: id });
+        setFormOpen(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
       }
@@ -233,43 +247,50 @@ export function StundenplanManager({
     return dt >= montag && dt <= sonntag;
   });
 
+  const heuteIndex = wochenOffset === 0 ? (new Date().getDay() + 6) % 7 : -1;
+
   const inhalt = (
     <>
-      <div className="rowb" style={{ marginBottom: 14 }}>
-        <div className="row" style={{ gap: 8 }}>
+      <div className="stundenplan-leiste">
+        <div className="stundenplan-woche" role="group" aria-label="Woche wählen">
           <button
             type="button"
-            className="btng"
-            style={{ padding: "5px 9px" }}
+            className="knopf leise klein nur-symbol"
             onClick={() => setWochenOffset((o) => o - 1)}
             aria-label="Vorherige Woche"
           >
-            ←
+            <Icon name="pfeil-links" groesse={16} />
           </button>
-          <span className="muted" style={{ fontSize: 13, fontWeight: 600, minWidth: 100, textAlign: "center" }}>
+          <span className="stundenplan-woche-text" aria-live="polite">
             {wochenLabel}
           </span>
           <button
             type="button"
-            className="btng"
-            style={{ padding: "5px 9px" }}
+            className="knopf leise klein nur-symbol"
             onClick={() => setWochenOffset((o) => o + 1)}
             aria-label="Nächste Woche"
           >
-            →
+            <Icon name="pfeil-rechts" groesse={16} />
           </button>
           {wochenOffset !== 0 && (
-            <button type="button" className="btng" style={{ padding: "5px 9px" }} onClick={() => setWochenOffset(0)}>
-              Heute
+            <button type="button" className="knopf leise klein" onClick={() => setWochenOffset(0)}>
+              Diese Woche
             </button>
           )}
         </div>
-        <div className="row" style={{ gap: 8 }}>
-          <button type="button" onClick={() => setFotoOffen(true)} className="btng" title="Stundenplan per Foto oder Screenshot eintragen lassen">
-            📷 Aus Foto
+        <div className="stundenplan-aktionen">
+          <button
+            type="button"
+            onClick={() => setFotoOffen(true)}
+            className="knopf leise klein"
+            title="Stundenplan per Foto oder Screenshot eintragen lassen"
+          >
+            <Icon name="kamera" groesse={16} />
+            Aus Foto
           </button>
-          <button type="button" onClick={openCreateForm} className="btnp">
-            + Eintrag
+          <button type="button" onClick={openCreateForm} className="knopf neben klein">
+            <Icon name="plus" groesse={16} />
+            Eintrag
           </button>
         </div>
       </div>
@@ -288,92 +309,131 @@ export function StundenplanManager({
         />
       )}
 
-      {error && <p className="auth-error">{error}</p>}
+      {error && !formOpen && (
+        <p className="formular-fehler" role="alert">
+          {error}
+        </p>
+      )}
 
-      <div className="stundenplan-grid" style={{ height: RASTER_HOEHE + 24 }}>
-        <div className="stundenplan-stunden">
-          {stunden.map((h) => (
-            <div key={h} className="stundenplan-stunde" style={{ height: 60 * PX_PRO_MINUTE }}>
-              {String(h).padStart(2, "0")}:00
-            </div>
-          ))}
-        </div>
+      {eintraege.length === 0 && !formOpen && (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Noch kein Stundenplan."
+          aktion={
+            <button type="button" className="knopf neben klein" onClick={() => setFotoOffen(true)}>
+              <Icon name="kamera" groesse={16} />
+              Aus Foto eintragen
+            </button>
+          }
+        >
+          Trag deine Veranstaltungen ein oder lass sie aus einem Foto deines Stundenplans erkennen. Fristen und Prüfungen der Woche stehen dann mit im Raster.
+        </Zustand>
+      )}
 
-        {TAGE.map((tag, tagIndex) => (
-          <div key={tag} className="stundenplan-tag-spalte">
-            <div className="stundenplan-tag-label">{TAG_LABEL[tag]}</div>
-            <div className="stundenplan-tag-body" style={{ height: RASTER_HOEHE }}>
-              {belegtFuerTag(tagIndex).map((b) => (
-                <div
-                  key={b.key}
-                  className="stundenplan-belegt"
-                  style={{ top: b.top, height: b.hoehe }}
-                  title="Belegt (Google Kalender)"
-                >
-                  Belegt
-                </div>
-              ))}
-              {blockeFuerTag(tag).map(({ e, start, ende, spur, spuren }) => {
+      {eintraege.length > 0 && (
+        // Der Raster scrollt am Handy waagerecht: per Tastatur erreichbar und beschriftet (WCAG 2.1.1)
+        <div
+          className="stundenplan-grid"
+          style={{ "--raster-hoehe": `${RASTER_HOEHE}px`, "--stunde": `${60 * PX_PRO_MINUTE}px` } as CSSProperties}
+          tabIndex={0}
+          role="region"
+          aria-label={`Stundenplan, Woche ${wochenLabel}`}
+        >
+          <div className="stundenplan-stunden" aria-hidden>
+            {stunden.map((h) => (
+              <div key={h} className="stundenplan-stunde">
+                {String(h).padStart(2, "0")}:00
+              </div>
+            ))}
+          </div>
+
+          {TAGE.map((tag, tagIndex) => (
+            <div key={tag} className={`stundenplan-tag-spalte${tagIndex === heuteIndex ? " heute" : ""}`}>
+              <div className="stundenplan-tag-label">{TAG_LABEL[tag]}</div>
+              <div className="stundenplan-tag-body">
+                {belegtFuerTag(tagIndex).map((b) => (
+                  <div
+                    key={b.key}
+                    className="stundenplan-belegt"
+                    style={{ top: b.top, height: b.hoehe }}
+                    title="Belegt (Google Kalender)"
+                  >
+                    Belegt
+                  </div>
+                ))}
+                {blockeFuerTag(tag).map(({ e, start, ende, spur, spuren }) => {
                   const fach = faecher.find((f) => f.id === e.fach_id);
-                  const top = start * PX_PRO_MINUTE;
-                  const hoehe = (ende - start) * PX_PRO_MINUTE;
+                  const zeit = `${toTimeInput(e.start_zeit)}–${toTimeInput(e.end_zeit)}`;
                   return (
                     <button
                       key={e.id}
                       type="button"
                       className="stundenplan-block"
-                      style={{
-                        top,
-                        height: Math.max(hoehe, 20),
-                        left: `calc(${(spur / spuren) * 100}% + 1px)`,
-                        width: `calc(${100 / spuren}% - 2px)`,
-                        right: "auto",
-                        backgroundColor: fach?.farbe ?? "#3b82f6",
-                      }}
+                      style={
+                        {
+                          top: start * PX_PRO_MINUTE,
+                          height: Math.max((ende - start) * PX_PRO_MINUTE, 20),
+                          left: `calc(${(spur / spuren) * 100}% + 1px)`,
+                          width: `calc(${100 / spuren}% - 2px)`,
+                          "--c": fach?.farbe ?? "var(--text-3)",
+                        } as CSSProperties
+                      }
                       onClick={() => openEditForm(e)}
-                      title={`${fach?.name ?? ""} ${toTimeInput(e.start_zeit)}–${toTimeInput(e.end_zeit)}`}
+                      title={`${fach?.name ?? "Eintrag"}, ${zeit}${e.raum ? `, ${e.raum}` : ""}`}
                     >
-                      <span className="stundenplan-block-fach">{fach?.name}</span>
+                      <span className="stundenplan-block-fach">{fach?.name ?? "Eintrag"}</span>
                       <span className="stundenplan-block-zeit">
-                        {toTimeInput(e.start_zeit)}–{toTimeInput(e.end_zeit)}
+                        <span className="vh">{TAG_LABEL_LANG[tag]}, </span>
+                        {zeit}
+                        {e.raum && <span className="vh">, {e.raum}</span>}
                       </span>
                     </button>
                   );
                 })}
 
-              {deadlinesDieseWoche
-                .filter((d) => JS_TAG_ZU_WOCHENTAG[new Date(d.faellig_am).getDay()] === tag)
-                .map((d) => (
-                  <div
-                    key={d.id}
-                    className="kalender-marker kalender-marker-deadline"
-                    style={{ top: positionFuerZeitpunkt(new Date(d.faellig_am)) }}
-                    title={`${uhrzeit(d.faellig_am)} · ${d.titel}`}
-                  >
-                    ⚑ {uhrzeit(d.faellig_am)} {d.titel}
-                  </div>
-                ))}
+                {deadlinesDieseWoche
+                  .filter((d) => JS_TAG_ZU_WOCHENTAG[new Date(d.faellig_am).getDay()] === tag)
+                  .map((d) => (
+                    <div
+                      key={d.id}
+                      className="kalender-marker kalender-marker-deadline"
+                      style={{ top: positionFuerZeitpunkt(new Date(d.faellig_am)) }}
+                      title={`${uhrzeit(d.faellig_am)} · ${d.titel}`}
+                    >
+                      <span className="vh">Frist: </span>
+                      {uhrzeit(d.faellig_am)} {d.titel}
+                    </div>
+                  ))}
 
-              {pruefungenDieseWoche
-                .filter((p) => JS_TAG_ZU_WOCHENTAG[new Date(p.datum).getDay()] === tag)
-                .map((p) => (
-                  <div
-                    key={p.id}
-                    className="kalender-marker kalender-marker-pruefung"
-                    style={{ top: positionFuerZeitpunkt(new Date(p.datum)) }}
-                    title={`${uhrzeit(p.datum)} · ${p.titel}`}
-                  >
-                    ✎ {uhrzeit(p.datum)} {p.titel}
-                  </div>
-                ))}
+                {pruefungenDieseWoche
+                  .filter((p) => JS_TAG_ZU_WOCHENTAG[new Date(p.datum).getDay()] === tag)
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="kalender-marker kalender-marker-pruefung"
+                      style={{ top: positionFuerZeitpunkt(new Date(p.datum)) }}
+                      title={`${uhrzeit(p.datum)} · ${p.titel}`}
+                    >
+                      <span className="vh">Prüfung: </span>
+                      {uhrzeit(p.datum)} {p.titel}
+                    </div>
+                  ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {formOpen && (
         <form className="crud-form" onSubmit={handleSubmit}>
           <h3>{editId ? "Eintrag bearbeiten" : "Neuer Eintrag"}</h3>
+          {error && (
+            <p className="formular-fehler" role="alert">
+              {error}
+            </p>
+          )}
 
           <label htmlFor="sp-fach">Fach</label>
           <select
@@ -389,67 +449,79 @@ export function StundenplanManager({
             ))}
           </select>
 
-          <label htmlFor="sp-tag">Wochentag</label>
-          <select
-            id="sp-tag"
-            value={form.tag}
-            onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value as Enums<"wochentag"> }))}
-          >
-            {TAGE.map((tag) => (
-              <option key={tag} value={tag}>
-                {TAG_LABEL[tag]}
-              </option>
-            ))}
-          </select>
+          <div className="crud-form-reihe">
+            <div>
+              <label htmlFor="sp-tag">Wochentag</label>
+              <select
+                id="sp-tag"
+                value={form.tag}
+                onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value as Enums<"wochentag"> }))}
+              >
+                {TAGE.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {TAG_LABEL_LANG[tag]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="sp-start">Beginn</label>
+              <input
+                id="sp-start"
+                type="time"
+                value={form.start_zeit}
+                onChange={(e) => setForm((f) => ({ ...f, start_zeit: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="sp-ende">Ende</label>
+              <input
+                id="sp-ende"
+                type="time"
+                value={form.end_zeit}
+                onChange={(e) => setForm((f) => ({ ...f, end_zeit: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
 
-          <label htmlFor="sp-start">Start</label>
-          <input
-            id="sp-start"
-            type="time"
-            value={form.start_zeit}
-            onChange={(e) => setForm((f) => ({ ...f, start_zeit: e.target.value }))}
-            required
-          />
-
-          <label htmlFor="sp-ende">Ende</label>
-          <input
-            id="sp-ende"
-            type="time"
-            value={form.end_zeit}
-            onChange={(e) => setForm((f) => ({ ...f, end_zeit: e.target.value }))}
-            required
-          />
-
-          <label htmlFor="sp-raum">Raum</label>
-          <input
-            id="sp-raum"
-            value={form.raum ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, raum: e.target.value || null }))}
-          />
-
-          <label htmlFor="sp-dozent">Dozent</label>
-          <input
-            id="sp-dozent"
-            value={form.dozent ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, dozent: e.target.value || null }))}
-          />
+          <div className="crud-form-reihe">
+            <div>
+              <label htmlFor="sp-raum">Raum</label>
+              <input
+                id="sp-raum"
+                value={form.raum ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, raum: e.target.value || null }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="sp-dozent">Lehrperson</label>
+              <input
+                id="sp-dozent"
+                value={form.dozent ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, dozent: e.target.value || null }))}
+              />
+            </div>
+          </div>
 
           <div className="crud-form-actions">
-            <button type="submit" className="btnp" disabled={isPending}>
+            <button type="submit" className="knopf haupt" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
+            </button>
+            <button type="button" className="knopf leise" onClick={() => setFormOpen(false)} disabled={isPending}>
+              Abbrechen
             </button>
             {editId && (
               <button
                 type="button"
+                className="knopf gefahr rechts"
                 onClick={() => handleDelete(editId)}
                 disabled={isPending}
               >
                 Löschen
               </button>
             )}
-            <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
-              Abbrechen
-            </button>
           </div>
         </form>
       )}
@@ -459,10 +531,10 @@ export function StundenplanManager({
   if (embedded) return inhalt;
 
   return (
-    <section className="card">
-      <div className="ch">
-        <span className="ct">Stundenplan</span>
-      </div>
+    <section aria-labelledby="abschnitt-stundenplan">
+      <h2 id="abschnitt-stundenplan" className="abschnitt-titel">
+        Stundenplan
+      </h2>
       {inhalt}
     </section>
   );
