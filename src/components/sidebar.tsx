@@ -164,6 +164,7 @@ export function Sidebar({
   kiVerfuegbar?: boolean;
 }) {
   const pfad = usePathname();
+  const [zuNachKlick, setZuNachKlick] = useState(false);
   const leiste = usePersoenlich("symbolleiste", symbolleiste);
   const gruppen = hubsInGruppen(leiste);
   /** Reihenfolge der Symbolleiste, für die Richtung des Übergangs */
@@ -179,7 +180,18 @@ export function Sidebar({
 
   return (
     <>
-      <nav className="rail" aria-label="Bereiche">
+      <nav
+        className="rail"
+        aria-label="Bereiche"
+        data-zu={zuNachKlick ? "" : undefined}
+        // Nach einem Klick klappt die Leiste zu und bleibt zu, bis die Maus sie verlässt
+        onClick={(e) => {
+          // Nicht beim Profil-Knopf: Dessen Menü soll offen bleiben
+          const ziel = (e.target as HTMLElement).closest("a, button");
+          if (ziel && !ziel.closest(".profilmenue")) setZuNachKlick(true);
+        }}
+        onMouseLeave={() => setZuNachKlick(false)}
+      >
         <TimerWaechter />
         <Link href="/" className="rmarke" aria-label="UniVerse, Zentraler Hub">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

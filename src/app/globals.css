@@ -14987,19 +14987,19 @@ html[data-bewegung="reduziert"] .lade-skelett {
 
 @media (min-width: 761px) {
   [data-leiste="offen"] .rail,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
     width: 216px;
     align-items: stretch;
     padding-inline: var(--space-3);
   }
 
   [data-leiste="offen"] .rail .rmarke,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rmarke {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rmarke {
     margin-left: 0;
   }
 
   [data-leiste="offen"] .rail .rpunkt,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rpunkt {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt {
     width: 100%;
     display: flex;
     align-items: center;
@@ -15009,7 +15009,7 @@ html[data-bewegung="reduziert"] .lade-skelett {
   }
 
   [data-leiste="offen"] .rail .rpunkt .tip,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rpunkt .tip {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip {
     position: static;
     padding: 0;
     background: none;
@@ -15022,32 +15022,32 @@ html[data-bewegung="reduziert"] .lade-skelett {
   }
 
   [data-leiste="offen"] .rail .rpunkt .tip kbd,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rpunkt .tip kbd {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip kbd {
     display: none;
   }
 
   [data-leiste="offen"] .rail .rtrenn,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rtrenn {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rtrenn {
     width: auto;
     margin-inline: 11px;
   }
 
   [data-leiste="offen"] .rail .rfuss,
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) .rfuss {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rfuss {
     align-items: stretch;
   }
 
-  /* Beim Drüberfahren: über den Inhalt legen statt ihn zu verschieben, kurz verzögert gegen versehentliches Aufklappen */
+  /* Beim Drüberfahren: über den Inhalt legen (auch über die Kopfleiste) statt ihn zu verschieben */
   [data-leiste="hover"] .rail {
-    z-index: 40;
+    z-index: calc(var(--z-sticky) + 10);
     transition: width 0s, margin 0s, box-shadow 0s;
   }
 
-  [data-leiste="hover"] .rail:is(:hover, :focus-within) {
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
     margin-right: -152px;
     background: var(--bg);
     box-shadow: 1px 0 0 var(--linie), 12px 0 32px var(--schatten);
-    transition-delay: 160ms;
+    transition-delay: 40ms;
   }
 }
 
