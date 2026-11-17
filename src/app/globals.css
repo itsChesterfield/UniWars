@@ -15637,6 +15637,8 @@ html[data-bewegung="reduziert"] .lade-skelett {
   .erfassen-unter-zeile.mit-wer select {
     grid-column: 1;
   }
+}
+
 /* Anmeldung: „Angemeldet bleiben“ */
 .auth-bleiben {
   display: flex;
