@@ -6,14 +6,13 @@ import { track } from "@/lib/analytics";
 import { createFach } from "@/app/fach/actions";
 import { naechsteFarbe } from "@/lib/fach-farben";
 import { createDeadline } from "@/app/deadline/actions";
-import { createTodo } from "@/app/todo/actions";
+import { createTodo, createUnterpunkte } from "@/app/todo/actions";
 import { createNote } from "@/app/note/actions";
 import { createPruefung } from "@/app/pruefung/actions";
 import { benutzerSuchen, deadlineEinladen } from "@/app/einladung/actions";
 import { createAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
 import { konfliktePruefen, type Konflikt } from "@/app/kalender/actions";
 import { DAUER_OPTIONEN, STANDARD_DAUER } from "@/lib/kalender/dauer";
-import { UnteraufgabenDialog, type UnteraufgabenParentTyp } from "@/components/unteraufgaben-dialog";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
 import { erfassenErkennen } from "@/app/(hubs)/erfassen-actions";
 import { ART_NAMEN, type ErfassenArt, type ErfassenErkannt } from "@/lib/ki/erfassen";
@@ -124,14 +123,11 @@ export function QuickAdd({
   const [teilenMitSuchLaeuft, setTeilenMitSuchLaeuft] = useState(false);
   const [anhaenge, setAnhaenge] = useState<{ url: string; titel: string }[]>([]);
   const [linkEingabe, setLinkEingabe] = useState("");
-  const [unterDialogFuer, setUnterDialogFuer] = useState<{
-    parentTyp: UnteraufgabenParentTyp;
-    parentId: string;
-    parentTitel: string;
-    fachId: string | null;
-  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fachManuell, setFachManuell] = useState(false);
+  /** Unteraufgaben direkt im Formular (aufklappbar) */
+  const [unterOffen, setUnterOffen] = useState(false);
+  const [unter, setUnter] = useState<{ id: number; titel: string; wann: string }[]>([]);
   const [raum, setRaum] = useState("");
   /** KI-Erkennung zum aktuellen Text (gilt nur, solange der Text gleich bleibt) */
   const [ki, setKi] = useState<{ fuer: string; erkannt: ErfassenErkannt } | null>(null);
@@ -148,6 +144,8 @@ export function QuickAdd({
     setFachManuell(false);
     setKi(null);
     setRaum("");
+    setUnterOffen(false);
+    setUnter([]);
   }
 
   function handleTeilenMitChange(value: string) {
@@ -210,10 +208,8 @@ export function QuickAdd({
   useEffect(() => {
     function oeffnen(e: Event) {
       const d = (e as CustomEvent<{ modus?: QuickAddModus; titel?: string; quelle?: string }>).detail ?? {};
-      if (d.modus && ALLE_MODI.includes(d.modus)) {
-        setModus(d.modus);
-        setTypManuellGesetzt(true);
-      }
+      // Vorauswahl ist nur ein Vorschlag: Die Erkennung darf sie noch ändern
+      if (d.modus && ALLE_MODI.includes(d.modus)) setModus(d.modus);
       if (typeof d.titel === "string") setTitel(d.titel);
       setOpen(true);
       track("schnell_erfassen_geoeffnet", { quelle: d.quelle ?? "befehlspalette" });
@@ -291,6 +287,32 @@ export function QuickAdd({
     setLinkEingabe("");
   }
 
+  /** Unteraufgaben aus dem Formular anlegen (ohne Datum: Termin der Hauptaufgabe) */
+  async function unteraufgabenAnlegen(parentTyp: "todo" | "deadline" | "pruefung", parentId: string, fach: string | null) {
+    const liste = unter.filter((u) => u.titel.trim());
+    if (!liste.length) return;
+    if (parentTyp === "todo") {
+      await createUnterpunkte(
+        parentId,
+        fach,
+        liste.map((u) => ({ titel: u.titel.trim(), faelligAm: u.wann ? new Date(u.wann).toISOString() : undefined })),
+      );
+    } else {
+      for (const u of liste) {
+        await createDeadline({
+          titel: u.titel.trim(),
+          fach_id: fach,
+          faellig_am: new Date(u.wann || datumZeit).toISOString(),
+          typ: "ABGABE",
+          kategorie: "NORMAL",
+          pruefungId: parentTyp === "pruefung" ? parentId : undefined,
+          parentDeadlineId: parentTyp === "deadline" ? parentId : undefined,
+        });
+      }
+    }
+    track("unteraufgaben_angelegt", { eltern_typ: parentTyp, anzahl: liste.length, ort: "schnell_erfassen" });
+  }
+
   async function speichereAnhaenge(zielTyp: AnhangZielTyp, zielId: string) {
     for (const a of anhaenge) {
       await createAnhang(zielTyp, zielId, a.url);
@@ -349,7 +371,7 @@ export function QuickAdd({
             dauer_minuten: dauer ? Number(dauer) : null,
           });
           await speichereAnhaenge("pruefung", erstellt.id);
-          setUnterDialogFuer({ parentTyp: "pruefung", parentId: erstellt.id, parentTitel: name, fachId });
+          await unteraufgabenAnlegen("pruefung", erstellt.id, fachId);
         } else if (!datumZeit) {
           // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
           const erstellt = await createTodo({
@@ -362,7 +384,7 @@ export function QuickAdd({
             track("mitglied_eingeladen", { ziel_typ: "todo", ort: "schnell_erfassen" });
           }
           await speichereAnhaenge("todo", erstellt.id);
-          setUnterDialogFuer({ parentTyp: "todo", parentId: erstellt.id, parentTitel: name, fachId: fachId || null });
+          await unteraufgabenAnlegen("todo", erstellt.id, fachId || null);
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
@@ -381,12 +403,7 @@ export function QuickAdd({
               track("mitglied_eingeladen", { ziel_typ: "deadline", ort: "schnell_erfassen" });
             }
             await speichereAnhaenge("deadline", erstellt[0].id);
-            setUnterDialogFuer({
-              parentTyp: "deadline",
-              parentId: erstellt[0].id,
-              parentTitel: name,
-              fachId: fachId || null,
-            });
+            await unteraufgabenAnlegen("deadline", erstellt[0].id, fachId || null);
           }
         }
 
@@ -422,7 +439,6 @@ export function QuickAdd({
   const zeigeDatumZeit = modus !== "FACH" && modus !== "NOTE";
   const istUnterstuetzterDeadlineTyp =
     modus === "ABGABE" || modus === "FRIST" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
-  const wirdAlsTodoGespeichert = istUnterstuetzterDeadlineTyp && !datumZeit;
   const hatDauer = modus === "PRUEFUNG" || modus === "TERMIN" || modus === "GRUPPENARBEIT";
   const standardDauer =
     modus === "PRUEFUNG" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "ABGABE" || modus === "SONSTIGE" || modus === "FRIST"
@@ -509,6 +525,18 @@ export function QuickAdd({
                       ✦
                     </span>
                     Erkannt: <b>{ART_NAMEN[ki.erkannt.art]}</b>
+                    {modus !== KI_ZU_MODUS[ki.erkannt.art] && (
+                      <button
+                        type="button"
+                        className="erfassen-uebernehmen"
+                        onClick={() => {
+                          setModus(KI_ZU_MODUS[ki.erkannt.art]);
+                          setTypManuellGesetzt(false);
+                        }}
+                      >
+                        übernehmen
+                      </button>
+                    )}
                     {ki.erkannt.fach && <> · {ki.erkannt.fach}</>}
                     {ki.erkannt.wann && <> · {new Date(ki.erkannt.wann.includes("T") ? ki.erkannt.wann : `${ki.erkannt.wann}T12:00`).toLocaleString("de-DE", ki.erkannt.wann.includes("T") ? { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "numeric", month: "short" })}</>}
                     {ki.erkannt.raum && <> · {ki.erkannt.raum}</>}
@@ -584,7 +612,7 @@ export function QuickAdd({
                       setDatumZeit(e.target.value);
                       setDatumManuellGesetzt(true);
                     }}
-                    required={modus === "PRUEFUNG"}
+                    required={modus !== "SONSTIGE"}
                   />
                 </label>
               )}
@@ -718,6 +746,60 @@ export function QuickAdd({
               )}
             </div>
 
+            {modus !== "FACH" && modus !== "NOTE" && (
+              <div className="erfassen-unter">
+                {!unterOffen ? (
+                  <button
+                    type="button"
+                    className="erfassen-unter-knopf"
+                    onClick={() => {
+                      setUnterOffen(true);
+                      setUnter((u) => (u.length ? u : [{ id: Date.now(), titel: "", wann: "" }]));
+                    }}
+                  >
+                    + Unteraufgaben
+                  </button>
+                ) : (
+                  <>
+                    <span className="erfassen-unter-titel">Unteraufgaben</span>
+                    {unter.map((u, i) => (
+                      <div key={u.id} className="erfassen-unter-zeile">
+                        <input
+                          className="field"
+                          autoFocus={i === unter.length - 1 && !u.titel}
+                          value={u.titel}
+                          placeholder={`Schritt ${i + 1}, z. B. „Literatur suchen“`}
+                          onChange={(e) => setUnter((l) => l.map((x) => (x.id === u.id ? { ...x, titel: e.target.value } : x)))}
+                          onKeyDown={(e) => {
+                            // Enter in einer Unteraufgabe: nächste Zeile statt Absenden
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "" }]);
+                            }
+                          }}
+                          aria-label={`Unteraufgabe ${i + 1}`}
+                        />
+                        <input
+                          className="field"
+                          type="datetime-local"
+                          value={u.wann}
+                          onChange={(e) => setUnter((l) => l.map((x) => (x.id === u.id ? { ...x, wann: e.target.value } : x)))}
+                          aria-label={`Termin für Unteraufgabe ${i + 1} (optional)`}
+                          title="Optional – ohne Datum gilt der Termin der Hauptaufgabe"
+                        />
+                        <button type="button" className="erfassen-unter-weg" aria-label={`Unteraufgabe ${i + 1} entfernen`} onClick={() => setUnter((l) => l.filter((x) => x.id !== u.id))}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="erfassen-unter-knopf" onClick={() => setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "" }])}>
+                      + Weitere Unteraufgabe
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
             {sichtbareKonflikte.length > 0 && (
               <div className="konflikt-hinweis" role="status">
                 <strong>Überschneidung:</strong>
@@ -738,8 +820,8 @@ export function QuickAdd({
               <span className="faint">
                 {modus === "PRUEFUNG"
                   ? "Legt auch eine offene Note an."
-                  : wirdAlsTodoGespeichert
-                    ? "Ohne Termin wird daraus ein To-do."
+                  : modus === "SONSTIGE"
+                    ? "Datum optional."
                     : ""}
               </span>
               <button type="button" className="knopf neben" onClick={handleClose} disabled={isPending}>
@@ -753,15 +835,6 @@ export function QuickAdd({
         </div>
       )}
 
-      {unterDialogFuer && (
-        <UnteraufgabenDialog
-          parentTyp={unterDialogFuer.parentTyp}
-          parentId={unterDialogFuer.parentId}
-          parentTitel={unterDialogFuer.parentTitel}
-          fachId={unterDialogFuer.fachId}
-          onClose={() => setUnterDialogFuer(null)}
-        />
-      )}
     </>
   );
 }
