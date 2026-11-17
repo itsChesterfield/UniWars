@@ -19,6 +19,7 @@ import {
   type Seite,
 } from "@/lib/geteilte-ansicht";
 import { hubNameAusPfad } from "@/lib/hubs/navigation";
+import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { track } from "@/lib/analytics";
 
 // Die Aufteilung liegt im Browser, damit sie Seitenwechsel und Neuladen übersteht.
@@ -86,7 +87,11 @@ const SEITEN_TEXT: Record<Seite, string> = { links: "links", rechts: "rechts", o
  * Rand, öffnet sich der Hub dort als zweite Ansicht (wie Windows Snap). Der zweite
  * Hub läuft in einem iframe derselben App – ohne Sidebar, sonst wie gewohnt.
  */
-export function GeteilteAnsicht({ children, mainKlasse }: { children: ReactNode; mainKlasse: string }) {
+export function GeteilteAnsicht({ children, mainKlasse: grundKlasse }: { children: ReactNode; mainKlasse: string }) {
+  // Zentraler Hub (Übersicht, Termine …) hat eigene Ränder; die Übersicht reicht bis an den Rand
+  const pfadJetzt = usePathname();
+  const zentral = BEREICHE.some((b) => b.href === pfadJetzt);
+  const mainKlasse = zentral ? `dashboard-main hub-zentral${pfadJetzt === "/" ? " hub-randlos" : ""}` : grundKlasse;
   const eingebettet = useEingebettet();
   const roh = useSyncExternalStore(abonnieren, rohLesen, () => null);
   const aufteilung = eingebettet ? null : aufteilungLesen(roh);

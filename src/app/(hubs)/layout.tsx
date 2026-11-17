@@ -40,10 +40,13 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
     supabase.from("benachrichtigung").select("*").order("erstellt_am", { ascending: false }).limit(20),
     supabase.from("einladung").select("*").eq("an_user_id", user.id).eq("status", "OFFEN").order("erstellt_am", { ascending: false }),
   ]);
-  const settings = settingsRoh ? await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh) : null;
+  // Streak und Profilbild-Link gleichzeitig statt nacheinander
+  const [settings, avatarUrl] = await Promise.all([
+    settingsRoh ? pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh) : null,
+    profilbildUrl(supabase, settingsRoh?.avatar_pfad),
+  ]);
 
   const name = anzeigeName(settings, user);
-  const avatarUrl = await profilbildUrl(supabase, settings?.avatar_pfad);
   const kiVerfuegbar = kiKonfiguriert();
   const theme = settings?.theme ?? "HELL";
   const darstellung = darstellungLesen(settings?.darstellung);

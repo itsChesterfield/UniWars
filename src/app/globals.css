@@ -14489,3 +14489,63 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 .plan-raster .z + .z {
   margin-top: 2px;
 }
+
+/* Ladeanzeige beim Wechsel zwischen Bereichen */
+.lade-skelett {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  animation: lade-ein 160ms ease-out 120ms both;
+}
+
+.lade-skelett .lade-zeile,
+.lade-skelett .lade-block {
+  display: block;
+  border-radius: var(--radius-m);
+  background: linear-gradient(90deg, var(--linie) 0%, color-mix(in srgb, var(--linie) 40%, transparent) 50%, var(--linie) 100%);
+  background-size: 200% 100%;
+  animation: lade-glanz 1.2s ease-in-out infinite;
+}
+
+.lade-skelett .lade-zeile {
+  width: 32%;
+  height: 18px;
+}
+
+.lade-skelett .lade-zeile.breit {
+  width: 52%;
+  height: 40px;
+}
+
+.lade-skelett .lade-raster {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.lade-skelett .lade-block {
+  height: 96px;
+}
+
+.lade-skelett .lade-block.hoch {
+  height: 240px;
+}
+
+@keyframes lade-glanz {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+/* Erst nach kurzer Verzögerung sichtbar: schnelle Wechsel flackern nicht */
+@keyframes lade-ein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lade-skelett .lade-zeile,
+  .lade-skelett .lade-block {
+    animation: none;
+  }
+}

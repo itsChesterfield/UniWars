@@ -25,7 +25,7 @@ import {
 import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschritt-views";
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
-import { QuickAdd } from "@/components/quick-add";
+import { SchnellErfassenKnopf } from "@/components/quick-add";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
@@ -344,7 +344,6 @@ export function DashboardContent({
             }}
             layoutRoh={settings.hub_layout}
           />
-          <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} ohneKnopf />
         </>
       ) : (
         <div className="hubseite">
@@ -354,7 +353,7 @@ export function DashboardContent({
               <p>{info.untertitel}</p>
             </div>
             <div className="rechts">
-              <QuickAdd faecher={faecher} todos={todos} pruefungen={pruefungen} />
+              <SchnellErfassenKnopf />
             </div>
           </header>
 

@@ -200,14 +200,14 @@ export function QuickAdd({
   // Strg+O (Befehlspalette) öffnet Schnell erfassen mit Typ und Titel
   useEffect(() => {
     function oeffnen(e: Event) {
-      const d = (e as CustomEvent<{ modus?: QuickAddModus; titel?: string }>).detail ?? {};
+      const d = (e as CustomEvent<{ modus?: QuickAddModus; titel?: string; quelle?: string }>).detail ?? {};
       if (d.modus && ALLE_MODI.includes(d.modus)) {
         setModus(d.modus);
         setTypManuellGesetzt(true);
       }
       if (typeof d.titel === "string") setTitel(d.titel);
       setOpen(true);
-      track("schnell_erfassen_geoeffnet", { quelle: "befehlspalette" });
+      track("schnell_erfassen_geoeffnet", { quelle: d.quelle ?? "befehlspalette" });
     }
     window.addEventListener(SCHNELL_ERFASSEN, oeffnen);
     return () => window.removeEventListener(SCHNELL_ERFASSEN, oeffnen);
@@ -666,5 +666,24 @@ export function QuickAdd({
         />
       )}
     </>
+  );
+}
+
+/** Knopf „Schnell erfassen“: öffnet das Formular aus dem gemeinsamen Rahmen (dort hört genau ein QuickAdd auf Q). */
+export function SchnellErfassenKnopf() {
+  return (
+    <button
+      type="button"
+      className="btnp"
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN, { detail: { quelle: "button" } }));
+      }}
+      title="Schnell erfassen (Taste Q)"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Schnell erfassen
+    </button>
   );
 }
