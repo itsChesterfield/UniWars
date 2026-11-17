@@ -14,6 +14,9 @@ import type { FachOption } from "@/lib/fach-option";
 import { Unteraufgaben } from "@/components/unteraufgaben";
 import { TodoUnterpunkte } from "@/components/todo-unterpunkte";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
+import { Zustand } from "@/components/zustand";
+import { ErfassenKnopf } from "@/components/erfassen-knopf";
+import { Icon } from "@/components/nav-icon";
 
 type Todo = Tables<"todo">;
 type Deadline = Tables<"deadline">;
@@ -123,15 +126,34 @@ export function TodoManager({
   const inhalt = (
     <>
       {!versteckeErstellen && (
-        <div className="rowb" style={{ marginBottom: 14 }}>
-          <span />
-          <button type="button" onClick={openCreateForm} className="btnp">
-            + To-Do
+        <div className="liste-kopf">
+          <button type="button" onClick={openCreateForm} className="knopf neben klein">
+            <Icon name="plus" groesse={16} />
+            To-Do
           </button>
         </div>
       )}
 
-      {sortiert.length === 0 && !formOpen && <p className="empty-state">Keine To-Dos.</p>}
+      {sortiert.length === 0 && !formOpen && (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Keine To-Dos."
+          aktion={
+            versteckeErstellen ? (
+              <ErfassenKnopf modus="SONSTIGE">To-Do erfassen</ErfassenKnopf>
+            ) : (
+              <button type="button" className="knopf neben klein" onClick={openCreateForm}>
+                <Icon name="plus" groesse={16} />
+                To-Do
+              </button>
+            )
+          }
+        >
+          Aufgaben ohne festen Termin sammeln sich hier, mit Unterpunkten zum Abhaken.
+        </Zustand>
+      )}
 
       <ul className="entry-list">
         {sortiert.map((t) => {
@@ -148,7 +170,6 @@ export function TodoManager({
                   onChange={() => handleToggleErledigt(t)}
                   aria-label="Erledigt"
                 />
-                <span className={`prio-marke prio-${t.prioritaet.toLowerCase()}`} aria-hidden />
                 <div className="entry-info">
                   <button
                     type="button"
@@ -158,14 +179,14 @@ export function TodoManager({
                     {t.titel}
                   </button>
                   <span className="entry-meta">
-                    {[PRIO_LABEL[t.prioritaet], fach?.name].filter(Boolean).join(" · ")}
+                    {[`Priorität ${PRIO_LABEL[t.prioritaet].toLowerCase()}`, fach?.name].filter(Boolean).join(", ")}
                   </span>
                 </div>
                 <div className="entry-actions">
-                  <button type="button" onClick={() => openEditForm(t)}>
+                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(t)}>
                     Bearbeiten
                   </button>
-                  <button type="button" onClick={() => handleDelete(t.id)}>
+                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(t.id)}>
                     Löschen
                   </button>
                 </div>
@@ -231,10 +252,10 @@ export function TodoManager({
           </select>
 
           <div className="crud-form-actions">
-            <button type="submit" className="btnp" disabled={isPending}>
+            <button type="submit" className="knopf haupt" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
-            <button type="button" onClick={() => setFormOpen(false)} disabled={isPending}>
+            <button type="button" className="knopf leise" onClick={() => setFormOpen(false)} disabled={isPending}>
               Abbrechen
             </button>
           </div>

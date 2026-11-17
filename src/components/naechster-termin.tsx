@@ -38,11 +38,7 @@ export function NaechsterTermin({
   const naechster = kandidaten[0];
 
   if (!naechster) {
-    return (
-      <div className="naechster-termin naechster-termin-leer">
-        <span className="muted">Kein anstehender Termin.</span>
-      </div>
-    );
+    return <p className="naechster-termin-leer">Kein anstehender Termin. Neue Termine legst du über „Schnell erfassen“ an.</p>;
   }
 
   const fach = faecher.find((f) => f.id === naechster.fach_id);
@@ -51,22 +47,23 @@ export function NaechsterTermin({
 
   return (
     <div className={`naechster-termin ${dringend ? "naechster-termin-dringend" : ""}`}>
-      <div className={`naechster-termin-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
-        <span className="entry-countdown-wert" style={{ fontSize: 30 }}>{wert}</span>
-        <span className="entry-countdown-einheit">{einheit}</span>
+      <div className="naechster-termin-countdown">
+        <span className="wert">{wert}</span>
+        <span className="einheit">{einheit}</span>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="row" style={{ gap: 8 }}>
-          <span className="tag">{naechster.typ}</span>
+      <div className="naechster-termin-text">
+        <p className="naechster-termin-art">
+          Als Nächstes: {naechster.typ}
           {fach && (
-            <span className="row muted" style={{ gap: 6, fontSize: 12 }}>
-              <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} />
+            <>
+              {", "}
+              <span className="dot" style={{ background: fach.farbe ?? "var(--text-3)" }} aria-hidden />
               {fach.name}
-            </span>
+            </>
           )}
-        </div>
-        <div style={{ fontWeight: 600, fontSize: 15, marginTop: 3 }}>{naechster.titel}</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 1 }}>{absolutesDatum(naechster.zeitpunkt)}</div>
+        </p>
+        <p className="naechster-termin-titel">{naechster.titel}</p>
+        <p className="naechster-termin-zeit">{absolutesDatum(naechster.zeitpunkt)}</p>
       </div>
     </div>
   );

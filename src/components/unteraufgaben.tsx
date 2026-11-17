@@ -20,6 +20,7 @@ import type { Tables } from "@/lib/supabase/types";
 import { restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 type Deadline = Tables<"deadline">;
 type ParentTyp = "todo" | "deadline" | "pruefung";
@@ -105,8 +106,9 @@ export function Unteraufgaben({
 
   if (aufgaben.length === 0 && !formOpen) {
     return (
-      <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-        + Unteraufgabe
+      <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
+        <Icon name="plus" groesse={16} />
+        Unteraufgabe
       </button>
     );
   }
@@ -117,7 +119,7 @@ export function Unteraufgaben({
         const name = nameVon(d.zugewiesen_an);
         const zeit = d.erledigt
           ? absolutesDatum(d.faellig_am)
-          : `${restzeitGross(d.faellig_am).wert} ${restzeitGross(d.faellig_am).einheit} · ${absolutesDatum(d.faellig_am)}`;
+          : `${restzeitGross(d.faellig_am).wert} ${restzeitGross(d.faellig_am).einheit}, ${absolutesDatum(d.faellig_am)}`;
         return (
           <div key={d.id} className={`unteraufgabe-row ${d.erledigt ? "entry-erledigt" : ""}`}>
             <input
@@ -128,13 +130,11 @@ export function Unteraufgaben({
             />
             <div className="unteraufgabe-info">
               <span>{d.titel}</span>
-              <span className="muted" style={{ fontSize: 11 }}>
-                {name ? `→ ${name} · ${zeit}` : zeit}
-              </span>
+              <span className="unteraufgabe-meta">{name ? `Für ${name}, ${zeit}` : zeit}</span>
             </div>
             {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
-            <button type="button" onClick={() => handleDelete(d.id)} aria-label="Unteraufgabe löschen">
-              ✕
+            <button type="button" className="unteraufgabe-weg" onClick={() => handleDelete(d.id)} aria-label="Unteraufgabe löschen">
+              <Icon name="schliessen" groesse={16} />
             </button>
           </div>
         );
@@ -151,8 +151,9 @@ export function Unteraufgaben({
           onAbbrechen={() => setFormOpen(false)}
         />
       ) : (
-        <button type="button" className="unteraufgabe-add" onClick={() => setFormOpen(true)}>
-          + Unteraufgabe
+        <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
+          <Icon name="plus" groesse={16} />
+          Unteraufgabe
         </button>
       )}
     </div>

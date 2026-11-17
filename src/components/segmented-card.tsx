@@ -9,8 +9,13 @@ export type Segment = {
   content: ReactNode;
 };
 
+/**
+ * Design B3: Abschnitt mit Umschalter (Segment) statt Karte. Titel als h2; `titelVerstecken`, wenn
+ * der Seitenkopf denselben Namen schon trägt (der Titel bleibt für Screenreader und Analyse).
+ */
 export function SegmentedCard({
   title,
+  titelVerstecken = false,
   subtitle,
   segments,
   className,
@@ -18,6 +23,7 @@ export function SegmentedCard({
   aktion,
 }: {
   title: string;
+  titelVerstecken?: boolean;
   subtitle?: ReactNode;
   segments: Segment[];
   className?: string;
@@ -28,21 +34,21 @@ export function SegmentedCard({
   const aktiv = segments.find((s) => s.key === active) ?? segments[0];
 
   return (
-    <section className={`card ${className ?? ""}`}>
-      <div className="ch">
-        <div className="row" style={{ gap: 12 }}>
-          <span className="ct">{title}</span>
-          {subtitle && <span className="muted" style={{ fontSize: 14, fontWeight: 500 }}>{subtitle}</span>}
+    <section className={`segmentkarte ${className ?? ""}`}>
+      <div className="segmentkarte-kopf">
+        <div className="segmentkarte-titel">
+          <h2 className={titelVerstecken ? "vh" : "abschnitt-titel"}>{title}</h2>
+          {subtitle && <span className="segmentkarte-untertitel">{subtitle}</span>}
         </div>
-        <div className="row" style={{ gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <div className="segmentkarte-rechts">
           {aktion}
           {segments.length > 1 && (
-            <div className="segwrap">
+            <div className="segment" role="group" aria-label={`${title}: Ansicht`}>
               {segments.map((s) => (
                 <button
                   key={s.key}
                   type="button"
-                  className={`seg ${s.key === aktiv?.key ? "on" : ""}`}
+                  aria-pressed={s.key === aktiv?.key}
                   onClick={() => {
                     if (s.key !== aktiv?.key) track("segment_gewechselt", { karte: title, segment: s.key });
                     setActive(s.key);
@@ -56,7 +62,7 @@ export function SegmentedCard({
         </div>
       </div>
       {banner}
-      <div style={{ minHeight: 220 }}>{aktiv?.content}</div>
+      <div className="segmentkarte-inhalt">{aktiv?.content}</div>
     </section>
   );
 }

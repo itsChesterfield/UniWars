@@ -97,9 +97,7 @@ export function UnteraufgabenDialog({
       }}
     >
       <h3>Unteraufgaben hinzufügen?</h3>
-      <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-        Für „{parentTitel}“ — optional.
-      </p>
+      <p className="unteraufgabe-meta">Für „{parentTitel}“, optional.</p>
 
       <UnteraufgabenEditor
         elternTyp={parentTyp}
