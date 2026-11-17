@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { AnalyticsNutzer } from "@/components/analytics-nutzer";
 import { NoteManager } from "@/components/note-manager";
@@ -68,7 +68,7 @@ export function DashboardContent({
   kalender,
   karten,
   serverJetzt,
-  bereich = "uebersicht",
+  bereich: bereichStart = "uebersicht",
   mensa = null,
   semester = null,
 }: {
@@ -326,6 +326,9 @@ export function DashboardContent({
       />
   );
 
+  // Die Notch wechselt den Bereich ohne Server-Aufruf (nur die Adresse ändert sich): Bereich aus der Adresse lesen
+  const pfad = usePathname();
+  const bereich: Bereich = BEREICHE.find((b) => b.href === pfad)?.bereich ?? bereichStart;
   const info = BEREICHE.find((b) => b.bereich === bereich) ?? BEREICHE[0];
 
   return (

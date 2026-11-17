@@ -60,10 +60,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
       .select("zuletzt_abgeglichen")
       .eq("user_id", user.id)
       .maybeSingle(),
-    // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Ohne Karteikarten-Tabelle bleibt es bei 0.
-    bereich === "uebersicht"
-      ? supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000)
-      : Promise.resolve({ data: null }),
+    // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
+    supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000),
   ]);
 
   const error =
@@ -95,10 +93,10 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
   const karten = { anzahl: faelligeKarten?.length ?? 0, stapel: [...proStapel.values()].sort((a, b) => b.anzahl - a.anzahl) };
 
   const username = anzeigeName(settings, user);
-  // Speiseplan nur für die Übersicht und nur mit gewählter Mensa (OpenMensa, 30 min zwischengespeichert)
+  // Alle Bereiche bekommen dieselben Daten: Die Notch blendet nur um (OpenMensa 30 min zwischengespeichert)
   const [mensa, sem] = await Promise.all([
-    bereich === "uebersicht" && settings.mensa_id ? speiseplan(settings.mensa_id, settings.mensa_name ?? "Mensa") : null,
-    bereich === "uebersicht" && settings.hochschule_id ? semesterLage(supabase).catch(() => null) : null,
+    settings.mensa_id ? speiseplan(settings.mensa_id, settings.mensa_name ?? "Mensa") : null,
+    settings.hochschule_id ? semesterLage(supabase).catch(() => null) : null,
   ]);
   const semesterText = sem ? semesterKurz(sem.termine, sem.land) : null;
   // Rahmen (Symbolleiste, Kopfleiste, Glocke) kommt aus app/(hubs)/layout.tsx und bleibt beim Wechsel stehen
