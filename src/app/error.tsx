@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { fehlerMelden } from "@/lib/analytics";
+import { Zustand } from "@/components/zustand";
 
 export default function Fehler({
   error,
@@ -16,14 +17,19 @@ export default function Fehler({
 
   return (
     <main className="auth-page">
-      <section className="zustand z-fehler" role="alert">
-        <h1>Da ist etwas schiefgelaufen.</h1>
-        <p>Der Fehler wurde gemeldet. Versuch es noch einmal, meistens klappt es beim zweiten Mal.</p>
-        <button type="button" className="btnp" onClick={() => retry()}>
-          Erneut versuchen
-        </button>
-        {error.digest && <p className="zustand-detail">Fehler-ID: {error.digest}</p>}
-      </section>
+      <Zustand
+        art="fehler"
+        ebene={1}
+        titel="Da ist etwas schiefgelaufen."
+        detail={error.digest ? `Fehler-ID: ${error.digest}` : undefined}
+        aktion={
+          <button type="button" className="knopf haupt" onClick={() => retry()}>
+            Erneut versuchen
+          </button>
+        }
+      >
+        Der Fehler wurde gemeldet. Versuch es noch einmal, meistens klappt es beim zweiten Mal.
+      </Zustand>
     </main>
   );
 }

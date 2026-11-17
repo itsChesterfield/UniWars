@@ -72,6 +72,7 @@
   --akzent-text: #1f4e8c;
   --auf-akzent: #ffffff;
   --auf-fehler: #ffffff;
+  --fehler-text: #9f1e23;
   --auf-warnung: #ffffff;
   --fokus: #1f4e8c;
   --ok: #1d8a57;
@@ -105,6 +106,7 @@
   --akzent-text: #ebc575;
   --auf-akzent: #17110a;
   --auf-fehler: #17110a;
+  --fehler-text: #f2777a;
   --auf-warnung: #17110a;
   --fokus: #ebc575;
   --ok: #5fd39a;
@@ -139,6 +141,7 @@
     --akzent-text: #ebc575;
     --auf-akzent: #17110a;
     --auf-fehler: #17110a;
+    --fehler-text: #f2777a;
     --auf-warnung: #17110a;
     --fokus: #ebc575;
     --ok: #5fd39a;
@@ -2128,8 +2131,10 @@ dialog.card {
 
 .btnp:disabled,
 .btng:disabled {
-  opacity: 0.55;
-  cursor: default;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border-color: transparent;
+  color: var(--text-3);
+  cursor: not-allowed;
 }
 
 a.btnp:hover,
@@ -3692,8 +3697,9 @@ dialog.dat-vorschau {
 }
 
 .icon-knopf:disabled {
-  opacity: 0.4;
-  cursor: default;
+  color: var(--text-3);
+  background: transparent;
+  cursor: not-allowed;
 }
 
 .icon-knopf.an,
@@ -12813,12 +12819,19 @@ html[data-bewegung="reduziert"][data-laedt]:not(:has(.lade-skelett)) .kopfleiste
   line-height: 1.5;
 }
 
-.zustand .btnp {
+.zustand .zustand-aktion {
   margin-top: var(--space-2);
 }
 
-.zustand .btnp[aria-busy="true"] {
-  cursor: progress;
+/* Zustand nur für einen Teil der Seite: kleiner, ohne eigenen Abstand nach außen */
+.zustand.z-region {
+  margin: 0;
+  padding: var(--space-6) 0;
+}
+
+.zustand.z-region h2,
+.zustand.z-region h3 {
+  font-size: var(--text-lg);
 }
 
 .zustand .zustand-detail {
@@ -12858,11 +12871,6 @@ html[data-bewegung="reduziert"][data-laedt]:not(:has(.lade-skelett)) .kopfleiste
   transform: scale(0.98);
 }
 
-.knopf:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .knopf.haupt {
   background: var(--akzent);
   color: var(--auf-akzent);
@@ -12895,6 +12903,28 @@ html[data-bewegung="reduziert"][data-laedt]:not(:has(.lade-skelett)) .kopfleiste
   padding: 0 var(--space-3);
   font-size: var(--text-sm);
   font-weight: 500;
+}
+
+/* Löschen und Entfernen: Fehlerfarbe getönt wie der Nebenknopf, damit es nicht wie „Abbrechen“ aussieht */
+.knopf.gefahr {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  color: var(--fehler-text);
+}
+
+.knopf.gefahr:hover {
+  background: color-mix(in srgb, var(--color-error) 22%, transparent);
+}
+
+/* Deaktiviert über Füllung, Schrift und Zeiger, nicht nur über Deckkraft (Hallmark 39a).
+   Steht nach den Varianten, damit es auch deren Hover überschreibt. Laden ist kein Deaktiviert. */
+.knopf:is(:disabled, [aria-disabled="true"]):not([aria-busy="true"]) {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.knopf[aria-busy="true"] {
+  cursor: progress;
 }
 
 .link {
@@ -14509,46 +14539,130 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   margin-top: 2px;
 }
 
-/* Ladeanzeige beim Wechsel zwischen Bereichen. Erst nach 300 ms sichtbar, damit schnelle
-   Wechsel nicht flackern (DESIGN.md Abschnitt 7). Bewegung nur über opacity. */
+/* Ladeanzeige beim Wechsel zwischen Bereichen: Skelett in der Form des Ziels (`components/skelett.tsx`).
+   Erst nach 300 ms sichtbar, damit schnelle Wechsel nicht flackern (DESIGN.md Abschnitt 7). Bewegung nur über opacity. */
 .lade-skelett {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-8);
+  gap: var(--space-6);
+  padding: var(--space-10) var(--space-8);
   animation: lade-ein var(--dur-short) var(--ease-out) 300ms both;
 }
 
-.lade-skelett .lade-zeile,
-.lade-skelett .lade-block {
+.lade-skelett i {
   display: block;
-  border-radius: var(--radius-m);
-  background: var(--linie);
+  height: 12px;
+  border-radius: var(--radius-s);
+  background: var(--flaeche-3);
   animation: lade-puls 1.2s var(--ease-out) 300ms infinite;
 }
 
-.lade-skelett .lade-zeile {
-  width: 32%;
-  height: 16px;
+.lade-skelett .sk-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.lade-skelett .lade-zeile.breit {
-  width: 52%;
+.lade-skelett .sk-titel {
+  width: min(420px, 70%);
+  height: 32px;
+}
+
+.lade-skelett .sk-kurz {
+  width: min(260px, 45%);
+}
+
+.lade-skelett .sk-zeile:nth-child(odd) {
+  width: min(560px, 85%);
+}
+
+.lade-skelett .sk-zeile:nth-child(even) {
+  width: min(440px, 65%);
+}
+
+.lade-skelett .sk-knopf {
+  width: 144px;
   height: 40px;
+  border-radius: var(--radius-pill);
 }
 
-.lade-skelett .lade-raster {
+.lade-skelett .sk-reihe {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-.lade-skelett .lade-block {
-  height: 96px;
+.lade-skelett .sk-reihe i {
+  height: 72px;
 }
 
-.lade-skelett .lade-block.hoch {
-  height: 240px;
+.lade-skelett .sk-tab i {
+  height: 40px;
+}
+
+.lade-skelett .sk-spalte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.lade-skelett .sk-blatt {
+  width: 100%;
+  max-width: 680px;
+  height: 440px;
+  margin: 0 auto;
+}
+
+.lade-skelett .sk-blatt.sk-breit {
+  max-width: none;
+}
+
+.lade-skelett .sk-zwei {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.lade-skelett .sk-rund {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  border-radius: 50%;
+}
+
+.lade-skelett .sk-blase {
+  width: 62%;
+  height: 56px;
+  border-radius: var(--radius-l);
+}
+
+.lade-skelett .sk-blase.ich {
+  align-self: flex-end;
+  width: 42%;
+}
+
+.lade-skelett .sk-blase.lang {
+  width: 78%;
+  height: 120px;
+}
+
+@media (max-width: 760px) {
+  .lade-skelett {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .lade-skelett .sk-zwei,
+  .lade-skelett .sk-reihe {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lade-skelett .sk-blatt {
+    height: 320px;
+  }
 }
 
 @keyframes lade-puls {
@@ -14572,14 +14686,12 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 
 /* Ohne Bewegung steht das Skelett still, erscheint aber weiterhin erst nach 300 ms. */
 @media (prefers-reduced-motion: reduce) {
-  .lade-skelett .lade-zeile,
-  .lade-skelett .lade-block {
+  .lade-skelett i {
     animation: none;
   }
 }
 
-html[data-bewegung="reduziert"] .lade-skelett .lade-zeile,
-html[data-bewegung="reduziert"] .lade-skelett .lade-block {
+html[data-bewegung="reduziert"] .lade-skelett i {
   animation: none !important;
 }
 

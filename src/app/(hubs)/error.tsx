@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fehlerMelden } from "@/lib/analytics";
+import { Zustand } from "@/components/zustand";
 
 /**
  * Design B3, Zustand „Fehler“ (DESIGN.md Abschnitt 8): nur dieser Bereich ist betroffen,
@@ -21,28 +22,28 @@ export default function BereichFehler({
   }, [error]);
 
   return (
-    <section className="zustand z-fehler" role="alert">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 3.5 21.5 20h-19Z" />
-        <path d="M12 10v4.5M12 17.2v.3" />
-      </svg>
-      <h2>Dieser Bereich hat gerade nicht geladen.</h2>
-      <p>Deine Daten sind sicher. Alle anderen Bereiche funktionieren weiter, du kannst links jederzeit wechseln.</p>
-      <button
-        type="button"
-        className="btnp"
-        disabled={laeuft}
-        aria-busy={laeuft}
-        onClick={() => {
-          setLaeuft(true);
-          retry();
-          // Klappt es nicht, erscheint der Fehler erneut; der Knopf wird dann wieder frei
-          window.setTimeout(() => setLaeuft(false), 1500);
-        }}
-      >
-        {laeuft ? "Wird geladen …" : "Erneut versuchen"}
-      </button>
-      {error.digest && <p className="zustand-detail">Fehler-ID: {error.digest}</p>}
-    </section>
+    <Zustand
+      art="fehler"
+      titel="Dieser Bereich hat gerade nicht geladen."
+      detail={error.digest ? `Fehler-ID: ${error.digest}` : undefined}
+      aktion={
+        <button
+          type="button"
+          className="knopf haupt"
+          disabled={laeuft}
+          aria-busy={laeuft}
+          onClick={() => {
+            setLaeuft(true);
+            retry();
+            // Klappt es nicht, erscheint der Fehler erneut; der Knopf wird dann wieder frei
+            window.setTimeout(() => setLaeuft(false), 1500);
+          }}
+        >
+          {laeuft ? "Wird geladen …" : "Erneut versuchen"}
+        </button>
+      }
+    >
+      Deine Daten sind sicher. Alle anderen Bereiche funktionieren weiter, du kannst links jederzeit wechseln.
+    </Zustand>
   );
 }
