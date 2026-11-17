@@ -4,6 +4,8 @@ import "server-only";
 import type { Supabase } from "@/lib/ki/server";
 import { berlinDatum, berlinMitternacht, berlinWochentag } from "@/lib/zeit";
 import { markerEntschaerfen } from "@/lib/ki/material";
+import { semesterLage } from "@/lib/semester-server";
+import { semesterSatz } from "@/lib/semester";
 
 const TAGNAME: Record<string, string> = { MO: "Mo", DI: "Di", MI: "Mi", DO: "Do", FR: "Fr", SA: "Sa", SO: "So" };
 
@@ -19,7 +21,7 @@ export async function lagebildText(supabase: Supabase): Promise<string> {
   const tagMorgen = berlinWochentag(morgen);
   const in14 = new Date(jetzt.getTime() + 14 * 86_400_000).toISOString();
   const in30 = new Date(jetzt.getTime() + 30 * 86_400_000).toISOString();
-  const [{ data: faecher }, { data: stunden }, { data: deadlines }, { data: pruefungen }, { data: todos }, { count: karten }, { data: studium }] = await Promise.all([
+  const [{ data: faecher }, { data: stunden }, { data: deadlines }, { data: pruefungen }, { data: todos }, { count: karten }, { data: studium }, semester] = await Promise.all([
     supabase.from("fach").select("id, name"),
     supabase.from("stundenplan_eintrag").select("fach_id, tag, start_zeit, raum").in("tag", [tagHeute, tagMorgen]).order("start_zeit"),
     supabase.from("deadline").select("titel, faellig_am, fach_id, typ").eq("erledigt", false).gte("faellig_am", jetzt.toISOString()).lte("faellig_am", in14).order("faellig_am").limit(12),
@@ -27,6 +29,7 @@ export async function lagebildText(supabase: Supabase): Promise<string> {
     supabase.from("todo").select("titel").eq("erledigt", false).is("parent_id", null).order("erstellt_am", { ascending: false }).limit(10),
     supabase.from("kk_karte").select("id", { count: "exact", head: true }).lte("naechste_abfrage", jetzt.toISOString()),
     supabase.from("settings").select("hochschule_frei, hochschule(name, ort, art)").maybeSingle(),
+    semesterLage(supabase).catch(() => null),
   ]);
   const hs = studium?.hochschule;
   const hochschule = hs ? `${hs.name}${hs.ort ? ` (${hs.ort})` : ""}${hs.art === "fh" ? ", Hochschule für angewandte Wissenschaften" : ""}` : studium?.hochschule_frei;
@@ -39,6 +42,7 @@ export async function lagebildText(supabase: Supabase): Promise<string> {
       .join(", ") || "keine";
   const zeilen = [
     ...(hochschule ? [`- Studiert an: ${markerEntschaerfen(hochschule).slice(0, 160)}`] : []),
+    ...(semester ? [`- ${semesterSatz(semester.termine, heute, semester.land, semester.gepflegt)}`] : []),
     `- Vorlesungen heute (${TAGNAME[tagHeute]}): ${vorlesungen(tagHeute)}`,
     `- Vorlesungen morgen (${TAGNAME[tagMorgen]}): ${vorlesungen(tagMorgen)}`,
     `- Offene Deadlines (14 Tage): ${(deadlines ?? []).map((d) => `${t(d.titel)}${fach(d.fach_id) ? ` [${t(fach(d.fach_id)!)}]` : ""} – ${kurzDatum(d.faellig_am)}`).join("; ") || "keine"}`,

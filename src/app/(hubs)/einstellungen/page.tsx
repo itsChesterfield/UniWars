@@ -8,6 +8,9 @@ import { Einstellungen } from "@/components/einstellungen";
 import { profilLesen } from "@/lib/ki/lernraum";
 import { HochschuleWahl } from "@/components/einstellungen/hochschule-wahl";
 import { MensaWahl } from "@/components/einstellungen/mensa-wahl";
+import { SemesterBlock } from "@/components/einstellungen/semester-block";
+import { semesterLage } from "@/lib/semester-server";
+import { berlinDatum } from "@/lib/zeit";
 import { adminKonfiguriert } from "@/lib/supabase/admin";
 import { mailKonfiguriert } from "@/lib/mail";
 import { domainAusMail } from "@/lib/hochschulen";
@@ -40,6 +43,7 @@ export default async function EinstellungenSeite() {
         : Promise.resolve({ data: null }),
     ]);
   const jetzt = new Date();
+  const semester = settings?.hochschule_id ? await semesterLage(supabase) : null;
   const bestaetigt = Boolean(
     verif?.bestaetigt_am &&
     verif.gueltig_bis &&
@@ -95,6 +99,15 @@ export default async function EinstellungenSeite() {
                   : null
               }
             />
+            {semester && (
+              <SemesterBlock
+                termine={semester.termine}
+                gepflegt={semester.gepflegt}
+                geaendertAm={semester.geaendertAm}
+                land={semester.land}
+                heute={berlinDatum(jetzt)}
+              />
+            )}
             <MensaWahl
               mensa={settings?.mensa_name ?? null}
               vorschlag={settings?.hochschule?.ort ?? null}

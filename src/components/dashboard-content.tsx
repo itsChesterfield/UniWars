@@ -70,6 +70,7 @@ export function DashboardContent({
   serverJetzt,
   bereich = "uebersicht",
   mensa = null,
+  semester = null,
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -91,6 +92,8 @@ export function DashboardContent({
   bereich?: Bereich;
   /** Speiseplan der gewählten Mensa (nur Übersicht) */
   mensa?: Speiseplan | null;
+  /** Kurzinfo zum Semester für „Diese Woche“ */
+  semester?: string | null;
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -347,6 +350,7 @@ export function DashboardContent({
               serverJetzt,
               mensa,
               mensaGewaehlt: Boolean(settings.mensa_id),
+              semester,
             }}
             layoutRoh={settings.hub_layout}
           />

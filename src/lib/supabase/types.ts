@@ -550,6 +550,50 @@ export type Database = {
         }
         Relationships: []
       }
+      hochschule_semester: {
+        Row: {
+          geaendert_am: string
+          geaendert_von: string | null
+          hochschule_id: string
+          pruefung_beginn: string | null
+          pruefung_ende: string | null
+          rueckmeldung_bis: string | null
+          semester: string
+          vorlesung_beginn: string
+          vorlesung_ende: string
+        }
+        Insert: {
+          geaendert_am?: string
+          geaendert_von?: string | null
+          hochschule_id: string
+          pruefung_beginn?: string | null
+          pruefung_ende?: string | null
+          rueckmeldung_bis?: string | null
+          semester: string
+          vorlesung_beginn: string
+          vorlesung_ende: string
+        }
+        Update: {
+          geaendert_am?: string
+          geaendert_von?: string | null
+          hochschule_id?: string
+          pruefung_beginn?: string | null
+          pruefung_ende?: string | null
+          rueckmeldung_bis?: string | null
+          semester?: string
+          vorlesung_beginn?: string
+          vorlesung_ende?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hochschule_semester_hochschule_id_fkey"
+            columns: ["hochschule_id"]
+            isOneToOne: false
+            referencedRelation: "hochschule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kalender_eintrag: {
         Row: {
           google_event_id: string
