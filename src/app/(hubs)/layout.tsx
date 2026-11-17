@@ -23,7 +23,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   if (!user) redirect("/login");
 
-  // Schnell erfassen (Taste Q) gibt es in der ganzen App – dafür die Auswahllisten laden
+  // Schnell erfassen (Knopf, Strg+O) gibt es in der ganzen App – dafür die Auswahllisten laden
   const [
     { data: settingsRoh },
     { data: faecher },

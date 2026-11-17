@@ -1270,8 +1270,9 @@ export type Database = {
           gewicht: number
           id: string
           titel: string
+          pruefung_id: string | null
           user_id: string
-          wert: number
+          wert: number | null
         }
         Insert: {
           bestanden?: boolean | null
@@ -1279,9 +1280,10 @@ export type Database = {
           fach_id: string
           gewicht?: number
           id?: string
+          pruefung_id?: string | null
           titel: string
           user_id: string
-          wert: number
+          wert?: number | null
         }
         Update: {
           bestanden?: boolean | null
@@ -1289,9 +1291,10 @@ export type Database = {
           fach_id?: string
           gewicht?: number
           id?: string
+          pruefung_id?: string | null
           titel?: string
           user_id?: string
-          wert?: number
+          wert?: number | null
         }
         Relationships: [
           {

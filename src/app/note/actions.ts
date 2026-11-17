@@ -7,7 +7,8 @@ import type { TablesInsert } from "@/lib/supabase/types";
 export type NoteInput = {
   titel: string;
   fach_id: string;
-  wert: number;
+  /** leer = ausstehend (z. B. Prüfung ohne Ergebnis) */
+  wert: number | null;
   gewicht: number;
   datum: string;
 };
@@ -35,6 +36,13 @@ export async function createNote(input: NoteInput) {
   return data;
 }
 
+/** Note mit Prüfung: Mit eingetragenem Wert ist die Prüfung bestanden (bis 4,0) oder nicht */
+async function pruefungAbgleichen(supabase: Awaited<ReturnType<typeof createClient>>, pruefungId: string | null, wert: number | null) {
+  if (!pruefungId) return;
+  const status = wert === null ? "ANSTEHEND" : wert <= 4 ? "BESTANDEN" : "NICHT_BESTANDEN";
+  await supabase.from("pruefung").update({ status }).eq("id", pruefungId);
+}
+
 export async function updateNote(id: string, input: NoteInput) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -51,6 +59,7 @@ export async function updateNote(id: string, input: NoteInput) {
     .single();
 
   if (error) throw new Error(error.message);
+  await pruefungAbgleichen(supabase, data.pruefung_id, data.wert);
   revalidatePath("/");
   return data;
 }
