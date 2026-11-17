@@ -1,6 +1,6 @@
 # DESIGN.md – UniVerse
 
-Verbindliche Gestaltungsregeln für UniVerse (Repo: UniWars). Stand 16.11.2026, entschieden von Didi Romrod.
+Verbindliche Gestaltungsregeln für UniVerse (Repo: UniWars). Stand 17.11.2026, entschieden von Didi Romrod.
 Diese Datei ist die Quelle für Menschen und für KI-Werkzeuge: Wer UI baut, hält sich an diese Datei und bringt keinen eigenen Geschmack ein.
 
 **Referenz zum Anklicken:** `docs/design/b3-dummy/index.html` (im Browser öffnen, unten links „Testwerkzeuge“ für Ladezeit, Leer, Fehler, Offline und Abmelden).
@@ -45,7 +45,8 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
   - Studium: PDF Reader, Lernraum, Dateiablage, Literatur, Transkription, Chat
   - Werkzeuge: Textverarbeitung, Tabellen, Präsentationen, MindMap, Whiteboard
   - Darunter: UniVerse Studio, Einstellungen, Avatar mit Profil-Menü. Die gleitende Markierung zeigt den aktiven Bereich.
-- **Kontextspalte** 272 px je Bereich (Navigation innerhalb des Bereichs, zum Beispiel Hub-Unterseiten, Notizenliste, Fächer im Lernraum).
+  - Ein Knopf unten in der Leiste klappt sie auf 216 px auf und zeigt die Namen neben den Symbolen. Der Zustand bleibt im Browser gespeichert. **Die Breite wird nicht animiert**, der Wechsel gilt sofort (Abschnitt 7).
+- **Kontextspalte** 272 px je Bereich (Navigation innerhalb des Bereichs, zum Beispiel Notizenliste, Fächer im Lernraum). **Ausnahme Zentraler Hub:** dessen Unterseiten stehen als Segment oben in der Arbeitsfläche, nicht in einer Spalte (Abschnitt 5).
 - **Kopfleiste** in der Arbeitsfläche: Pfad, Fokus-Timer, Sync-Status (Synchron, Wird abgeglichen, Offline), Benachrichtigungen, Uhrzeit. **Kein Design-Schalter** (Standard aus, in der Personalisierung einschaltbar).
 - **UniVerse Studio** (⌘J): eine Leiste rechts, der Inhalt rückt zur Seite. Zeigt „Sieht gerade …“, nimmt markierten Text mit, Neuer Chat, Privater Chat, Groß/Klein. Am Handy als Vollbild.
 - **Befehlspalette** Strg/⌘+O (einziges Kürzel), **Schnell erfassen** mit Q.
@@ -53,10 +54,11 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - **Handy (unter 60 rem):** Tab-Leiste unten (die ersten vier Bereiche der Symbolleiste plus „Alles“), Kontextspalte als aufklappbare Leiste oben, Studio und Avatar in der Kopfleiste.
 
 ## 5. Zentraler Hub
-- Unterseiten in der Kontextspalte: Übersicht, Termine, Aufgaben, Noten, Fortschritt, Fächer. Termine, Aufgaben und Noten haben einen Fach-Filter.
+- Unterseiten als Segment oben in der Arbeitsfläche („Notch“): Übersicht, Termine, Aufgaben, Noten, Fortschritt, Fächer. Ein gesetzter Fach-Filter bleibt beim Wechsel erhalten; Termine, Aufgaben und Noten haben einen Fach-Filter. Das Segment ist getönt und ohne Rand (Abschnitt 3); am Handy scrollt es waagerecht.
 - **Übersicht auf 3-Spalten-Raster**, Bausteine in S (⅓), M (⅔) oder L (voll); jeder Baustein erlaubt nur passende Größen. Bleibt in einer Zeile Platz, füllt der Baustein davor die Zeile.
-- Standard („Ausgewogen“): Als Nächstes L · Überblick L · Heute M + Dein Tag S · Diese Woche L. „Wiederholen“ ist aus. Voreinstellungen: Ruhig, Ausgewogen, Alles.
-- **Dein Tag:** KI-Begrüßung (Max' Tages-Briefing) plus drei Lernblöcke mit Grund, „Einplanen“, „Mit Studio planen“.
+- Standard („Ausgewogen“): Dein Tag L · Als Nächstes L · Überblick L · Heute L · Diese Woche L. „Wiederholen“ und „Mensa heute“ sind aus. Voreinstellungen: Ruhig, Ausgewogen, Alles.
+- **Dein Tag** steht in allen Voreinstellungen oben und in voller Breite: die wechselnde KI-Begrüßung ist die Überschrift der Seite, darunter die Lernblöcke mit Grund, „Einplanen“, „Mit Studio planen“.
+- **Mensa heute** erscheint, sobald in den Einstellungen eine Mensa gewählt ist.
 - **Anpassen = Bearbeiten direkt im Hub:** Griff (Maus, Touch, Tastatur), Pfeile nach vorn und hinten (WCAG 2.5.7), Breite S/M/L, Ausblenden in eine Ablage, Rückgängig (auch ⌘Z), „Fertig“.
 
 ## 6. Personalisierung (Einstellungen › Personalisierung, eigene Seite)
@@ -71,8 +73,8 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - Token: 120 ms (Mikro), 200 ms (kurz), 320 ms, 640 ms nur für die Lichtspur. Ein: `cubic-bezier(.22,.9,.24,1)`, aus: `cubic-bezier(.4,0,.9,.5)`.
 - Nur `transform` und `opacity`, nie `transition: all`, nie Breite oder Höhe animieren.
 - **Wechsel zwischen Bereichen:** View Transitions, „mit Richtung“: altes Bild 100 ms aus, neues 200 ms ein, 60 ms später, 12 px aus der Klickrichtung. Symbolleiste und Kopfleiste stehen still.
-- **Laden:** Skelett erst nach 300 ms, dann mindestens 400 ms, in der Form des Bereichs. Laden = Umlauf, Speichern = Lichtspur wird Haken.
-- Reduzierte Bewegung (System oder Einstellung): nur Überblenden in 120 ms.
+- **Laden: genau eine Anzeige pro Ladevorgang.** Zeigt der Bereich ein Skelett (`loading.tsx`), bleiben Lichtspur und gedämpfte Fläche weg; hat ein Bereich kein Skelett, bleibt die alte Ansicht stehen und die Lichtspur läuft unter der Kopfleiste. Beides erscheint **erst nach 300 ms**, damit schnelle Wechsel nicht flackern. Das Skelett soll die Form des Bereichs haben; der gemeinsame Platzhalter ist nur die Zwischenlösung bis Schritt 6. Speichern = Lichtspur wird Haken.
+- Reduzierte Bewegung (System oder Einstellung): nur Überblenden in 120 ms. **Die Einstellung stoppt Übergänge und Animationen**; Ladeanzeigen bleiben sichtbar, stehen aber still.
 
 ## 8. Zustände
 - Jeder Bereich, der Daten lädt, hat vier Zustände: Laden, Leer, Fehler, Voll.

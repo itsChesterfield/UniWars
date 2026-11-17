@@ -68,11 +68,11 @@ export function MensaWahl({ mensa, vorschlag }: { mensa: string | null; vorschla
         <div className="hs-gewaehlt">
           <span className={mensa ? "hs-name" : "faint"}>{mensa ?? "Keine Mensa gewählt"}</span>
           {mensa && (
-            <button type="button" className="btng" disabled={laeuft} onClick={() => speichern(null)}>
+            <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => speichern(null)}>
               Entfernen
             </button>
           )}
-          <button type="button" className={mensa ? "btng" : "btnp"} disabled={laeuft} onClick={() => setOffen(true)}>
+          <button type="button" className={mensa ? "knopf leise klein" : "knopf haupt klein"} disabled={laeuft} onClick={() => setOffen(true)}>
             {mensa ? "Ändern" : "Mensa wählen"}
           </button>
         </div>

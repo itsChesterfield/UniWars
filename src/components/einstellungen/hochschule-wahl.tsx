@@ -77,10 +77,10 @@ function Suche({
           placeholder="Name deiner Hochschule"
           onChange={(e) => setEingabe(e.target.value)}
         />
-        <button type="submit" className="btnp" disabled={!eingabe.trim()}>
+        <button type="submit" className="knopf haupt" disabled={!eingabe.trim()}>
           Speichern
         </button>
-        <button type="button" className="btng" onClick={() => setFrei(false)}>
+        <button type="button" className="knopf leise" onClick={() => setFrei(false)}>
           Zurück zur Suche
         </button>
       </form>
@@ -246,7 +246,7 @@ export function HochschuleWahl({
             {bestaetigt && <span className="hs-abzeichen">✓ Bestätigt</span>}
             <button
               type="button"
-              className="btng"
+              className="knopf leise klein"
               disabled={laeuft}
               onClick={() => setSuchen(true)}
             >
@@ -276,7 +276,7 @@ export function HochschuleWahl({
             </span>
             <button
               type="button"
-              className="btng"
+              className="knopf leise klein"
               disabled={laeuft}
               onClick={() =>
                 ausfuehren(
@@ -304,7 +304,7 @@ export function HochschuleWahl({
                 </span>
                 <button
                   type="button"
-                  className="btnp"
+                  className="knopf neben"
                   disabled={laeuft}
                   onClick={() =>
                     ausfuehren(
@@ -350,7 +350,7 @@ export function HochschuleWahl({
                   />
                   <button
                     type="submit"
-                    className={codeGesendet ? "btng" : "btnp"}
+                    className={codeGesendet ? "knopf neben" : "knopf haupt"}
                     disabled={laeuft || !mail.trim()}
                   >
                     {codeGesendet ? "Neuen Code senden" : "Code senden"}
@@ -381,7 +381,7 @@ export function HochschuleWahl({
                     />
                     <button
                       type="submit"
-                      className="btnp"
+                      className="knopf haupt"
                       disabled={laeuft || code.replace(/\D/g, "").length !== 6}
                     >
                       Bestätigen
