@@ -15082,21 +15082,25 @@ html[data-bewegung="reduziert"] .lade-skelett {
   animation: lade-ein 1ms linear 300ms both !important;
 }
 
-/* Symbolleiste ausgeklappt: Namen neben den Symbolen (Knopf unten in der Leiste).
-   Die Breite wird nicht animiert (DESIGN.md Abschnitt 7), der Wechsel gilt sofort. */
+/* Symbolleiste mit Namen (Einstellung „Seitenleiste“ unter Personalisierung):
+   „offen“ = immer ausgeklappt (schiebt den Inhalt), „hover“ = beim Drüberfahren ausgeklappt (legt sich darüber),
+   „zu“ = immer schmal. Die Breite wird nicht animiert (DESIGN.md Abschnitt 7). */
 
 @media (min-width: 761px) {
-  html[data-rail-offen] .rail {
+  [data-leiste="offen"] .rail,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
     width: 216px;
     align-items: stretch;
     padding-inline: var(--space-3);
   }
 
-  html[data-rail-offen] .rmarke {
+  [data-leiste="offen"] .rail .rmarke,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rmarke {
     margin-left: 0;
   }
 
-  html[data-rail-offen] .rpunkt {
+  [data-leiste="offen"] .rail .rpunkt,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt {
     width: 100%;
     display: flex;
     align-items: center;
@@ -15105,7 +15109,8 @@ html[data-bewegung="reduziert"] .lade-skelett {
     padding: 0 11px;
   }
 
-  html[data-rail-offen] .rpunkt .tip {
+  [data-leiste="offen"] .rail .rpunkt .tip,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip {
     position: static;
     padding: 0;
     background: none;
@@ -15117,17 +15122,33 @@ html[data-bewegung="reduziert"] .lade-skelett {
     text-overflow: ellipsis;
   }
 
-  html[data-rail-offen] .rpunkt .tip kbd {
+  [data-leiste="offen"] .rail .rpunkt .tip kbd,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip kbd {
     display: none;
   }
 
-  html[data-rail-offen] .rtrenn {
+  [data-leiste="offen"] .rail .rtrenn,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rtrenn {
     width: auto;
     margin-inline: 11px;
   }
 
-  html[data-rail-offen] .rfuss {
+  [data-leiste="offen"] .rail .rfuss,
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rfuss {
     align-items: stretch;
+  }
+
+  /* Beim Drüberfahren: über den Inhalt legen (auch über die Kopfleiste) statt ihn zu verschieben */
+  [data-leiste="hover"] .rail {
+    z-index: calc(var(--z-sticky) + 10);
+    transition: width 0s, margin 0s, box-shadow 0s;
+  }
+
+  [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
+    margin-right: -152px;
+    background: var(--bg);
+    box-shadow: 1px 0 0 var(--linie), 12px 0 32px var(--schatten);
+    transition-delay: 40ms;
   }
 }
 
