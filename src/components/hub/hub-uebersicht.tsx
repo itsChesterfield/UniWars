@@ -22,6 +22,7 @@ import {
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { hubLayoutSpeichern } from "@/app/settings/actions";
 import { HubBaustein, type HubDaten } from "@/components/hub/hub-bausteine";
+import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { track } from "@/lib/analytics";
 import {
   BAUSTEIN_NAMEN,
@@ -411,6 +412,9 @@ export function HubUebersicht({ d, layoutRoh }: { d: HubDaten; layoutRoh: unknow
 
   return (
     <div className="hubbox" ref={box}>
+      <header className="seitenkopf hub-gruss">
+        <DashboardUeberschrift name={d.name} standard={`Hallo, ${d.name}`} />
+      </header>
       <p className="vh" role="status" aria-live="polite">
         {ansage}
       </p>

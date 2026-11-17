@@ -13151,7 +13151,7 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   overflow: hidden;
 }
 
-.hubraster .kopf h1 {
+.hubraster .kopf h2 {
   max-width: 22ch;
   font-size: clamp(32px, 3.4vw, 44px);
   line-height: 1.04;
@@ -13719,7 +13719,7 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     display: none;
   }
 
-  .hubraster .kopf h1 {
+  .hubraster .kopf h2 {
     font-size: var(--text-2xl);
   }
 
@@ -14464,4 +14464,9 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   .designkarte:active {
     transform: none;
   }
+}
+
+/* Begrüßung über „Dein Tag" im Zentralen Hub */
+.hub-gruss {
+  padding: var(--space-8) var(--space-8) var(--space-4);
 }

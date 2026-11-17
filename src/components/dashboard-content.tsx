@@ -31,8 +31,8 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
-import { HubKontext } from "@/components/hub/hub-kontext";
 import { HubUebersicht } from "@/components/hub/hub-uebersicht";
+import { HauptNotch } from "@/components/haupt-notch";
 import type { FaelligeKarten } from "@/components/hub/hub-bausteine";
 
 type Fach = Tables<"fach">;
@@ -324,7 +324,8 @@ export function DashboardContent({
   return (
     <>
       <AnalyticsNutzer userId={userId} username={username} />
-      <HubKontext aktiv={bereich} faecher={faecher} deadlines={deadlines} pruefungen={pruefungen} mobil />
+      {/* Bereiche des Zentralen Hubs als Notch oben (statt Kontextspalte) */}
+      <HauptNotch aktiv={bereich} />
 
       {bereich === "uebersicht" ? (
         <>
