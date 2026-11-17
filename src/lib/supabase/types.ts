@@ -517,6 +517,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hochschule: {
+        Row: {
+          art: string
+          domains: string[]
+          id: string
+          kurzname: string | null
+          land: string
+          name: string
+          ort: string | null
+          website: string | null
+        }
+        Insert: {
+          art?: string
+          domains?: string[]
+          id: string
+          kurzname?: string | null
+          land: string
+          name: string
+          ort?: string | null
+          website?: string | null
+        }
+        Update: {
+          art?: string
+          domains?: string[]
+          id?: string
+          kurzname?: string | null
+          land?: string
+          name?: string
+          ort?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       kalender_eintrag: {
         Row: {
           google_event_id: string
@@ -1759,6 +1792,8 @@ export type Database = {
         Row: {
           avatar_pfad: string | null
           darstellung: Json
+          hochschule_frei: string | null
+          hochschule_id: string | null
           hub_layout: Json | null
           ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
@@ -1777,6 +1812,8 @@ export type Database = {
         Insert: {
           avatar_pfad?: string | null
           darstellung?: Json
+          hochschule_frei?: string | null
+          hochschule_id?: string | null
           hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
@@ -1795,6 +1832,8 @@ export type Database = {
         Update: {
           avatar_pfad?: string | null
           darstellung?: Json
+          hochschule_frei?: string | null
+          hochschule_id?: string | null
           hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
@@ -1810,7 +1849,15 @@ export type Database = {
           username?: string | null
           work_station?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "settings_hochschule_id_fkey"
+            columns: ["hochschule_id"]
+            isOneToOne: false
+            referencedRelation: "hochschule"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stundenplan_eintrag: {
         Row: {
@@ -2055,6 +2102,53 @@ export type Database = {
           },
         ]
       }
+      uni_verifizierung: {
+        Row: {
+          bestaetigt_am: string | null
+          code_hash: string | null
+          code_laeuft_ab: string | null
+          email: string
+          erstellt_am: string
+          gesendet_am: string[]
+          gueltig_bis: string | null
+          hochschule_id: string | null
+          user_id: string
+          versuche: number
+        }
+        Insert: {
+          bestaetigt_am?: string | null
+          code_hash?: string | null
+          code_laeuft_ab?: string | null
+          email: string
+          erstellt_am?: string
+          gesendet_am?: string[]
+          gueltig_bis?: string | null
+          hochschule_id?: string | null
+          user_id: string
+          versuche?: number
+        }
+        Update: {
+          bestaetigt_am?: string | null
+          code_hash?: string | null
+          code_laeuft_ab?: string | null
+          email?: string
+          erstellt_am?: string
+          gesendet_am?: string[]
+          gueltig_bis?: string | null
+          hochschule_id?: string | null
+          user_id?: string
+          versuche?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uni_verifizierung_hochschule_id_fkey"
+            columns: ["hochschule_id"]
+            isOneToOne: false
+            referencedRelation: "hochschule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whiteboard: {
         Row: {
           daten: Json
@@ -2098,6 +2192,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      hochschule_zur_domain: { Args: { p_domain: string }; Returns: string }
       benachrichtigungen_fuer_faellige_deadlines: {
         Args: never
         Returns: undefined
