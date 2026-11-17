@@ -30,9 +30,11 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims prüft das Token lokal (asymmetrische Signatur, Schlüssel werden zwischengespeichert)
+  // statt bei jeder Anfrage den Auth-Server zu fragen – spart pro Seitenwechsel einen Netzwerkweg.
+  // Abgelaufene Sitzungen werden dabei wie bisher erneuert und als Cookie zurückgeschrieben.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path),
