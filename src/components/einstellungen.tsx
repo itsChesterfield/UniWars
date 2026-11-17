@@ -65,6 +65,7 @@ export function Einstellungen({
   audioEingewilligt,
   kiVerfuegbar,
   kiProfil,
+  hochschule,
 }: {
   name: string;
   email: string;
@@ -75,6 +76,8 @@ export function Einstellungen({
   audioEingewilligt: boolean;
   kiVerfuegbar: boolean;
   kiProfil: Lernprofil;
+  /** Abschnitt „Hochschule“ (Suche + Uni-Mail), von der Seite vorbereitet */
+  hochschule?: ReactNode;
 }) {
   const router = useRouter();
   const [laeuft, startTransition] = useTransition();
@@ -186,6 +189,12 @@ export function Einstellungen({
         </form>
         <Meldung ergebnis={nameErgebnis} />
       </Abschnitt>
+
+      {hochschule && (
+        <Abschnitt titel="Hochschule" untertitel="Wo du studierst. Hilft der KI und schaltet Uni-Funktionen frei.">
+          {hochschule}
+        </Abschnitt>
+      )}
 
       <Abschnitt titel="Konto" untertitel="E-Mail-Adresse und Passwort für die Anmeldung.">
         <form

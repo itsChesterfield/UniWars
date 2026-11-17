@@ -14600,3 +14600,122 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     align-items: stretch;
   }
 }
+
+/* Einstellungen › Hochschule */
+.hs-bereich {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.hs-suche {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hs-treffer {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  box-shadow: 0 0 0 1px var(--linie), 0 8px 24px rgb(0 0 0 / 0.08);
+  background: var(--flaeche);
+}
+
+.hs-treffer li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.hs-treffer li.an {
+  background: var(--hover);
+}
+
+.hs-name {
+  font-weight: 600;
+}
+
+.hs-meta {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.hs-nicht-dabei {
+  align-self: flex-start;
+  font-size: var(--text-sm);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.hs-frei,
+.hs-mail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hs-frei .field,
+.hs-mail .field {
+  flex: 1 1 240px;
+}
+
+.hs-code {
+  max-width: 200px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.2em;
+}
+
+.hs-gewaehlt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hs-gewaehlt .btng {
+  margin-left: auto;
+}
+
+.hs-abzeichen {
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.hs-verif {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--linie);
+}
+
+.hs-verif h3 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.hs-verif > p {
+  margin: 0;
+}
+
+.hs-vorschlag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--akzent) 8%, transparent);
+}
