@@ -35,6 +35,8 @@ export const ICONS = {
   suchen: "circle:11,11,6.5|m20 20-4.2-4.2",
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
+  hoch: "m6 15 6-6 6 6",
+  runter: "m6 9 6 6 6-6",
   schliessen: "M6 6l12 12M18 6 6 18",
   haken: "m5 12.5 4.5 4.5L19 7.5",
   "pfeil-links": "M19 12H5|m11 6-6 6 6 6",
@@ -51,6 +53,7 @@ export const ICONS = {
   tauschen: "M7 4 3.5 7.5 7 11|M3.5 7.5h14|m17 13 3.5 3.5L17 20|M20.5 16.5h-14",
   menue: "M4 7h16M4 12h16M4 17h16",
   mehr: "circle:5.5,12,1|circle:12,12,1|circle:18.5,12,1",
+  kopieren: "rect:8,8,12,12,2|M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3",
   schere: "circle:6,6,2.5|circle:6,18,2.5|M8 7.5 20 17M8 16.5 20 7",
 
   // Dinge

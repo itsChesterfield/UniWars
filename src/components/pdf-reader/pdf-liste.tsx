@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   pdfOrdnerAnlegen,
@@ -318,7 +320,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         </button>
         {aktuell && (
           <>
-            <span className="faint" aria-hidden>
+            <span className="pdf-pfad-trenner" aria-hidden>
               ›
             </span>
             {ordnerUmbenennen === aktuell.schluessel ? (
@@ -337,29 +339,41 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
                 ]}
               />
             ) : (
-              <span className="faint pdf-pfad-hinweis">Fach-Ordner · auch in der Dateiablage</span>
+              <span className="pdf-pfad-hinweis">Fach-Ordner, auch in der Dateiablage</span>
             )}
           </>
         )}
       </nav>
 
-      {fehler && <p className="auth-error">{fehler}</p>}
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
 
       {uploads.length > 0 && (
         <ul className="pdf-uploads">
           {uploads.map((u) => (
             <li key={u.schluessel}>
-              <span className="pdf-upload-name">⤒ {u.name}</span>
+              <span className="dat-typ" aria-hidden>
+                <Icon name="hochladen" groesse={14} />
+              </span>
+              <span className="pdf-upload-name">{u.name}</span>
               {u.fehler ? (
                 <>
                   <span className="dat-upload-fehler">{u.fehler}</span>
-                  <button type="button" className="icon-knopf" aria-label="Ausblenden" onClick={() => setUploads((l) => l.filter((x) => x.schluessel !== u.schluessel))}>
-                    ✕
+                  <button
+                    type="button"
+                    className="knopf leise klein nur-symbol"
+                    aria-label="Ausblenden"
+                    onClick={() => setUploads((l) => l.filter((x) => x.schluessel !== u.schluessel))}
+                  >
+                    <Icon name="schliessen" groesse={16} />
                   </button>
                 </>
               ) : (
-                <span className="progress-track pdf-upload-balken">
-                  <span className="progress-fill" style={{ width: `${Math.round(u.anteil * 100)}%` }} />
+                <span className="balkenf pdf-upload-balken" aria-hidden>
+                  <i style={{ width: `${Math.round(u.anteil * 100)}%` }} />
                 </span>
               )}
             </li>
@@ -381,7 +395,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
                   <button type="button" className="pdf-ordner-oeffnen" onClick={() => oeffnen(o.schluessel)} title={o.eigen ? o.name : `${o.name} (Fach)`}>
                     <OrdnerIcon farbe={o.farbe} gross />
                     <span className="pdf-ordner-name">{o.name}</span>
-                    <span className="faint pdf-ordner-zahl">
+                    <span className="pdf-ordner-zahl">
                       {anzahl(o.schluessel)} {anzahl(o.schluessel) === 1 ? "PDF" : "PDFs"}
                       {!o.eigen && " · Fach"}
                     </span>
@@ -406,7 +420,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
             ) : (
               <button type="button" className="pdf-ordner-kachel pdf-ordner-neu" onClick={() => setNeuerOrdner(true)}>
                 <span className="pdf-ordner-plus" aria-hidden>
-                  +
+                  <Icon name="plus" groesse={20} />
                 </span>
                 <span className="pdf-ordner-name">Neuer Ordner</span>
               </button>
@@ -415,13 +429,13 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         </section>
       )}
 
-      <section className="card pdf-dateien" aria-label="PDFs">
+      <section className="pdf-dateien" aria-label="PDFs">
         {sichtbar.length === 0 ? (
-          <p className="empty-state">
+          <Zustand art="leer" region ebene={3} icon="pdf" titel={ort === null ? "Noch keine PDFs ohne Ordner." : "Dieser Ordner ist leer."}>
             {ort === null
-              ? "Hier liegen PDFs ohne Ordner. Zieh PDFs von deinem Computer hierher, um sie hochzuladen."
-              : "Dieser Ordner ist leer. Zieh PDFs von deinem Computer hierher oder verschiebe welche über ⋯."}
-          </p>
+              ? "Zieh PDFs von deinem Computer hierher, um sie hochzuladen."
+              : "Zieh PDFs von deinem Computer hierher oder verschiebe welche über das Menü einer PDF."}
+          </Zustand>
         ) : (
           <ul className="pdf-liste">
             {sichtbar.map((d) => (
@@ -437,7 +451,9 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
               >
                 {umbenennenId === d.id ? (
                   <div className="pdf-liste-zeile">
-                    <span aria-hidden>📕</span>
+                    <span className="dat-typ" aria-hidden>
+                      <Icon name="pdf" groesse={14} />
+                    </span>
                     <UmbenennenFeld
                       datei={d}
                       onFertig={(neu) => {
@@ -448,10 +464,12 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
                   </div>
                 ) : (
                   <Link href={`/pdf-reader/${d.id}`} className="pdf-liste-zeile" draggable={false}>
-                    <span aria-hidden>📕</span>
+                    <span className="dat-typ" aria-hidden>
+                      <Icon name="pdf" groesse={14} />
+                    </span>
                     <span className="pdf-liste-name">{d.name}</span>
-                    <span className="faint mono">{groesseText(d.groesse)}</span>
-                    {d.letzteSeite && <span className="tag tag-accent">weiter bei S. {d.letzteSeite}</span>}
+                    <span className="pdf-liste-groesse zahl">{groesseText(d.groesse)}</span>
+                    {d.letzteSeite && <span className="pdf-weiter">weiter bei S. {d.letzteSeite}</span>}
                   </Link>
                 )}
                 <DreiPunkteMenue label={`Aktionen für ${d.name}`} punkte={menue(d)} />
@@ -460,7 +478,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
           </ul>
         )}
       </section>
-      <p className="faint pdf-explorer-tipp">
+      <p className="pdf-explorer-tipp">
         Tipp: PDFs auf einen Ordner ziehen verschiebt sie – auf „Meine PDFs“ ziehen nimmt sie wieder heraus.
       </p>
     </div>
