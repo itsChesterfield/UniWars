@@ -19,10 +19,11 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 |---|---|---|
 | `--grund` | #08090b | #ecece9 |
 | `--flaeche` / `-2` / `-3` | #0e1013 / #15181c / #1d2126 | #ffffff / #f7f7f5 / #efefec |
-| `--text` / `-2` / `-3` | #ededef / #a8acb3 / #8a8f98 | #111419 / #4f555e / #676d76 |
+| `--text` / `-2` / `-3` | #ededef / #a8acb3 / #8a8f98 | #111419 / #4f555e / #61676f |
 | `--linie` / `-2` | rgba(255,255,255,.075) / .13 | rgba(12,18,28,.09) / .16 |
 | `--akzent` / `--akzent-text` | #E8BE6A / #EBC575 | #1f4e8c / #1f4e8c |
 | `--auf-akzent` | #17110a | #ffffff |
+| `--auf-fehler` / `--auf-warnung` (Text auf Fehler- und Warnflächen) | #17110a / #17110a | #ffffff / #ffffff |
 | `--ok` / `--color-error` | #5fd39a / #e5484d | #1d8a57 / #c62a2f |
 | `--warnung` | #E8BE6A | #946318 |
 | Fachfarben `--f1`…`--f4` | #7FBFB6 #CFAE7A #8EA3C9 #A99CC4 | #2f7d74 #946318 #3d5f9e #6b4f9a |

@@ -163,6 +163,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
               probleme: kalenderProbleme,
             }}
             karten={karten}
+            serverJetzt={new Date().toISOString()}
             bereich={bereich}
           />
         </Suspense>

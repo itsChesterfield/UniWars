@@ -431,10 +431,13 @@ export function QuickAdd({
         <div className="quick-add-overlay" onClick={handleClose}>
           <form
             className="quick-add-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quick-add-titel"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <h3>Neu anlegen</h3>
+            <h3 id="quick-add-titel">Neu anlegen</h3>
             {error && <p className="auth-error">{error}</p>}
 
             <input

@@ -66,6 +66,7 @@ export function DashboardContent({
   userId,
   kalender,
   karten,
+  serverJetzt,
   bereich = "uebersicht",
 }: {
   faecher: Fach[];
@@ -82,6 +83,8 @@ export function DashboardContent({
   kalender: { konfiguriert: boolean; verbunden: boolean; probleme: string[] };
   /** heute fällige Karteikarten, für die Übersicht */
   karten: FaelligeKarten;
+  /** Zeitpunkt der Anfrage auf dem Server (ISO), für den ersten Stand der Uhr im Hub */
+  serverJetzt: string;
   /** Übersicht oder ein einzelner Bereich als eigene Seite (Kontextspalte) */
   bereich?: Bereich;
 }) {
@@ -336,6 +339,7 @@ export function DashboardContent({
               lernSessions,
               streak: settings.streak_count,
               karten,
+              serverJetzt,
             }}
             layoutRoh={settings.hub_layout}
           />

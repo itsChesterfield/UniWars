@@ -8,7 +8,7 @@ import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
 import { InaktivitaetsWaechter } from "@/components/inaktivitaet-waechter";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
-import { ProfilAvatar } from "@/components/profil-avatar";
+import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { NavIcon } from "@/components/nav-icon";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
@@ -97,7 +97,7 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
         className="rprofil"
         aria-haspopup="menu"
         aria-expanded={offen}
-        aria-label={`Profil, ${name}`}
+        aria-label={avatarName(name, avatarUrl, `Profil, ${name}`)}
         onClick={() => setOffen((o) => !o)}
       >
         <ProfilAvatar name={name} url={avatarUrl} groesse={28} />

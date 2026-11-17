@@ -67,10 +67,12 @@
   --linie-2: rgba(12, 18, 28, 0.16);
   --text: #111419;
   --text-2: #4f555e;
-  --text-3: #676d76;
+  --text-3: #61676f;
   --akzent: #1f4e8c;
   --akzent-text: #1f4e8c;
   --auf-akzent: #ffffff;
+  --auf-fehler: #ffffff;
+  --auf-warnung: #ffffff;
   --fokus: #1f4e8c;
   --ok: #1d8a57;
   --warnung: #946318;
@@ -102,6 +104,8 @@
   --akzent: #e8be6a;
   --akzent-text: #ebc575;
   --auf-akzent: #17110a;
+  --auf-fehler: #17110a;
+  --auf-warnung: #17110a;
   --fokus: #ebc575;
   --ok: #5fd39a;
   --warnung: #e8be6a;
@@ -134,6 +138,8 @@
     --akzent: #e8be6a;
     --akzent-text: #ebc575;
     --auf-akzent: #17110a;
+    --auf-fehler: #17110a;
+    --auf-warnung: #17110a;
     --fokus: #ebc575;
     --ok: #5fd39a;
     --warnung: #e8be6a;
@@ -589,13 +595,13 @@ textarea {
 
 .tag-danger {
   background: var(--danger);
-  color: #fff;
+  color: var(--auf-fehler);
   border-color: var(--danger);
 }
 
 .tag-warn {
   background: var(--warn);
-  color: #fff;
+  color: var(--auf-warnung);
   border-color: var(--warn);
 }
 
@@ -679,7 +685,7 @@ select.field {
 .chip.on,
 .chip-active {
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--auf-akzent);
   border-color: var(--accent-strong);
 }
 
@@ -866,7 +872,7 @@ input[type="checkbox"] {
   width: 16px;
   height: 16px;
   background: var(--danger);
-  color: #fff;
+  color: var(--auf-fehler);
   border-radius: 50%;
   font-size: 10px;
   font-weight: 700;
@@ -1146,7 +1152,8 @@ input[type="checkbox"] {
 }
 
 .entry-countdown-dringend {
-  color: var(--danger);
+  /* Rot bleibt in Rahmen und Grund; die Schrift braucht vollen Kontrast */
+  color: var(--text);
   border-color: var(--danger);
   background: var(--danger-soft);
 }
@@ -1289,6 +1296,9 @@ input[type="checkbox"] {
 .fach-card-name {
   font-weight: 600;
   font-size: 14px;
+  /* lange Fachnamen am Handy trennen statt unter die Knöpfe laufen */
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .fach-card-meta {
@@ -1298,6 +1308,7 @@ input[type="checkbox"] {
 
 .fach-card-actions {
   display: flex;
+  flex: none;
   gap: 6px;
 }
 
@@ -1567,7 +1578,7 @@ input[type="checkbox"] {
   border-radius: 50%;
   border: none;
   background: var(--accent-strong);
-  color: white;
+  color: var(--auf-akzent);
   font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
@@ -1843,7 +1854,7 @@ dialog.card {
   border-radius: var(--radius-m);
   border: 1px solid var(--border);
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--auf-akzent);
   cursor: pointer;
   font-size: 11px;
 }
@@ -6012,7 +6023,7 @@ textarea.folie-punkte {
   padding: 0 6px;
   border-radius: 999px;
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--auf-akzent);
   font-size: 11px;
   font-weight: 700;
   display: inline-flex;
@@ -6852,7 +6863,7 @@ dialog.ki-dialog-klein {
   border: none;
   border-radius: 999px;
   background: var(--danger);
-  color: #fff;
+  color: var(--auf-fehler);
   font: inherit;
   font-size: 17px;
   font-weight: 700;
@@ -7687,7 +7698,7 @@ dialog.ki-dialog-klein {
 .ki-diktat-knopf.an,
 .ki-vorlesen-knopf.an {
   background: var(--danger);
-  color: #fff;
+  color: var(--auf-fehler);
   border-radius: 50%;
 }
 
@@ -11652,7 +11663,7 @@ html[data-eingebettet] .notiz-karte {
 
 .gd-schalter.an {
   background: var(--accent);
-  color: #fff;
+  color: var(--auf-akzent);
   border-color: var(--accent);
 }
 
@@ -11818,8 +11829,9 @@ html[data-eingebettet] .notiz-karte {
   animation: tb-ein 0.4s ease-out;
 }
 
+/* Studio schreibt den Gruß neu: leiser über die zweite Textfarbe, nicht über Transparenz (Kontrast bleibt über 4,5:1) */
 .tb-schreibt {
-  opacity: 0.75;
+  color: var(--text-2);
 }
 
 @keyframes tb-ein {
@@ -12325,6 +12337,11 @@ html[data-eingebettet] .notiz-karte {
 
 .kopfleiste .suchpille-text {
   margin-right: var(--space-4);
+}
+
+.kopfleiste .suchpille-kbd {
+  display: inline-flex;
+  gap: var(--space-2);
 }
 
 .kopfleiste .suchpille kbd,
@@ -13476,8 +13493,9 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   text-wrap: pretty;
 }
 
-.tb-gruss.tb-laedt {
-  color: var(--text-3);
+.tb-gruss.tb-laedt,
+.tb-gruss.tb-schreibt {
+  color: var(--text-2);
 }
 
 .vliste {
