@@ -1,15 +1,15 @@
-/** Sofortige Rückmeldung beim Wechsel: Rahmen bleibt stehen, der Inhalt zeigt Platzhalter, bis die Daten da sind. */
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Skelett } from "@/components/skelett";
+import { skelettForm } from "@/lib/skelett";
+
+/**
+ * Sofortige Rückmeldung beim Wechsel: Rahmen bleibt stehen, der Inhalt zeigt ein Skelett in der Form des Ziels.
+ * Bewusst eine Datei für alle Bereiche statt je eine `loading.tsx` pro Ordner: Beim Wechsel zwischen Bereichen
+ * greift immer diese Grenze der Gruppe zuerst. Eigene Dateien darunter hätten ein zweites Skelett nachgeschoben.
+ * Beim Wechsel zeigt `usePathname` schon das Ziel.
+ */
 export default function Laedt() {
-  return (
-    <div className="lade-skelett" role="status" aria-label="Wird geladen">
-      <span className="lade-zeile breit" />
-      <span className="lade-zeile" />
-      <div className="lade-raster">
-        <span className="lade-block" />
-        <span className="lade-block" />
-        <span className="lade-block" />
-      </div>
-      <span className="lade-block hoch" />
-    </div>
-  );
+  return <Skelett form={skelettForm(usePathname())} />;
 }
