@@ -1,123 +1,267 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition, type CSSProperties } from "react";
+import Link from "next/link";
 import { fehltageAendern } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { track } from "@/lib/analytics";
+import { Zustand } from "@/components/zustand";
+import { Icon } from "@/components/nav-icon";
+import { WOCHENTAGE_KURZ, dauerText, minutenProFach, minutenProTag, wochenbeginn } from "@/lib/fortschritt";
 
 type Fach = Tables<"fach">;
 type Settings = Tables<"settings">;
+type LernSession = Tables<"lern_session">;
+
+const ECTS_BACHELOR = 120;
+const keinAbo = () => () => {};
+
+/** Design B3, Fortschritt: drei Abschnitte untereinander wie im Dummy (Lernzeit, Anwesenheit, Bachelorarbeit). */
+export function FortschrittSeite({
+  lernSessions,
+  faecher,
+  settings,
+}: {
+  lernSessions: LernSession[];
+  faecher: Fach[];
+  settings: Settings;
+}) {
+  return (
+    <div className="fortschritt-seite">
+      <LernzeitWoche lernSessions={lernSessions} faecher={faecher} settings={settings} />
+      <AnwesenheitUebersicht faecher={faecher} />
+      <BachelorStand faecher={faecher} />
+    </div>
+  );
+}
+
+function LernzeitWoche({
+  lernSessions,
+  faecher,
+  settings,
+}: {
+  lernSessions: LernSession[];
+  faecher: Fach[];
+  settings: Settings;
+}) {
+  // Woche und Wochentag gelten in der Ortszeit: erst im Browser rechnen, damit Server- und Browser-HTML gleich sind
+  const imBrowser = useSyncExternalStore(keinAbo, () => true, () => false);
+  const jetzt = imBrowser ? new Date() : null;
+  const tage = jetzt ? minutenProTag(lernSessions, wochenbeginn(jetzt)) : [0, 0, 0, 0, 0, 0, 0];
+  const heute = jetzt ? (jetzt.getDay() + 6) % 7 : -1;
+  const summe = tage.reduce((s, m) => s + m, 0);
+  const hoechster = Math.max(...tage, 1);
+  const proFach = minutenProFach(lernSessions);
+  const fachMax = Math.max(...proFach.map((f) => f.minuten), 1);
+  const streak = settings.streak_count;
+
+  return (
+    <section aria-labelledby="abschnitt-lernzeit">
+      <div className="abschnitt-kopf">
+        <h2 id="abschnitt-lernzeit" className="abschnitt-titel">
+          Lernzeit diese Woche
+        </h2>
+        <span className="abschnitt-info">
+          <span className="zahl">{dauerText(summe)}</span>
+          {streak > 0 && (
+            <>
+              , <Icon name="serie" groesse={14} /> <span className="zahl">{streak}</span> {streak === 1 ? "Tag" : "Tage"} in Folge
+            </>
+          )}
+          {settings.streak_freezes > 0 &&
+            `, ${settings.streak_freezes} ${settings.streak_freezes === 1 ? "Streak-Freeze" : "Streak-Freezes"} übrig`}
+        </span>
+      </div>
+
+      {lernSessions.length === 0 ? (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Noch keine Lernzeit."
+          aktion={
+            <Link href="/work-station" className="knopf neben klein">
+              <Icon name="fokus" groesse={16} />
+              Fokus starten
+            </Link>
+          }
+        >
+          Starte in der Work Station einen Fokus-Timer. Die Minuten landen hier, nach Tag und Fach.
+        </Zustand>
+      ) : (
+        <>
+          <div
+            className="wochenbalken"
+            role="img"
+            aria-label={`Lernminuten pro Tag: ${tage.map((m, i) => `${WOCHENTAGE_KURZ[i]} ${m}`).join(", ")}`}
+          >
+            {tage.map((m, i) => (
+              <div key={WOCHENTAGE_KURZ[i]} className={i === heute ? "heute" : undefined}>
+                <i style={{ height: `${Math.max((m / hoechster) * 100, 2)}%` }} />
+                {WOCHENTAGE_KURZ[i]}
+              </div>
+            ))}
+          </div>
+          <h3 className="unter-titel">Pro Fach, insgesamt</h3>
+          <ul className="entry-list">
+            {proFach.map(({ fachId, minuten }) => {
+              const fach = faecher.find((f) => f.id === fachId);
+              return (
+                <li key={fachId ?? "ohne"} className="entry-row fach-zeile">
+                  <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
+                  <div className="entry-info">
+                    <span className="entry-title">{fach?.name ?? "Ohne Fach"}</span>
+                    <span className="balkenf" style={{ "--c": fach?.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden>
+                      <i style={{ width: `${(minuten / fachMax) * 100}%` }} />
+                    </span>
+                  </div>
+                  <span className="fortschritt-wert zahl">{dauerText(minuten)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
 
 export function AnwesenheitUebersicht({ faecher: initialFaecher }: { faecher: Fach[] }) {
   const [faecher, setFaecher] = useState(initialFaecher);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const [fehler, setFehler] = useState<string | null>(null);
 
   const relevante = faecher.filter((f) => f.anwesenheitspflicht);
 
   function handleFehltag(id: string, delta: number) {
     track("fehltag_geaendert", { richtung: delta > 0 ? "hinzugefuegt" : "entfernt" });
+    setFehler(null);
     startTransition(async () => {
-      const updated = await fehltageAendern(id, delta);
-      setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));
+      try {
+        const updated = await fehltageAendern(id, delta);
+        setFaecher((prev) => prev.map((f) => (f.id === id ? updated : f)));
+      } catch (err) {
+        setFehler(err instanceof Error ? err.message : "Unbekannter Fehler");
+      }
     });
   }
 
-  if (relevante.length === 0) {
-    return (
-      <p className="empty-state">
-        Kein Fach mit Anwesenheitspflicht. Beim Bearbeiten eines Fachs (Fächer-Karte)
-        &quot;Anwesenheitspflicht&quot; anhaken, dann taucht es hier auf.
-      </p>
-    );
-  }
-
   return (
-    <div style={{ paddingTop: 6 }}>
-      {relevante.map((f) => {
-        const anteil = f.max_fehltage != null ? Math.min(f.fehltage_genutzt / f.max_fehltage, 1) : 0;
-        const kritisch = f.max_fehltage != null && f.fehltage_genutzt >= f.max_fehltage - 1;
-        return (
-          <div key={f.id} style={{ marginBottom: 16 }}>
-            <div className="rowb" style={{ marginBottom: 7 }}>
-              <span className="row" style={{ gap: 10 }}>
-                <span className="dot" style={{ background: f.farbe ?? "#94a3b8" }} />
-                <span style={{ fontSize: 14, fontWeight: 500 }}>{f.name}</span>
-              </span>
-              <span className="row" style={{ gap: 8 }}>
-                <span className={`muted ${kritisch ? "" : ""}`} style={{ fontSize: 12, color: kritisch ? "var(--warn)" : undefined, fontWeight: kritisch ? 600 : 400 }}>
-                  {f.fehltage_genutzt}
-                  {f.max_fehltage != null ? ` / ${f.max_fehltage}` : ""} Fehltage
+    <section aria-labelledby="abschnitt-anwesenheit">
+      <div className="abschnitt-kopf">
+        <h2 id="abschnitt-anwesenheit" className="abschnitt-titel">
+          Anwesenheit
+        </h2>
+        <span className="abschnitt-info">Fächer mit Anwesenheitspflicht</span>
+      </div>
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
+      {relevante.length === 0 ? (
+        <Zustand
+          art="leer"
+          region
+          ebene={3}
+          titel="Kein Fach mit Anwesenheitspflicht."
+          aktion={
+            <Link href="/faecher" className="knopf leise klein">
+              Fächer öffnen
+            </Link>
+          }
+        >
+          Hak beim Bearbeiten eines Fachs „Anwesenheitspflicht“ an. Dann zählst du hier die Fehltage.
+        </Zustand>
+      ) : (
+        <ul className="entry-list">
+          {relevante.map((f) => {
+            const max = f.max_fehltage;
+            const stufe = max == null ? "" : f.fehltage_genutzt >= max ? " grenze" : f.fehltage_genutzt >= max - 1 ? " knapp" : "";
+            const farbe = { "--c": f.farbe ?? "var(--text-3)" } as CSSProperties;
+            return (
+              <li key={f.id} className={`entry-row fach-zeile anwesenheit${stufe}`}>
+                <span className="fach-farbe" style={farbe} aria-hidden />
+                <div className="entry-info">
+                  <span className="entry-title">{f.name}</span>
+                  {max != null && (
+                    <span className="balkenf" style={farbe} aria-hidden>
+                      <i style={{ width: `${Math.min(f.fehltage_genutzt / Math.max(max, 1), 1) * 100}%` }} />
+                    </span>
+                  )}
+                </div>
+                <span className="fortschritt-wert">
+                  <span className="zahl">{f.fehltage_genutzt}</span>
+                  {max != null ? (
+                    <>
+                      {" "}von <span className="zahl">{max}</span> Fehltagen
+                    </>
+                  ) : f.fehltage_genutzt === 1 ? (
+                    " Fehltag"
+                  ) : (
+                    " Fehltage"
+                  )}
                 </span>
-                {f.fehltage_genutzt > 0 && (
-                  <button type="button" className="btng" style={{ padding: "2px 8px" }} onClick={() => handleFehltag(f.id, -1)}>
-                    −1
+                <div className="entry-actions">
+                  <button
+                    type="button"
+                    className="knopf leise klein nur-symbol"
+                    onClick={() => handleFehltag(f.id, -1)}
+                    disabled={isPending || f.fehltage_genutzt === 0}
+                    aria-label={`Einen Fehltag in ${f.name} entfernen`}
+                  >
+                    <Icon name="minus" groesse={16} />
                   </button>
-                )}
-                <button type="button" className="btng" style={{ padding: "2px 8px" }} onClick={() => handleFehltag(f.id, 1)}>
-                  +1 Fehltag
-                </button>
-              </span>
-            </div>
-            {f.max_fehltage != null && (
-              <div className="progress-track">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${anteil * 100}%`,
-                    background: kritisch ? "var(--warn)" : "var(--accent)",
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+                  <button
+                    type="button"
+                    className="knopf leise klein"
+                    onClick={() => handleFehltag(f.id, 1)}
+                    disabled={isPending}
+                    aria-label={`Einen Fehltag in ${f.name} eintragen`}
+                  >
+                    <Icon name="plus" groesse={16} />
+                    Fehltag
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
-export function StreakUebersicht({ settings }: { settings: Settings }) {
-  const pips = Array.from({ length: 7 }, (_, i) => i < Math.min(settings.streak_count, 7));
-
+/** Bachelorarbeit-Tracker: gesperrt bis 120 ECTS, dann folgt der eigentliche Tracker (noch ohne Datenlogik). */
+function BachelorStand({ faecher }: { faecher: Fach[] }) {
+  const ects = faecher.reduce((s, f) => s + (f.ects ?? 0), 0);
+  const anteil = Math.min(ects / ECTS_BACHELOR, 1);
   return (
-    <div style={{ paddingTop: 10 }}>
-      <div className="row" style={{ gap: 16 }}>
-        <div
-          style={{
-            width: 66,
-            height: 66,
-            borderRadius: "50%",
-            background: "var(--warn-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: "none",
-          }}
+    <section aria-labelledby="abschnitt-bachelor">
+      <div className="abschnitt-kopf">
+        <h2 id="abschnitt-bachelor" className="abschnitt-titel">
+          Bachelorarbeit
+        </h2>
+        <span className="abschnitt-info">ab {ECTS_BACHELOR} ECTS</span>
+      </div>
+      <div className="gesperrt">
+        <p>
+          <Icon name="schloss" groesse={16} />
+          Der Tracker für die Bachelorarbeit mit Countdown und Meilensteinen öffnet sich ab {ECTS_BACHELOR} ECTS. Du hast{" "}
+          <span className="zahl">{ects.toLocaleString("de-DE")}</span>.
+        </p>
+        <span
+          className="balkenf"
+          role="progressbar"
+          aria-label="ECTS bis zur Bachelorarbeit"
+          aria-valuemin={0}
+          aria-valuemax={ECTS_BACHELOR}
+          aria-valuenow={Math.min(ects, ECTS_BACHELOR)}
+          style={{ "--c": "var(--text-3)" } as CSSProperties}
         >
-          <span style={{ fontSize: 30 }}>🔥</span>
-        </div>
-        <div>
-          <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1 }}>
-            {settings.streak_count} {settings.streak_count === 1 ? "Tag" : "Tage"}
-          </div>
-          <div className="muted" style={{ fontSize: 13, marginTop: 5 }}>
-            {settings.streak_freezes} {settings.streak_freezes === 1 ? "Streak-Freeze" : "Streak-Freezes"} übrig
-          </div>
-        </div>
+          <i style={{ width: `${anteil * 100}%` }} />
+        </span>
       </div>
-      <div className="row" style={{ gap: 5, marginTop: 20 }}>
-        {pips.map((an, i) => (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: 8,
-              borderRadius: 3,
-              background: an ? "var(--warn)" : "var(--border)",
-            }}
-          />
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

@@ -8,7 +8,6 @@ import { benoetigteNote, notenText, schnittMit, schnittProFach, zahlLesen } from
 
 type Note = Tables<"note">;
 type Pruefung = Tables<"pruefung">;
-type LernSession = Tables<"lern_session">;
 
 const STATUS_LABEL: Record<Enums<"pruefung_status">, string> = {
   ANSTEHEND: "Anstehend",
@@ -213,58 +212,5 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
         </form>
       </div>
     </section>
-  );
-}
-
-export function LernzeitStatistik({
-  lernSessions,
-  faecher,
-}: {
-  lernSessions: LernSession[];
-  faecher: FachOption[];
-}) {
-  const proFach = useMemo(() => {
-    const summen = new Map<string, number>();
-    lernSessions.forEach((s) => {
-      const key = s.fach_id ?? "ohne-fach";
-      summen.set(key, (summen.get(key) ?? 0) + s.dauer_minuten);
-    });
-    return [...summen.entries()]
-      .map(([fachId, minuten]) => ({
-        fachId,
-        name: faecher.find((f) => f.id === fachId)?.name ?? "Ohne Fach",
-        farbe: faecher.find((f) => f.id === fachId)?.farbe ?? "#94a3b8",
-        minuten,
-      }))
-      .sort((a, b) => b.minuten - a.minuten);
-  }, [lernSessions, faecher]);
-
-  const gesamtMinuten = proFach.reduce((sum, f) => sum + f.minuten, 0);
-  const maxMinuten = Math.max(...proFach.map((f) => f.minuten), 1);
-
-  if (proFach.length === 0) {
-    return <p className="empty-state">Noch keine Lernzeit erfasst.</p>;
-  }
-
-  return (
-    <div className="lernzeit-balken-reihe">
-      {proFach.map((f) => (
-        <div key={f.fachId} className="lernzeit-saeule">
-          <span className="lernzeit-saeule-wert">{Math.round((f.minuten / 60) * 10) / 10} h</span>
-          <div
-            className="lernzeit-saeule-balken"
-            style={{ height: Math.max((f.minuten / maxMinuten) * 120, 6), backgroundColor: f.farbe }}
-          />
-          <span className="lernzeit-saeule-name">{f.name}</span>
-        </div>
-      ))}
-      <div style={{ width: 1, alignSelf: "stretch", background: "var(--border)", margin: "10px 0" }} />
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, paddingBottom: 24 }}>
-        <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Gesamt</span>
-        <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 28, fontWeight: 700 }}>
-          {Math.round(gesamtMinuten / 60)} h
-        </span>
-      </div>
-    </div>
   );
 }

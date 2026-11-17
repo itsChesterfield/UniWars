@@ -18,13 +18,11 @@ import {
   NotenKopf,
   NotenDurchschnittProFach,
   NotenRechner,
-  LernzeitStatistik,
 } from "@/components/rechner-section";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { gewichteterSchnitt } from "@/lib/noten";
-import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschritt-views";
-import { LockedCard } from "@/components/locked-card";
+import { FortschrittSeite } from "@/components/fortschritt-views";
 import { SegmentedCard } from "@/components/segmented-card";
 import { SchnellErfassenKnopf } from "@/components/quick-add";
 import type { Speiseplan } from "@/lib/mensa";
@@ -130,7 +128,6 @@ export function DashboardContent({
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
 
-  const gesamtEcts = faecher.reduce((sum, f) => sum + (f.ects ?? 0), 0);
 
 
   const terminKarte = (klasse: string) => (
@@ -266,60 +263,6 @@ export function DashboardContent({
       </div>
     );
 
-  const fortschrittKarte = (klasse: string) => (
-        <SegmentedCard
-          title="Fortschritt"
-          className={klasse}
-          segments={[
-            {
-              key: "lernzeit",
-              label: "Lernzeit",
-              content: <LernzeitStatistik lernSessions={lernSessions} faecher={faecher} />,
-            },
-            {
-              key: "anwesenheit",
-              label: "Anwesenheit",
-              content: <AnwesenheitUebersicht faecher={faecher} />,
-            },
-            {
-              key: "streak",
-              label: "Streak",
-              content: <StreakUebersicht settings={settings} />,
-            },
-          ]}
-        />
-  );
-
-  const bachelorKarte = (
-    <LockedCard
-        className="span-12"
-        icon={
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-          </svg>
-        }
-        title="Bachelorarbeit-Tracker"
-        description="Erscheint automatisch, sobald du bereit bist — mit Countdown & Meilensteinen."
-        right={
-          <div style={{ minWidth: 220 }}>
-            <div className="rowb" style={{ marginBottom: 7 }}>
-              <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Freischaltung ab 120 ECTS</span>
-              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display), sans-serif" }}>
-                {gesamtEcts} / 120
-              </span>
-            </div>
-            <div className="progress-track" style={{ height: 9 }}>
-              <div
-                className="progress-fill"
-                style={{ width: `${Math.min((gesamtEcts / 120) * 100, 100)}%`, background: "var(--faint)" }}
-              />
-            </div>
-          </div>
-        }
-      />
-  );
-
   // Die Notch wechselt den Bereich ohne Server-Aufruf (nur die Adresse ändert sich): Bereich aus der Adresse lesen
   const pfad = usePathname();
   const bereich: Bereich = BEREICHE.find((b) => b.href === pfad)?.bereich ?? bereichStart;
@@ -371,8 +314,9 @@ export function DashboardContent({
           {bereich === "noten" && <div className="dashboard-grid">{notenBlock("span-12")}</div>}
           {bereich === "fortschritt" && (
             <div className="dashboard-grid">
-              {fortschrittKarte("span-12")}
-              {bachelorKarte}
+              <div className="span-12">
+                <FortschrittSeite lernSessions={lernSessions} faecher={faecher} settings={settings} />
+              </div>
             </div>
           )}
           {bereich === "faecher" && (
