@@ -9,7 +9,6 @@ import {
   passwortAendern,
   profilbildEntfernen,
   profilbildSpeichern,
-  setTheme,
   type Ergebnis,
 } from "@/app/settings/actions";
 import { AbmeldenButton } from "@/components/sidebar-aktionen";
@@ -20,9 +19,6 @@ import type { Lernprofil } from "@/lib/ki/lernraum";
 import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
 import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
 import { ProfilAvatar } from "@/components/profil-avatar";
-import { SIDEBAR_SCHLUESSEL } from "@/components/sidebar";
-import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
-import type { Enums } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 /** Bild im Browser quadratisch zuschneiden (Mitte) und auf 512 px verkleinern. */
@@ -65,7 +61,6 @@ export function Einstellungen({
   email,
   neueEmail,
   avatarUrl,
-  theme,
   kiEingewilligt,
   audioEingewilligt,
   kiVerfuegbar,
@@ -76,7 +71,6 @@ export function Einstellungen({
   /** E-Mail-Änderung wartet noch auf Bestätigung */
   neueEmail: string | null;
   avatarUrl: string | null;
-  theme: Enums<"theme">;
   kiEingewilligt: boolean;
   audioEingewilligt: boolean;
   kiVerfuegbar: boolean;
@@ -93,7 +87,6 @@ export function Einstellungen({
   const [emailErgebnis, setEmailErgebnis] = useState<Ergebnis | null>(null);
   const [pw, setPw] = useState({ aktuell: "", neu: "", wiederholt: "" });
   const [pwErgebnis, setPwErgebnis] = useState<Ergebnis | null>(null);
-  const eingeklappt = useBrowserWert(SIDEBAR_SCHLUESSEL, "0") === "1";
 
   function ausfuehren(aktion: () => Promise<Ergebnis>, setzen: (e: Ergebnis) => void, ereignis: string, danach?: () => void) {
     startTransition(async () => {
@@ -135,20 +128,6 @@ export function Einstellungen({
       return;
     }
     ausfuehren(() => passwortAendern(pw.aktuell, pw.neu), setPwErgebnis, "passwort_geaendert", () => setPw({ aktuell: "", neu: "", wiederholt: "" }));
-  }
-
-  function themeWaehlen(neu: Enums<"theme">) {
-    if (neu === theme) return;
-    track("theme_gewechselt", { theme: neu, ort: "einstellungen" });
-    startTransition(async () => {
-      await setTheme(neu);
-      router.refresh();
-    });
-  }
-
-  function sidebarEinklappen(an: boolean) {
-    document.documentElement.toggleAttribute("data-sidebar-eingeklappt", an);
-    browserWertSchreiben(SIDEBAR_SCHLUESSEL, an ? "1" : null);
   }
 
   return (
@@ -276,34 +255,6 @@ export function Einstellungen({
           </button>
         </form>
         <Meldung ergebnis={pwErgebnis} />
-      </Abschnitt>
-
-      <Abschnitt titel="Design" untertitel="Wie UniWars aussieht.">
-        <div className="einst-zeile">
-          <span>Darstellung</span>
-          <span className="segwrap" role="radiogroup" aria-label="Darstellung">
-            <button type="button" role="radio" aria-checked={theme === "HELL"} className={`seg ${theme === "HELL" ? "on" : ""}`} disabled={laeuft} onClick={() => themeWaehlen("HELL")}>
-              ☀️ Hell
-            </button>
-            <button type="button" role="radio" aria-checked={theme === "DUNKEL"} className={`seg ${theme === "DUNKEL" ? "on" : ""}`} disabled={laeuft} onClick={() => themeWaehlen("DUNKEL")}>
-              🌙 Dunkel
-            </button>
-          </span>
-        </div>
-        <div className="einst-zeile">
-          <span>
-            Seitenleiste eingeklappt
-            <small className="faint einst-klein">Nur Icons – mehr Platz für Inhalte (dieses Gerät)</small>
-          </span>
-          <span className="segwrap" role="radiogroup" aria-label="Seitenleiste">
-            <button type="button" role="radio" aria-checked={!eingeklappt} className={`seg ${!eingeklappt ? "on" : ""}`} onClick={() => sidebarEinklappen(false)}>
-              Aus
-            </button>
-            <button type="button" role="radio" aria-checked={eingeklappt} className={`seg ${eingeklappt ? "on" : ""}`} onClick={() => sidebarEinklappen(true)}>
-              An
-            </button>
-          </span>
-        </div>
       </Abschnitt>
 
       <Abschnitt titel="Datenschutz & KI" untertitel="Was UniWars nutzen darf. Du kannst alles jederzeit ändern.">

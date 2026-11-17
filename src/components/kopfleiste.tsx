@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "@/components/nav-icon";
@@ -14,6 +14,9 @@ import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, restzeit } from "@/lib/work-station/timer";
 import type { Tables } from "@/lib/supabase/types";
 import { useOnline } from "@/lib/online";
+import { track } from "@/lib/analytics";
+import { designWaehlen, usePersoenlich, useSystemDunkel } from "@/lib/personalisierung-store";
+import { DESIGN_NAMEN, STANDARD_DARSTELLUNG, sichtbaresDesign, type Darstellung, type Theme } from "@/lib/personalisierung";
 
 /** Fokus-Timer als Pille, solange er läuft oder pausiert ist – führt zur Work Station. */
 function FokusStatus() {
@@ -41,6 +44,39 @@ function Heute() {
   return <span className="heute">{text}</span>;
 }
 
+/** Design-Schalter: nur, wenn er in der Personalisierung eingeschaltet ist (Standard aus). */
+function DesignSchalter({ theme }: { theme: Theme }) {
+  const [laeuft, starte] = useTransition();
+  const jetzt = sichtbaresDesign(usePersoenlich("theme", theme), useSystemDunkel());
+  const anderes = jetzt === "DUNKEL" ? "HELL" : "DUNKEL";
+  return (
+    <button
+      type="button"
+      className="symbolknopf"
+      aria-label={`${DESIGN_NAMEN[anderes]} verwenden`}
+      title={`${DESIGN_NAMEN[anderes]} verwenden`}
+      disabled={laeuft}
+      onClick={() =>
+        starte(async () => {
+          track("theme_gewechselt", { theme: anderes, ort: "kopfleiste" });
+          await designWaehlen(anderes);
+        })
+      }
+    >
+      {jetzt === "DUNKEL" ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M21 13A8.5 8.5 0 1 1 11 3a6.5 6.5 0 0 0 10 10Z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 /**
  * Design B3: Kopfleiste über der Arbeitsfläche (DESIGN.md Abschnitt 4).
  * Links der Ort, rechts Suche, Fokus-Timer, Lernserie, Benachrichtigungen und Datum.
@@ -51,6 +87,8 @@ export function Kopfleiste({
   avatarUrl = null,
   streak = 0,
   kiVerfuegbar = false,
+  theme = "HELL",
+  darstellung = STANDARD_DARSTELLUNG,
   benachrichtigungen,
   einladungen,
 }: {
@@ -58,11 +96,14 @@ export function Kopfleiste({
   avatarUrl?: string | null;
   streak?: number;
   kiVerfuegbar?: boolean;
+  theme?: Theme;
+  darstellung?: Darstellung;
   benachrichtigungen: Tables<"benachrichtigung">[];
   einladungen: Tables<"einladung">[];
 }) {
   const pfad = usePathname();
   const online = useOnline();
+  const designSchalter = usePersoenlich("darstellung", darstellung).design_schalter;
   const { hub, unterseite } = hubAusPfad(pfad);
   const titel = hub?.name ?? (pfad.startsWith("/einstellungen") ? "Einstellungen" : "UniVerse");
 
@@ -125,6 +166,7 @@ export function Kopfleiste({
             <span className="serie-text">{streak === 1 ? "Tag" : "Tage"}</span>
           </span>
         )}
+        {designSchalter && <DesignSchalter theme={theme} />}
         <NotificationBell initial={benachrichtigungen} initialEinladungen={einladungen} />
         <span className="trenn" aria-hidden />
         <Heute />

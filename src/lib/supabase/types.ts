@@ -1765,7 +1765,6 @@ export type Database = {
           ki_gedaechtnis_an: boolean
           ki_kennenlernen: Json
           ki_profil: Json
-          sichtbare_widgets: Json
           streak_count: number
           streak_freezes: number
           streak_last_active: string | null
@@ -1784,7 +1783,6 @@ export type Database = {
           ki_gedaechtnis_an?: boolean
           ki_kennenlernen?: Json
           ki_profil?: Json
-          sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null
@@ -1803,7 +1801,6 @@ export type Database = {
           ki_gedaechtnis_an?: boolean
           ki_kennenlernen?: Json
           ki_profil?: Json
-          sichtbare_widgets?: Json
           streak_count?: number
           streak_freezes?: number
           streak_last_active?: string | null

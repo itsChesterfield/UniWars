@@ -19,13 +19,12 @@ export default async function EinstellungenSeite() {
 
   return (
     <>
-      <HubKopf titel="Einstellungen" untertitel="Profil, Konto, Design und Datenschutz." />
+      <HubKopf titel="Profil und Konto" untertitel="Profil, Anmeldung und Datenschutz. Design und Anordnung findest du unter Personalisierung." />
       <Einstellungen
         name={anzeigeName(settings, user)}
         email={user.email ?? ""}
         neueEmail={user.new_email ?? null}
         avatarUrl={await profilbildUrl(supabase, settings?.avatar_pfad)}
-        theme={settings?.theme ?? "HELL"}
         kiEingewilligt={Boolean(settings?.ki_einwilligung)}
         audioEingewilligt={Boolean(settings?.ki_audio_einwilligung)}
         kiVerfuegbar={kiKonfiguriert()}

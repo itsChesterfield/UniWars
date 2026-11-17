@@ -1,4 +1,5 @@
 import { BEREICHE } from "@/lib/dashboard-bereiche";
+import { bereichHref, standardSymbolleiste, symbolleistenGruppen, type Symbolleiste } from "@/lib/personalisierung";
 
 /** Die Hubs in der Sidebar – auch für Titel in der geteilten Ansicht. */
 
@@ -87,21 +88,21 @@ export function hubNameAusPfad(href: string): string {
   return hub?.name ?? "Ansicht";
 }
 
-/** Design B3: Gruppen der Symbolleiste (DESIGN.md Abschnitt 4). */
-export const HUB_GRUPPEN: { name: string; hrefs: string[] }[] = [
-  { name: "Täglich", hrefs: ["/", "/work-station", "/karteikarten", "/notizen"] },
-  { name: "Studium", hrefs: ["/pdf-reader", "/lernraum", "/dateiablage", "/literaturverwaltung", "/transkription", "/chat"] },
-  { name: "Werkzeuge", hrefs: ["/textverarbeitung", "/tabellen", "/praesentationen", "/mindmap", "/whiteboard"] },
-];
-
 export type HubEintrag = { name: string; href: string; icon: string };
 
-/** Alle Hubs mit Ziel, in der Reihenfolge der Gruppen. */
-export function hubsInGruppen(): { name: string; hubs: HubEintrag[] }[] {
-  const alle: HubEintrag[] = [ZENTRALER_HUB, ...WEITERE_HUBS.filter((h): h is HubEintrag => Boolean(h.href))];
-  return HUB_GRUPPEN.map((g) => ({
+const ALLE: HubEintrag[] = [ZENTRALER_HUB, ...WEITERE_HUBS.filter((h): h is HubEintrag => Boolean(h.href))];
+
+/** Hub zu einer Kennung der Symbolleiste ("hub", "notizen" …). */
+export const hubVonId = (id: string): HubEintrag | null => ALLE.find((h) => h.href === bereichHref(id)) ?? null;
+
+/**
+ * Design B3: Gruppen der Symbolleiste (DESIGN.md Abschnitt 4) in der Reihenfolge aus der Personalisierung.
+ * Ausgeblendete Bereiche fehlen hier, bleiben aber über die Befehlspalette erreichbar.
+ */
+export function hubsInGruppen(s: Symbolleiste = standardSymbolleiste()): { name: string; hubs: HubEintrag[] }[] {
+  return symbolleistenGruppen(s).map((g) => ({
     name: g.name,
-    hubs: g.hrefs.map((href) => alle.find((h) => h.href === href)).filter((h): h is HubEintrag => Boolean(h)),
+    hubs: g.eintraege.filter((e) => e.sichtbar).map((e) => hubVonId(e.id)).filter((h): h is HubEintrag => Boolean(h)),
   }));
 }
 
@@ -114,10 +115,21 @@ export function hubAusPfad(pfad: string): { hub: HubEintrag | null; unterseite: 
   return { hub: hub?.href ? (hub as HubEintrag) : null, unterseite: null };
 }
 
-/** Handy: die vier Bereiche in der Tab-Leiste unten (der fünfte Platz öffnet die Befehlspalette). */
-export const MOBIL_HUBS: { kurz: string; href: string }[] = [
-  { kurz: "Hub", href: "/" },
-  { kurz: "Fokus", href: "/work-station" },
-  { kurz: "Karten", href: "/karteikarten" },
-  { kurz: "Notizen", href: "/notizen" },
-];
+/** Kurze Namen für die Tab-Leiste am Handy. Dort stehen die ersten vier sichtbaren Bereiche der Symbolleiste. */
+export const KURZNAMEN: Record<string, string> = {
+  hub: "Hub",
+  "work-station": "Fokus",
+  karteikarten: "Karten",
+  notizen: "Notizen",
+  "pdf-reader": "PDF",
+  lernraum: "Lernraum",
+  dateiablage: "Dateien",
+  literaturverwaltung: "Literatur",
+  transkription: "Aufnahme",
+  chat: "Chat",
+  textverarbeitung: "Text",
+  tabellen: "Tabellen",
+  praesentationen: "Folien",
+  mindmap: "MindMap",
+  whiteboard: "Board",
+};
