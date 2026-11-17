@@ -44,16 +44,16 @@ test("Hub-Layout lesen: Größe korrigieren, Doppeltes verwerfen, Fehlendes ausg
   assert.deepEqual(sichtbare(l), ["heute"]);
 });
 
-test("Raster: „Ausgewogen“ ergibt vier Zeilen ohne freien Platz", () => {
+test("Raster: „Ausgewogen“ ergibt fünf Zeilen ohne freien Platz", () => {
   const plan = rasterPlan(VOREINSTELLUNGEN.ausgewogen);
   assert.deepEqual(
     plan.map((p) => [p.id, p.zeile, p.spalte, p.frei]),
     [
-      ["naechstes", 0, 0, 0],
-      ["fakten", 1, 0, 0],
-      ["heute", 2, 0, 0],
-      ["vorschlag", 2, 2, 0],
-      ["woche", 3, 0, 0],
+      ["vorschlag", 0, 0, 0],
+      ["naechstes", 1, 0, 0],
+      ["fakten", 2, 0, 0],
+      ["heute", 3, 0, 0],
+      ["woche", 4, 0, 0],
     ],
   );
 });
@@ -81,17 +81,17 @@ test("Raster: bleibt in der Zeile Platz, meldet der Baustein davor ihn als frei"
 
 test("Verschieben überspringt ausgeblendete Bausteine und hört am Rand auf", () => {
   const l = VOREINSTELLUNGEN.ruhig;
-  assert.equal(verschieben(l, "naechstes", -1), null);
-  assert.equal(verschieben(l, "vorschlag", 1), null);
+  assert.equal(verschieben(l, "vorschlag", -1), null);
+  assert.equal(verschieben(l, "heute", 1), null);
   assert.equal(verschieben(l, "fakten", 1), null);
-  assert.deepEqual(sichtbare(verschieben(l, "naechstes", 1)!), ["heute", "naechstes", "vorschlag"]);
-  assert.deepEqual(sichtbare(l), ["naechstes", "heute", "vorschlag"]);
+  assert.deepEqual(sichtbare(verschieben(l, "naechstes", 1)!), ["vorschlag", "heute", "naechstes"]);
+  assert.deepEqual(sichtbare(l), ["vorschlag", "naechstes", "heute"]);
 });
 
 test("Umsetzen, Größe und Sichtbarkeit ändern das Original nicht", () => {
   const l = standardLayout();
-  assert.deepEqual(sichtbare(umsetzen(l, "woche", "naechstes")), ["woche", "naechstes", "fakten", "heute", "vorschlag"]);
-  assert.deepEqual(sichtbare(umsetzen(l, "naechstes", "heute")), ["fakten", "heute", "naechstes", "vorschlag", "woche"]);
+  assert.deepEqual(sichtbare(umsetzen(l, "woche", "naechstes")), ["vorschlag", "woche", "naechstes", "fakten", "heute"]);
+  assert.deepEqual(sichtbare(umsetzen(l, "naechstes", "heute")), ["vorschlag", "fakten", "heute", "naechstes", "woche"]);
   assert.equal(groesseSetzen(l, "heute", "S"), l);
   assert.equal(groesseSetzen(l, "heute", "L").find(([id]) => id === "heute")![2], "L");
   assert.deepEqual(sichtbare(sichtbarSetzen(l, "wiederholen", true)).at(-1), "wiederholen");

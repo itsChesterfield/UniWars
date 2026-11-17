@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { toggleDeadlineErledigt } from "@/app/deadline/actions";
 import { toggleTodoErledigt } from "@/app/todo/actions";
-import { DashboardUeberschrift } from "@/components/ki/dashboard-ueberschrift";
 import { TagesBriefing } from "@/components/ki/tages-briefing";
 import { SCHNELL_ERFASSEN } from "@/components/quick-add";
 import { track } from "@/lib/analytics";
@@ -76,14 +75,12 @@ function Naechstes({ d }: { d: HubDaten }) {
   const jetzt = useJetzt(1000);
   const { oeffne } = useAufgabenDetail();
   const k = naechsterKandidat(d);
-  const gruss = <DashboardUeberschrift name={d.name} standard={`Hallo, ${d.name}`} als="p" />;
 
   if (!k) {
     return (
       <section className="kopf" aria-labelledby="hub-h">
         <div className="kopf-text">
-          {gruss}
-          <h1 id="hub-h">Gerade steht nichts an.</h1>
+          <h2 id="hub-h">Gerade steht nichts an.</h2>
           <p className="unter">Keine offenen Fristen und keine anstehenden Prüfungen.</p>
           <div className="aktionen">
             <button type="button" className="knopf haupt" onClick={() => window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN))}>
@@ -109,8 +106,7 @@ function Naechstes({ d }: { d: HubDaten }) {
       <span className="bahn" aria-hidden />
       <span className="planet" aria-hidden />
       <div className="kopf-text">
-        {gruss}
-        <h1 id="hub-h">{k.titel}</h1>
+        <h2 id="hub-h">{k.titel}</h2>
         <p className="unter">
           <i aria-hidden style={{ background: fach?.farbe ?? FARBE_OHNE_FACH }} />
           {fach ? `${fach.name}, ` : ""}

@@ -9,7 +9,6 @@ import { Sidebar } from "@/components/sidebar";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
-import { HubKontext } from "@/components/hub/hub-kontext";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
@@ -128,9 +127,6 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         symbolleiste={symbolleisteLesen(settings.symbolleiste)}
         kiVerfuegbar={kiKonfiguriert()}
       />
-      <Suspense fallback={null}>
-        <HubKontext aktiv={bereich} faecher={faecher ?? []} deadlines={deadlines ?? []} pruefungen={pruefungen ?? []} />
-      </Suspense>
       <div className="arbeitsflaeche">
         <Kopfleiste
           name={username}

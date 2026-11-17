@@ -37,28 +37,29 @@ export type Voreinstellung = "ruhig" | "ausgewogen" | "alles";
 export const VOREINSTELLUNG_NAMEN: Record<Voreinstellung, string> = { ruhig: "Ruhig", ausgewogen: "Ausgewogen", alles: "Alles" };
 
 export const VOREINSTELLUNGEN: Record<Voreinstellung, HubLayout> = {
+  // „Dein Tag“ (Begrüßung + Vorschläge) steht immer oben
   ruhig: [
+    ["vorschlag", true, "L"],
     ["naechstes", true, "L"],
-    ["heute", true, "M"],
-    ["vorschlag", true, "S"],
+    ["heute", true, "L"],
     ["fakten", false, "L"],
     ["woche", false, "L"],
     ["wiederholen", false, "S"],
   ],
   ausgewogen: [
+    ["vorschlag", true, "L"],
     ["naechstes", true, "L"],
     ["fakten", true, "L"],
-    ["heute", true, "M"],
-    ["vorschlag", true, "S"],
+    ["heute", true, "L"],
     ["woche", true, "L"],
     ["wiederholen", false, "S"],
   ],
   alles: [
+    ["vorschlag", true, "L"],
     ["naechstes", true, "L"],
     ["fakten", true, "M"],
     ["wiederholen", true, "S"],
-    ["heute", true, "M"],
-    ["vorschlag", true, "S"],
+    ["heute", true, "L"],
     ["woche", true, "L"],
   ],
 };
