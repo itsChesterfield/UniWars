@@ -61,13 +61,23 @@ export function fotoPromptBauen(faecher: string[]): { system: string; nutzer: st
     system: [
       "Du liest Stundenpläne von Studierenden aus Fotos oder Screenshots ab.",
       "Gib NUR ein JSON-Objekt zurück: {\"eintraege\": [{\"fach\": string, \"tag\": \"MO\"|\"DI\"|\"MI\"|\"DO\"|\"FR\"|\"SA\"|\"SO\", \"start\": \"HH:MM\", \"ende\": \"HH:MM\", \"raum\": string|null, \"dozent\": string|null}]}.",
-      "Regeln: Jede wöchentliche Veranstaltung ist ein Eintrag; findet sie an mehreren Tagen statt, dann ein Eintrag pro Tag.",
+      "Regeln: Jede wöchentliche Veranstaltung ist ein Eintrag; findet sie an mehreren Tagen statt, dann ein Eintrag pro Tag. Jeder Kasten im Plan ergibt genau einen Eintrag – nichts doppelt.",
+      "Wochentag und Uhrzeit: Steht im Kasten selbst ein Tag oder eine Zeit (z. B. 'Montag, 09:45 - 11:15'), gilt diese Angabe – nicht die Spalte oder Zeile, in der der Kasten zu stehen scheint. Sonst die Spaltenüberschrift genau prüfen (Spalten können unterschiedlich breit sein).",
+      "Dozent nur, wenn ein Personenname dasteht. Veranstaltungsarten wie 'Seminaristischer Lehrvortrag', 'PC-Übung', 'Praktische Übung', SWS-Angaben oder Sprache sind KEIN Dozent.",
       "Uhrzeiten im 24-Stunden-Format. Fachname kurz und ohne Raum/Dozent/Kürzel wie 'VL' oder 'Ü' – außer Übung und Vorlesung sind getrennte Fächer im Plan.",
       "Nichts erfinden: Was nicht lesbar ist, weglassen bzw. null. Keine Pausen, keine leeren Zeitslots.",
       "Ist auf dem Bild kein Stundenplan, gib {\"eintraege\": []} zurück.",
     ].join("\n"),
     nutzer: `Lies alle Veranstaltungen aus diesem Stundenplan ab. ${bekannte}`,
   };
+}
+
+/** Veranstaltungsarten o. Ä., die die KI fälschlich als Dozent abliest */
+const KEIN_DOZENT = /lehrvortrag|lehrvertrag|vorlesung|übung|uebung|seminar|praktikum|tutorium|\bsws\b|deutsch|englisch|wöch|ungerade|gerade woche/i;
+
+export function dozentLesen(wert: unknown): string | null {
+  const d = text(wert, 100);
+  return d && !KEIN_DOZENT.test(d) ? d : null;
 }
 
 /** KI-Antwort prüfen: nur vollständige, plausible Einträge, ohne Duplikate. */
@@ -83,10 +93,10 @@ export function fotoParsen(antwort: string): FotoEintrag[] {
     const start = zeitLesen(o.start);
     const ende = zeitLesen(o.ende);
     if (!fach || !tag || !start || !ende || ende <= start) continue;
-    const schluessel = `${fach.toLowerCase()}|${tag}|${start}`;
+    const schluessel = `${fach.toLowerCase()}|${tag}|${start}|${ende}`;
     if (gesehen.has(schluessel)) continue;
     gesehen.add(schluessel);
-    ergebnis.push({ fach, tag, start, ende, raum: text(o.raum, 100) || null, dozent: text(o.dozent, 100) || null });
+    ergebnis.push({ fach, tag, start, ende, raum: text(o.raum, 100) || null, dozent: dozentLesen(o.dozent) });
     if (ergebnis.length >= MAX_FOTO_EINTRAEGE) break;
   }
   const reihenfolge: Wochentag[] = ["MO", "DI", "MI", "DO", "FR", "SA", "SO"];

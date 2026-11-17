@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fachZuordnen, fotoParsen, fotoPromptBauen, tagLesen, zeitLesen } from "./stundenplan-foto.ts";
+import { dozentLesen, fachZuordnen, fotoParsen, fotoPromptBauen, tagLesen, zeitLesen } from "./stundenplan-foto.ts";
 
 test("Stundenplan-Foto: Zeiten und Tage lesen", () => {
   assert.equal(zeitLesen("8:15"), "08:15");
@@ -60,4 +60,11 @@ test("KI-Anfrage: Bilder hängen an der Nutzernachricht", async () => {
     ],
   });
   assert.deepEqual(nachrichtenBauen({ nutzer: "x", maxTokens: 1, temperatur: 0 })[0], { role: "user", content: "x" });
+});
+
+test("Dozent: Veranstaltungsarten werden nicht als Dozent übernommen", () => {
+  assert.equal(dozentLesen("Seminaristischer Lehrvortrag"), null);
+  assert.equal(dozentLesen("Lehrvertrag"), null);
+  assert.equal(dozentLesen("PC-Übung"), null);
+  assert.equal(dozentLesen("Prof. Dr. Klaus Meier"), "Prof. Dr. Klaus Meier");
 });

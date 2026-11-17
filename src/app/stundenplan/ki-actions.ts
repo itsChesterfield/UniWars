@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { KiEingabe, KiKeineDaten } from "@/lib/ki/fehler";
 import { alsFehler, kiNutzer, textAnfrageAusfuehren, textVoraussetzungen, type KiErgebnis } from "@/lib/ki/server";
-import { fachZuordnen, fotoParsen, fotoPromptBauen, MAX_BILD_ZEICHEN, tagLesen, zeitLesen, type FotoEintrag } from "@/lib/ki/stundenplan-foto";
+import { dozentLesen, fachZuordnen, fotoParsen, fotoPromptBauen, MAX_BILD_ZEICHEN, tagLesen, zeitLesen, type FotoEintrag } from "@/lib/ki/stundenplan-foto";
 import { naechsteFarbe } from "@/lib/fach-farben";
 import { kalenderAbgleichAnstossen } from "@/lib/kalender/anstossen";
 import type { Tables } from "@/lib/supabase/types";
@@ -59,9 +59,12 @@ export type FotoUebernahme = {
 };
 
 /** Bestätigte Einträge speichern; fehlende Fächer werden dabei angelegt. */
-export async function stundenplanFotoUebernehmen(eintraege: FotoUebernahme[]): Promise<{ angelegt: number; neueFaecher: number; eintraege: Tables<"stundenplan_eintrag">[] }> {
+export async function stundenplanFotoUebernehmen(
+  eintraege: FotoUebernahme[],
+  ersetzen = false,
+): Promise<{ angelegt: number; neueFaecher: number; uebersprungen: number; eintraege: Tables<"stundenplan_eintrag">[] }> {
   const { supabase, userId } = await kiNutzer();
-  if (!Array.isArray(eintraege) || eintraege.length === 0) return { angelegt: 0, neueFaecher: 0, eintraege: [] };
+  if (!Array.isArray(eintraege) || eintraege.length === 0) return { angelegt: 0, neueFaecher: 0, uebersprungen: 0, eintraege: [] };
   if (eintraege.length > 60) throw new Error("Zu viele Einträge.");
 
   const { data: vorhandene, error: fachFehler } = await supabase.from("fach").select("id, name, farbe");
@@ -94,6 +97,16 @@ export async function stundenplanFotoUebernehmen(eintraege: FotoUebernahme[]): P
     neueFaecher++;
   }
 
+  // Bisherigen Stundenplan ersetzen – sonst nur hinzufügen, was es so noch nicht gibt
+  if (ersetzen) {
+    const { error } = await supabase.from("stundenplan_eintrag").delete().eq("user_id", userId);
+    if (error) throw new Error(error.message);
+  }
+  const { data: bisher } = ersetzen ? { data: [] } : await supabase.from("stundenplan_eintrag").select("fach_id, tag, start_zeit, end_zeit");
+  const schluessel = (fachId: string, tag: string, start: string, ende: string) => `${fachId}|${tag}|${start.slice(0, 5)}|${ende.slice(0, 5)}`;
+  const vorhanden = new Set((bisher ?? []).map((b) => schluessel(b.fach_id, b.tag, b.start_zeit, b.end_zeit)));
+  let uebersprungen = 0;
+
   const zeilen = [];
   for (const e of eintraege) {
     const fachId = e.fachId && eigeneIds.has(e.fachId) ? e.fachId : neueIds.get(e.neuesFach?.replace(/\s+/g, " ").trim().toLowerCase() ?? "");
@@ -101,6 +114,12 @@ export async function stundenplanFotoUebernehmen(eintraege: FotoUebernahme[]): P
     const start = zeitLesen(e.start);
     const ende = zeitLesen(e.ende);
     if (!fachId || !tag || !start || !ende || ende <= start) continue;
+    const k = schluessel(fachId, tag, start, ende);
+    if (vorhanden.has(k)) {
+      uebersprungen++;
+      continue;
+    }
+    vorhanden.add(k);
     zeilen.push({
       user_id: userId,
       fach_id: fachId,
@@ -108,7 +127,7 @@ export async function stundenplanFotoUebernehmen(eintraege: FotoUebernahme[]): P
       start_zeit: start,
       end_zeit: ende,
       raum: e.raum?.trim().slice(0, 100) || null,
-      dozent: e.dozent?.trim().slice(0, 100) || null,
+      dozent: dozentLesen(e.dozent),
     });
   }
   let gespeichert: Tables<"stundenplan_eintrag">[] = [];
@@ -120,5 +139,5 @@ export async function stundenplanFotoUebernehmen(eintraege: FotoUebernahme[]): P
   revalidatePath("/");
   revalidatePath("/termine");
   await kalenderAbgleichAnstossen(supabase);
-  return { angelegt: gespeichert.length, neueFaecher, eintraege: gespeichert };
+  return { angelegt: gespeichert.length, neueFaecher, uebersprungen, eintraege: gespeichert };
 }

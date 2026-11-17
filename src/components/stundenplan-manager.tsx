@@ -14,6 +14,7 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { useRouter } from "next/navigation";
 import { StundenplanFotoDialog } from "@/components/stundenplan-foto-dialog";
+import { spurenVerteilen } from "@/lib/spuren";
 
 type Eintrag = Tables<"stundenplan_eintrag">;
 type Deadline = Tables<"deadline">;
@@ -128,6 +129,15 @@ export function StundenplanManager({
   }, [kalenderVerbunden, wochenOffset]);
 
   const belegtDieseWoche = kalenderVerbunden && belegt.woche === wochenOffset ? belegt.bloecke : [];
+
+  /** Einträge eines Tages; überlappende stehen nebeneinander */
+  function blockeFuerTag(tag: Enums<"wochentag">) {
+    const amTag = eintraege
+      .filter((e) => e.tag === tag)
+      .map((e) => ({ e, start: minutenSeitBasis(e.start_zeit), ende: minutenSeitBasis(e.end_zeit) }));
+    const spuren = spurenVerteilen(amTag);
+    return amTag.map((x) => ({ ...x, ...spuren.get(x)! }));
+  }
 
   function belegtFuerTag(tagIndex: number) {
     const tagStart = new Date(montag);
@@ -267,10 +277,11 @@ export function StundenplanManager({
       {fotoOffen && (
         <StundenplanFotoDialog
           faecher={faecher}
+          vorhandene={eintraege.length}
           onSchliessen={() => setFotoOffen(false)}
-          onUebernommen={(neu) => {
+          onUebernommen={(neu, ersetzt) => {
             setFotoOffen(false);
-            setEintraege((l) => [...l, ...neu]);
+            setEintraege((l) => (ersetzt ? neu : [...l, ...neu]));
             // neue Fächer und Termine auch im Rest der Seite zeigen
             router.refresh();
           }}
@@ -302,14 +313,10 @@ export function StundenplanManager({
                   Belegt
                 </div>
               ))}
-              {eintraege
-                .filter((e) => e.tag === tag)
-                .map((e) => {
+              {blockeFuerTag(tag).map(({ e, start, ende, spur, spuren }) => {
                   const fach = faecher.find((f) => f.id === e.fach_id);
-                  const top = minutenSeitBasis(e.start_zeit) * PX_PRO_MINUTE;
-                  const hoehe =
-                    (minutenSeitBasis(e.end_zeit) - minutenSeitBasis(e.start_zeit)) *
-                    PX_PRO_MINUTE;
+                  const top = start * PX_PRO_MINUTE;
+                  const hoehe = (ende - start) * PX_PRO_MINUTE;
                   return (
                     <button
                       key={e.id}
@@ -318,6 +325,9 @@ export function StundenplanManager({
                       style={{
                         top,
                         height: Math.max(hoehe, 20),
+                        left: `calc(${(spur / spuren) * 100}% + 1px)`,
+                        width: `calc(${100 / spuren}% - 2px)`,
+                        right: "auto",
                         backgroundColor: fach?.farbe ?? "#3b82f6",
                       }}
                       onClick={() => openEditForm(e)}
