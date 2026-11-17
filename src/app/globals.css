@@ -3812,137 +3812,140 @@ label.ws-ton {
    Hubs Stufe 2: Dateiablage, PDF Reader, Literaturverwaltung
    ========================================================================= */
 
-/* --- Dateiablage --- */
+/* --- Dateiablage (Design B3): Ordner wie eine Kontextspalte, Dateien als Tabelle mit Trennlinien --- */
 
 .dat-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(200px, 256px) minmax(0, 1fr);
+  gap: var(--space-8);
   align-items: start;
 }
 
 .dat-ordner {
-  padding: 12px;
-  gap: 14px;
   position: sticky;
-  top: 16px;
-}
-
-.dat-ordner ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  top: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-4);
+}
+
+.dat-ordner .gt {
+  margin-bottom: 0;
+}
+
+.dat-ordner .kliste {
   max-height: 60vh;
   overflow-y: auto;
 }
 
+/* Ordner sind Knöpfe (Ablegen per Ziehen), sehen aber aus wie die Einträge der Kontextspalte */
 .dat-ordner-knopf {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
-  border: 1px dashed transparent;
-  border-radius: var(--radius-m);
+  border: 0;
   background: none;
-  color: var(--text);
-  font-size: 13.5px;
+  font: inherit;
+  font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
 }
 
-.dat-ordner-knopf:hover {
-  background: var(--card2);
-}
-
-.dat-ordner-knopf.aktiv {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  font-weight: 600;
-}
-
 .dat-ordner-knopf.ziel {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.dat-ordner-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+  color: var(--akzent-text);
 }
 
 .dat-speicher {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  padding: 10px 4px 2px;
-  border-top: 1px solid var(--border);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) 0;
+  border-top: 1px solid var(--linie);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.dat-speicher .balkenf {
+  --c: var(--akzent);
+  margin: 0;
+}
+
+.dat-speicher .balkenf.voll {
+  --c: var(--color-error);
 }
 
 .dat-speicher-voll {
-  color: var(--danger);
+  color: var(--fehler-text);
   font-weight: 600;
 }
 
 .dat-inhalt {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-height: 360px;
-  gap: 14px;
 }
 
 .dat-titel {
   margin: 0;
 }
 
+.dat-meldung {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .dat-ablegen {
-  outline: 2px dashed var(--accent);
-  outline-offset: -8px;
+  border-radius: var(--radius-m);
+  outline: 2px dashed var(--akzent);
+  outline-offset: var(--space-2);
 }
 
 .dat-ablegen-hinweis {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--accent-soft) 85%, transparent);
-  color: var(--accent-strong);
-  font-weight: 700;
-  font-size: 18px;
+  background: color-mix(in srgb, var(--akzent) 14%, var(--flaeche));
+  color: var(--akzent-text);
+  font-size: var(--text-lg);
+  font-weight: 600;
   pointer-events: none;
 }
 
+/* Hochladen: eine Zeile je Datei mit Balken, Fehler getönt in der Fehlerfarbe */
 .dat-uploads {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .dat-uploads li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(80px, 200px) auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(80px, 200px) auto;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  padding: 8px 10px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-m);
-  background: var(--card2);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1px var(--linie);
+  font-size: var(--text-sm);
+}
+
+.dat-uploads li .balkenf {
+  --c: var(--akzent);
+  margin: 0;
 }
 
 .dat-uploads li.fehler {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
-  background: var(--danger-soft);
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 2fr) auto;
+  background: color-mix(in srgb, var(--color-error) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .dat-upload-name {
@@ -3951,9 +3954,26 @@ label.ws-ton {
   white-space: nowrap;
 }
 
+.dat-upload-info {
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
 .dat-upload-fehler {
-  color: var(--danger);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  color: var(--fehler-text);
+}
+
+/* Dateityp als Symbol in einem leisen Feld (wie im Dummy) */
+.dat-typ {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-s);
+  background: var(--flaeche-3);
+  color: var(--text-2);
 }
 
 .dat-tabelle-wrap {
@@ -3963,36 +3983,45 @@ label.ws-ton {
 .dat-tabelle {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: var(--text-md);
 }
 
 .dat-tabelle th {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--linie-2);
+  color: var(--text-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
   text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .dat-tabelle th button {
-  border: none;
+  min-height: 24px;
+  padding: var(--space-1) 0;
+  border: 0;
   background: none;
   color: inherit;
   font: inherit;
-  padding: 0;
   cursor: pointer;
 }
 
+.dat-tabelle th button:hover {
+  color: var(--text);
+}
+
 .dat-tabelle td {
-  padding: 7px 8px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--linie);
   vertical-align: middle;
 }
 
+.dat-tabelle tbody tr {
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
 .dat-tabelle tbody tr:hover {
-  background: var(--card2);
+  background: var(--hover);
 }
 
 .dat-tabelle tbody tr[draggable="true"] {
@@ -4000,66 +4029,62 @@ label.ws-ton {
 }
 
 .dat-spalte-typ {
-  width: 34px;
-  font-size: 17px;
-  text-align: center;
+  width: 44px;
 }
 
 .dat-spalte-groesse,
 .dat-spalte-datum {
+  color: var(--text-2);
   white-space: nowrap;
-  color: var(--muted);
 }
 
-.dat-spalte-groesse {
-  text-align: right;
-}
-
+.dat-spalte-groesse,
 .dat-tabelle th.dat-spalte-groesse {
   text-align: right;
 }
 
 .dat-spalte-aktion {
   position: relative;
-  width: 40px;
+  width: 44px;
 }
 
 .dat-spalte-name {
-  max-width: 0;
   width: 100%;
+  max-width: 0;
 }
 
 .dat-name-knopf {
+  display: block;
   max-width: 100%;
-  border: none;
+  min-height: 24px;
+  overflow: hidden;
+  padding: var(--space-1) 0;
+  border: 0;
   background: none;
-  padding: 0;
   color: var(--text);
   font: inherit;
-  font-weight: 500;
+  font-weight: 550;
   text-align: left;
-  cursor: pointer;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: block;
+  cursor: pointer;
 }
 
 .dat-name-knopf:hover {
-  color: var(--accent-strong);
+  color: var(--akzent-text);
   text-decoration: underline;
 }
 
 .dat-umbenennen {
   display: flex;
-  align-items: center;
-  gap: 4px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .dat-umbenennen .field {
-  padding: 5px 8px;
   max-width: 320px;
+  padding: var(--space-1) var(--space-2);
 }
 
 .dat-verschieben {
@@ -4067,28 +4092,60 @@ label.ws-ton {
 }
 
 .dat-verschieben-titel {
-  font-size: 11px;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-3);
 }
 
+.dat-verschieben .f {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--space-half);
+  background: var(--c);
+}
+
+/* Vorschau (Bild, Audio): Dialog wie das Aufgaben-Detail, Ring statt Rand */
 dialog.dat-vorschau {
-  max-width: min(92vw, 1000px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   width: auto;
-  gap: 12px;
-  border: none;
+  max-width: min(92vw, 1000px);
+  padding: var(--space-5);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -16px var(--schatten);
+  color: var(--text);
+}
+
+dialog.dat-vorschau::backdrop {
+  background: color-mix(in srgb, var(--grund) 60%, transparent);
+}
+
+.dat-vorschau-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .dat-vorschau-titel {
-  font-size: 17px;
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .dat-vorschau img {
+  align-self: center;
   max-width: 100%;
   max-height: 75vh;
+  border-radius: var(--radius-s);
   object-fit: contain;
-  border-radius: var(--radius-m);
-  align-self: center;
 }
 
 .dat-vorschau audio {
@@ -4096,8 +4153,86 @@ dialog.dat-vorschau {
 }
 
 .dat-transkribieren {
+  align-self: flex-start;
+}
+
+/* Anhänge (Aufgaben-Detail): Pillen, Feld und Knöpfe in einer Zeile */
+.anhang-liste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.anhang {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  height: 32px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.anhang a {
+  display: block;
+  padding: var(--space-1) 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anhang-weg {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.anhang-weg:hover {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+}
+
+.anhang-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.anhang-feld {
+  height: 32px;
+  min-width: 0;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.anhang-hinweis {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.anhang-fehler {
+  flex-basis: 100%;
   margin: 0;
-  font-size: 13px;
 }
 
 /* --- PDF Reader --- */
@@ -4873,11 +5008,12 @@ dialog.dat-vorschau {
     position: static;
   }
 
-  .dat-ordner ul {
-    flex-direction: row;
-    overflow-x: auto;
+  /* Ordner am Handy als waagerechte Leiste */
+  .dat-ordner .kliste {
+    display: flex;
     max-height: none;
-    padding-bottom: 4px;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
   }
 
   .dat-ordner-knopf {
@@ -4885,7 +5021,7 @@ dialog.dat-vorschau {
     white-space: nowrap;
   }
 
-  .dat-ordner-name {
+  .dat-ordner-knopf .n {
     overflow: visible;
   }
 
@@ -4894,10 +5030,10 @@ dialog.dat-vorschau {
   }
 
   .dat-uploads li {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  .dat-uploads li .progress-track {
+  .dat-uploads li .balkenf {
     grid-column: 1 / -1;
     grid-row: 2;
   }
@@ -8368,28 +8504,29 @@ dialog.ki-dialog-klein {
   font-size: 11.5px;
 }
 
-/* Dateiablage: Import über einen Link */
+/* Dateiablage: Import über einen Link (Fläche wie die Formulare) */
 .dat-link-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px 10px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-4);
 }
 
 .dat-link-zeile {
   min-width: 0;
+  margin: 0;
 }
 
-.dat-link-zeile .field {
+.dat-link-zeile input {
   width: 100%;
 }
 
 .dat-link-tipp {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 @media (max-width: 640px) {
