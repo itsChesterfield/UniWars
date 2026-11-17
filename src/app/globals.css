@@ -15359,3 +15359,33 @@ html[data-bewegung="reduziert"] .lade-skelett {
 .hs-verif h3 .faint {
   font-weight: 400;
 }
+
+/* Anmeldung: „Angemeldet bleiben“ */
+.auth-bleiben {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-bleiben input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--btn-bg);
+  flex: none;
+}
+
+.auth-bleiben span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auth-bleiben small {
+  color: var(--text-3, var(--muted));
+  font-size: 12px;
+  line-height: 1.35;
+}
