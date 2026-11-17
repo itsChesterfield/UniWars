@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import posthog from "posthog-js";
 import { createFach, updateFach, archiveFach, type FachInput } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
+import { naechsteFarbe } from "@/lib/fach-farben";
+import { Zustand } from "@/components/zustand";
+import { Icon } from "@/components/nav-icon";
 
 type Fach = Tables<"fach">;
-
-import { naechsteFarbe } from "@/lib/fach-farben";
 
 function leeresFormular(faecher: Fach[]): FachInput {
   return {
@@ -20,6 +21,13 @@ function leeresFormular(faecher: Fach[]): FachInput {
   };
 }
 
+/** „3“ wird zu „3. Semester“, freie Angaben wie „WiSe 26/27“ bleiben, wie sie sind. */
+function semesterText(semester: string | null): string | null {
+  if (!semester) return null;
+  return /^\d+$/.test(semester.trim()) ? `${semester.trim()}. Semester` : semester;
+}
+
+/** Design B3: Fächer als Zeilen mit Trennlinien, Farbe als kleines Quadrat, Fehltage als getönte Pille. */
 export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   const [faecher, setFaecher] = useState(initialFaecher);
   const [formOpen, setFormOpen] = useState(false);
@@ -31,6 +39,7 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   function openCreateForm() {
     setEditId(null);
     setForm(leeresFormular(faecher));
+    setError(null);
     setFormOpen(true);
   }
 
@@ -44,6 +53,7 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
       anwesenheitspflicht: fach.anwesenheitspflicht,
       max_fehltage: fach.max_fehltage,
     });
+    setError(null);
     setFormOpen(true);
   }
 
@@ -87,67 +97,94 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
   }
 
   return (
-    <section className="card" id="faecher">
-      <div className="ch" style={{ marginBottom: 14 }}>
-        <span className="ct">Fächer</span>
-        <button type="button" onClick={openCreateForm} className="btng" style={{ padding: "5px 11px" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Fach
-        </button>
-      </div>
-
-      {faecher.length === 0 && !formOpen && (
-        <p className="empty-state">Noch keine Fächer angelegt.</p>
+    <div className="faecher-seite" id="faecher">
+      {faecher.length > 0 && (
+        <div className="liste-kopf">
+          <button type="button" onClick={openCreateForm} className="knopf neben klein">
+            <Icon name="plus" groesse={16} />
+            Fach hinzufügen
+          </button>
+        </div>
       )}
 
-      <ul className="fach-list">
-        {faecher.map((fach) => (
-          <li key={fach.id} className="fach-card">
-            <span
-              className="dot"
-              style={{ background: fach.farbe ?? "#94a3b8" }}
-              aria-hidden
-            />
-            <div className="fach-card-info">
-              <span className="fach-card-name">{fach.name}</span>
-              <span className="fach-card-meta">
-                {[fach.semester, fach.ects != null ? `${fach.ects} ECTS` : null]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
+      {error && !formOpen && (
+        <p className="formular-fehler" role="alert">
+          {error}
+        </p>
+      )}
+
+      {faecher.length === 0 && !formOpen && (
+        <Zustand
+          art="leer"
+          icon="faecher"
+          titel="Noch keine Fächer."
+          aktion={
+            <button type="button" className="knopf neben klein" onClick={openCreateForm}>
+              <Icon name="plus" groesse={16} />
+              Fach hinzufügen
+            </button>
+          }
+        >
+          Fächer ordnen Aufgaben, Noten und den Stundenplan. Leg die Fächer dieses Semesters mit Farbe und ECTS an.
+        </Zustand>
+      )}
+
+      <ul className="entry-list">
+        {faecher.map((fach) => {
+          const grenze = fach.max_fehltage != null && fach.fehltage_genutzt >= fach.max_fehltage;
+          return (
+            <li key={fach.id} className="entry-row fach-zeile">
+              <span className="fach-farbe" style={{ "--c": fach.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
+              <div className="entry-info">
+                <span className="entry-title">{fach.name}</span>
+                <span className="entry-meta">
+                  {[semesterText(fach.semester), fach.ects != null ? `${fach.ects} ECTS` : null]
+                    .filter(Boolean)
+                    .join(", ") || "Ohne Semester und ECTS"}
+                </span>
+              </div>
               {fach.anwesenheitspflicht && (
-                <span
-                  className={`fach-fehltage ${
-                    fach.max_fehltage != null && fach.fehltage_genutzt >= fach.max_fehltage
-                      ? "fach-fehltage-warnung"
-                      : ""
-                  }`}
-                >
-                  Fehltage: {fach.fehltage_genutzt}
-                  {fach.max_fehltage != null ? `/${fach.max_fehltage}` : ""}
-                  {" · in Fortschritt → Anwesenheit erfassen"}
+                <span className={`fach-fehltage${grenze ? " fach-fehltage-grenze" : ""}`}>
+                  {fach.max_fehltage != null ? (
+                    <>
+                      <span className="zahl">{fach.fehltage_genutzt}</span> von{" "}
+                      <span className="zahl">{fach.max_fehltage}</span> Fehltagen
+                    </>
+                  ) : (
+                    <>
+                      <span className="zahl">{fach.fehltage_genutzt}</span>{" "}
+                      {fach.fehltage_genutzt === 1 ? "Fehltag" : "Fehltage"}
+                    </>
+                  )}
                 </span>
               )}
-            </div>
-            <div className="fach-card-actions">
-              <button type="button" onClick={() => openEditForm(fach)}>
-                Bearbeiten
-              </button>
-              <button type="button" onClick={() => handleArchive(fach.id)}>
-                Archivieren
-              </button>
-            </div>
-          </li>
-        ))}
+              <div className="entry-actions">
+                <button type="button" className="knopf leise klein" onClick={() => openEditForm(fach)}>
+                  Bearbeiten
+                </button>
+                <button
+                  type="button"
+                  className="knopf leise klein"
+                  onClick={() => handleArchive(fach.id)}
+                  disabled={isPending}
+                >
+                  Archivieren
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {formOpen && (
-        <form className="fach-form" onSubmit={handleSubmit}>
+        <form className="crud-form" onSubmit={handleSubmit}>
           <h3>{editId ? "Fach bearbeiten" : "Neues Fach"}</h3>
 
-          {error && <p className="auth-error">{error}</p>}
+          {error && (
+            <p className="formular-fehler" role="alert">
+              {error}
+            </p>
+          )}
 
           <label htmlFor="fach-name">Name</label>
           <input
@@ -157,35 +194,42 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
             required
           />
 
-          <label htmlFor="fach-semester">Semester</label>
-          <input
-            id="fach-semester"
-            value={form.semester ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value || null }))}
-          />
-
-          <label htmlFor="fach-farbe">Farbe</label>
-          <input
-            id="fach-farbe"
-            type="color"
-            value={form.farbe ?? "#3B82F6"}
-            onChange={(e) => setForm((f) => ({ ...f, farbe: e.target.value }))}
-          />
-
-          <label htmlFor="fach-ects">ECTS</label>
-          <input
-            id="fach-ects"
-            type="number"
-            step="0.5"
-            min="0"
-            value={form.ects ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                ects: e.target.value === "" ? null : Number(e.target.value),
-              }))
-            }
-          />
+          <div className="crud-form-reihe">
+            <div>
+              <label htmlFor="fach-semester">Semester</label>
+              <input
+                id="fach-semester"
+                value={form.semester ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, semester: e.target.value || null }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="fach-ects">ECTS</label>
+              <input
+                id="fach-ects"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min="0"
+                value={form.ects ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    ects: e.target.value === "" ? null : Number(e.target.value),
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <label htmlFor="fach-farbe">Farbe</label>
+              <input
+                id="fach-farbe"
+                type="color"
+                value={form.farbe ?? naechsteFarbe(faecher)}
+                onChange={(e) => setForm((f) => ({ ...f, farbe: e.target.value }))}
+              />
+            </div>
+          </div>
 
           <label className="fach-checkbox">
             <input
@@ -200,10 +244,11 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
 
           {form.anwesenheitspflicht && (
             <>
-              <label htmlFor="fach-max-fehltage">Max. Fehltage</label>
+              <label htmlFor="fach-max-fehltage">Höchstens erlaubte Fehltage</label>
               <input
                 id="fach-max-fehltage"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={form.max_fehltage ?? ""}
                 onChange={(e) =>
@@ -216,16 +261,16 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
             </>
           )}
 
-          <div className="fach-form-actions">
-            <button type="submit" className="btnp" disabled={isPending}>
+          <div className="crud-form-actions">
+            <button type="submit" className="knopf haupt" disabled={isPending} aria-busy={isPending}>
               {isPending ? "Speichern…" : "Speichern"}
             </button>
-            <button type="button" onClick={closeForm} disabled={isPending}>
+            <button type="button" className="knopf leise" onClick={closeForm} disabled={isPending}>
               Abbrechen
             </button>
           </div>
         </form>
       )}
-    </section>
+    </div>
   );
 }

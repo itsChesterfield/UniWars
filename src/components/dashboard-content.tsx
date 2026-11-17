@@ -15,13 +15,14 @@ import { DeadlineManager } from "@/components/deadline-manager";
 import { TodoManager } from "@/components/todo-manager";
 import { PruefungManager } from "@/components/pruefung-manager";
 import {
-  NotenPrognose,
+  NotenKopf,
   NotenDurchschnittProFach,
-  ZielnotenRechner,
-  WasWaereWenn,
-  BestandenUebersicht,
+  NotenRechner,
   LernzeitStatistik,
 } from "@/components/rechner-section";
+import { Zustand } from "@/components/zustand";
+import { ErfassenKnopf } from "@/components/erfassen-knopf";
+import { gewichteterSchnitt } from "@/lib/noten";
 import { AnwesenheitUebersicht, StreakUebersicht } from "@/components/fortschritt-views";
 import { LockedCard } from "@/components/locked-card";
 import { SegmentedCard } from "@/components/segmented-card";
@@ -223,55 +224,47 @@ export function DashboardContent({
         </div>
   );
 
-  const notenBlock = (klasse: string) => (
-        <div className={klasse} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <SegmentedCard
-            title="Noten-Rechner"
-            segments={[
-              {
-                key: "prognose",
-                label: "Prognose",
-                content: <NotenPrognose notenschnitt={notenschnitt} notes={notes} />,
-              },
-              {
-                key: "rechner",
-                label: "Rechner",
-                content: (
-                  <div className="rechner-grid">
-                    <ZielnotenRechner notes={notes} />
-                    <WasWaereWenn notes={notes} />
-                  </div>
-                ),
-              },
-              {
-                key: "noten",
-                label: "Noten",
-                content: (
-                  <NoteManager
-                    key={`noten-${filterKey}`}
-                    initialNotes={notes}
-                    faecher={faecher}
-                    notenschnitt={notenschnitt}
-                    embedded
-                  />
-                ),
-              },
-              {
-                key: "status",
-                label: "Status",
-                content: <BestandenUebersicht pruefungen={pruefungen} />,
-              },
-            ]}
+  // Design B3, Noten: Schnitt groß, darunter Noten, Schnitt pro Fach und Rechner als Abschnitte (kein Segment, keine Karte)
+  const gefilterteNotes = fachId ? notes.filter((n) => n.fach_id === fachId) : notes;
+  const filterFach = fachId ? faecher.find((f) => f.id === fachId) : undefined;
+  const notenBlock = (klasse: string) =>
+    notes.length === 0 ? (
+      <div className={klasse}>
+        <Zustand
+          art="leer"
+          icon="noten"
+          titel="Noch keine Noten."
+          aktion={<ErfassenKnopf modus="NOTE">Note erfassen</ErfassenKnopf>}
+        >
+          Trag Noten mit Gewicht ein. Dann siehst du hier deinen Schnitt, den Schnitt pro Fach und was du für dein Ziel brauchst.
+        </Zustand>
+      </div>
+    ) : (
+      <div className={`noten-seite ${klasse}`}>
+        {gefilterteNotes.length > 0 && (
+          <NotenKopf
+            schnitt={fachId ? gewichteterSchnitt(gefilterteNotes) : notenschnitt ?? gewichteterSchnitt(notes)}
+            notes={gefilterteNotes}
+            fachName={filterFach?.name}
+            pruefungen={gefiltertePruefungen}
           />
-
-          <section className="card">
-            <div className="ch">
-              <span className="ct">Durchschnitt pro Fach</span>
-            </div>
-            <NotenDurchschnittProFach notes={notes} faecher={faecher} />
-          </section>
-        </div>
-  );
+        )}
+        <section aria-labelledby="abschnitt-noten">
+          <h2 id="abschnitt-noten" className="abschnitt-titel">
+            Noten
+          </h2>
+          <NoteManager
+            key={`noten-${filterKey}`}
+            initialNotes={gefilterteNotes}
+            faecher={faecher}
+            embedded
+            versteckeErstellen
+          />
+        </section>
+        {!fachId && <NotenDurchschnittProFach notes={notes} faecher={faecher} />}
+        <NotenRechner notes={gefilterteNotes} />
+      </div>
+    );
 
   const fortschrittKarte = (klasse: string) => (
         <SegmentedCard
