@@ -7,6 +7,7 @@ import { HubKopf } from "@/components/hubs/hub-bausteine";
 import { Einstellungen } from "@/components/einstellungen";
 import { profilLesen } from "@/lib/ki/lernraum";
 import { HochschuleWahl } from "@/components/einstellungen/hochschule-wahl";
+import { MensaWahl } from "@/components/einstellungen/mensa-wahl";
 import { adminKonfiguriert } from "@/lib/supabase/admin";
 import { mailKonfiguriert } from "@/lib/mail";
 import { domainAusMail } from "@/lib/hochschulen";
@@ -20,21 +21,48 @@ export default async function EinstellungenSeite() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const domain = user.email ? domainAusMail(user.email) : null;
-  const [{ data: settings }, { data: verif }, { data: anmeldeHs }] = await Promise.all([
-    supabase.from("settings").select("*, hochschule(name)").eq("user_id", user.id).maybeSingle(),
-    supabase.from("uni_verifizierung").select("email, bestaetigt_am, gueltig_bis, code_laeuft_ab, hochschule(name)").eq("user_id", user.id).maybeSingle(),
-    domain && user.email_confirmed_at ? supabase.rpc("hochschule_zur_domain", { p_domain: domain }) : Promise.resolve({ data: null }),
-  ]);
+  const [{ data: settings }, { data: verif }, { data: anmeldeHs }] =
+    await Promise.all([
+      supabase
+        .from("settings")
+        .select("*, hochschule(name, ort)")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("uni_verifizierung")
+        .select(
+          "email, bestaetigt_am, gueltig_bis, code_laeuft_ab, hochschule(name)",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      domain && user.email_confirmed_at
+        ? supabase.rpc("hochschule_zur_domain", { p_domain: domain })
+        : Promise.resolve({ data: null }),
+    ]);
   const jetzt = new Date();
-  const bestaetigt = Boolean(verif?.bestaetigt_am && verif.gueltig_bis && new Date(verif.gueltig_bis) > jetzt);
+  const bestaetigt = Boolean(
+    verif?.bestaetigt_am &&
+    verif.gueltig_bis &&
+    new Date(verif.gueltig_bis) > jetzt,
+  );
   // Vorschlag: Anmelde-Mail ist eine Uni-Mail und noch nicht als solche bestätigt
-  const vorschlag = anmeldeHs && !(bestaetigt && verif?.email === user.email?.toLowerCase())
-    ? ((await supabase.from("hochschule").select("name").eq("id", anmeldeHs).maybeSingle()).data?.name ?? null)
-    : null;
+  const vorschlag =
+    anmeldeHs && !(bestaetigt && verif?.email === user.email?.toLowerCase())
+      ? ((
+          await supabase
+            .from("hochschule")
+            .select("name")
+            .eq("id", anmeldeHs)
+            .maybeSingle()
+        ).data?.name ?? null)
+      : null;
 
   return (
     <>
-      <HubKopf titel="Profil und Konto" untertitel="Profil, Anmeldung und Datenschutz. Design und Anordnung findest du unter Personalisierung." />
+      <HubKopf
+        titel="Profil und Konto"
+        untertitel="Profil, Anmeldung und Datenschutz. Design und Anordnung findest du unter Personalisierung."
+      />
       <Einstellungen
         name={anzeigeName(settings, user)}
         email={user.email ?? ""}
@@ -45,23 +73,33 @@ export default async function EinstellungenSeite() {
         kiVerfuegbar={kiKonfiguriert()}
         kiProfil={profilLesen(settings?.ki_profil)}
         hochschule={
-          <HochschuleWahl
-            hochschule={settings?.hochschule?.name ?? null}
-            frei={settings?.hochschule_frei ?? null}
-            verifizierbar={adminKonfiguriert() && mailKonfiguriert()}
-            vorschlag={bestaetigt ? null : vorschlag}
-            verifizierung={
-              verif
-                ? {
-                    email: verif.email,
-                    bestaetigt,
-                    gueltigBis: verif.gueltig_bis,
-                    hochschule: verif.hochschule?.name ?? null,
-                    codeOffen: Boolean(!verif.bestaetigt_am && verif.code_laeuft_ab && new Date(verif.code_laeuft_ab) > jetzt),
-                  }
-                : null
-            }
-          />
+          <>
+            <HochschuleWahl
+              hochschule={settings?.hochschule?.name ?? null}
+              frei={settings?.hochschule_frei ?? null}
+              verifizierbar={adminKonfiguriert() && mailKonfiguriert()}
+              vorschlag={bestaetigt ? null : vorschlag}
+              verifizierung={
+                verif
+                  ? {
+                      email: verif.email,
+                      bestaetigt,
+                      gueltigBis: verif.gueltig_bis,
+                      hochschule: verif.hochschule?.name ?? null,
+                      codeOffen: Boolean(
+                        !verif.bestaetigt_am &&
+                        verif.code_laeuft_ab &&
+                        new Date(verif.code_laeuft_ab) > jetzt,
+                      ),
+                    }
+                  : null
+              }
+            />
+            <MensaWahl
+              mensa={settings?.mensa_name ?? null}
+              vorschlag={settings?.hochschule?.ort ?? null}
+            />
+          </>
         }
       />
     </>

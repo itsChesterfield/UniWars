@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { speiseplan } from "@/lib/mensa-server";
 import { googleEinrichtungsProbleme } from "@/lib/kalender/google";
 import { abgleichNachLadenPlanen } from "@/lib/kalender/anstossen";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
@@ -91,6 +92,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
   const karten = { anzahl: faelligeKarten?.length ?? 0, stapel: [...proStapel.values()].sort((a, b) => b.anzahl - a.anzahl) };
 
   const username = anzeigeName(settings, user);
+  // Speiseplan nur für die Übersicht und nur mit gewählter Mensa (OpenMensa, 30 min zwischengespeichert)
+  const mensa = bereich === "uebersicht" && settings.mensa_id ? await speiseplan(settings.mensa_id, settings.mensa_name ?? "Mensa") : null;
   // Rahmen (Symbolleiste, Kopfleiste, Glocke) kommt aus app/(hubs)/layout.tsx und bleibt beim Wechsel stehen
   return (
     <Suspense fallback={null}>
@@ -114,6 +117,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         karten={karten}
         serverJetzt={new Date().toISOString()}
         bereich={bereich}
+        mensa={mensa}
       />
     </Suspense>
   );

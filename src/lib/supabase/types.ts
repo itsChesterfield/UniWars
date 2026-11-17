@@ -1794,6 +1794,8 @@ export type Database = {
           darstellung: Json
           hochschule_frei: string | null
           hochschule_id: string | null
+          mensa_id: number | null
+          mensa_name: string | null
           hub_layout: Json | null
           ki_audio_einwilligung: string | null
           ki_einwilligung: string | null
@@ -1814,6 +1816,8 @@ export type Database = {
           darstellung?: Json
           hochschule_frei?: string | null
           hochschule_id?: string | null
+          mensa_id?: number | null
+          mensa_name?: string | null
           hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null
@@ -1834,6 +1838,8 @@ export type Database = {
           darstellung?: Json
           hochschule_frei?: string | null
           hochschule_id?: string | null
+          mensa_id?: number | null
+          mensa_name?: string | null
           hub_layout?: Json | null
           ki_audio_einwilligung?: string | null
           ki_einwilligung?: string | null

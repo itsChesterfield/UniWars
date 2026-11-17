@@ -13324,6 +13324,7 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 
 .hubraster .heute,
 .hubraster .wiederholen,
+.hubraster .mensa-ab,
 .hubraster .vorschlag {
   padding-top: var(--space-2);
   padding-bottom: var(--space-4);
@@ -14718,4 +14719,51 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--akzent) 8%, transparent);
+}
+
+/* Mensa heute */
+.mensa-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-8);
+}
+
+.mensa-liste li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--linie);
+}
+
+.mensa-liste li:first-child {
+  border-top: 0;
+}
+
+.mensa-liste li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mensa-gericht {
+  font-weight: 550;
+}
+
+.mensa-liste .meta {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.mensa-preis {
+  margin-left: auto;
+  white-space: nowrap;
+  color: var(--text-2);
+}
+
+@media (max-width: 760px) {
+  .mensa-liste {
+    padding: 0 var(--space-4);
+  }
 }
