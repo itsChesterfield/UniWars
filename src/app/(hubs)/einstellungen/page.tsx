@@ -43,7 +43,9 @@ export default async function EinstellungenSeite() {
         : Promise.resolve({ data: null }),
     ]);
   const jetzt = new Date();
-  const semester = settings?.hochschule_id ? await semesterLage(supabase) : null;
+  const semester = settings?.hochschule_id
+    ? await semesterLage(supabase)
+    : null;
   const bestaetigt = Boolean(
     verif?.bestaetigt_am &&
     verif.gueltig_bis &&
@@ -81,7 +83,8 @@ export default async function EinstellungenSeite() {
             <HochschuleWahl
               hochschule={settings?.hochschule?.name ?? null}
               frei={settings?.hochschule_frei ?? null}
-              verifizierbar={adminKonfiguriert() && mailKonfiguriert()}
+              verifizierbar={adminKonfiguriert()}
+              mailMoeglich={adminKonfiguriert() && mailKonfiguriert()}
               vorschlag={bestaetigt ? null : vorschlag}
               verifizierung={
                 verif
