@@ -149,8 +149,8 @@ export function NoteManager({
                   {[fach?.name, `Gewicht ${n.gewicht.toLocaleString("de-DE")}`, datumText(n.datum)].filter(Boolean).join(", ")}
                 </span>
               </div>
-              <span className="note-wert zahl">
-                {notenText(n.wert)}
+              <span className={`note-wert zahl${n.wert === null ? " ausstehend" : ""}`}>
+                {n.wert === null ? "ausstehend" : notenText(n.wert)}
               </span>
               <div className="entry-actions">
                 <button type="button" className="knopf leise klein" onClick={() => openEditForm(n)}>
@@ -203,7 +203,7 @@ export function NoteManager({
 
           <div className="crud-form-reihe">
             <div>
-              <label htmlFor="note-wert">Note (1,0 bis 5,0)</label>
+              <label htmlFor="note-wert">Note (1,0 bis 5,0, leer = ausstehend)</label>
               <input
                 id="note-wert"
                 type="number"
@@ -211,9 +211,9 @@ export function NoteManager({
                 step="0.1"
                 min="1"
                 max="5"
-                value={form.wert}
-                onChange={(e) => setForm((f) => ({ ...f, wert: Number(e.target.value) }))}
-                required
+                placeholder="ausstehend"
+                value={form.wert ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, wert: e.target.value === "" ? null : Number(e.target.value) }))}
               />
             </div>
             <div>

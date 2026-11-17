@@ -15,6 +15,8 @@ import { konfliktePruefen, type Konflikt } from "@/app/kalender/actions";
 import { DAUER_OPTIONEN, STANDARD_DAUER } from "@/lib/kalender/dauer";
 import { UnteraufgabenDialog, type UnteraufgabenParentTyp } from "@/components/unteraufgaben-dialog";
 import { erkenneTyp, erkenneDatum, type ErkannterTyp } from "@/lib/typ-erkennung";
+import { erfassenErkennen } from "@/app/(hubs)/erfassen-actions";
+import { ART_NAMEN, type ErfassenArt, type ErfassenErkannt } from "@/lib/ki/erfassen";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -36,11 +38,9 @@ const CHIP_LABEL: Record<QuickAddModus, string> = {
   PRUEFUNG: "Prüfung",
   ABGABE: "Abgabe",
   TERMIN: "Termin",
-  // FRIST ist Teil von deadline_typ (Altbestand), aber kein eigener Chip im
-  // neuen Design – taucht hier nur auf, damit der Record vollständig ist.
   FRIST: "Frist",
   GRUPPENARBEIT: "Gruppenarbeit",
-  SONSTIGE: "Sonstige",
+  SONSTIGE: "To-do",
   FACH: "Fach",
   NOTE: "Note",
 };
@@ -48,12 +48,22 @@ const CHIP_LABEL: Record<QuickAddModus, string> = {
 const ALLE_MODI: QuickAddModus[] = [
   "PRUEFUNG",
   "ABGABE",
+  "FRIST",
   "TERMIN",
   "GRUPPENARBEIT",
   "SONSTIGE",
   "FACH",
   "NOTE",
 ];
+
+const KI_ZU_MODUS: Record<ErfassenArt, QuickAddModus> = {
+  PRUEFUNG: "PRUEFUNG",
+  GRUPPENARBEIT: "GRUPPENARBEIT",
+  ABGABE: "ABGABE",
+  FRIST: "FRIST",
+  TERMIN: "TERMIN",
+  TODO: "SONSTIGE",
+};
 
 // Erkennt sowohl vollständige URLs (https://…) als auch bloße Domains ohne
 // Protokoll (figma.com/x, docs.google.com), wie sie beim Tippen/Einfügen
@@ -94,7 +104,7 @@ export function QuickAdd({
   faecher: FachOption[];
   todos?: TodoOption[];
   pruefungen?: PruefungOption[];
-  /** Nur per Taste Q erreichbar (in allen Hubs, ohne eigenen Knopf in der Kopfzeile) */
+  /** Ohne eigenen Knopf: geöffnet über „Schnell erfassen“-Knöpfe und die Befehlspalette (Strg+O) */
   ohneKnopf?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -121,6 +131,11 @@ export function QuickAdd({
     fachId: string | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fachManuell, setFachManuell] = useState(false);
+  const [raum, setRaum] = useState("");
+  /** KI-Erkennung zum aktuellen Text (gilt nur, solange der Text gleich bleibt) */
+  const [ki, setKi] = useState<{ fuer: string; erkannt: ErfassenErkannt } | null>(null);
+  const [kiLaeuft, setKiLaeuft] = useState(false);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const chipRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -130,6 +145,9 @@ export function QuickAdd({
     setOpen(false);
     setTypManuellGesetzt(false);
     setDatumManuellGesetzt(false);
+    setFachManuell(false);
+    setKi(null);
+    setRaum("");
   }
 
   function handleTeilenMitChange(value: string) {
@@ -171,20 +189,11 @@ export function QuickAdd({
     chipRefs.current[naechsterIndex]?.focus();
   }
 
+  // Geöffnet wird über Knopf oder Befehlspalette (Strg+O); Esc schließt
   useEffect(() => {
+    if (!open) return;
     function handleKeydown(e: KeyboardEvent) {
-      const ziel = e.target as HTMLElement | null;
-      const editierbar =
-        !!ziel &&
-        (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.tagName === "SELECT" || ziel.isContentEditable);
-      // Nicht bei Tastenkombinationen, beim Gedrückthalten oder während ein anderer Dialog offen ist
-      const andererDialog = Boolean(document.querySelector("dialog[open]"));
-
-      if (!open && !editierbar && !andererDialog && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && e.key.toLowerCase() === "q") {
-        e.preventDefault();
-        setOpen(true);
-        track("schnell_erfassen_geoeffnet", { quelle: "taste_q" });
-      } else if (open && e.key === "Escape") {
+      if (e.key === "Escape") {
         e.preventDefault();
         handleClose();
       }
@@ -238,6 +247,38 @@ export function QuickAdd({
     return () => clearTimeout(timer);
   }, [titel, typManuellGesetzt, datumManuellGesetzt]);
 
+  // KI erkennt, was es ist (Prüfung, Gruppenarbeit …), dazu Fach, Zeitpunkt, Raum – nach kurzer Tipp-Pause
+  useEffect(() => {
+    const satz = titel.trim();
+    if (!open || satz.length < 6 || modus === "FACH" || modus === "NOTE") return;
+    let aktuell = true;
+    const timer = setTimeout(() => {
+      setKiLaeuft(true);
+      erfassenErkennen(satz)
+        .then((erkannt) => {
+          if (!aktuell || !erkannt) return;
+          setKi({ fuer: titel, erkannt });
+          if (!typManuellGesetzt) setModus(KI_ZU_MODUS[erkannt.art]);
+          if (!fachManuell && erkannt.fach) {
+            const f = faecher.find((x) => x.name === erkannt.fach);
+            if (f) setFachId(f.id);
+          }
+          if (!datumManuellGesetzt && erkannt.wann) {
+            setDatumZeit(erkannt.wann.includes("T") ? erkannt.wann : `${erkannt.wann}T${erkannt.art === "PRUEFUNG" ? "09:00" : "23:59"}`);
+          }
+          if (erkannt.raum) setRaum(erkannt.raum);
+        })
+        .catch(() => undefined)
+        .finally(() => aktuell && setKiLaeuft(false));
+    }, 800);
+    return () => {
+      aktuell = false;
+      clearTimeout(timer);
+    };
+    // Nur auf neuen Text reagieren; die übrigen Werte werden beim Eintreffen gelesen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titel, open]);
+
   function entferneAnhang(url: string) {
     setAnhaenge((prev) => prev.filter((a) => a.url !== url));
   }
@@ -264,6 +305,9 @@ export function QuickAdd({
       setError("Diesen Nutzernamen gibt es nicht. Bitte aus den Vorschlägen auswählen.");
       return;
     }
+
+    // Titel ohne Datum/Uhrzeit/Raum, wenn die KI ihn zum aktuellen Text bereinigt hat
+    const name = modus !== "FACH" && modus !== "NOTE" && ki?.fuer === titel && ki.erkannt.titel ? ki.erkannt.titel : titel;
 
     startTransition(async () => {
       try {
@@ -297,19 +341,19 @@ export function QuickAdd({
           if (!fachId) throw new Error("Bitte ein Fach wählen.");
           if (!datumZeit) throw new Error("Bitte einen Termin angeben.");
           const erstellt = await createPruefung({
-            titel,
+            titel: name,
             fach_id: fachId,
             datum: new Date(datumZeit).toISOString(),
-            raum: null,
+            raum: raum.trim() || null,
             status: "ANSTEHEND",
             dauer_minuten: dauer ? Number(dauer) : null,
           });
           await speichereAnhaenge("pruefung", erstellt.id);
-          setUnterDialogFuer({ parentTyp: "pruefung", parentId: erstellt.id, parentTitel: titel, fachId });
+          setUnterDialogFuer({ parentTyp: "pruefung", parentId: erstellt.id, parentTitel: name, fachId });
         } else if (!datumZeit) {
           // Kein Termin gesetzt -> eigenständiges To-Do statt Deadline.
           const erstellt = await createTodo({
-            titel,
+            titel: name,
             fach_id: fachId || null,
             prioritaet: "MITTEL",
           });
@@ -318,11 +362,11 @@ export function QuickAdd({
             track("mitglied_eingeladen", { ziel_typ: "todo", ort: "schnell_erfassen" });
           }
           await speichereAnhaenge("todo", erstellt.id);
-          setUnterDialogFuer({ parentTyp: "todo", parentId: erstellt.id, parentTitel: titel, fachId: fachId || null });
+          setUnterDialogFuer({ parentTyp: "todo", parentId: erstellt.id, parentTitel: name, fachId: fachId || null });
         } else {
           const [unterTyp, unterId] = unterAuswahl ? unterAuswahl.split(":") : [null, null];
           const erstellt = await createDeadline({
-            titel,
+            titel: name,
             fach_id: fachId || null,
             faellig_am: new Date(datumZeit).toISOString(),
             typ: modus,
@@ -340,7 +384,7 @@ export function QuickAdd({
             setUnterDialogFuer({
               parentTyp: "deadline",
               parentId: erstellt[0].id,
-              parentTitel: titel,
+              parentTitel: name,
               fachId: fachId || null,
             });
           }
@@ -377,7 +421,7 @@ export function QuickAdd({
   const brauchtFach = modus === "NOTE" || modus === "PRUEFUNG";
   const zeigeDatumZeit = modus !== "FACH" && modus !== "NOTE";
   const istUnterstuetzterDeadlineTyp =
-    modus === "ABGABE" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
+    modus === "ABGABE" || modus === "FRIST" || modus === "TERMIN" || modus === "GRUPPENARBEIT" || modus === "SONSTIGE";
   const wirdAlsTodoGespeichert = istUnterstuetzterDeadlineTyp && !datumZeit;
   const hatDauer = modus === "PRUEFUNG" || modus === "TERMIN" || modus === "GRUPPENARBEIT";
   const standardDauer =
@@ -418,7 +462,7 @@ export function QuickAdd({
             setOpen(true);
             track("schnell_erfassen_geoeffnet", { quelle: "button" });
           }}
-          title="Schnell erfassen (Taste Q)"
+          title="Schnell erfassen"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 5v14M5 12h14" />
@@ -428,115 +472,251 @@ export function QuickAdd({
       )}
 
       {open && (
-        <div className="quick-add-overlay" onClick={handleClose}>
+        <div className="erfassen-hinter" onClick={handleClose}>
           <form
-            className="quick-add-modal"
+            className="erfassen"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="quick-add-titel"
+            aria-labelledby="erfassen-titel"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSubmit}
           >
-            <h3 id="quick-add-titel">Neu anlegen</h3>
-            {error && <p className="auth-error">{error}</p>}
+            <h2 id="erfassen-titel" className="vh">
+              Schnell erfassen
+            </h2>
 
-            <input
-              ref={inputRef}
-              value={titel}
-              onChange={(e) => setTitel(e.target.value)}
-              placeholder="Titel…"
-              required
-            />
-
-            {anhaenge.length > 0 && (
-              <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
-                {anhaenge.map((a) => (
-                  <span key={a.url} className="tag">
-                    {a.titel}
-                    <button
-                      type="button"
-                      aria-label={`Anhang ${a.titel} entfernen`}
-                      onClick={() => entferneAnhang(a.url)}
-                      style={{ marginLeft: 6, border: "none", background: "none", color: "inherit", cursor: "pointer" }}
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="row" style={{ gap: 6 }}>
+            <div className="erfassen-eingabe">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
               <input
-                type="text"
-                value={linkEingabe}
-                onChange={(e) => setLinkEingabe(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    linkHinzufuegen();
-                  }
-                }}
-                placeholder="Link hinzufügen (optional)"
-                style={{ flex: 1 }}
+                ref={inputRef}
+                value={titel}
+                onChange={(e) => setTitel(e.target.value)}
+                placeholder={modus === "FACH" ? "Name des Fachs" : modus === "NOTE" ? "Wofür ist die Note?" : "Was steht an? z. B. „Klausur Statistik 12.2. 10 Uhr H1“"}
+                aria-label="Was steht an?"
+                required
               />
-              <button type="button" className="unteraufgabe-add" onClick={linkHinzufuegen}>
-                + Link
-              </button>
             </div>
 
-            {modus === "NOTE" && (
-              <div className="row" style={{ gap: 6 }}>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="1"
-                  max="5"
-                  step="0.1"
-                  value={notenWert}
-                  onChange={(e) => setNotenWert(e.target.value)}
-                  placeholder="Note (1,0–5,0)"
-                  aria-label="Note"
-                  required
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0.1"
-                  step="0.1"
-                  value={notenGewicht}
-                  onChange={(e) => setNotenGewicht(e.target.value)}
-                  placeholder="Gewicht"
-                  aria-label="Gewicht"
-                  style={{ width: 110 }}
-                />
-              </div>
+            {modus !== "FACH" && modus !== "NOTE" && (kiLaeuft || ki?.fuer === titel) && (
+              <p className="erfassen-erkannt" role="status">
+                {kiLaeuft ? (
+                  <span className="faint">Erkenne …</span>
+                ) : ki?.fuer === titel ? (
+                  <>
+                    <span className="erfassen-ki" aria-hidden>
+                      ✦
+                    </span>
+                    Erkannt: <b>{ART_NAMEN[ki.erkannt.art]}</b>
+                    {ki.erkannt.fach && <> · {ki.erkannt.fach}</>}
+                    {ki.erkannt.wann && <> · {new Date(ki.erkannt.wann.includes("T") ? ki.erkannt.wann : `${ki.erkannt.wann}T12:00`).toLocaleString("de-DE", ki.erkannt.wann.includes("T") ? { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "numeric", month: "short" })}</>}
+                    {ki.erkannt.raum && <> · {ki.erkannt.raum}</>}
+                    {ki.erkannt.titel && ki.erkannt.titel !== titel.trim() && <span className="faint"> – wird gespeichert als „{ki.erkannt.titel}“</span>}
+                  </>
+                ) : null}
+              </p>
             )}
 
-            {zeigeDatumZeit && (
-              <input
-                type="datetime-local"
-                value={datumZeit}
-                onChange={(e) => {
-                  setDatumZeit(e.target.value);
-                  setDatumManuellGesetzt(true);
-                }}
-                aria-label={modus === "PRUEFUNG" ? "Termin am" : "Fällig am (leer lassen = To-Do ohne Termin)"}
-                required={modus === "PRUEFUNG"}
-              />
-            )}
+            {error && <p className="auth-error">{error}</p>}
 
-            {hatDauer && datumZeit && (
-              <select value={dauer} onChange={(e) => setDauer(e.target.value)} aria-label="Dauer">
-                <option value="">Dauer: {standardDauer} Min. (Standard)</option>
-                {DAUER_OPTIONEN.filter((m) => m !== standardDauer).map((m) => (
-                  <option key={m} value={m}>
-                    Dauer: {m >= 60 && m % 60 === 0 ? `${m / 60} Std.` : `${m} Min.`}
-                  </option>
-                ))}
-              </select>
-            )}
+            <div role="radiogroup" aria-label="Art" className="erfassen-arten">
+              {ALLE_MODI.map((key, index) => (
+                <button
+                  key={key}
+                  ref={(el) => {
+                    chipRefs.current[index] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={modus === key}
+                  tabIndex={modus === key ? 0 : -1}
+                  className={modus === key ? "an" : undefined}
+                  onClick={() => waehleModus(key)}
+                  onKeyDown={(e) => handleChipKeydown(e, index)}
+                >
+                  {CHIP_LABEL[key]}
+                </button>
+              ))}
+            </div>
+
+            <div className="erfassen-felder">
+              {modus === "NOTE" && (
+                <>
+                  <label>
+                    <span>Note</span>
+                    <input
+                      className="field"
+                      type="number"
+                      inputMode="decimal"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={notenWert}
+                      onChange={(e) => setNotenWert(e.target.value)}
+                      placeholder="1,0–5,0"
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Gewicht</span>
+                    <input
+                      className="field"
+                      type="number"
+                      inputMode="decimal"
+                      min="0.1"
+                      step="0.1"
+                      value={notenGewicht}
+                      onChange={(e) => setNotenGewicht(e.target.value)}
+                    />
+                  </label>
+                </>
+              )}
+
+              {zeigeDatumZeit && (
+                <label>
+                  <span>{modus === "PRUEFUNG" ? "Termin" : modus === "TERMIN" ? "Wann" : "Fällig"}</span>
+                  <input
+                    className="field"
+                    type="datetime-local"
+                    value={datumZeit}
+                    onChange={(e) => {
+                      setDatumZeit(e.target.value);
+                      setDatumManuellGesetzt(true);
+                    }}
+                    required={modus === "PRUEFUNG"}
+                  />
+                </label>
+              )}
+
+              {hatDauer && datumZeit && (
+                <label>
+                  <span>Dauer</span>
+                  <select className="field" value={dauer} onChange={(e) => setDauer(e.target.value)}>
+                    <option value="">{standardDauer} Min. (Standard)</option>
+                    {DAUER_OPTIONEN.filter((m) => m !== standardDauer).map((m) => (
+                      <option key={m} value={m}>
+                        {m >= 60 && m % 60 === 0 ? `${m / 60} Std.` : `${m} Min.`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              {!istEntitaetOhneFach && faecher.length > 0 && (
+                <label>
+                  <span>Fach</span>
+                  <select
+                    className="field"
+                    value={fachId}
+                    onChange={(e) => {
+                      setFachId(e.target.value);
+                      setFachManuell(true);
+                    }}
+                  >
+                    {!brauchtFach && <option value="">Kein Fach</option>}
+                    {faecher.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+
+              {modus === "PRUEFUNG" && (
+                <label>
+                  <span>Raum</span>
+                  <input className="field" value={raum} onChange={(e) => setRaum(e.target.value)} placeholder="optional" maxLength={60} />
+                </label>
+              )}
+
+              {modus === "GRUPPENARBEIT" && (
+                <label className="erfassen-breit">
+                  <span>Mit wem?</span>
+                  <input
+                    className="field"
+                    type="text"
+                    value={teilenMit}
+                    onChange={(e) => handleTeilenMitChange(e.target.value)}
+                    placeholder="Nutzername eingeben …"
+                    list="quick-add-nutzer-vorschlaege"
+                  />
+                  <datalist id="quick-add-nutzer-vorschlaege">
+                    {nutzerVorschlaege.map((n) => (
+                      <option key={n.user_id} value={n.username} />
+                    ))}
+                  </datalist>
+                  {teilenMitUnbekannt && <small className="auth-error">Diesen Nutzernamen gibt es nicht.</small>}
+                  {teilenMitGueltig && <small className="faint">✓ {teilenMit.trim()} gefunden</small>}
+                </label>
+              )}
+
+              {istUnterstuetzterDeadlineTyp && datumZeit && (todos.length > 0 || pruefungen.length > 0) && (
+                <label className="erfassen-breit">
+                  <span>Gehört zu</span>
+                  <select className="field" value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
+                    <option value="">Nichts – eigenständig</option>
+                    {todos.filter((t) => !t.erledigt).length > 0 && (
+                      <optgroup label="To-do">
+                        {todos
+                          .filter((t) => !t.erledigt)
+                          .map((t) => (
+                            <option key={t.id} value={`todo:${t.id}`}>
+                              {t.titel}
+                            </option>
+                          ))}
+                      </optgroup>
+                    )}
+                    {pruefungen.length > 0 && (
+                      <optgroup label="Prüfung">
+                        {pruefungen.map((p) => (
+                          <option key={p.id} value={`pruefung:${p.id}`}>
+                            {p.titel}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                </label>
+              )}
+
+              {modus !== "FACH" && modus !== "NOTE" && (
+                <label className="erfassen-breit">
+                  <span>Link</span>
+                  <span className="erfassen-link">
+                    <input
+                      className="field"
+                      type="text"
+                      value={linkEingabe}
+                      onChange={(e) => setLinkEingabe(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          linkHinzufuegen();
+                        }
+                      }}
+                      placeholder="optional, z. B. Moodle-Aufgabe"
+                    />
+                    <button type="button" className="knopf neben klein" onClick={linkHinzufuegen}>
+                      Hinzufügen
+                    </button>
+                  </span>
+                  {anhaenge.length > 0 && (
+                    <span className="erfassen-anhaenge">
+                      {anhaenge.map((a) => (
+                        <span key={a.url} className="erfassen-anhang">
+                          {a.titel}
+                          <button type="button" aria-label={`Anhang ${a.titel} entfernen`} onClick={() => entferneAnhang(a.url)}>
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </label>
+              )}
+            </div>
 
             {sichtbareKonflikte.length > 0 && (
               <div className="konflikt-hinweis" role="status">
@@ -550,106 +730,23 @@ export function QuickAdd({
                     </li>
                   ))}
                 </ul>
-                <span className="muted" style={{ fontSize: 11 }}>Speichern ist trotzdem möglich.</span>
+                <span className="faint">Speichern ist trotzdem möglich.</span>
               </div>
             )}
 
-            {!istEntitaetOhneFach && faecher.length > 0 && (
-              <select value={fachId} onChange={(e) => setFachId(e.target.value)}>
-                {!brauchtFach && <option value="">Kein Fach</option>}
-                {faecher.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <div role="radiogroup" aria-label="Typ" className="row" style={{ gap: 8, overflowX: "auto", paddingBottom: 2 }}>
-              {ALLE_MODI.map((key, index) => (
-                <button
-                  key={key}
-                  ref={(el) => {
-                    chipRefs.current[index] = el;
-                  }}
-                  type="button"
-                  role="radio"
-                  aria-checked={modus === key}
-                  tabIndex={modus === key ? 0 : -1}
-                  className={`chip ${modus === key ? "on" : ""}`}
-                  onClick={() => waehleModus(key)}
-                  onKeyDown={(e) => handleChipKeydown(e, index)}
-                >
-                  {CHIP_LABEL[key]}
-                </button>
-              ))}
-            </div>
-
-            {wirdAlsTodoGespeichert && (
-              <p className="muted" style={{ fontSize: 12 }}>
-                Ohne Termin wird daraus ein To-Do.
-              </p>
-            )}
-
-            {modus === "GRUPPENARBEIT" && (
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  value={teilenMit}
-                  onChange={(e) => handleTeilenMitChange(e.target.value)}
-                  placeholder="Wer nimmt teil? Nutzername eingeben…"
-                  list="quick-add-nutzer-vorschlaege"
-                />
-                <datalist id="quick-add-nutzer-vorschlaege">
-                  {nutzerVorschlaege.map((n) => (
-                    <option key={n.user_id} value={n.username} />
-                  ))}
-                </datalist>
-                {teilenMitUnbekannt && (
-                  <p className="auth-error" style={{ fontSize: 12, marginTop: 4 }}>
-                    Diesen Nutzernamen gibt es nicht.
-                  </p>
-                )}
-                {teilenMitGueltig && (
-                  <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    ✓ {teilenMit.trim()} gefunden
-                  </p>
-                )}
-              </div>
-            )}
-
-            {istUnterstuetzterDeadlineTyp && datumZeit && (todos.length > 0 || pruefungen.length > 0) && (
-              <select value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
-                <option value="">Eigenständige Deadline</option>
-                {todos.filter((t) => !t.erledigt).length > 0 && (
-                  <optgroup label="Als Unteraufgabe von To-Do">
-                    {todos
-                      .filter((t) => !t.erledigt)
-                      .map((t) => (
-                        <option key={t.id} value={`todo:${t.id}`}>
-                          {t.titel}
-                        </option>
-                      ))}
-                  </optgroup>
-                )}
-                {pruefungen.length > 0 && (
-                  <optgroup label="Als Unteraufgabe von Prüfung">
-                    {pruefungen.map((p) => (
-                      <option key={p.id} value={`pruefung:${p.id}`}>
-                        {p.titel}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            )}
-
-            <div className="crud-form-actions">
-              <button type="submit" className="btnp" disabled={isPending}>
-                {isPending ? "Speichern…" : "Hinzufügen (Enter)"}
+            <div className="erfassen-fuss">
+              <span className="faint">
+                {modus === "PRUEFUNG"
+                  ? "Legt auch eine offene Note an."
+                  : wirdAlsTodoGespeichert
+                    ? "Ohne Termin wird daraus ein To-do."
+                    : ""}
+              </span>
+              <button type="button" className="knopf neben" onClick={handleClose} disabled={isPending}>
+                Abbrechen <kbd>Esc</kbd>
               </button>
-              <button type="button" onClick={handleClose} disabled={isPending}>
-                Abbrechen (Esc)
+              <button type="submit" className="knopf haupt" disabled={isPending}>
+                {isPending ? "Speichert …" : "Anlegen"} <kbd>↵</kbd>
               </button>
             </div>
           </form>
@@ -669,7 +766,7 @@ export function QuickAdd({
   );
 }
 
-/** Knopf „Schnell erfassen“: öffnet das Formular aus dem gemeinsamen Rahmen (dort hört genau ein QuickAdd auf Q). */
+/** Knopf „Schnell erfassen“: öffnet das Formular aus dem gemeinsamen Rahmen (genau ein QuickAdd für die ganze App). */
 export function SchnellErfassenKnopf() {
   return (
     <button
@@ -678,7 +775,7 @@ export function SchnellErfassenKnopf() {
       onClick={() => {
         window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN, { detail: { quelle: "button" } }));
       }}
-      title="Schnell erfassen (Taste Q)"
+      title="Schnell erfassen"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 5v14M5 12h14" />
