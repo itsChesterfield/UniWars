@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   dateiLink,
@@ -15,7 +15,9 @@ import {
   uploadVorbereiten,
   type Datei,
 } from "@/app/(hubs)/dateiablage/actions";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
+import { Zustand } from "@/components/zustand";
+import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import {
   ACCEPT_ATTRIBUT,
@@ -36,13 +38,23 @@ type Upload = { schluessel: string; name: string; anteil: number; fehler: string
 type Sortierung = { spalte: "name" | "datum" | "groesse"; absteigend: boolean };
 type Vorschau = { art: "bild" | "audio"; url: string; name: string; id: string };
 
-const ART_ICON: Record<DateiArt, string> = { pdf: "📕", bild: "🖼️", office: "📄", text: "📝", audio: "🎵" };
-const OFFICE_ICON: Record<string, string> = { docx: "📘", pptx: "📙", xlsx: "📗" };
+// Design B3: Symbole aus dem eigenen Satz statt Emojis
+const ART_ICON: Record<DateiArt, IconName> = { pdf: "pdf", bild: "bild", office: "notizen", text: "notizen", audio: "kopfhoerer" };
+const OFFICE_ICON: Record<string, IconName> = { docx: "text", pptx: "praesentation", xlsx: "tabelle" };
 
-function icon(name: string) {
+function icon(name: string): IconName {
   const typ = dateiTyp(name);
-  if (!typ) return "📄";
-  return typ.art === "office" ? (OFFICE_ICON[endung(name)] ?? "📄") : ART_ICON[typ.art];
+  if (!typ) return "notizen";
+  return typ.art === "office" ? (OFFICE_ICON[endung(name)] ?? "notizen") : ART_ICON[typ.art];
+}
+
+/** Farbquadrat des Fachs; der Ordner „Allgemein“ hat ein Ordnersymbol. */
+function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
+  return ordner.id ? (
+    <span className="f" style={{ "--c": ordner.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
+  ) : (
+    <Icon name="dateiablage" groesse={14} className="i" />
+  );
 }
 
 const DRAG_TYP = "application/x-uniwars-datei";
@@ -277,16 +289,18 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
     <>
       <button
         type="button"
-        className="btng"
+        className="knopf leise"
         onClick={() => setLinkOffen((o) => !o)}
         disabled={voll}
         aria-expanded={linkOffen}
         title="Datei über einen Link importieren (oder Link mit Strg+V einfügen)"
       >
-        🔗 Aus Link
+        <Icon name="link" groesse={16} />
+        Aus Link
       </button>
-      <button type="button" className="btnp" onClick={() => eingabe.current?.click()} disabled={voll} title={voll ? "Speicher voll" : undefined}>
-        ⤒ Hochladen
+      <button type="button" className="knopf haupt" onClick={() => eingabe.current?.click()} disabled={voll} title={voll ? "Speicher voll" : undefined}>
+        <Icon name="hochladen" groesse={16} />
+        Hochladen
       </button>
       <input
         ref={eingabe}
@@ -304,10 +318,16 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
 
   return (
     <>
-      <HubKopf titel="Dateiablage" untertitel="Alle Uni-Dateien an einem Ort, nach Fach geordnet." aktionen={hochladenKnopf} />
+      <header className="seitenkopf">
+        <div>
+          <h1>Dateiablage</h1>
+          <p>Alle Uni-Dateien an einem Ort, nach Fach geordnet.</p>
+        </div>
+        <div className="rechts">{hochladenKnopf}</div>
+      </header>
       {linkOffen && (
         <form
-          className="card dat-link-form"
+          className="crud-form dat-link-form"
           onSubmit={(e) => {
             e.preventDefault();
             linkAbschicken();
@@ -328,10 +348,10 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
               }}
             />
           </label>
-          <button type="submit" className="btnp" disabled={!linkNormalisieren(linkWert)}>
+          <button type="submit" className="knopf haupt" disabled={!linkNormalisieren(linkWert)}>
             Importieren
           </button>
-          <button type="button" className="btng" onClick={() => setLinkOffen(false)}>
+          <button type="button" className="knopf leise" onClick={() => setLinkOffen(false)}>
             Abbrechen
           </button>
           <p className="muted dat-link-tipp">
@@ -342,22 +362,24 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
         </form>
       )}
       {meldung && (
-        <p className="auth-error" role="alert">
-          {meldung}{" "}
-          <button type="button" className="icon-knopf" aria-label="Meldung schließen" onClick={() => setMeldung(null)}>
-            ✕
+        <p className="formular-fehler dat-meldung" role="alert">
+          {meldung}
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Meldung schließen" onClick={() => setMeldung(null)}>
+            <Icon name="schliessen" groesse={16} />
           </button>
         </p>
       )}
 
       <div className="dat-layout">
-        <aside className="card dat-ordner" aria-label="Ordner">
-          <ul>
+        <aside className="dat-ordner" aria-label="Ordner">
+          <h2 className="gt">Ordner</h2>
+          <ul className="kliste">
             {ordner.map((o) => (
               <li key={o.id ?? "allgemein"}>
                 <button
                   type="button"
-                  className={`dat-ordner-knopf ${o.id === aktuellerOrdner.id ? "aktiv" : ""} ${ordnerZiel === o.id ? "ziel" : ""}`}
+                  className={`keintrag dat-ordner-knopf${ordnerZiel === o.id ? " ziel" : ""}`}
+                  aria-current={o.id === aktuellerOrdner.id ? "true" : undefined}
                   onClick={() => ordnerOeffnen(o.id)}
                   onDragOver={(e) => {
                     if (e.dataTransfer.types.includes(DRAG_TYP)) {
@@ -376,11 +398,9 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                     }
                   }}
                 >
-                  <span aria-hidden style={{ color: o.farbe ?? undefined }}>
-                    {o.id ? "📁" : "🗂️"}
-                  </span>
-                  <span className="dat-ordner-name">{o.name}</span>
-                  <span className="faint">({anzahl(o.id)})</span>
+                  <OrdnerZeichen ordner={o} />
+                  <span className="n">{o.name}</span>
+                  <span className="z">{anzahl(o.id)}</span>
                 </button>
               </li>
             ))}
@@ -388,13 +408,10 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
 
           {/* DAT-09 */}
           <div className="dat-speicher">
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${Math.min(100, (belegt / limit) * 100)}%`, background: voll ? "var(--danger)" : undefined }}
-              />
-            </div>
-            <span className={voll ? "dat-speicher-voll" : "muted"}>
+            <span className={`balkenf${voll ? " voll" : ""}`} aria-hidden>
+              <i style={{ width: `${Math.min(100, (belegt / limit) * 100)}%` }} />
+            </span>
+            <span className={voll ? "dat-speicher-voll" : undefined}>
               {groesseText(belegt)} von {groesseText(limit)} belegt
             </span>
             {voll && <span className="dat-speicher-voll">Speicher voll – lösche Dateien, um neue hochzuladen.</span>}
@@ -402,7 +419,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
         </aside>
 
         <section
-          className={`card dat-inhalt ${ziehenUeber ? "dat-ablegen" : ""}`}
+          className={`dat-inhalt${ziehenUeber ? " dat-ablegen" : ""}`}
           aria-label={`Dateien in ${aktuellerOrdner.name}`}
           onDragOver={(e) => {
             if (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes("text/uri-list")) {
@@ -427,33 +444,36 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
             if (!voll) hochladen(e.dataTransfer.files);
           }}
         >
-          <h2 className="ct dat-titel">{aktuellerOrdner.name}</h2>
+          <h2 className="abschnitt-titel dat-titel">{aktuellerOrdner.name}</h2>
 
           {uploads.length > 0 && (
             <ul className="dat-uploads" aria-live="polite">
               {uploads.map((u) => (
                 <li key={u.schluessel} className={u.fehler ? "fehler" : ""}>
+                  <span className="dat-typ" aria-hidden>
+                    <Icon name={icon(u.name)} groesse={14} />
+                  </span>
                   <span className="dat-upload-name">{u.name}</span>
                   {u.fehler ? (
                     <>
                       <span className="dat-upload-fehler">{u.fehler}</span>
                       <button
                         type="button"
-                        className="icon-knopf"
+                        className="knopf leise klein nur-symbol"
                         aria-label="Hinweis schließen"
                         onClick={() => setUploads((l) => l.filter((x) => x.schluessel !== u.schluessel))}
                       >
-                        ✕
+                        <Icon name="schliessen" groesse={16} />
                       </button>
                     </>
                   ) : u.vonLink ? (
-                    <span className="faint">🔗 Wird aus dem Link geladen …</span>
+                    <span className="dat-upload-info">Wird aus dem Link geladen …</span>
                   ) : (
                     <>
-                      <div className="progress-track">
-                        <div className="progress-fill" style={{ width: `${Math.round(u.anteil * 100)}%` }} />
-                      </div>
-                      <span className="mono faint">{Math.round(u.anteil * 100)} %</span>
+                      <span className="balkenf" aria-hidden>
+                        <i style={{ width: `${Math.round(u.anteil * 100)}%` }} />
+                      </span>
+                      <span className="dat-upload-info zahl">{Math.round(u.anteil * 100)} %</span>
                     </>
                   )}
                 </li>
@@ -462,19 +482,23 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
           )}
 
           {imOrdner.length === 0 ? (
-            <LeererZustand
-              icon="📂"
-              text={
-                dateien.length === 0
-                  ? "Noch keine Dateien. Lade Skripte, Folien oder Aufnahmen hoch, zieh sie hierher – oder füg einen Link zur Datei mit Strg+V ein."
-                  : "Dieser Ordner ist leer. Zieh Dateien hierher oder lade sie hoch."
-              }
+            <Zustand
+              art="leer"
+              region
+              ebene={3}
+              icon="dateiablage"
+              titel={dateien.length === 0 ? "Noch keine Dateien." : `Noch keine Dateien in ${aktuellerOrdner.name}.`}
               aktion={
-                <button type="button" className="btnp hub-leer-knopf" onClick={() => eingabe.current?.click()} disabled={voll}>
-                  ⤒ Dateien hochladen
+                <button type="button" className="knopf neben klein" onClick={() => eingabe.current?.click()} disabled={voll}>
+                  <Icon name="hochladen" groesse={16} />
+                  Dateien hochladen
                 </button>
               }
-            />
+            >
+              {dateien.length === 0
+                ? "Lade Skripte, Folien oder Aufnahmen hoch, zieh sie hierher oder füg einen Link zur Datei mit Strg+V ein."
+                : "Zieh Dateien hierher oder lade sie hoch. Sie landen automatisch in diesem Ordner."}
+            </Zustand>
           ) : (
             <div className="dat-tabelle-wrap">
               <table className="dat-tabelle">
@@ -510,7 +534,9 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                       }}
                     >
                       <td className="dat-spalte-typ" aria-hidden>
-                        {icon(d.name)}
+                        <span className="dat-typ">
+                          <Icon name={icon(d.name)} groesse={14} />
+                        </span>
                       </td>
                       <td className="dat-spalte-name">
                         {umbenennenId === d.id ? (
@@ -543,12 +569,12 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                         />
                         {verschiebenId === d.id && (
                           <div className="drei-punkte-menue dat-verschieben" role="menu" aria-label="Verschieben nach">
-                            <span className="faint dat-verschieben-titel">Verschieben nach</span>
+                            <span className="dat-verschieben-titel">Verschieben nach</span>
                             {ordner
                               .filter((o) => o.id !== (d.fach_id ?? null))
                               .map((o) => (
                                 <button key={o.id ?? "allgemein"} type="button" role="menuitem" onClick={() => void verschieben(d, o.id)}>
-                                  {o.id ? "📁" : "🗂️"} {o.name}
+                                  <OrdnerZeichen ordner={o} /> {o.name}
                                 </button>
                               ))}
                             <button type="button" role="menuitem" onClick={() => setVerschiebenId(null)}>
@@ -637,7 +663,7 @@ function VorschauFenster({ vorschau, onSchliessen }: { vorschau: Vorschau; onSch
   return (
     <dialog
       ref={ref}
-      className="card dat-vorschau"
+      className="dat-vorschau"
       onCancel={(e) => {
         e.preventDefault();
         onSchliessen();
@@ -646,10 +672,10 @@ function VorschauFenster({ vorschau, onSchliessen }: { vorschau: Vorschau; onSch
         if (e.target === e.currentTarget) onSchliessen();
       }}
     >
-      <div className="rowb">
-        <h3 className="dat-vorschau-titel">{vorschau.name}</h3>
-        <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
-          ✕
+      <div className="dat-vorschau-kopf">
+        <h2 className="dat-vorschau-titel">{vorschau.name}</h2>
+        <button type="button" className="knopf leise klein nur-symbol" aria-label="Schließen" onClick={onSchliessen}>
+          <Icon name="schliessen" groesse={16} />
         </button>
       </div>
       {vorschau.art === "bild" ? (
@@ -658,8 +684,9 @@ function VorschauFenster({ vorschau, onSchliessen }: { vorschau: Vorschau; onSch
       ) : (
         <>
           <audio src={vorschau.url} controls autoFocus />
-          <Link href={`/transkription?datei=${vorschau.id}`} className="btng dat-transkribieren">
-            🎙️ Transkribieren
+          <Link href={`/transkription?datei=${vorschau.id}`} className="knopf neben dat-transkribieren">
+            <Icon name="mikrofon" groesse={16} />
+            Transkribieren
           </Link>
         </>
       )}
