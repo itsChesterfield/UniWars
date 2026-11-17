@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { createClient as browserClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 import { createFach } from "@/app/fach/actions";
 import { naechsteFarbe } from "@/lib/fach-farben";
@@ -127,7 +128,10 @@ export function QuickAdd({
   const [fachManuell, setFachManuell] = useState(false);
   /** Unteraufgaben direkt im Formular (aufklappbar) */
   const [unterOffen, setUnterOffen] = useState(false);
-  const [unter, setUnter] = useState<{ id: number; titel: string; wann: string }[]>([]);
+  const [unter, setUnter] = useState<{ id: number; titel: string; wann: string; wer: string }[]>([]);
+  /** Gruppenarbeit: eingeladene Personen (Einladung wird beim Anlegen verschickt) */
+  const [mitglieder, setMitglieder] = useState<{ user_id: string; username: string }[]>([]);
+  const [ichId, setIchId] = useState<string | null>(null);
   const [raum, setRaum] = useState("");
   /** KI-Erkennung zum aktuellen Text (gilt nur, solange der Text gleich bleibt) */
   const [ki, setKi] = useState<{ fuer: string; erkannt: ErfassenErkannt } | null>(null);
@@ -146,6 +150,7 @@ export function QuickAdd({
     setRaum("");
     setUnterOffen(false);
     setUnter([]);
+    setMitglieder([]);
   }
 
   function handleTeilenMitChange(value: string) {
@@ -185,6 +190,22 @@ export function QuickAdd({
     const naechsterIndex = (index + delta + ALLE_MODI.length) % ALLE_MODI.length;
     waehleModus(ALLE_MODI[naechsterIndex]);
     chipRefs.current[naechsterIndex]?.focus();
+  }
+
+  useEffect(() => {
+    if (!open || ichId) return;
+    void browserClient()
+      .auth.getUser()
+      .then(({ data }) => setIchId(data.user?.id ?? null))
+      .catch(() => undefined);
+  }, [open, ichId]);
+
+  function mitgliedHinzufuegen() {
+    const treffer = nutzerVorschlaege.find((n) => n.username.toLowerCase() === teilenMit.trim().toLowerCase());
+    if (!treffer) return;
+    setMitglieder((l) => (l.some((m) => m.user_id === treffer.user_id) ? l : [...l, treffer]));
+    setTeilenMit("");
+    setNutzerVorschlaege([]);
   }
 
   // Geöffnet wird über Knopf oder Befehlspalette (Strg+O); Esc schließt
@@ -295,7 +316,7 @@ export function QuickAdd({
       await createUnterpunkte(
         parentId,
         fach,
-        liste.map((u) => ({ titel: u.titel.trim(), faelligAm: u.wann ? new Date(u.wann).toISOString() : undefined })),
+        liste.map((u) => ({ titel: u.titel.trim(), faelligAm: u.wann ? new Date(u.wann).toISOString() : undefined, zugewiesenAn: u.wer || undefined })),
       );
     } else {
       for (const u of liste) {
@@ -307,6 +328,7 @@ export function QuickAdd({
           kategorie: "NORMAL",
           pruefungId: parentTyp === "pruefung" ? parentId : undefined,
           parentDeadlineId: parentTyp === "deadline" ? parentId : undefined,
+          zugewiesenAn: u.wer || undefined,
         });
       }
     }
@@ -327,6 +349,9 @@ export function QuickAdd({
       setError("Diesen Nutzernamen gibt es nicht. Bitte aus den Vorschlägen auswählen.");
       return;
     }
+
+    const offenerName = nutzerVorschlaege.find((n) => n.username.toLowerCase() === teilenMit.trim().toLowerCase());
+    const einladen = modus === "GRUPPENARBEIT" ? [...mitglieder, ...(offenerName && !mitglieder.some((m) => m.user_id === offenerName.user_id) ? [offenerName] : [])] : [];
 
     // Titel ohne Datum/Uhrzeit/Raum, wenn die KI ihn zum aktuellen Text bereinigt hat
     const name = modus !== "FACH" && modus !== "NOTE" && ki?.fuer === titel && ki.erkannt.titel ? ki.erkannt.titel : titel;
@@ -379,8 +404,8 @@ export function QuickAdd({
             fach_id: fachId || null,
             prioritaet: "MITTEL",
           });
-          if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
-            await deadlineEinladen(erstellt.id, teilenMit.trim(), "todo");
+          for (const m of einladen) {
+            await deadlineEinladen(erstellt.id, m.username, "todo");
             track("mitglied_eingeladen", { ziel_typ: "todo", ort: "schnell_erfassen" });
           }
           await speichereAnhaenge("todo", erstellt.id);
@@ -398,8 +423,8 @@ export function QuickAdd({
             dauerMinuten: hatDauer && dauer ? Number(dauer) : null,
           });
           if (erstellt[0]) {
-            if (modus === "GRUPPENARBEIT" && teilenMit.trim()) {
-              await deadlineEinladen(erstellt[0].id, teilenMit.trim());
+            for (const m of einladen) {
+              await deadlineEinladen(erstellt[0].id, m.username);
               track("mitglied_eingeladen", { ziel_typ: "deadline", ort: "schnell_erfassen" });
             }
             await speichereAnhaenge("deadline", erstellt[0].id);
@@ -412,7 +437,7 @@ export function QuickAdd({
           typ_automatisch_erkannt: !typManuellGesetzt,
           mit_termin: Boolean(datumZeit),
           als_todo_gespeichert: istUnterstuetzterDeadlineTyp && !datumZeit,
-          geteilt: modus === "GRUPPENARBEIT" && teilenMit.trim() !== "",
+          geteilt: einladen.length > 0,
           anzahl_anhaenge: anhaenge.length,
           als_unteraufgabe_von: unterAuswahl ? unterAuswahl.split(":")[0] : null,
         });
@@ -424,6 +449,7 @@ export function QuickAdd({
         setDauer("");
         setUnterAuswahl("");
         setTeilenMit("");
+        setMitglieder([]);
         setNutzerVorschlaege([]);
         setAnhaenge([]);
         handleClose();
@@ -662,21 +688,44 @@ export function QuickAdd({
               {modus === "GRUPPENARBEIT" && (
                 <label className="erfassen-breit">
                   <span>Mit wem?</span>
-                  <input
-                    className="field"
-                    type="text"
-                    value={teilenMit}
-                    onChange={(e) => handleTeilenMitChange(e.target.value)}
-                    placeholder="Nutzername eingeben …"
-                    list="quick-add-nutzer-vorschlaege"
-                  />
+                  {mitglieder.length > 0 && (
+                    <span className="erfassen-anhaenge">
+                      {mitglieder.map((m) => (
+                        <span key={m.user_id} className="erfassen-anhang">
+                          @{m.username}
+                          <button type="button" aria-label={`${m.username} entfernen`} onClick={() => setMitglieder((l) => l.filter((x) => x.user_id !== m.user_id))}>
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                  <span className="erfassen-link">
+                    <input
+                      className="field"
+                      type="text"
+                      value={teilenMit}
+                      onChange={(e) => handleTeilenMitChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          mitgliedHinzufuegen();
+                        }
+                      }}
+                      placeholder={mitglieder.length ? "Weitere Person …" : "Nutzername eingeben …"}
+                      list="quick-add-nutzer-vorschlaege"
+                    />
+                    <button type="button" className="knopf neben klein" disabled={!teilenMitGueltig} onClick={mitgliedHinzufuegen}>
+                      Einladen
+                    </button>
+                  </span>
                   <datalist id="quick-add-nutzer-vorschlaege">
                     {nutzerVorschlaege.map((n) => (
                       <option key={n.user_id} value={n.username} />
                     ))}
                   </datalist>
                   {teilenMitUnbekannt && <small className="auth-error">Diesen Nutzernamen gibt es nicht.</small>}
-                  {teilenMitGueltig && <small className="faint">✓ {teilenMit.trim()} gefunden</small>}
+                  {teilenMitGueltig && <small className="faint">✓ {teilenMit.trim()} gefunden – mit Enter hinzufügen</small>}
                 </label>
               )}
 
@@ -754,7 +803,7 @@ export function QuickAdd({
                     className="erfassen-unter-knopf"
                     onClick={() => {
                       setUnterOffen(true);
-                      setUnter((u) => (u.length ? u : [{ id: Date.now(), titel: "", wann: "" }]));
+                      setUnter((u) => (u.length ? u : [{ id: Date.now(), titel: "", wann: "", wer: "" }]));
                     }}
                   >
                     + Unteraufgaben
@@ -763,7 +812,7 @@ export function QuickAdd({
                   <>
                     <span className="erfassen-unter-titel">Unteraufgaben</span>
                     {unter.map((u, i) => (
-                      <div key={u.id} className="erfassen-unter-zeile">
+                      <div key={u.id} className={`erfassen-unter-zeile${modus === "GRUPPENARBEIT" ? " mit-wer" : ""}`}>
                         <input
                           className="field"
                           autoFocus={i === unter.length - 1 && !u.titel}
@@ -774,11 +823,27 @@ export function QuickAdd({
                             // Enter in einer Unteraufgabe: nächste Zeile statt Absenden
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "" }]);
+                              setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "", wer: "" }]);
                             }
                           }}
                           aria-label={`Unteraufgabe ${i + 1}`}
                         />
+                        {modus === "GRUPPENARBEIT" && (
+                          <select
+                            className="field"
+                            value={u.wer}
+                            onChange={(e) => setUnter((l) => l.map((x) => (x.id === u.id ? { ...x, wer: e.target.value } : x)))}
+                            aria-label={`Zuständig für Unteraufgabe ${i + 1}`}
+                          >
+                            <option value="">Niemand</option>
+                            {ichId && <option value={ichId}>Ich</option>}
+                            {mitglieder.map((m) => (
+                              <option key={m.user_id} value={m.user_id}>
+                                @{m.username}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         <input
                           className="field"
                           type="datetime-local"
@@ -792,7 +857,7 @@ export function QuickAdd({
                         </button>
                       </div>
                     ))}
-                    <button type="button" className="erfassen-unter-knopf" onClick={() => setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "" }])}>
+                    <button type="button" className="erfassen-unter-knopf" onClick={() => setUnter((l) => [...l, { id: Date.now(), titel: "", wann: "", wer: "" }])}>
                       + Weitere Unteraufgabe
                     </button>
                   </>
