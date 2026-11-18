@@ -18,6 +18,11 @@ import {
   zuruecksetzen,
   alsUhr,
   dauerText,
+  flowSetzen,
+  istAbgelaufen,
+  flowBeenden,
+  anzeigeZeit,
+  istFlow,
 } from "./work-station/timer.ts";
 import { tabelleFehlt } from "./hubs/datenbank.ts";
 
@@ -469,4 +474,39 @@ test("Timer am Kreis ziehen: Runde = 1 Stunde, weiterziehen über 12 Uhr gibt me
   assert.deepEqual(kreisStand(75, b), { anteil: 0.25, volleRunden: 1 });
   assert.equal(stellBereich("kurz").runde, 30);
   assert.equal(alsUhr(90 * 60_000), "1:30:00");
+});
+
+test("Flow-Modus: zählt hoch, Pause hält an, Beenden ab 5 Minuten zählt als Runde", () => {
+  const MIN = 60_000;
+  const basis = { ...startZustand(WS_STANDARD, "f1"), aufgabe: { typ: "todo" as const, id: "t1", titel: "Lesen" } };
+  let z = flowSetzen(basis, true);
+  assert.equal(istFlow(z), true);
+  assert.equal(anzeigeZeit(z, 0), 0);
+  z = starten(z, 1_000);
+  assert.equal(anzeigeZeit(z, 1_000 + 20 * MIN), 20 * MIN);
+  // läuft nie ab
+  assert.equal(istAbgelaufen(z, 1_000 + 999 * MIN), false);
+  // Pause hält die Zeit fest, weiter zählt danach weiter
+  z = pausieren(z, 1_000 + 20 * MIN);
+  assert.equal(anzeigeZeit(z, 1_000 + 90 * MIN), 20 * MIN);
+  z = starten(z, 1_000 + 90 * MIN);
+  assert.equal(anzeigeZeit(z, 1_000 + 130 * MIN), 60 * MIN);
+  // Während es läuft, lässt sich nicht auf Timer zurückschalten
+  assert.equal(flowSetzen(z, false), z);
+  const ende = flowBeenden(z, 1_000 + 130 * MIN);
+  assert.deepEqual(ende.sitzung, { start: 1_000, minuten: 60, abgeschlossen: true });
+  assert.equal(ende.zustand.modus, "kurz");
+  assert.equal(ende.zustand.erledigteRunden, 1);
+  assert.equal(ende.zustand.frage?.id, "t1");
+  // Nach der Pause geht es wieder im Flow weiter
+  const danach = abschliessen(starten(ende.zustand, 0)).zustand;
+  assert.equal(istFlow(danach), true);
+  assert.equal(danach.dauerMs, 0);
+  // Unter 5 Minuten: nichts gespeichert, zurück auf Anfang
+  const kurz = flowBeenden(starten(flowSetzen(startZustand(), true), 0), 3 * MIN);
+  assert.equal(kurz.sitzung, null);
+  assert.equal(istFlow(kurz.zustand), true);
+  assert.equal(anzeigeZeit(kurz.zustand, 0), 0);
+  // Zurück auf festen Timer: wieder die eingestellte Dauer
+  assert.equal(flowSetzen(flowSetzen(startZustand(), true), false).dauerMs, 25 * MIN);
 });

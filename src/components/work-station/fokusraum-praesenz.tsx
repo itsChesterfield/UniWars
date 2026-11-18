@@ -5,6 +5,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useFokusraum } from "@/lib/fokusraum-store";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
+import { istFlow } from "@/lib/work-station/timer";
 import { teilnehmerListe, type Anwesenheit, type Teilnehmer } from "@/lib/fokusraum";
 
 // Teilnehmerliste des eigenen Raums für die Raum-Ansicht (dieselbe Verbindung, kein zweiter Kanal)
@@ -44,8 +45,9 @@ export function FokusraumPraesenz({ name, faecher }: { name: string; faecher: { 
         f: wahl.fachZeigen ? (faecher.find((x) => x.id === timer?.fachId)?.name ?? null) : null,
         m: timer?.modus ?? "fokus",
         l: Boolean(timer?.laeuft),
-        e: timer?.laeuft ? timer.endetUm : null,
+        e: timer?.laeuft ? (timer && istFlow(timer) ? (timer.flowAb ?? null) : timer.endetUm) : null,
         r: timer?.restMs ?? 0,
+        w: timer ? istFlow(timer) : false,
       }
     : null;
   const payload = anwesenheit ? JSON.stringify(anwesenheit) : null;
