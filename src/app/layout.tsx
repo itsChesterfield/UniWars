@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import "./text-zentriert.css";
 import Script from "next/script";
 import { AnalyticsBanner } from "@/components/analytics-banner";
 import { FRAME_NAME } from "@/lib/geteilte-ansicht";
