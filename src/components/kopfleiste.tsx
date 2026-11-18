@@ -11,7 +11,7 @@ import { hubAusPfad } from "@/lib/hubs/navigation";
 import { HUB_ANORDNEN } from "@/lib/hub-layout";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
-import { alsUhr, restzeit } from "@/lib/work-station/timer";
+import { alsUhr, anzeigeZeit, istFlow } from "@/lib/work-station/timer";
 import type { Tables } from "@/lib/supabase/types";
 import { useOnline } from "@/lib/online";
 import { track } from "@/lib/analytics";
@@ -25,8 +25,10 @@ function FokusStatus() {
   if (!zustand || (!zustand.laeuft && zustand.restMs === zustand.dauerMs)) return null;
   return (
     <Link href="/work-station" className="timerstatus" data-pausiert={zustand.laeuft ? undefined : ""}>
-      <span className="vh">{zustand.laeuft ? "Fokus läuft, noch" : "Fokus pausiert, noch"}</span>
-      <span className="zahl">{alsUhr(restzeit(zustand, jetzt))}</span>
+      <span className="vh">
+        {istFlow(zustand) ? (zustand.laeuft ? "Flow läuft seit" : "Flow pausiert bei") : zustand.laeuft ? "Fokus läuft, noch" : "Fokus pausiert, noch"}
+      </span>
+      <span className="zahl">{alsUhr(anzeigeZeit(zustand, jetzt))}</span>
     </Link>
   );
 }

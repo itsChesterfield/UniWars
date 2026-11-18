@@ -5,6 +5,8 @@ import Link from "next/link";
 import { karteBeantworten, lernrundeAbschliessen } from "@/app/(hubs)/karteikarten/actions";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
 import { VorlesenKnopf } from "@/components/ki/vorlesen-knopf";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { studioMelden } from "@/lib/ki/studio-kontext";
 import {
   BEWERTUNGEN,
@@ -143,6 +145,7 @@ export function Lernmodus({
     const taste = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest("input, textarea, [contenteditable=true]")) return;
       if (e.key === " ") {
+        if (e.target instanceof HTMLButtonElement) return; // der Knopf selbst löst schon aus
         e.preventDefault();
         umdrehen();
       } else if (["1", "2", "3", "4"].includes(e.key)) antworten(Number(e.key) as Bewertung);
@@ -157,8 +160,9 @@ export function Lernmodus({
   }
 
   const zurueck = (
-    <Link href={`/karteikarten/${stapel.id}`} className="hub-zurueck-link">
-      ← {stapel.name}
+    <Link href={`/karteikarten/${stapel.id}`} className="knopf leise klein zurueck-link">
+      <Icon name="pfeil-links" groesse={16} />
+      {stapel.name}
     </Link>
   );
 
@@ -166,18 +170,21 @@ export function Lernmodus({
     return (
       <>
         {zurueck}
-        <div className="card kk-lernen-leer">
-          <div className="hub-leer-icon" aria-hidden>
-            ✅
-          </div>
-          <h2 className="ct">Heute nichts fällig</h2>
-          <p className="muted">Alle Karten in „{stapel.name}“ sind wiederholt. Morgen geht&apos;s weiter.</p>
-          {karten.length > 0 && (
-            <button type="button" className="btnp" onClick={alleLernen}>
-              Trotzdem alle lernen
-            </button>
-          )}
-        </div>
+        <Zustand
+          art="leer"
+          icon="haken"
+          titel="Heute ist nichts fällig."
+          ebene={1}
+          aktion={
+            karten.length > 0 && (
+              <button type="button" className="knopf neben klein" onClick={alleLernen}>
+                Trotzdem alle lernen
+              </button>
+            )
+          }
+        >
+          Alle Karten in „{stapel.name}“ sind wiederholt. Morgen geht es weiter.
+        </Zustand>
       </>
     );
   }
@@ -188,78 +195,77 @@ export function Lernmodus({
     return (
       <>
         {zurueck}
-        <div className="card kk-zusammenfassung">
-          <div className="hub-leer-icon" aria-hidden>
-            🎉
-          </div>
-          <h2 className="ct">Runde beendet</h2>
-          <p className="kk-ergebnis">
-            <strong>{karten}</strong> {karten === 1 ? "Karte" : "Karten"} in <strong>{beantwortet}</strong> Antworten
+        <section className="kk-ende">
+          <h1>Runde beendet.</h1>
+          <p>
+            <span className="zahl">{karten}</span> {karten === 1 ? "Karte" : "Karten"} in <span className="zahl">{beantwortet}</span> Antworten.
+            {karten >= STREAK_MIN_KARTEN && " Zählt für deinen Streak."}
           </p>
           {beantwortet > 0 && (
             <ul className="kk-auswertung" aria-label="Bewertungen">
               {BEWERTUNGEN.map((b) => (
                 <li key={b.wert} className={b.klasse}>
                   <span>{b.name}</span>
-                  <span className="kk-auswertung-balken" aria-hidden>
-                    <span style={{ width: `${(runde.zaehler[b.wert] / beantwortet) * 100}%` }} />
+                  <span className="balkenf" aria-hidden>
+                    <i style={{ width: `${(runde.zaehler[b.wert] / beantwortet) * 100}%` }} />
                   </span>
-                  <strong className="mono">{runde.zaehler[b.wert]}</strong>
+                  <span className="zahl">{runde.zaehler[b.wert]}</span>
                 </li>
               ))}
             </ul>
           )}
-          {karten >= STREAK_MIN_KARTEN && <p className="muted">🔥 Zählt für deinen Streak.</p>}
-          {speicherFehler && <p className="auth-error">Einige Antworten konnten nicht gespeichert werden.</p>}
-          <div className="hub-formular-knoepfe">
-            <Link href={`/karteikarten/${stapel.id}`} className="btng">
-              Zurück zum Stapel
-            </Link>
-            <button type="button" className="btnp" onClick={alleLernen}>
+          {speicherFehler && (
+            <p className="formular-fehler" role="alert">
+              Einige Antworten konnten nicht gespeichert werden.
+            </p>
+          )}
+          <div className="kk-ende-knoepfe">
+            <button type="button" className="knopf haupt" onClick={alleLernen}>
               Nochmal alle lernen
             </button>
+            <Link href={`/karteikarten/${stapel.id}`} className="knopf leise">
+              Zurück zum Stapel
+            </Link>
           </div>
-        </div>
+        </section>
       </>
     );
   }
 
   const karte = runde.karten[runde.index];
-  const fortschritt = (runde.index / runde.karten.length) * 100;
 
   return (
     <div className="kk-lernen">
       <div className="kk-lernen-kopf">
         {zurueck}
-        <span className="mono kk-fortschritt-text">
+        <span className="zahl">
           {runde.index + 1} / {runde.karten.length}
         </span>
-        <button type="button" className="btng" onClick={() => beenden(runde)}>
+        <button type="button" className="knopf leise klein" onClick={() => beenden(runde)}>
           Beenden
         </button>
       </div>
-      <div className="progress-track kk-fortschritt" aria-hidden>
-        <div className="progress-fill" style={{ width: `${fortschritt}%` }} />
-      </div>
-
-      <div
-        role="button"
-        tabIndex={0}
-        className={`kk-lernkarte ${runde.umgedreht ? "umgedreht" : ""}`}
-        onClick={umdrehen}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") umdrehen();
-        }}
-        aria-label={runde.umgedreht ? "Karte umdrehen (Vorderseite zeigen)" : "Karte umdrehen (Rückseite zeigen)"}
+      <span
+        className="balkenf kk-fortschritt"
+        role="progressbar"
+        aria-label="Fortschritt der Runde"
+        aria-valuemin={0}
+        aria-valuemax={runde.karten.length}
+        aria-valuenow={runde.index}
       >
+        <i style={{ width: `${(runde.index / runde.karten.length) * 100}%` }} />
+      </span>
+
+      {/* Klick auf die Karte dreht sie um; per Tastatur über den Knopf darunter oder die Leertaste */}
+      <div className={`kk-lernkarte ${runde.umgedreht ? "umgedreht" : ""}`} onClick={umdrehen}>
         <div className="kk-lernkarte-innen">
           <div className="kk-seite kk-vorne" aria-hidden={runde.umgedreht}>
             <span className="kk-seite-label">Vorderseite</span>
-            <MarkdownAnzeige key={`v-${karte.id}`} wert={karte.vorderseite} />
+            <MarkdownAnzeige key={`v-${karte.id}`} wert={karte.vorderseite} label="Vorderseite" />
           </div>
           <div className="kk-seite kk-hinten" aria-hidden={!runde.umgedreht}>
             <span className="kk-seite-label">Rückseite</span>
-            <MarkdownAnzeige key={`r-${karte.id}`} wert={karte.rueckseite} />
+            <MarkdownAnzeige key={`r-${karte.id}`} wert={karte.rueckseite} label="Rückseite" />
           </div>
         </div>
       </div>
@@ -276,10 +282,14 @@ export function Lernmodus({
         </div>
       )}
 
-      {runde.umgedreht && <p className="faint kk-studio-hinweis">Nicht verstanden? Drück <kbd>Strg</kbd> + <kbd>J</kbd> – UniVerse Studio erklärt dir diese Karte.</p>}
+      {runde.umgedreht && (
+        <p className="kk-tipp">
+          Nicht verstanden? <kbd>Strg</kbd> + <kbd>J</kbd>, dann erklärt dir UniVerse Studio diese Karte.
+        </p>
+      )}
 
       {runde.umgedreht ? (
-        <div className="kk-antworten kk-antworten-4" role="group" aria-label="Wie gut wusstest du es?">
+        <div className="kk-antworten" role="group" aria-label="Wie gut wusstest du es?">
           {BEWERTUNGEN.map((b) => (
             <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
               <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
@@ -289,9 +299,10 @@ export function Lernmodus({
           ))}
         </div>
       ) : (
-        <p className="muted kk-tipp">
-          Klicke auf die Karte oder drück <kbd>Leertaste</kbd> zum Umdrehen.
-        </p>
+        <button type="button" className="knopf haupt kk-aufdecken" onClick={umdrehen} autoFocus>
+          Antwort zeigen
+          <kbd>Leertaste</kbd>
+        </button>
       )}
     </div>
   );

@@ -13,8 +13,9 @@ import {
   type Notiz,
 } from "@/app/(hubs)/notizen/actions";
 import { FachFilterChips } from "@/components/fach-filter-chips";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { markdownAlsText } from "@/lib/markdown-text";
 import { DiktatKnopf } from "@/components/ki/diktat-knopf";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
@@ -57,15 +58,6 @@ function tabsLesen(roh: string): string[] {
   } catch {
     return [];
   }
-}
-
-function PinIcon({ an }: { an: boolean }) {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill={an ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
-      <path d="M9 3h6l-1 6 4 4H6l4-4-1-6Z" />
-      <path d="M12 13v8" strokeLinecap="round" />
-    </svg>
-  );
 }
 
 export function NotizenHub({
@@ -261,178 +253,228 @@ export function NotizenHub({
     laufendeVorlesung &&
     (laufendeVorlesung.vorhandeneNotizId ? `Mitschrift für ${laufendeVorlesung.fachName} öffnen` : `Mitschrift für ${laufendeVorlesung.fachName} anlegen?`);
 
+  const filterAktiv = Boolean(suche.trim() || tagFilter);
+  const neuKnopf = (klasse: string, text: string) => (
+    <button type="button" className={`knopf ${klasse}`} onClick={() => neu()} disabled={isPending} aria-busy={isPending}>
+      <Icon name="plus" groesse={16} />
+      {text}
+    </button>
+  );
+
   return (
     <>
-      <HubKopf
-        titel="Notizen"
-        untertitel="Mitschriften mit Formatierungen wie in Word – und Verlinkungen zwischen Notizen und PDFs."
-        aktionen={
-          <div className="notiz-kopf-aktionen">
-            <button type="button" className="btng" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (alles andere: Strg+O)">
-              🔍 Öffnen
+      <header className="seitenkopf">
+        <div>
+          <h1>Notizen</h1>
+          <p>Mitschriften mit Formatierungen wie in Word und Verlinkungen zwischen Notizen und PDFs.</p>
+        </div>
+        {notizen.length > 0 && (
+          <div className="rechts">
+            <button type="button" className="knopf leise" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (alles andere: Strg+O)">
+              <Icon name="suchen" groesse={16} />
+              Öffnen
             </button>
-            <div className="notiz-neu-gruppe">
-              <button type="button" className="btnp" onClick={() => neu()} disabled={isPending}>
-                + Neue Notiz
-              </button>
-              <button type="button" className="btnp notiz-neu-pfeil" aria-label="Aus Vorlage" title="Aus Vorlage" aria-expanded={vorlagenOffen} onClick={() => setVorlagenOffen((o) => !o)} disabled={isPending}>
-                ▾
-              </button>
-              {vorlagenOffen && (
-                <div className="notiz-vorlagen card">
-                  {VORLAGEN.map((v) => (
-                    <button key={v.id} type="button" onClick={() => neu(v.id)}>
-                      <strong>{v.name}</strong>
-                      <span className="muted">{v.beschreibung}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <button type="button" className="knopf neben" onClick={() => setVorlagenOffen(true)} disabled={isPending}>
+              Aus Vorlage
+            </button>
+            {neuKnopf("haupt", "Neue Notiz")}
           </div>
-        }
-      />
+        )}
+      </header>
       <FachFilterChips faecher={faecher} />
-      {fehler && <p className="auth-error">{fehler}</p>}
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
 
       {vorlesungHinweis && laufendeVorlesung && (
-        <button type="button" className="hub-vorschlag" onClick={() => mitschrift(laufendeVorlesung)} disabled={isPending}>
-          <span aria-hidden>🎓</span> Gerade läuft {laufendeVorlesung.fachName}. <strong>{vorlesungHinweis}</strong>
-        </button>
+        <div className="notiz-vorlesung">
+          <Icon name="uhr" groesse={18} />
+          <span>Gerade läuft {laufendeVorlesung.fachName}.</span>
+          <button type="button" className="knopf neben klein" onClick={() => mitschrift(laufendeVorlesung)} disabled={isPending}>
+            {vorlesungHinweis}
+          </button>
+        </div>
       )}
+
+      {vorlagenOffen && <VorlagenDialog onWahl={(id) => neu(id)} onSchliessen={() => setVorlagenOffen(false)} />}
 
       {schnellsuche && <Schnellsuche notizen={notizen} onWahl={(id) => (setSchnellsuche(false), oeffnen(id))} onNeu={(t) => (setSchnellsuche(false), neu("leer", t))} onSchliessen={() => setSchnellsuche(false)} />}
 
       {notizen.length === 0 ? (
-        <LeererZustand
-          icon="📝"
-          text="Noch keine Notizen. Halte hier fest, was in der Vorlesung wichtig war."
-          aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={() => neu()} disabled={isPending}>
-              + Erste Notiz anlegen
-            </button>
-          }
-        />
+        <Zustand art="leer" icon="notizen" titel="Noch keine Notizen." aktion={neuKnopf("neben klein", "Erste Notiz anlegen")}>
+          Halte hier fest, was in der Vorlesung wichtig war. Mit [[ ]] verlinkst du Notizen und PDFs.
+        </Zustand>
       ) : (
-        <div className="hub-zweispaltig notiz-layout" data-ansicht={auswahl ? "inhalt" : "liste"} data-liste={auswahl && !listeOffen ? "zu" : "auf"}>
-          <section className="card hub-liste" aria-label="Notizliste">
-            {auswahl && (
-              <button type="button" className="notiz-liste-zu" onClick={listeUmschalten} title="Liste einklappen – mehr Platz für die Notiz">
-                « Liste einklappen
-              </button>
-            )}
-            <input type="search" className="field" placeholder="Notizen durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+        <div className="notiz-layout" data-ansicht={auswahl ? "inhalt" : "liste"} data-liste={auswahl && !listeOffen ? "zu" : "auf"}>
+          <section className="notiz-spalte" aria-label="Notizliste">
+            <div className="notiz-spalte-kopf">
+              <input type="search" className="notiz-suche" aria-label="Notizen durchsuchen" placeholder="Notizen durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+              {auswahl && (
+                <button type="button" className="knopf leise klein nur-symbol" onClick={listeUmschalten} aria-label="Liste einklappen" title="Liste einklappen, mehr Platz für die Notiz">
+                  <Icon name="pfeil-links" groesse={16} />
+                </button>
+              )}
+            </div>
             {alleTags.length > 0 && (
-              <div className="notiz-tags" aria-label="Tags">
+              <div className="notiz-tags" role="group" aria-label="Tags">
                 {alleTags.map(([t, n]) => (
-                  <button key={t} type="button" className={`notiz-tag ${tagFilter === t ? "an" : ""}`} onClick={() => setTagFilter((alt) => (alt === t ? null : t))} title={`${n} Notiz${n === 1 ? "" : "en"}`}>
+                  <button key={t} type="button" className="filter-chip" aria-pressed={tagFilter === t} onClick={() => setTagFilter((alt) => (alt === t ? null : t))} title={`${n} Notiz${n === 1 ? "" : "en"}`}>
                     #{t}
                   </button>
                 ))}
               </div>
             )}
-            <ul className="notiz-liste">
-              {sichtbar.length === 0 && <li className="empty-state hub-liste-leer">Keine passenden Notizen.</li>}
-              {sichtbar.map((n) => {
-                const fach = fachVon(n.fach_id);
-                const vorschau = markdownAlsText(n.inhalt.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_g, z: string, l?: string) => l ?? z)).slice(0, 60);
-                return (
-                  <li key={n.id}>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      className={`notiz-zeile ${n.id === auswahlId ? "aktiv" : ""}`}
-                      onClick={(e) => (e.ctrlKey || e.metaKey ? inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts") : oeffnen(n.id))}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          oeffnen(n.id);
-                        }
-                      }}
-                    >
-                      <div className="notiz-zeile-kopf">
-                        {fach && <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} title={fach.name} />}
-                        <span className={`notiz-zeile-titel ${n.titel ? "" : "faint"}`}>
-                          {n.titel || OHNE_TITEL} <KiMarkierung an={n.ki_erzeugt} />
-                        </span>
-                        <button
-                          type="button"
-                          className={`icon-knopf pin ${n.angepinnt ? "an" : ""}`}
-                          aria-label={n.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
-                          title={n.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            anpinnen(n);
-                          }}
-                        >
-                          <PinIcon an={n.angepinnt} />
-                        </button>
-                      </div>
-                      <div className="notiz-zeile-vorschau">{vorschau || <span className="faint">Kein Text</span>}</div>
-                      <div className="notiz-zeile-datum faint">{kurzDatum(n.geaendert_am)}</div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          <section className="hub-inhalt notiz-inhalt" aria-label="Notiz">
-            {(tabs.length > 0 || auswahl) && (
-              <div className="notiz-tabs" role="tablist" aria-label="Geöffnete Notizen">
-                {auswahl && !listeOffen && (
-                  <button type="button" className="icon-knopf notiz-liste-auf" title="Alle Notizen anzeigen" aria-label="Notizliste anzeigen" onClick={listeUmschalten}>
-                    ☰
-                  </button>
-                )}
-                <button type="button" className="icon-knopf" title="Zurück (wie im Browser)" aria-label="Zurück" onClick={() => router.back()}>
-                  ←
-                </button>
-                <button type="button" className="icon-knopf" title="Vor" aria-label="Vor" onClick={() => window.history.forward()}>
-                  →
-                </button>
-                {tabs.map((id) => {
-                  const n = notizen.find((x) => x.id === id);
-                  if (!n) return null;
-                  return (
-                    <span key={id} role="tab" aria-selected={id === auswahlId} className={`notiz-tab ${id === auswahlId ? "an" : ""}`}>
-                      <button type="button" className="notiz-tab-titel" onClick={() => oeffnen(id)} title={n.titel || OHNE_TITEL}>
-                        {n.titel || OHNE_TITEL}
-                      </button>
-                      <button type="button" className="notiz-tab-zu" aria-label="Tab schließen" onClick={() => tabSchliessen(id)}>
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <div className="card notiz-karte">
-              {auswahl ? (
-                <NotizEditor
-                  key={auswahl.id}
-                  notiz={auswahl}
-                  alleNotizen={notizen}
-                  faecher={faecher}
-                  ziele={ziele}
-                  aufloesen={aufloesen}
-                  onLinkOeffnen={linkOeffnen}
-                  autoFokusTitel={auswahl.id === neuId}
-                  onZurueck={() => oeffnen(null)}
-                  onLokal={(teil) => aktualisieren(auswahl.id, teil)}
-                  onAngepasst={(liste) => setNotizen((alt) => alt.map((n) => liste.find((x) => x.id === n.id) ? { ...n, inhalt: liste.find((x) => x.id === n.id)!.inhalt } : n))}
-                  onAnpinnen={() => anpinnen(auswahl)}
-                  onLoeschen={() => loeschen(auswahl)}
-                  onNotizOeffnen={oeffnen}
+            {sichtbar.length === 0 ? (
+              filterAktiv ? (
+                <Zustand
+                  art="leer"
+                  icon="suchen"
+                  titel="Keine passenden Notizen."
+                  region
+                  ebene={3}
+                  aktion={
+                    <button type="button" className="knopf neben klein" onClick={() => (setSuche(""), setTagFilter(null))}>
+                      Suche zurücksetzen
+                    </button>
+                  }
                 />
               ) : (
-                <p className="empty-state hub-inhalt-leer">Wähle links eine Notiz aus, öffne eine mit Strg+O – oder lege eine neue an.</p>
-              )}
-            </div>
+                <Zustand art="leer" icon="notizen" titel="In diesem Fach gibt es noch keine Notiz." region ebene={3} aktion={neuKnopf("neben klein", "Notiz anlegen")} />
+              )
+            ) : (
+              <ul className="notiz-liste">
+                {sichtbar.map((n) => {
+                  const fach = fachVon(n.fach_id);
+                  const vorschau = markdownAlsText(n.inhalt.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_g, z: string, l?: string) => l ?? z)).slice(0, 60);
+                  return (
+                    <li key={n.id} className="notiz-eintrag">
+                      <button
+                        type="button"
+                        className="notiz-oeffnen"
+                        aria-current={n.id === auswahlId ? "true" : undefined}
+                        onClick={(e) => (e.ctrlKey || e.metaKey ? inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts") : oeffnen(n.id))}
+                      >
+                        <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--linie-2)" } as React.CSSProperties} title={fach?.name} aria-hidden />
+                        <span className={`notiz-name${n.titel ? "" : " ohne"}`}>
+                          {n.titel || OHNE_TITEL} <KiMarkierung an={n.ki_erzeugt} />
+                        </span>
+                        <span className="notiz-vorschau">{vorschau || "Kein Text"}</span>
+                        <span className="notiz-datum">{kurzDatum(n.geaendert_am)}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="knopf leise klein nur-symbol"
+                        aria-pressed={n.angepinnt}
+                        aria-label={`${n.titel || OHNE_TITEL} anpinnen`}
+                        title={n.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
+                        onClick={() => anpinnen(n)}
+                      >
+                        <Icon name="anheften" groesse={16} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section className="notiz-inhalt" aria-label="Notiz">
+            {(tabs.length > 0 || auswahl) && (
+              <nav className="notiz-reiter" aria-label="Geöffnete Notizen">
+                {auswahl && !listeOffen && (
+                  <button type="button" className="knopf leise klein nur-symbol notiz-liste-auf" title="Alle Notizen anzeigen" aria-label="Notizliste anzeigen" onClick={listeUmschalten}>
+                    <Icon name="menue" groesse={16} />
+                  </button>
+                )}
+                <button type="button" className="knopf leise klein nur-symbol" title="Zurück (wie im Browser)" aria-label="Zurück" onClick={() => router.back()}>
+                  <Icon name="pfeil-links" groesse={16} />
+                </button>
+                <button type="button" className="knopf leise klein nur-symbol" title="Vor" aria-label="Vor" onClick={() => window.history.forward()}>
+                  <Icon name="pfeil-rechts" groesse={16} />
+                </button>
+                <ul>
+                  {tabs.map((id) => {
+                    const n = notizen.find((x) => x.id === id);
+                    if (!n) return null;
+                    return (
+                      <li key={id}>
+                        <button type="button" className="notiz-reiter-titel" aria-current={id === auswahlId ? "page" : undefined} onClick={() => oeffnen(id)} title={n.titel || OHNE_TITEL}>
+                          {n.titel || OHNE_TITEL}
+                        </button>
+                        <button type="button" className="notiz-reiter-zu" aria-label={`${n.titel || OHNE_TITEL} schließen`} onClick={() => tabSchliessen(id)}>
+                          <Icon name="schliessen" groesse={14} />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            )}
+            {auswahl ? (
+              <NotizEditor
+                key={auswahl.id}
+                notiz={auswahl}
+                alleNotizen={notizen}
+                faecher={faecher}
+                ziele={ziele}
+                aufloesen={aufloesen}
+                onLinkOeffnen={linkOeffnen}
+                autoFokusTitel={auswahl.id === neuId}
+                onZurueck={() => oeffnen(null)}
+                onLokal={(teil) => aktualisieren(auswahl.id, teil)}
+                onAngepasst={(liste) => setNotizen((alt) => alt.map((n) => liste.find((x) => x.id === n.id) ? { ...n, inhalt: liste.find((x) => x.id === n.id)!.inhalt } : n))}
+                onAnpinnen={() => anpinnen(auswahl)}
+                onLoeschen={() => loeschen(auswahl)}
+                onNotizOeffnen={oeffnen}
+              />
+            ) : (
+              <Zustand art="leer" icon="notizen" titel="Keine Notiz geöffnet." region ebene={2}>
+                Wähle links eine Notiz, öffne eine über „Öffnen“ oder lege eine neue an.
+              </Zustand>
+            )}
           </section>
         </div>
       )}
     </>
+  );
+}
+
+/** Neue Notiz aus einer Vorlage */
+function VorlagenDialog({ onWahl, onSchliessen }: { onWahl: (id: VorlageId) => void; onSchliessen: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="formular-dialog notiz-vorlagen"
+      aria-labelledby="notiz-vorlagen-titel"
+      onCancel={(e) => {
+        e.preventDefault();
+        onSchliessen();
+      }}
+      onClick={(e) => {
+        if (e.target === ref.current) onSchliessen();
+      }}
+    >
+      <h2 id="notiz-vorlagen-titel">Neue Notiz aus Vorlage</h2>
+      <ul>
+        {VORLAGEN.map((v) => (
+          <li key={v.id}>
+            <button type="button" onClick={() => onWahl(v.id)}>
+              {v.name}
+              <small>{v.beschreibung}</small>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" className="knopf leise" onClick={onSchliessen}>
+        Abbrechen
+      </button>
+    </dialog>
   );
 }
 
@@ -463,7 +505,7 @@ function Schnellsuche({
   return (
     <dialog
       ref={ref}
-      className="card notiz-schnellsuche"
+      className="formular-dialog notiz-schnellsuche"
       aria-label="Notiz öffnen"
       onCancel={(e) => {
         e.preventDefault();
@@ -474,8 +516,8 @@ function Schnellsuche({
       }}
     >
       <input
-        className="field"
         autoFocus
+        aria-label="Notiz suchen"
         placeholder="Notiz suchen … (Enter öffnet)"
         value={q}
         onChange={(e) => {
@@ -500,15 +542,17 @@ function Schnellsuche({
         {treffer.map((n, i) => (
           <li key={n.id}>
             <button type="button" className={i === index ? "an" : ""} onClick={() => onWahl(n.id)}>
-              📝 {n.titel || OHNE_TITEL}
-              <span className="faint">{kurzDatum(n.geaendert_am)}</span>
+              <Icon name="notizen" groesse={16} />
+              {n.titel || OHNE_TITEL}
+              <span className="notiz-datum">{kurzDatum(n.geaendert_am)}</span>
             </button>
           </li>
         ))}
         {neuerTitel && (
           <li>
             <button type="button" className={index === treffer.length ? "an" : ""} onClick={() => onNeu(neuerTitel)}>
-              ＋ Neue Notiz „{neuerTitel}“
+              <Icon name="plus" groesse={16} />
+              Neue Notiz „{neuerTitel}“
             </button>
           </li>
         )}
@@ -604,12 +648,13 @@ function NotizEditor({
   return (
     <div className="notiz-editor">
       <div className="notiz-editor-leiste">
-        <button type="button" className="btng hub-zurueck" onClick={onZurueck}>
-          ← Zurück
+        <button type="button" className="knopf leise klein notiz-zurueck" onClick={onZurueck}>
+          <Icon name="pfeil-links" groesse={16} />
+          Alle Notizen
         </button>
         <label className="notiz-fach">
-          <span className="muted">Fach:</span>
-          <select className="field" value={notiz.fach_id ?? ""} onChange={(e) => fachAendern(e.target.value)}>
+          Fach
+          <select value={notiz.fach_id ?? ""} onChange={(e) => fachAendern(e.target.value)}>
             <option value="">Ohne Fach</option>
             {faecher.map((f) => (
               <option key={f.id} value={f.id}>
@@ -623,21 +668,22 @@ function NotizEditor({
         </span>
         <button
           type="button"
-          className={`icon-knopf pin ${notiz.angepinnt ? "an" : ""}`}
-          aria-label={notiz.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
+          className="knopf leise klein nur-symbol"
+          aria-pressed={notiz.angepinnt}
+          aria-label="Anpinnen"
           title={notiz.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
           onClick={onAnpinnen}
         >
-          <PinIcon an={notiz.angepinnt} />
+          <Icon name="anheften" groesse={16} />
         </button>
         <DreiPunkteMenue
+          label="Weitere Aktionen für diese Notiz"
           punkte={[
             { label: "Daneben öffnen", onClick: () => inZweiterAnsichtOeffnen(`/notizen?id=${notiz.id}`, "rechts") },
             { label: "Löschen", onClick: onLoeschen, gefahr: true },
           ]}
         />
       </div>
-
 
       <input
         className="notiz-titel"
@@ -677,10 +723,10 @@ function NotizEditor({
         <aside className="notiz-seite" aria-label="Gliederung und Verlinkungen">
           {gliederung.length > 0 && (
             <section>
-              <h4>Gliederung</h4>
+              <h2>Gliederung</h2>
               <ul className="notiz-gliederung">
                 {gliederung.map((u) => (
-                  <li key={u.pos} style={{ paddingLeft: (u.ebene - 1) * 10 }}>
+                  <li key={u.pos} style={{ "--einzug": `${(u.ebene - 1) * 12}px` } as React.CSSProperties}>
                     <button type="button" onClick={() => zuUeberschrift(u.pos)}>
                       {u.text || "…"}
                     </button>
@@ -690,15 +736,16 @@ function NotizEditor({
             </section>
           )}
           <section>
-            <h4>Verlinkt von {rueckverweise.length > 0 && <span className="faint">{rueckverweise.length}</span>}</h4>
+            <h2>Verlinkt von{rueckverweise.length > 0 && `, ${rueckverweise.length}`}</h2>
             {rueckverweise.length === 0 ? (
-              <p className="faint">Noch keine Notiz verweist hierher.</p>
+              <p>Noch keine Notiz verweist hierher.</p>
             ) : (
               <ul className="notiz-verweise">
                 {rueckverweise.map((n) => (
                   <li key={n.id}>
                     <button type="button" onClick={(e) => (e.ctrlKey || e.metaKey ? inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts") : onNotizOeffnen(n.id))}>
-                      📝 {n.titel || OHNE_TITEL}
+                      <Icon name="notizen" groesse={16} />
+                      {n.titel || OHNE_TITEL}
                     </button>
                   </li>
                 ))}
@@ -707,15 +754,16 @@ function NotizEditor({
           </section>
           {ausgehend.length > 0 && (
             <section>
-              <h4>Verlinkt in dieser Notiz</h4>
+              <h2>Verlinkt in dieser Notiz</h2>
               <ul className="notiz-verweise">
                 {ausgehend.map((l) => {
                   const art = aufloesen(l.name).art;
                   return (
                     <li key={`${l.name}#${l.seite ?? ""}`}>
                       <button type="button" className={art === "fehlt" ? "fehlt" : ""} onClick={(e) => onLinkOeffnen(l.seite ? `${l.name}#S${l.seite}` : l.name, e.ctrlKey || e.metaKey)}>
-                        {istPdfName(l.name) ? "📕" : "📝"} {l.name}
-                        {l.seite ? ` · S. ${l.seite}` : ""}
+                        <Icon name={istPdfName(l.name) ? "pdf" : "notizen"} groesse={16} />
+                        {l.name}
+                        {l.seite ? `, S. ${l.seite}` : ""}
                       </button>
                     </li>
                   );

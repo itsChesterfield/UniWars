@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { quelleSeitenSpeichern, quelleSetzen, quelleUeberblick } from "@/app/(hubs)/lernraum/actions";
 import { dateiLink } from "@/app/(hubs)/dateiablage/actions";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import type { Lernprofil, Ueberblick } from "@/lib/ki/lernraum";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { ampel } from "@/lib/ki/gedaechtnis";
@@ -41,7 +44,7 @@ function pdfjsLaden() {
 function profilText(p: Lernprofil) {
   const laenge = { kurz: "kurz", normal: "mittel", ausfuehrlich: "ausführlich" }[p.laenge];
   const niveau = { einfach: "einfach", normal: "Uni-Niveau", fortgeschritten: "fortgeschritten" }[p.niveau];
-  return `${laenge} · ${niveau}${p.beispiele ? " · mit Beispielen" : ""}`;
+  return `${laenge}, ${niveau}${p.beispiele ? ", mit Beispielen" : ""}`;
 }
 
 /**
@@ -55,7 +58,9 @@ export function Lernraum({
   weitere,
   startProfil,
   kompetenz = [],
+  kiVerfuegbar = true,
 }: {
+  kiVerfuegbar?: boolean;
   lernraumId: string;
   fach: { id: string; name: string; farbe: string | null };
   startQuellen: QuelleUi[];
@@ -86,7 +91,7 @@ export function Lernraum({
       for (const q of offen) {
         eingelesen.current.add(q.id);
         try {
-          setEinlesen((e) => ({ ...e, [q.id]: "Wird eingelesen …" }));
+          setEinlesen((e) => ({ ...e, [q.id]: "Wird eingelesen" }));
           const pdfjs = await pdfjsLaden();
           const doc = await pdfjs.getDocument({ url: await dateiLink(q.id) }).promise;
           let block: { seite: number; text: string }[] = [];
@@ -102,7 +107,7 @@ export function Lernraum({
               await quelleSeitenSpeichern(q.id, block, erster);
               erster = false;
               block = [];
-              setEinlesen((e) => ({ ...e, [q.id]: `Liest ein … ${nr}/${doc.numPages}` }));
+              setEinlesen((e) => ({ ...e, [q.id]: `Liest ein, Seite ${nr} von ${doc.numPages}` }));
             }
           }
           void doc.destroy();
@@ -154,8 +159,10 @@ export function Lernraum({
     return fragenAusUeberblick.length ? fragenAusUeberblick.slice(0, 4) : VORSCHLAEGE;
   })();
 
+  const schwache = kompetenz.filter((t) => ampel(t.beherrschung) !== "sicher");
+
   return (
-    <div className="lr">
+    <>
       {einwilligung && (
         <KiEinwilligungDialog
           onSchliessen={() => setEinwilligung(null)}
@@ -165,152 +172,207 @@ export function Lernraum({
           }}
         />
       )}
-
-      {/* Quellen */}
-      <aside className="card lr-quellen" aria-label="Quellen">
-        <div className="lr-kopf">
-          <h2>Quellen</h2>
-          <span className="faint">{aktive.length} aktiv</span>
+      <Link href="/lernraum" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Lernraum
+      </Link>
+      <header className="seitenkopf">
+        <div>
+          <h1>{fach.name}</h1>
+          <p>
+            {kiVerfuegbar
+              ? `${aktive.length} von ${quellen.length} Quellen aktiv. Studio antwortet nur aus diesen Quellen und belegt jede Aussage.`
+              : "Die KI ist gerade nicht eingerichtet."}
+          </p>
         </div>
-        {quellen.length === 0 && <p className="empty-state">Noch keine PDFs oder Notizen in diesem Fach. Lade ein Skript in der Dateiablage hoch oder schreib eine Notiz mit diesem Fach.</p>}
-        <ul className="lr-quellen-liste">
-          {quellen.map((q) => {
-            const schluessel = `${q.art}:${q.id}`;
-            const u = ueberblick[schluessel];
-            return (
-              <li key={schluessel} className={q.aktiv ? "" : "aus"}>
-                <div className="lr-quelle">
-                  <input type="checkbox" checked={q.aktiv} onChange={() => quelleUmschalten(q)} aria-label={`${q.titel} verwenden`} title={q.herkunft === "extra" ? "Aus dem Lernraum entfernen" : "Für Antworten verwenden"} />
-                  <button type="button" className="lr-quelle-titel" onClick={() => ueberblickLaden(q)} title="Überblick anzeigen">
-                    <span aria-hidden>{q.art === "pdf" ? "📕" : "📝"}</span> {q.titel}
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-knopf"
-                    title="Daneben öffnen"
-                    aria-label="Daneben öffnen"
-                    onClick={() => inZweiterAnsichtOeffnen(q.art === "pdf" ? `/pdf-reader/${q.id}` : `/notizen?id=${q.id}`, "rechts")}
-                  >
-                    ↗
-                  </button>
-                </div>
-                {einlesen[q.id] && <span className="lr-status">{einlesen[q.id]}</span>}
-                {q.herkunft === "extra" && <span className="lr-status">dazugenommen</span>}
-                {offenerUeberblick === schluessel && (
-                  <div className="lr-ueberblick">
-                    {u === "laedt" || u === undefined ? (
-                      <p className="muted">Überblick wird erstellt …</p>
-                    ) : typeof u === "string" ? (
-                      <p className="auth-error">{u}</p>
-                    ) : (
-                      <>
-                        <p>{u.zusammenfassung}</p>
-                        <div className="lr-themen">
-                          {u.themen.map((t) => (
-                            <span key={t} className="tag">
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                        {u.fragen.map((f) => (
-                          <button key={f} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(f)}>
-                            {f}
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        <div className="lr-dazu">
-          {hinzufuegen ? (
-            <select
-              className="field"
-              autoFocus
-              defaultValue=""
-              onChange={(e) => {
-                const w = weitere.find((x) => `${x.art}:${x.id}` === e.target.value);
-                if (w) quelleDazu(w);
-              }}
-              onBlur={() => setHinzufuegen(false)}
+        {kiVerfuegbar && (
+          <div className="rechts">
+            <button type="button" className="knopf haupt" onClick={() => studioOeffnen()}>
+              <Icon name="studio" groesse={16} />
+              In Studio fragen
+            </button>
+          </div>
+        )}
+      </header>
+
+      <div className="lr">
+        <section className="lr-quellen" aria-labelledby="lr-quellen-titel">
+          <div className="abschnitt-kopf">
+            <h2 id="lr-quellen-titel" className="abschnitt-titel">
+              Quellen
+            </h2>
+            {quellen.length > 0 && <span className="abschnitt-info">{aktive.length} aktiv</span>}
+          </div>
+          {quellen.length === 0 ? (
+            <Zustand
+              art="leer"
+              icon="pdf"
+              titel="Noch keine Quellen in diesem Fach."
+              region
+              ebene={3}
+              aktion={
+                <Link href="/dateiablage" className="knopf neben klein">
+                  Zur Dateiablage
+                </Link>
+              }
             >
-              <option value="" disabled>
-                Quelle aus anderem Fach wählen …
-              </option>
-              {weitere
-                .filter((w) => !quellen.some((q) => q.id === w.id))
-                .map((w) => (
-                  <option key={`${w.art}:${w.id}`} value={`${w.art}:${w.id}`}>
-                    {w.art === "pdf" ? "📕" : "📝"} {w.titel}
-                  </option>
-                ))}
-            </select>
+              Lade ein Skript hoch oder schreib eine Notiz mit diesem Fach. Studio antwortet dann mit Belegen aus genau diesen Quellen.
+            </Zustand>
           ) : (
-            <button type="button" className="btng" onClick={() => setHinzufuegen(true)}>
-              + Quelle dazunehmen
-            </button>
+            <ul className="lr-quellen-liste">
+              {quellen.map((q) => {
+                const schluessel = `${q.art}:${q.id}`;
+                const u = ueberblick[schluessel];
+                return (
+                  <li key={schluessel} className={q.aktiv ? "" : "aus"}>
+                    <div className="lr-quelle">
+                      <input
+                        type="checkbox"
+                        checked={q.aktiv}
+                        onChange={() => quelleUmschalten(q)}
+                        aria-label={`${q.titel} verwenden`}
+                        title={q.herkunft === "extra" ? "Aus dem Lernraum entfernen" : "Für Antworten verwenden"}
+                      />
+                      <button
+                        type="button"
+                        className="lr-quelle-titel"
+                        onClick={() => ueberblickLaden(q)}
+                        aria-expanded={offenerUeberblick === schluessel}
+                        title="Überblick anzeigen"
+                      >
+                        <Icon name={q.art === "pdf" ? "pdf" : "notizen"} groesse={16} />
+                        <span>{q.titel}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="knopf leise klein nur-symbol"
+                        title="Daneben öffnen"
+                        aria-label={`${q.titel} daneben öffnen`}
+                        onClick={() => inZweiterAnsichtOeffnen(q.art === "pdf" ? `/pdf-reader/${q.id}` : `/notizen?id=${q.id}`, "rechts")}
+                      >
+                        <Icon name="extern" groesse={16} />
+                      </button>
+                    </div>
+                    {einlesen[q.id] && <span className="lr-status">{einlesen[q.id]}</span>}
+                    {q.herkunft === "extra" && <span className="lr-status">dazugenommen</span>}
+                    {offenerUeberblick === schluessel && (
+                      <div className="lr-ueberblick">
+                        {u === "laedt" || u === undefined ? (
+                          <p>Studio erstellt den Überblick.</p>
+                        ) : typeof u === "string" ? (
+                          <p className="formular-fehler">{u}</p>
+                        ) : (
+                          <>
+                            <p>{u.zusammenfassung}</p>
+                            {u.themen.length > 0 && (
+                              <p>
+                                Themen: <strong>{u.themen.join(", ")}</strong>
+                              </p>
+                            )}
+                            {u.fragen.map((f) => (
+                              <button key={f} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(f)}>
+                                <Icon name="studio" groesse={16} />
+                                {f}
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </div>
-      </aside>
+          <div className="lr-dazu">
+            {hinzufuegen ? (
+              <select
+                aria-label="Quelle aus einem anderen Fach"
+                autoFocus
+                defaultValue=""
+                onChange={(e) => {
+                  const w = weitere.find((x) => `${x.art}:${x.id}` === e.target.value);
+                  if (w) quelleDazu(w);
+                }}
+                onBlur={() => setHinzufuegen(false)}
+              >
+                <option value="" disabled>
+                  Quelle aus anderem Fach wählen
+                </option>
+                {weitere
+                  .filter((w) => !quellen.some((q) => q.id === w.id))
+                  .map((w) => (
+                    <option key={`${w.art}:${w.id}`} value={`${w.art}:${w.id}`}>
+                      {w.art === "pdf" ? "PDF" : "Notiz"}: {w.titel}
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <button type="button" className="knopf leise klein" onClick={() => setHinzufuegen(true)}>
+                <Icon name="plus" groesse={16} />
+                Quelle dazunehmen
+              </button>
+            )}
+          </div>
+        </section>
 
-      {/* Fragen laufen über UniVerse Studio (ein Chat für die ganze App) */}
-      <section className="card lr-studio-hinweis" aria-label="UniVerse Studio">
-        <h2>
-          <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-        </h2>
-        <p>
-          Drück <kbd>Strg</kbd> + <kbd>J</kbd> (Mac: <kbd>⌘</kbd> + <kbd>J</kbd>) – <strong>UniVerse Studio</strong> kennt die {aktive.length} aktiven Quellen dieses Fachs, belegt
-          jede Aussage und erstellt dir auf Wunsch Lernzettel, FAQ, Quiz oder Karteikarten.
-        </p>
-        <div className="lr-vorschlaege">
-          {letzteVorschlaege.map((v) => (
-            <button key={v} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(v)}>
-              {v}
-            </button>
-          ))}
-        </div>
-        <p className="faint lr-klein">Erklärweise: {profilText(profil)} – passt sich an deine Rückmeldungen an (Einstellungen in UniVerse Studio).</p>
-        <div className="lr-kompetenz">
-          <h3>Dein Stand</h3>
+        {/* Fragen laufen über UniVerse Studio (ein Chat für die ganze App) */}
+        <section className="lr-mitte" aria-labelledby="lr-fragen-titel">
+          <div className="abschnitt-kopf">
+            <h2 id="lr-fragen-titel" className="abschnitt-titel">
+              Fragen an {fach.name}
+            </h2>
+          </div>
+          <div className="lr-vorschlaege">
+            {letzteVorschlaege.map((v) => (
+              <button key={v} type="button" className="lr-vorschlag" onClick={() => studioOeffnen(v)}>
+                <Icon name="studio" groesse={16} />
+                {v}
+              </button>
+            ))}
+          </div>
+          <p className="qz-hinweis">
+            Antworten, Lernzettel, FAQ und Quiz entstehen in UniVerse Studio (<kbd>Strg</kbd> + <kbd>J</kbd>). Erklärweise: {profilText(profil)}, passt sich an
+            deine Rückmeldungen an.
+          </p>
+
+          <div className="abschnitt-kopf lr-stand-kopf">
+            <h2 className="abschnitt-titel">Dein Stand</h2>
+            <span className="abschnitt-info">aus Quiz und Karteikarten</span>
+          </div>
           {kompetenz.length === 0 ? (
-            <p className="faint lr-klein">Entsteht aus Quiz und Karteikarten in diesem Fach – je mehr du übst, desto genauer.</p>
+            <p className="qz-hinweis">Entsteht, sobald du in diesem Fach Quiz und Karteikarten übst. Je mehr du übst, desto genauer.</p>
           ) : (
             <>
-              <ul className="gd-themen">
-                {kompetenz.map((t) => {
-                  const a = ampel(t.beherrschung);
-                  return (
-                    <li key={t.thema} className={`gd-thema ${a}`} title={t.fehlerbild ?? undefined}>
-                      <span className="gd-ampel" aria-hidden />
-                      <span className="gd-thema-name">{t.thema}</span>
-                      <span className="faint gd-thema-info">{Math.round(t.beherrschung * 100)} %</span>
-                    </li>
-                  );
-                })}
+              <ul className="entry-list">
+                {kompetenz.map((t) => (
+                  <li key={t.thema} className={`entry-row lr-stand ${ampel(t.beherrschung)}`} title={t.fehlerbild ?? undefined}>
+                    <div className="entry-info">
+                      <span className="entry-title">{t.thema}</span>
+                      <span className="balkenf" aria-hidden>
+                        <i style={{ width: `${Math.round(t.beherrschung * 100)}%` }} />
+                      </span>
+                    </div>
+                    <span className="fortschritt-wert zahl">{Math.round(t.beherrschung * 100)} %</span>
+                  </li>
+                ))}
               </ul>
-              {kompetenz.some((t) => ampel(t.beherrschung) !== "sicher") && (
+              {schwache.length > 0 && (
                 <button
                   type="button"
-                  className="btnp lr-schwaches"
+                  className="knopf neben klein lr-schwaches"
                   onClick={() =>
-                    studioOeffnen(
-                      `Frag mich zu meinen schwachen Themen in ${fach.name} ab: ${kompetenz
-                        .filter((t) => ampel(t.beherrschung) !== "sicher")
-                        .map((t) => t.thema)
-                        .join(", ")}. Erst eine Frage, dann warten.`,
-                    )
+                    studioOeffnen(`Frag mich zu meinen schwachen Themen in ${fach.name} ab: ${schwache.map((t) => t.thema).join(", ")}. Erst eine Frage, dann warten.`)
                   }
                 >
-                  🎯 Schwaches üben
+                  <Icon name="ziel" groesse={16} />
+                  Schwache Themen üben
                 </button>
               )}
             </>
           )}
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </>
   );
 }

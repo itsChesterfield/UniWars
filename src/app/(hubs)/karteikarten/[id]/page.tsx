@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { StapelAnsicht } from "@/components/karteikarten/stapel-ansicht";
 
 export default async function StapelSeite({ params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +14,7 @@ export default async function StapelSeite({ params }: { params: Promise<{ id: st
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Karteikarten" />
-        <EinrichtungHinweis hub="Karteikarten" />
-      </>
-    );
+    return <Einrichtung bereich="Karteikarten" />;
   }
   if (error?.code === "22P02") notFound(); // keine gültige ID
   if (error) throw new Error(error.message);

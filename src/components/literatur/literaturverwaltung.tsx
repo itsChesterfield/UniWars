@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { quelleLoeschen, quelleSpeichern, type Quelle, type QuelleEingabe } from "@/app/(hubs)/literaturverwaltung/actions";
 import { FachFilterChips } from "@/components/fach-filter-chips";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import {
   erstautorKurz,
   literaturverzeichnis,
@@ -98,7 +99,7 @@ export function Literaturverwaltung({
   function sortieren(spalte: Spalte) {
     setSortierung((s) => (s.spalte === spalte ? { spalte, ab: !s.ab } : { spalte, ab: spalte === "jahr" }));
   }
-  const pfeil = (spalte: Spalte) => (sortierung.spalte === spalte ? (sortierung.ab ? " ↓" : " ↑") : "");
+  const sortRichtung = (spalte: Spalte) => (sortierung.spalte === spalte ? (sortierung.ab ? "descending" : "ascending") : undefined);
 
   async function zitieren(q: Quelle, art: "text" | "verzeichnis") {
     const text = art === "text" ? zitatImText(daten(q)) : verzeichnisEintrag(daten(q));
@@ -136,15 +137,22 @@ export function Literaturverwaltung({
   const ausgewaehlt = quellen.filter((q) => auswahl.has(q.id));
   const alleSichtbarGewaehlt = sichtbar.length > 0 && sichtbar.every((q) => auswahl.has(q.id));
 
-  const neuKnopf = (
-    <button type="button" className="btnp" onClick={() => setFormular({ quelle: null })}>
-      + Quelle
+  const neuKnopf = (klasse: string, text: string) => (
+    <button type="button" className={`knopf ${klasse}`} onClick={() => setFormular({ quelle: null })}>
+      <Icon name="plus" groesse={16} />
+      {text}
     </button>
   );
 
   return (
     <>
-      <HubKopf titel="Literaturverwaltung" untertitel="Quellen sammeln und nach APA zitieren." aktionen={neuKnopf} />
+      <header className="seitenkopf">
+        <div>
+          <h1>Literatur</h1>
+          <p>Quellen sammeln und nach APA zitieren.</p>
+        </div>
+        {quellen.length > 0 && <div className="rechts">{neuKnopf("haupt", "Quelle")}</div>}
+      </header>
       <FachFilterChips faecher={faecher} />
 
       {formular && (
@@ -163,202 +171,171 @@ export function Literaturverwaltung({
         />
       )}
 
-      {quellen.length === 0 && !formular ? (
-        <LeererZustand
-          icon="📚"
-          text="Noch keine Quellen. Sammle hier Bücher, Artikel und Webseiten für deine Hausarbeit."
-          aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={() => setFormular({ quelle: null })}>
-              + Erste Quelle anlegen
-            </button>
-          }
-        />
+      {quellen.length === 0 ? (
+        <Zustand art="leer" icon="literatur" titel="Noch keine Quellen." aktion={neuKnopf("neben klein", "Erste Quelle anlegen")}>
+          Sammle hier Bücher, Artikel und Webseiten für deine Hausarbeit und zitiere sie nach APA.
+        </Zustand>
       ) : (
-        quellen.length > 0 && (
-          <section className="card lit-karte">
-            <div className="lit-werkzeuge">
-              <input
-                type="search"
-                className="field"
-                placeholder="Quellen durchsuchen …"
-                value={suche}
-                onChange={(e) => setSuche(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btng"
-                disabled={ausgewaehlt.length === 0}
-                onClick={() => {
-                  setVerzeichnis(literaturverzeichnis(ausgewaehlt.map(daten)));
-                  track("literaturverzeichnis_erstellt", { quellen: ausgewaehlt.length });
-                }}
-              >
-                Verzeichnis erstellen{ausgewaehlt.length ? ` (${ausgewaehlt.length})` : ""}
-              </button>
-            </div>
+        <>
+          <div className="lit-werkzeuge">
+            <input type="search" className="lit-suche" aria-label="Quellen durchsuchen" placeholder="Quellen durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+            <button
+              type="button"
+              className="knopf neben klein"
+              disabled={ausgewaehlt.length === 0}
+              onClick={() => {
+                setVerzeichnis(literaturverzeichnis(ausgewaehlt.map(daten)));
+                track("literaturverzeichnis_erstellt", { quellen: ausgewaehlt.length });
+              }}
+            >
+              Verzeichnis erstellen
+              {ausgewaehlt.length > 0 && <span className="zahl">{ausgewaehlt.length}</span>}
+            </button>
+          </div>
 
-            {verzeichnis && (
-              <div className="lit-verzeichnis">
-                <div className="rowb">
-                  <h3 className="ct">Literaturverzeichnis</h3>
-                  <div className="row" style={{ gap: 6 }}>
-                    <button
-                      type="button"
-                      className="btnp"
-                      onClick={async () => setToast((await kopieren(verzeichnis.join("\n\n"))) ? "Kopiert" : "Kopieren nicht möglich")}
-                    >
-                      Alles kopieren
-                    </button>
-                    <button type="button" className="icon-knopf" aria-label="Verzeichnis schließen" onClick={() => setVerzeichnis(null)}>
-                      ✕
-                    </button>
-                  </div>
+          {verzeichnis && (
+            <section className="lit-verzeichnis" aria-labelledby="lit-verzeichnis-titel">
+              <div className="abschnitt-kopf">
+                <h2 id="lit-verzeichnis-titel" className="abschnitt-titel">
+                  Verzeichnis nach APA
+                </h2>
+                <div className="rechts">
+                  <button
+                    type="button"
+                    className="knopf neben klein"
+                    onClick={async () => setToast((await kopieren(verzeichnis.join("\n\n"))) ? "Kopiert" : "Kopieren nicht möglich")}
+                  >
+                    <Icon name="kopieren" groesse={16} />
+                    Alles kopieren
+                  </button>
+                  <button type="button" className="knopf leise klein nur-symbol" aria-label="Verzeichnis schließen" onClick={() => setVerzeichnis(null)}>
+                    <Icon name="schliessen" groesse={16} />
+                  </button>
                 </div>
-                <ol>
-                  {verzeichnis.map((e, i) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ol>
               </div>
-            )}
+              <ol>
+                {verzeichnis.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-            {sichtbar.length === 0 ? (
-              <p className="empty-state">Keine passenden Quellen.</p>
+          {sichtbar.length === 0 ? (
+            suche.trim() ? (
+              <Zustand
+                art="leer"
+                icon="suchen"
+                titel="Keine passenden Quellen."
+                region
+                ebene={3}
+                aktion={
+                  <button type="button" className="knopf neben klein" onClick={() => setSuche("")}>
+                    Suche zurücksetzen
+                  </button>
+                }
+              />
             ) : (
-              <div className="dat-tabelle-wrap">
-                <table className="dat-tabelle lit-tabelle">
-                  <thead>
-                    <tr>
-                      <th className="lit-spalte-wahl">
-                        <input
-                          type="checkbox"
-                          aria-label="Alle auswählen"
-                          checked={alleSichtbarGewaehlt}
-                          onChange={() =>
-                            setAuswahl((a) => {
-                              const neu = new Set(a);
-                              for (const q of sichtbar) {
-                                if (alleSichtbarGewaehlt) neu.delete(q.id);
-                                else neu.add(q.id);
-                              }
-                              return neu;
-                            })
-                          }
-                        />
+              <Zustand art="leer" icon="literatur" titel="In diesem Fach gibt es noch keine Quelle." region ebene={3} aktion={neuKnopf("neben klein", "Quelle anlegen")} />
+            )
+          ) : (
+            <div className="dat-tabelle-wrap lit-tabelle-wrap">
+              <table className="dat-tabelle lit-tabelle">
+                <thead>
+                  <tr>
+                    <th className="lit-spalte-wahl">
+                      <input
+                        type="checkbox"
+                        aria-label="Alle auswählen"
+                        checked={alleSichtbarGewaehlt}
+                        onChange={() =>
+                          setAuswahl((a) => {
+                            const neu = new Set(a);
+                            for (const q of sichtbar) {
+                              if (alleSichtbarGewaehlt) neu.delete(q.id);
+                              else neu.add(q.id);
+                            }
+                            return neu;
+                          })
+                        }
+                      />
+                    </th>
+                    {(
+                      [
+                        ["autor", "Autor"],
+                        ["jahr", "Jahr"],
+                        ["titel", "Titel"],
+                        ["typ", "Typ"],
+                        ["fach", "Fach"],
+                      ] as [Spalte, string][]
+                    ).map(([sp, label]) => (
+                      <th key={sp} className={`lit-spalte-${sp}`} aria-sort={sortRichtung(sp)}>
+                        <button type="button" onClick={() => sortieren(sp)}>
+                          {label}
+                          {sortRichtung(sp) && <Icon name={sortRichtung(sp) === "descending" ? "runter" : "hoch"} groesse={14} />}
+                        </button>
                       </th>
-                      {(
-                        [
-                          ["autor", "Autor"],
-                          ["jahr", "Jahr"],
-                          ["titel", "Titel"],
-                          ["typ", "Typ"],
-                          ["fach", "Fach"],
-                        ] as [Spalte, string][]
-                      ).map(([s, label]) => (
-                        <th key={s} className={`lit-spalte-${s}`}>
-                          <button type="button" onClick={() => sortieren(s)}>
-                            {label}
-                            {pfeil(s)}
-                          </button>
-                        </th>
-                      ))}
-                      <th aria-label="Aktionen" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sichtbar.map((q) => (
-                      <tr key={q.id}>
-                        <td className="lit-spalte-wahl">
-                          <input type="checkbox" aria-label={`${q.titel} auswählen`} checked={auswahl.has(q.id)} onChange={() => umschalten(q.id)} />
-                        </td>
-                        <td className="lit-spalte-autor">{erstautorKurz(q.autoren)}</td>
-                        <td className="lit-spalte-jahr mono">{q.jahr}</td>
-                        <td className="lit-spalte-titel">
-                          <button type="button" className="dat-name-knopf" onClick={() => setFormular({ quelle: q })} title={q.notiz ?? undefined}>
-                            {q.titel}
-                          </button>
-                          {q.datei_id && (
-                            <Link href={`/pdf-reader/${q.datei_id}`} className="lit-pdf" title="Verknüpfte PDF öffnen">
-                              📕 PDF
-                            </Link>
-                          )}
-                        </td>
-                        <td className="lit-spalte-typ">
-                          <span className="tag">{TYP_NAME[q.typ as QuellenTyp]}</span>
-                        </td>
-                        <td className="lit-spalte-fach muted">{fachName(q.fach_id) || "–"}</td>
-                        <td className="dat-spalte-aktion">
-                          <div className="lit-aktionen">
-                            <ZitierMenue onWahl={(art) => void zitieren(q, art)} />
-                            <DreiPunkteMenue
-                              punkte={[
-                                { label: "Bearbeiten", onClick: () => setFormular({ quelle: q }) },
-                                { label: "Löschen", onClick: () => void loeschen(q), gefahr: true },
-                              ]}
-                            />
-                          </div>
-                        </td>
-                      </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )
+                    <th>
+                      <span className="sr-only">Aktionen</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sichtbar.map((q) => (
+                    <tr key={q.id}>
+                      <td className="lit-spalte-wahl">
+                        <input type="checkbox" aria-label={`${q.titel} auswählen`} checked={auswahl.has(q.id)} onChange={() => umschalten(q.id)} />
+                      </td>
+                      <td className="lit-spalte-autor">{erstautorKurz(q.autoren)}</td>
+                      <td className="lit-spalte-jahr">{q.jahr}</td>
+                      <td className="lit-spalte-titel">
+                        <button type="button" className="dat-name-knopf" onClick={() => setFormular({ quelle: q })} title={q.notiz ?? undefined}>
+                          {q.titel}
+                        </button>
+                        {q.datei_id && (
+                          <Link href={`/pdf-reader/${q.datei_id}`} className="knopf leise klein lit-pdf" title="Verknüpfte PDF öffnen">
+                            <Icon name="pdf" groesse={16} />
+                            PDF
+                          </Link>
+                        )}
+                      </td>
+                      <td className="lit-spalte-typ">
+                        <span className="lit-typ">{TYP_NAME[q.typ as QuellenTyp]}</span>
+                      </td>
+                      <td className="lit-spalte-fach">{fachName(q.fach_id) || "Ohne Fach"}</td>
+                      <td className="dat-spalte-aktion">
+                        <div className="lit-aktionen">
+                          <DreiPunkteMenue
+                            label={`${q.titel} zitieren`}
+                            knopfText="Zitieren"
+                            punkte={[
+                              { label: "Im Text (APA)", onClick: () => void zitieren(q, "text") },
+                              { label: "Literaturverzeichnis (APA)", onClick: () => void zitieren(q, "verzeichnis") },
+                            ]}
+                          />
+                          <DreiPunkteMenue
+                            label={`Weitere Aktionen für ${q.titel}`}
+                            punkte={[
+                              { label: "Bearbeiten", onClick: () => setFormular({ quelle: q }) },
+                              { label: "Löschen", onClick: () => void loeschen(q), gefahr: true },
+                            ]}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
-      {toast && (
-        <div className="lit-toast" role="status">
-          {toast}
-        </div>
-      )}
+      <p className="lit-status" role="status">
+        {toast}
+      </p>
     </>
-  );
-}
-
-/** LIT-03 */
-function ZitierMenue({ onWahl }: { onWahl: (art: "text" | "verzeichnis") => void }) {
-  const [offen, setOffen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOffen(false);
-    };
-    document.addEventListener("mousedown", zu);
-    return () => document.removeEventListener("mousedown", zu);
-  }, [offen]);
-  return (
-    <div className="drei-punkte" ref={ref}>
-      <button type="button" className="btng lit-zitieren" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen((o) => !o)}>
-        Zitieren
-      </button>
-      {offen && (
-        <div className="drei-punkte-menue" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOffen(false);
-              onWahl("text");
-            }}
-          >
-            Im Text (APA)
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOffen(false);
-              onWahl("verzeichnis");
-            }}
-          >
-            Literaturverzeichnis (APA)
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -446,130 +423,147 @@ function QuellenFormular({
     }
   }
 
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    dialog.current?.showModal();
+  }, []);
+
   const vorschau = werte.autoren.trim() && werte.titel.trim() ? verzeichnisEintrag({ ...werte, abgerufen_am: werte.abgerufenAm }) : null;
 
   return (
     <>
       {/* außerhalb des <form>: der Dialog hat ein eigenes Formular (verschachtelte Formulare sind ungültig) */}
       {kiDialog && <KiQuelleDialog onErkannt={kiUebernehmen} onSchliessen={() => setKiDialog(false)} />}
-      <form className="card hub-formular lit-formular" onSubmit={absenden}>
-        <div className="rowb">
-          <h2 className="ct">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h2>
-        </div>
-        {kiFelder.size > 0 && (
-          <p className="ki-hinweis lit-ki-hinweis">
-            ✨ Gelb markierte Felder hat die KI ausgefüllt – bitte prüfen.{" "}
-            <button type="button" className="link-knopf" onClick={() => setKiFelder(new Set())}>
-              Alles geprüft
+      <dialog
+        ref={dialog}
+        className="formular-dialog lit-dialog"
+        aria-labelledby="lit-formular-titel"
+        onCancel={(e) => {
+          e.preventDefault();
+          onAbbrechen();
+        }}
+      >
+        <form className="crud-form" onSubmit={absenden}>
+          <h3 id="lit-formular-titel">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h3>
+          {kiFelder.size > 0 && (
+            <p className="ki-hinweis lit-ki-hinweis">
+              Markierte Felder hat die KI ausgefüllt, bitte prüfen.{" "}
+              <button type="button" className="link-knopf" onClick={() => setKiFelder(new Set())}>
+                Alles geprüft
+              </button>
+              {kiVerworfen.length > 0 && <span> Nicht im Text gefunden, daher leer: {kiVerworfen.join(", ")}.</span>}
+            </p>
+          )}
+          <div className="crud-form-reihe lit-felder">
+            <label>
+              <span>Typ *</span>
+              <select
+                className={`${ki("typ")}`}
+                value={werte.typ}
+                onFocus={() => angefasst("typ")}
+                onChange={(e) => {
+                  const typ = e.target.value as QuellenTyp;
+                  setWerte((w) => ({ ...w, typ, abgerufenAm: typ === "WEBSEITE" && !w.abgerufenAm ? berlinDatum() : w.abgerufenAm }));
+                }}
+              >
+                <option value="BUCH">Buch</option>
+                <option value="ARTIKEL">Artikel</option>
+                <option value="WEBSEITE">Webseite</option>
+              </select>
+            </label>
+            <label className="lit-breit">
+              <span>Autor(en) *</span>
+              <input
+                className={`${ki("autoren")}`}
+                onFocus={() => angefasst("autoren")}
+                required
+                value={werte.autoren}
+                placeholder="Müller, Anna; Schmidt, Ben"
+                onChange={(e) => setze("autoren", e.target.value)}
+                autoFocus
+              />
+            </label>
+            <label className="lit-breit">
+              <span>Titel *</span>
+              <input className={`${ki("titel")}`} onFocus={() => angefasst("titel")} required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
+            </label>
+            <label>
+              <span>Jahr *</span>
+              <input
+                className={`${ki("jahr")}`}
+                onFocus={() => angefasst("jahr")}
+                type="number"
+                required
+                min={1000}
+                max={2200}
+                value={werte.jahr}
+                onChange={(e) => setze("jahr", Number(e.target.value))}
+              />
+            </label>
+            <label>
+              <span>{werte.typ === "ARTIKEL" ? "Zeitschrift" : web ? "Website-Name" : "Verlag"}</span>
+              <input className={`${ki("verlag")}`} onFocus={() => angefasst("verlag")} value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
+            </label>
+            <label className={web ? "lit-breit" : ""}>
+              <span>URL{web ? " *" : ""}</span>
+              <input className={`${ki("url")}`} onFocus={() => angefasst("url")} type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
+            </label>
+            <label>
+              <span>Abgerufen am{web ? " *" : ""}</span>
+              <input className={`${ki("abgerufenAm")}`} onFocus={() => angefasst("abgerufenAm")} type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
+            </label>
+            <label>
+              <span>Seiten</span>
+              <input className={`${ki("seiten")}`} onFocus={() => angefasst("seiten")} value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
+            </label>
+            <label>
+              <span>Fach</span>
+              <select value={werte.fachId ?? ""} onChange={(e) => setze("fachId", e.target.value || null)}>
+                <option value="">Ohne Fach</option>
+                {faecher.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>PDF aus der Dateiablage</span>
+              <select value={werte.dateiId ?? ""} onChange={(e) => setze("dateiId", e.target.value || null)}>
+                <option value="">Keine</option>
+                {pdfs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="lit-voll">
+              <span>Notiz</span>
+              <textarea rows={2} value={werte.notiz} placeholder="gutes Kapitel zu Automaten" onChange={(e) => setze("notiz", e.target.value)} />
+            </label>
+          </div>
+          {vorschau && (
+            <p className="lit-vorschau">
+              <span>Vorschau</span>
+              {vorschau}
+            </p>
+          )}
+          {fehler && (
+            <p className="formular-fehler" role="alert">
+              {fehler}
+            </p>
+          )}
+          <div className="crud-form-actions">
+            <button type="submit" className="knopf haupt" disabled={laeuft} aria-busy={laeuft}>
+              Speichern
             </button>
-            {kiVerworfen.length > 0 && <span className="muted"> Nicht im Text gefunden, daher leer: {kiVerworfen.join(", ")}.</span>}
-          </p>
-        )}
-        <div className="lit-felder">
-          <label>
-            <span>Typ *</span>
-            <select
-              className={`field ${ki("typ")}`}
-              value={werte.typ}
-              onFocus={() => angefasst("typ")}
-              onChange={(e) => {
-                const typ = e.target.value as QuellenTyp;
-                setWerte((w) => ({ ...w, typ, abgerufenAm: typ === "WEBSEITE" && !w.abgerufenAm ? berlinDatum() : w.abgerufenAm }));
-              }}
-            >
-              <option value="BUCH">Buch</option>
-              <option value="ARTIKEL">Artikel</option>
-              <option value="WEBSEITE">Webseite</option>
-            </select>
-          </label>
-          <label className="lit-breit">
-            <span>Autor(en) *</span>
-            <input
-              className={`field ${ki("autoren")}`}
-              onFocus={() => angefasst("autoren")}
-              required
-              value={werte.autoren}
-              placeholder="Müller, Anna; Schmidt, Ben"
-              onChange={(e) => setze("autoren", e.target.value)}
-              autoFocus
-            />
-          </label>
-          <label className="lit-breit">
-            <span>Titel *</span>
-            <input className={`field ${ki("titel")}`} onFocus={() => angefasst("titel")} required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
-          </label>
-          <label>
-            <span>Jahr *</span>
-            <input
-              className={`field ${ki("jahr")}`}
-              onFocus={() => angefasst("jahr")}
-              type="number"
-              required
-              min={1000}
-              max={2200}
-              value={werte.jahr}
-              onChange={(e) => setze("jahr", Number(e.target.value))}
-            />
-          </label>
-          <label>
-            <span>{werte.typ === "ARTIKEL" ? "Zeitschrift" : web ? "Website-Name" : "Verlag"}</span>
-            <input className={`field ${ki("verlag")}`} onFocus={() => angefasst("verlag")} value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
-          </label>
-          <label className={web ? "lit-breit" : ""}>
-            <span>URL{web ? " *" : ""}</span>
-            <input className={`field ${ki("url")}`} onFocus={() => angefasst("url")} type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
-          </label>
-          <label>
-            <span>Abgerufen am{web ? " *" : ""}</span>
-            <input className={`field ${ki("abgerufenAm")}`} onFocus={() => angefasst("abgerufenAm")} type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
-          </label>
-          <label>
-            <span>Seiten</span>
-            <input className={`field ${ki("seiten")}`} onFocus={() => angefasst("seiten")} value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
-          </label>
-          <label>
-            <span>Fach</span>
-            <select className="field" value={werte.fachId ?? ""} onChange={(e) => setze("fachId", e.target.value || null)}>
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>PDF aus der Dateiablage</span>
-            <select className="field" value={werte.dateiId ?? ""} onChange={(e) => setze("dateiId", e.target.value || null)}>
-              <option value="">Keine</option>
-              {pdfs.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="lit-voll">
-            <span>Notiz</span>
-            <textarea className="field" rows={2} value={werte.notiz} placeholder="gutes Kapitel zu Automaten" onChange={(e) => setze("notiz", e.target.value)} />
-          </label>
-        </div>
-        {vorschau && (
-          <p className="lit-vorschau">
-            <span className="faint">Vorschau: </span>
-            {vorschau}
-          </p>
-        )}
-        {fehler && <p className="auth-error">{fehler}</p>}
-        <div className="hub-formular-knoepfe">
-          <button type="button" className="btng" onClick={onAbbrechen}>
-            Abbrechen
-          </button>
-          <button type="submit" className="btnp" disabled={laeuft}>
-            {laeuft ? "…" : "Speichern"}
-          </button>
-        </div>
-      </form>
+            <button type="button" className="knopf leise" onClick={onAbbrechen}>
+              Abbrechen
+            </button>
+          </div>
+        </form>
+      </dialog>
     </>
   );
 }

@@ -5,7 +5,7 @@ import { SPEICHER_LIMIT_BYTES } from "@/lib/dateiablage/dateien";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { Dateiablage, type Ordner } from "@/components/dateiablage/dateiablage";
 
-export const metadata = { title: "Dateiablage · UniWars" };
+export const metadata = { title: "Dateiablage · UniVerse" };
 
 export default async function DateiablageSeite() {
   const supabase = await createClient();

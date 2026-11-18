@@ -16,6 +16,7 @@ import { farbeFuerMitglied } from "@/lib/mitglied-farbe";
 import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 import { Skelett } from "@/components/skelett";
+import { FokusZeit } from "@/components/work-station/fokus-zeit";
 
 const TYP_LABEL: Record<DetailZielTyp, string> = {
   todo: "To-Do",
@@ -253,6 +254,8 @@ export function DetailAnsicht({
               </div>
             )}
           </section>
+
+          <FokusZeit typ={daten.typ} id={zielId} />
 
           <section className="detail-abschnitt" aria-labelledby="detail-unteraufgaben">
             <div className="detail-abschnitt-kopf">

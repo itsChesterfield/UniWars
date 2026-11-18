@@ -5,6 +5,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { CALLOUTS, type CalloutTyp } from "@/components/notizen/editor-erweiterungen";
 import { zielText } from "@/lib/notizen/wikilinks";
 import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
+import { Icon as Zeichen } from "@/components/nav-icon";
 
 export type LinkZiel = { id: string; name: string; art: "notiz" | "pdf" };
 
@@ -68,14 +69,15 @@ function Knopf({
     <button
       type="button"
       title={titel}
-      aria-label={titel}
       aria-pressed={aktiv}
       disabled={deaktiviert}
       className={`wz-knopf ${aktiv ? "an" : ""} ${breit ? "breit" : ""}`}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
     >
-      {children}
+      {/* Name aus dem Text (WCAG 2.5.3): Sichtbares nur für Sehende, der Name für Screenreader */}
+      <span aria-hidden>{children}</span>
+      <span className="sr-only">{titel}</span>
     </button>
   );
 }
@@ -101,16 +103,14 @@ function Aufklapp({ titel, knopf, aktiv = false, children }: { titel: string; kn
       <button
         type="button"
         title={titel}
-        aria-label={titel}
         aria-expanded={offen}
-        className={`wz-knopf ${aktiv || offen ? "an" : ""}`}
+        className={`wz-knopf ${aktiv ? "an" : ""}`}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOffen((o) => !o)}
       >
-        {knopf}
-        <span className="wz-pfeil" aria-hidden>
-          ▾
-        </span>
+        <span aria-hidden>{knopf}</span>
+        <span className="sr-only">{titel}</span>
+        <Zeichen name="runter" groesse={12} />
       </button>
       {offen && <div className="wz-feld">{children(() => setOffen(false))}</div>}
     </div>
@@ -123,7 +123,7 @@ function Trenner() {
 
 function Icon({ d, groesse = 16 }: { d: string; groesse?: number }) {
   return (
-    <svg width={groesse} height={groesse} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width={groesse} height={groesse} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {d.split("|").map((p, i) => (
         <path key={i} d={p} />
       ))}
@@ -132,8 +132,6 @@ function Icon({ d, groesse = 16 }: { d: string; groesse?: number }) {
 }
 
 const ICONS = {
-  rueck: "M9 14 4 9l5-5|M4 9h10.5a5.5 5.5 0 0 1 0 11H11",
-  vor: "m15 14 5-5-5-5|M20 9H9.5a5.5 5.5 0 0 0 0 11H13",
   links: "M4 6h16|M4 10h10|M4 14h16|M4 18h10",
   mitte: "M4 6h16|M7 10h10|M4 14h16|M7 18h10",
   rechts: "M4 6h16|M10 10h10|M4 14h16|M10 18h10",
@@ -143,11 +141,7 @@ const ICONS = {
   check: "M4 5h5v5H4z|m5 16 1.5 1.5L9 15|M13 7.5h7|M13 16.5h7",
   einzugPlus: "M3 6h18|M11 10h10|M11 14h10|M3 18h18|m3 9 3 3-3 3",
   einzugMinus: "M3 6h18|M11 10h10|M11 14h10|M3 18h18|M7 9l-3 3 3 3",
-  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1|M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
-  tabelle: "M3.5 4.5h17v15h-17z|M3.5 9.5h17|M3.5 14.5h17|M9 4.5v15|M15 4.5v15",
-  bild: "M3.5 4.5h17v15h-17z|m3.5 16 5-5 4 4 3-3 5 5|M15.5 9a1 1 0 1 0 0-.01",
   linie: "M3 12h18",
-  zitat: "M7 7H4v5h3l-1 4|M17 7h-3v5h3l-1 4",
   code: "m8 8-4 4 4 4|m16 8 4 4-4 4|m14 5-4 14",
   radierer: "m7 21-4-4L14 6l4 4-8 8|M7 21h13|m12 8 4 4",
 };
@@ -226,28 +220,30 @@ export function Werkzeugleiste({
 
   return (
     <div className={`wz ${eingeklappt ? "wz-zu" : ""}`} role="toolbar" aria-label="Formatierung">
-      <div className="wz-reiter" role="tablist">
-        <span className="wz-schnell">
+      <div className="wz-kopf">
+        <span className="wz-gruppe">
           <Knopf titel="Rückgängig (Strg+Z)" deaktiviert={!z.kannRueck} onClick={() => c().undo().run()}>
-            <Icon d={ICONS.rueck} groesse={14} />
+            <Zeichen name="rueckgaengig" groesse={16} />
           </Knopf>
           <Knopf titel="Wiederholen (Strg+Y)" deaktiviert={!z.kannVor} onClick={() => c().redo().run()}>
-            <Icon d={ICONS.vor} groesse={14} />
+            <Zeichen name="wiederholen" groesse={16} />
           </Knopf>
         </span>
-        {reiter.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            role="tab"
-            aria-selected={!eingeklappt && tab === r.id}
-            className={`wz-reiter-knopf ${!eingeklappt && tab === r.id ? "an" : ""} ${r.id === "tabelle" ? "kontext" : ""}`}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => tabKlick(r.id)}
-          >
-            {r.name}
-          </button>
-        ))}
+        <span className="wz-reiter" role="tablist" aria-label="Registerkarten">
+          {reiter.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              role="tab"
+              aria-selected={!eingeklappt && tab === r.id}
+              className={r.id === "tabelle" ? "kontext" : undefined}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => tabKlick(r.id)}
+            >
+              {r.name}
+            </button>
+          ))}
+        </span>
         {eingeklappt && (
           <span className="wz-mini">
             <Knopf titel="Fett (Strg+B)" aktiv={z.fett} onClick={() => c().toggleBold().run()}>
@@ -264,13 +260,13 @@ export function Werkzeugleiste({
         )}
         <button
           type="button"
-          className="wz-einklappen"
+          className="knopf leise klein nur-symbol wz-einklappen"
           title={eingeklappt ? "Leiste ausklappen" : "Leiste einklappen (nur Registerkarten)"}
           aria-label={eingeklappt ? "Leiste ausklappen" : "Leiste einklappen"}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => browserWertSchreiben(EINGEKLAPPT_SCHLUESSEL, eingeklappt ? null : "1")}
         >
-          {eingeklappt ? "⌄" : "⌃"}
+          <Zeichen name={eingeklappt ? "runter" : "hoch"} groesse={16} />
         </button>
       </div>
 
@@ -346,9 +342,9 @@ export function Werkzeugleiste({
               {(zu) => (
                 <div className="wz-farben">
                   {SCHRIFTFARBEN.map((f) => (
-                    <button key={f} type="button" title={f} className="wz-farbe" style={{ background: f }} onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setColor(f).run(), zu())} />
+                    <button key={f} type="button" title={f} aria-label={`Schriftfarbe ${f}`} className="wz-farbe" style={{ "--c": f } as React.CSSProperties} onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setColor(f).run(), zu())} />
                   ))}
-                  <button type="button" className="wz-text-knopf" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().unsetColor().removeEmptyTextStyle().run(), zu())}>
+                  <button type="button" className="knopf leise klein" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().unsetColor().removeEmptyTextStyle().run(), zu())}>
                     Automatisch
                   </button>
                 </div>
@@ -359,7 +355,8 @@ export function Werkzeugleiste({
               aktiv={Boolean(z.hintergrund) || editor.isActive("highlight")}
               knopf={
                 <span className="wz-farbknopf">
-                  🖍<span className="wz-farbstrich" style={{ background: z.hintergrund ?? "#fef08a" }} />
+                  <Zeichen name="textmarker" groesse={16} />
+                  <span className="wz-farbstrich" style={{ background: z.hintergrund ?? "#fef08a" }} />
                 </span>
               }
             >
@@ -370,15 +367,16 @@ export function Werkzeugleiste({
                       key={f}
                       type="button"
                       title={f}
+                      aria-label={`Textmarker ${f}`}
                       className="wz-farbe"
-                      style={{ background: f }}
+                      style={{ "--c": f } as React.CSSProperties}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => (c().unsetHighlight().setBackgroundColor(f).run(), zu())}
                     />
                   ))}
                   <button
                     type="button"
-                    className="wz-text-knopf"
+                    className="knopf leise klein"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => (c().unsetHighlight().unsetBackgroundColor().removeEmptyTextStyle().run(), zu())}
                   >
@@ -432,13 +430,13 @@ export function Werkzeugleiste({
         <div className="wz-zeile" role="tabpanel">
           <div className="wz-gruppe" aria-label="Einfügen">
             <VerlinkenKnopf editor={editor} ziele={ziele} />
-            <Aufklapp titel="Weblink" aktiv={z.link} knopf={<Icon d={ICONS.link} />}>
+            <Aufklapp titel="Weblink" aktiv={z.link} knopf={<Zeichen name="link" groesse={16} />}>
               {(zu) => <WeblinkFeld editor={editor} zu={zu} />}
             </Aufklapp>
-            <Aufklapp titel="Tabelle einfügen" aktiv={z.tabelle} knopf={<Icon d={ICONS.tabelle} />}>
+            <Aufklapp titel="Tabelle einfügen" aktiv={z.tabelle} knopf={<Zeichen name="tabelle" groesse={16} />}>
               {(zu) => <TabellenRaster onWahl={(zeilen, spalten) => (c().insertTable({ rows: zeilen, cols: spalten, withHeaderRow: true }).run(), zu())} />}
             </Aufklapp>
-            <Aufklapp titel="Bild einfügen" knopf={<Icon d={ICONS.bild} />}>
+            <Aufklapp titel="Bild einfügen" knopf={<Zeichen name="bild" groesse={16} />}>
               {(zu) => (
                 <EingabeFeld
                   beschriftung="Bildadresse (https://…)"
@@ -453,17 +451,19 @@ export function Werkzeugleiste({
             <Knopf titel="Trennlinie" onClick={() => c().setHorizontalRule().run()}>
               <Icon d={ICONS.linie} />
             </Knopf>
-            <Aufklapp titel="Hinweisbox (Callout)" aktiv={z.callout} knopf={<span className="wz-text">💬</span>}>
+            <Aufklapp titel="Hinweisbox (Callout)" aktiv={z.callout} knopf={<Zeichen name="info" groesse={16} />}>
               {(zu) => (
                 <div className="wz-liste">
                   {(Object.keys(CALLOUTS) as CalloutTyp[]).map((t) => (
                     <button key={t} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().setCallout(t).run(), zu())}>
-                      {CALLOUTS[t].icon} {CALLOUTS[t].name}
+                      <Zeichen name={CALLOUTS[t].icon} groesse={16} />
+                      {CALLOUTS[t].name}
                     </button>
                   ))}
                   {z.callout && (
                     <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => (c().lift("callout").run(), zu())}>
-                      ✕ Box entfernen
+                      <Zeichen name="schliessen" groesse={16} />
+                      Box entfernen
                     </button>
                   )}
                 </div>
@@ -476,7 +476,7 @@ export function Werkzeugleiste({
               <span className="wz-text">{"{ }"}</span>
             </Knopf>
             <Knopf titel="Zitat" aktiv={z.absatz === "zitat"} onClick={() => absatzSetzen(editor, "zitat")}>
-              <Icon d={ICONS.zitat} />
+              <Zeichen name="zitat" groesse={16} />
             </Knopf>
           </div>
           {extra && (
@@ -512,7 +512,7 @@ export function Werkzeugleiste({
             Kopfzeile
           </Knopf>
           <Knopf breit titel="Tabelle löschen" onClick={() => c().deleteTable().run()}>
-            🗑 Tabelle
+            <Zeichen name="loeschen" groesse={16} /> Tabelle
           </Knopf>
         </div>
       )}
@@ -532,9 +532,9 @@ function EingabeFeld({ beschriftung, knopf, start = "", onFertig }: { beschriftu
     >
       <label>
         <span>{beschriftung}</span>
-        <input className="field" autoFocus value={wert} onChange={(e) => setWert(e.target.value)} />
+        <input autoFocus value={wert} onChange={(e) => setWert(e.target.value)} />
       </label>
-      <button type="submit" className="btnp">
+      <button type="submit" className="knopf haupt klein">
         {knopf}
       </button>
     </form>
@@ -561,7 +561,7 @@ function WeblinkFeld({ editor, zu }: { editor: Editor; zu: () => void }) {
         }}
       />
       {start && (
-        <button type="button" className="wz-text-knopf" onClick={() => (editor.chain().focus().extendMarkRange("link").unsetLink().run(), zu())}>
+        <button type="button" className="knopf leise klein" onClick={() => (editor.chain().focus().extendMarkRange("link").unsetLink().run(), zu())}>
           Link entfernen
         </button>
       )}
@@ -585,12 +585,12 @@ function FormelFeld({ editor, zu }: { editor: Editor; zu: () => void }) {
     >
       <label>
         <span>Formel in LaTeX, z. B. \frac{"{a}"}{"{b}"}, x^2, \sum_{"{i=1}"}^n</span>
-        <input className="field mono" autoFocus value={latex} onChange={(e) => setLatex(e.target.value)} placeholder="E = mc^2" />
+        <input autoFocus value={latex} onChange={(e) => setLatex(e.target.value)} placeholder="E = mc^2" />
       </label>
       <label className="wz-check">
         <input type="checkbox" checked={block} onChange={(e) => setBlock(e.target.checked)} /> Eigene Zeile (groß)
       </label>
-      <button type="submit" className="btnp">
+      <button type="submit" className="knopf haupt klein">
         Einfügen
       </button>
     </form>
@@ -616,7 +616,7 @@ function TabellenRaster({ onWahl }: { onWahl: (zeilen: number, spalten: number) 
           )),
         )}
       </div>
-      <span className="muted">
+      <span>
         {hover[0] + 1} Zeilen × {hover[1] + 1} Spalten
       </span>
     </div>
@@ -661,8 +661,8 @@ function VerlinkenFeld({ editor, ziele, zu }: { editor: Editor; ziele: LinkZiel[
   return (
     <div className="wz-verlinken-feld">
       <input
-        className="field"
         autoFocus
+        aria-label="Notiz oder PDF suchen"
         placeholder="Notiz oder PDF suchen …"
         value={suche}
         onChange={(e) => {
@@ -685,25 +685,27 @@ function VerlinkenFeld({ editor, ziele, zu }: { editor: Editor; ziele: LinkZiel[
         }}
       />
       <label className="wz-seite">
-        <span className="muted">Seite (bei PDFs):</span>
-        <input className="field" inputMode="numeric" value={seite} onChange={(e) => setSeite(e.target.value.replace(/\D/g, ""))} placeholder="–" />
+        <span>Seite (bei PDFs):</span>
+        <input inputMode="numeric" value={seite} onChange={(e) => setSeite(e.target.value.replace(/\D/g, ""))} placeholder="–" />
       </label>
       <ul className="wz-treffer">
         {treffer.map((t, i) => (
           <li key={`${t.art}-${t.id}`}>
             <button type="button" className={i === index ? "an" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(t.name, t.art)}>
-              <span aria-hidden>{t.art === "pdf" ? "📕" : "📝"}</span> {t.name}
+              <Zeichen name={t.art === "pdf" ? "pdf" : "notizen"} groesse={16} />
+              {t.name}
             </button>
           </li>
         ))}
         {neuAnlegen && (
           <li>
             <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(neuAnlegen, "notiz")}>
-              ＋ Neue Notiz „{neuAnlegen}“ verlinken
+              <Zeichen name="plus" groesse={16} />
+              Neue Notiz „{neuAnlegen}“ verlinken
             </button>
           </li>
         )}
-        {treffer.length === 0 && !neuAnlegen && <li className="muted">Keine Notizen oder PDFs.</li>}
+        {treffer.length === 0 && !neuAnlegen && <li className="leer">Keine Notizen oder PDFs.</li>}
       </ul>
     </div>
   );

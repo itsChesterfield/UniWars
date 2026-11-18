@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { DokumentListe } from "@/components/textverarbeitung/dokument-liste";
 
-export const metadata = { title: "Textverarbeitung · UniWars" };
+export const metadata = { title: "Textverarbeitung · UniVerse" };
 
 export default async function TextverarbeitungSeite() {
   const supabase = await createClient();
@@ -14,12 +14,7 @@ export default async function TextverarbeitungSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Textverarbeitung" />
-        <EinrichtungHinweis hub="Die Textverarbeitung" />
-      </>
-    );
+    return <Einrichtung bereich="Die Textverarbeitung" />;
   }
   if (error) throw new Error(error.message);
 

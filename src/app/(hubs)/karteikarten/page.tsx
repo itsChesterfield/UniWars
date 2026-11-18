@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { anzahlFaellig } from "@/lib/karteikarten/wiederholung";
 import { vorschlaegeBerechnen } from "@/lib/karteikarten/vorschlaege";
 import { berlinDatum, berlinUhrzeit, berlinWochentag } from "@/lib/zeit";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { StapelUebersicht, type StapelKachel } from "@/components/karteikarten/stapel-uebersicht";
 import { QuizBereich, type QuizKachel } from "@/components/quiz/quiz-bereich";
 import type { QuellOption } from "@/components/quiz/quellen-wahl";
@@ -13,7 +13,7 @@ import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const maxDuration = 300;
 
-export const metadata = { title: "Karteikarten · UniWars" };
+export const metadata = { title: "Karteikarten · UniVerse" };
 
 export default async function KarteikartenSeite() {
   const supabase = await createClient();
@@ -40,12 +40,7 @@ export default async function KarteikartenSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Karteikarten" />
-        <EinrichtungHinweis hub="Karteikarten" />
-      </>
-    );
+    return <Einrichtung bereich="Karteikarten" />;
   }
   if (error) throw new Error(error.message);
 

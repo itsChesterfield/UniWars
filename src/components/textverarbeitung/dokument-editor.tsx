@@ -10,6 +10,9 @@ import Image from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import { dokumentFachSetzen, dokumentLoeschen, dokumentSpeichern, type Dokument } from "@/app/(hubs)/textverarbeitung/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
+import type { IconName } from "@/lib/icons";
 import { BildAuswahl, bildUrl } from "@/components/hubs/bild-auswahl";
 import { OHNE_TITEL } from "@/components/textverarbeitung/dokument-liste";
 import { KiFeedbackLeiste } from "@/components/textverarbeitung/ki-feedback-leiste";
@@ -142,64 +145,64 @@ export function DokumentEditor({
 
   return (
     <div className="txt-seite">
+      <Link href="/textverarbeitung" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Alle Dokumente
+      </Link>
       <div className="txt-kopf">
-        <Link href="/textverarbeitung" className="hub-zurueck-link">
-          ← Alle Dokumente
-        </Link>
-        <div className="txt-kopf-zeile">
-          <input
-            className="notiz-titel txt-titel"
-            value={titel}
-            placeholder={OHNE_TITEL}
-            aria-label="Titel"
-            maxLength={300}
-            autoFocus={istNeu}
-            onChange={(e) => {
-              setTitel(e.target.value);
-              aendern({ titel: e.target.value });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                editor?.commands.focus("start");
-              }
-            }}
+        <input
+          className="txt-titel"
+          value={titel}
+          placeholder={OHNE_TITEL}
+          aria-label="Titel"
+          maxLength={300}
+          autoFocus={istNeu}
+          onChange={(e) => {
+            setTitel(e.target.value);
+            aendern({ titel: e.target.value });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              editor?.commands.focus("start");
+            }
+          }}
+        />
+        <div className="txt-kopf-aktionen">
+          <span className={`speicher-status ${status}`} aria-live="polite">
+            {exportiert ?? SPEICHER_TEXT[status]}
+          </span>
+          <select className="txt-fach" value={fachId ?? ""} onChange={(e) => fachAendern(e.target.value)} aria-label="Fach">
+            <option value="">Ohne Fach</option>
+            {faecher.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          <DreiPunkteMenue
+            label="Exportieren"
+            knopfText="Exportieren"
+            punkte={[
+              { label: "Als PDF (Drucken, dann „Als PDF speichern“)", onClick: () => void exportieren("pdf") },
+              { label: "Als Word (.docx)", onClick: () => void exportieren("docx") },
+            ]}
           />
-          <div className="txt-kopf-aktionen">
-            <span className={`speicher-status ${status}`} aria-live="polite">
-              {exportiert ?? SPEICHER_TEXT[status]}
-            </span>
-            <select className="field txt-fach" value={fachId ?? ""} onChange={(e) => fachAendern(e.target.value)} aria-label="Fach">
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            <ExportMenue onWahl={(art) => void exportieren(art)} />
-            <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
-          </div>
+          <DreiPunkteMenue label="Weitere Aktionen für dieses Dokument" punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
         </div>
       </div>
 
-      {editor && (
-        <Werkzeugleiste
-          editor={editor}
-          quellen={quellen}
-          onBild={() => setBildDialog(true)}
-        />
-      )}
+      {editor && <Werkzeugleiste editor={editor} quellen={quellen} onBild={() => setBildDialog(true)} />}
 
       <div className={`txt-koerper ${kiOffen && editor ? "mit-ki" : ""}`}>
-        <nav className="txt-gliederung" aria-label="Gliederung">
-          <h3>Gliederung</h3>
+        <nav className="txt-gliederung" aria-labelledby="txt-gliederung-titel">
+          <h2 id="txt-gliederung-titel">Gliederung</h2>
           {!gliederung || gliederung.length === 0 ? (
-            <p className="empty-state">Überschriften erscheinen hier automatisch.</p>
+            <p>Überschriften erscheinen hier automatisch.</p>
           ) : (
             <ul>
               {gliederung.map((g) => (
-                <li key={g.pos} style={{ paddingLeft: (g.ebene - 1) * 12 }}>
+                <li key={g.pos} style={{ "--einzug": `${(g.ebene - 1) * 12}px` } as React.CSSProperties}>
                   <button type="button" onClick={() => zuUeberschrift(g.pos)} className={`txt-gliederung-${g.ebene}`}>
                     {g.text || "(leere Überschrift)"}
                   </button>
@@ -220,16 +223,16 @@ export function DokumentEditor({
       </div>
 
       {zaehler && (
-        <div className="txt-fuss mono" aria-live="off">
+        <p className="txt-fuss" aria-live="off">
           {zaehler.auswahlZeichen > 0 && (
             <span className="txt-auswahl">
-              Auswahl: {zaehler.auswahlWoerter.toLocaleString("de-DE")} Wörter · {zaehler.auswahlZeichen.toLocaleString("de-DE")} Zeichen
+              Auswahl <span className="zahl">{zaehler.auswahlWoerter.toLocaleString("de-DE")}</span> Wörter, <span className="zahl">{zaehler.auswahlZeichen.toLocaleString("de-DE")}</span> Zeichen
             </span>
           )}
           <span>
-            {zaehler.woerter.toLocaleString("de-DE")} Wörter · {zaehler.zeichen.toLocaleString("de-DE")} Zeichen
+            <span className="zahl">{zaehler.woerter.toLocaleString("de-DE")}</span> Wörter, <span className="zahl">{zaehler.zeichen.toLocaleString("de-DE")}</span> Zeichen
           </span>
-        </div>
+        </p>
       )}
 
       {bildDialog && editor && (
@@ -242,56 +245,6 @@ export function DokumentEditor({
             track("dokument_bild_eingefuegt");
           }}
         />
-      )}
-    </div>
-  );
-}
-
-function ExportMenue({ onWahl }: { onWahl: (art: "pdf" | "docx") => void }) {
-  return (
-    <DreiPunkteMenueKnopf
-      label="Exportieren"
-      punkte={[
-        { label: "Als PDF (Drucken → „Als PDF speichern“)", onClick: () => onWahl("pdf") },
-        { label: "Als Word (.docx)", onClick: () => onWahl("docx") },
-      ]}
-    />
-  );
-}
-
-/** Wie DreiPunkteMenue, aber mit Text-Knopf. */
-function DreiPunkteMenueKnopf({ label, punkte }: { label: string; punkte: { label: string; onClick: () => void }[] }) {
-  const [offen, setOffen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOffen(false);
-    };
-    document.addEventListener("mousedown", zu);
-    return () => document.removeEventListener("mousedown", zu);
-  }, [offen]);
-  return (
-    <div className="drei-punkte" ref={ref}>
-      <button type="button" className="btng" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen((o) => !o)}>
-        {label} ▾
-      </button>
-      {offen && (
-        <div className="drei-punkte-menue" role="menu">
-          {punkte.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOffen(false);
-                p.onClick();
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
       )}
     </div>
   );
@@ -331,107 +284,136 @@ function Werkzeugleiste({ editor, quellen, onBild }: { editor: Editor; quellen: 
     else kette.setHeading({ level: Number(b.slice(1)) as 1 | 2 | 3 }).run();
   }
 
-  const knopf = (label: string, titel: string, aktiv: boolean, aktion: () => void, extra = "") => (
+  const knopf = (inhalt: React.ReactNode, titel: string, aktiv: boolean | undefined, aktion: () => void, deaktiviert = false) => (
     <button
       type="button"
       title={titel}
-      aria-label={titel}
       aria-pressed={aktiv}
-      className={`md-knopf ${aktiv ? "an" : ""} ${extra}`}
+      disabled={deaktiviert}
+      className={`wz-knopf ${aktiv ? "an" : ""}`}
       onMouseDown={(e) => e.preventDefault()}
       onClick={aktion}
     >
-      {label}
+      {/* Name aus dem Text (WCAG 2.5.3) */}
+      <span aria-hidden>{inhalt}</span>
+      <span className="sr-only">{titel}</span>
     </button>
+  );
+  const symbol = (name: IconName) => <Icon name={name} groesse={16} />;
+  const mitText = (name: IconName, text: string) => (
+    <>
+      {symbol(name)} {text}
+    </>
   );
 
   return (
-    <div className="txt-werkzeuge" role="toolbar" aria-label="Formatierung">
-      <select className="field txt-block" value={s.block} onChange={(e) => blockSetzen(e.target.value as Block)} aria-label="Absatzformat">
-        <option value="p">Absatz</option>
-        <option value="h1">Überschrift 1</option>
-        <option value="h2">Überschrift 2</option>
-        <option value="h3">Überschrift 3</option>
-      </select>
-      <span className="txt-trenner" />
-      {knopf("B", "Fett (Strg+B)", s.fett, () => editor.chain().focus().toggleBold().run(), "md-fett")}
-      {knopf("I", "Kursiv (Strg+I)", s.kursiv, () => editor.chain().focus().toggleItalic().run(), "md-kursiv")}
-      {knopf("U", "Unterstrichen (Strg+U)", s.unter, () => editor.chain().focus().toggleUnderline().run(), "md-unter")}
-      <span className="txt-trenner" />
-      {knopf("•", "Aufzählung", s.punkte, () => editor.chain().focus().toggleBulletList().run())}
-      {knopf("1.", "Nummerierung", s.nummern, () => editor.chain().focus().toggleOrderedList().run())}
-      {knopf("❝", "Zitat-Block", s.zitat, () => editor.chain().focus().toggleBlockquote().run())}
-      <span className="txt-trenner" />
-      {s.tabelle ? (
-        <>
-          {knopf("+Zeile", "Zeile darunter einfügen", false, () => editor.chain().focus().addRowAfter().run())}
-          {knopf("+Spalte", "Spalte rechts einfügen", false, () => editor.chain().focus().addColumnAfter().run())}
-          {knopf("−Zeile", "Zeile löschen", false, () => editor.chain().focus().deleteRow().run())}
-          {knopf("−Spalte", "Spalte löschen", false, () => editor.chain().focus().deleteColumn().run())}
-          {knopf("✕Tabelle", "Tabelle löschen", false, () => editor.chain().focus().deleteTable().run())}
-        </>
-      ) : (
-        knopf("▦ Tabelle", "Tabelle einfügen (3 × 3)", false, () =>
-          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
-        )
-      )}
-      {knopf("🖼 Bild", "Bild einfügen", false, onBild)}
-      <div className="drei-punkte">
-        {knopf("❞ Quelle", "Quelle zitieren (TXT-05)", quellenOffen, () => setQuellenOffen((o) => !o))}
-        {quellenOffen && (
-          <QuellenAuswahl
-            quellen={quellen}
-            onSchliessen={() => setQuellenOffen(false)}
-            onWahl={(q) => {
-              setQuellenOffen(false);
-              editor.chain().focus().insertContent(`${zitatImText(q)} `).run();
-              track("dokument_quelle_eingefuegt");
-            }}
-          />
+    <div className="wz txt-werkzeuge" role="toolbar" aria-label="Formatierung">
+      <div className="wz-zeile">
+        <select className="wz-auswahl wz-absatz" value={s.block} onChange={(e) => blockSetzen(e.target.value as Block)} aria-label="Absatzformat">
+          <option value="p">Absatz</option>
+          <option value="h1">Überschrift 1</option>
+          <option value="h2">Überschrift 2</option>
+          <option value="h3">Überschrift 3</option>
+        </select>
+        <span className="wz-trenner" />
+        {knopf(<b>F</b>, "Fett (Strg+B)", s.fett, () => editor.chain().focus().toggleBold().run())}
+        {knopf(<i>K</i>, "Kursiv (Strg+I)", s.kursiv, () => editor.chain().focus().toggleItalic().run())}
+        {knopf(<u>U</u>, "Unterstrichen (Strg+U)", s.unter, () => editor.chain().focus().toggleUnderline().run())}
+        <span className="wz-trenner" />
+        {knopf(symbol("aufzaehlung"), "Aufzählung", s.punkte, () => editor.chain().focus().toggleBulletList().run())}
+        {knopf(symbol("nummerierung"), "Nummerierung", s.nummern, () => editor.chain().focus().toggleOrderedList().run())}
+        {knopf(symbol("zitat"), "Zitat-Block", s.zitat, () => editor.chain().focus().toggleBlockquote().run())}
+        <span className="wz-trenner" />
+        {s.tabelle ? (
+          <>
+            {knopf(mitText("plus", "Zeile"), "Zeile darunter einfügen", undefined, () => editor.chain().focus().addRowAfter().run())}
+            {knopf(mitText("plus", "Spalte"), "Spalte rechts einfügen", undefined, () => editor.chain().focus().addColumnAfter().run())}
+            {knopf(mitText("minus", "Zeile"), "Zeile löschen", undefined, () => editor.chain().focus().deleteRow().run())}
+            {knopf(mitText("minus", "Spalte"), "Spalte löschen", undefined, () => editor.chain().focus().deleteColumn().run())}
+            {knopf(mitText("loeschen", "Tabelle"), "Tabelle löschen", undefined, () => editor.chain().focus().deleteTable().run())}
+          </>
+        ) : (
+          knopf(mitText("tabelle", "Tabelle"), "Tabelle einfügen (3 × 3)", undefined, () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run())
         )}
+        {knopf(mitText("bild", "Bild"), "Bild einfügen", undefined, onBild)}
+        {knopf(mitText("literatur", "Quelle"), "Quelle zitieren", quellenOffen, () => setQuellenOffen(true))}
+        <span className="wz-trenner" />
+        {knopf(symbol("rueckgaengig"), "Rückgängig (Strg+Z)", undefined, () => editor.chain().focus().undo().run(), !s.rueckgaengig)}
+        {knopf(symbol("wiederholen"), "Wiederholen (Strg+Y)", undefined, () => editor.chain().focus().redo().run(), !s.wiederholen)}
       </div>
-      <span className="txt-trenner" />
-      {knopf("↶", "Rückgängig (Strg+Z)", false, () => editor.chain().focus().undo().run(), s.rueckgaengig ? "" : "aus")}
-      {knopf("↷", "Wiederholen (Strg+Y)", false, () => editor.chain().focus().redo().run(), s.wiederholen ? "" : "aus")}
+      {quellenOffen && (
+        <QuellenAuswahl
+          quellen={quellen}
+          onSchliessen={() => setQuellenOffen(false)}
+          onWahl={(q) => {
+            setQuellenOffen(false);
+            editor.chain().focus().insertContent(`${zitatImText(q)} `).run();
+            track("dokument_quelle_eingefuegt");
+          }}
+        />
+      )}
     </div>
   );
 }
 
+/** TXT-05: Quelle aus der Literaturverwaltung zitieren */
 function QuellenAuswahl({ quellen, onWahl, onSchliessen }: { quellen: Quelle[]; onWahl: (q: Quelle) => void; onSchliessen: () => void }) {
   const [suche, setSuche] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    const zu = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) onSchliessen();
-    };
-    document.addEventListener("mousedown", zu);
-    return () => document.removeEventListener("mousedown", zu);
-  }, [onSchliessen]);
+    ref.current?.showModal();
+  }, []);
   const sichtbar = useMemo(() => {
     const q = suche.trim().toLowerCase();
     return quellen.filter((x) => !q || `${x.autoren} ${x.titel} ${x.jahr}`.toLowerCase().includes(q));
   }, [quellen, suche]);
 
   return (
-    <div className="drei-punkte-menue txt-quellen" ref={ref} role="dialog" aria-label="Quelle wählen">
+    <dialog
+      ref={ref}
+      className="formular-dialog txt-quellen"
+      aria-labelledby="txt-quellen-titel"
+      onCancel={(e) => {
+        e.preventDefault();
+        onSchliessen();
+      }}
+      onClick={(e) => {
+        if (e.target === ref.current) onSchliessen();
+      }}
+    >
+      <h2 id="txt-quellen-titel">Quelle zitieren</h2>
       {quellen.length === 0 ? (
-        <p className="empty-state" style={{ padding: 8 }}>
-          Noch keine Quellen. <Link href="/literaturverwaltung">Zur Literaturverwaltung</Link>
-        </p>
+        <Zustand
+          art="leer"
+          icon="literatur"
+          titel="Noch keine Quellen."
+          region
+          ebene={3}
+          aktion={
+            <Link href="/literaturverwaltung" className="knopf neben klein">
+              Zur Literaturverwaltung
+            </Link>
+          }
+        />
       ) : (
         <>
-          <input className="field" placeholder="Quelle suchen …" value={suche} onChange={(e) => setSuche(e.target.value)} autoFocus />
-          <div className="txt-quellen-liste">
+          <input aria-label="Quelle suchen" placeholder="Quelle suchen …" value={suche} onChange={(e) => setSuche(e.target.value)} autoFocus />
+          <ul className="txt-quellen-liste">
             {sichtbar.map((q) => (
-              <button key={q.id} type="button" onClick={() => onWahl(q)}>
-                <strong>{zitatImText(q)}</strong>
-                <span className="muted">{q.titel}</span>
-              </button>
+              <li key={q.id}>
+                <button type="button" onClick={() => onWahl(q)}>
+                  <strong>{zitatImText(q)}</strong>
+                  <span>{q.titel}</span>
+                </button>
+              </li>
             ))}
-            {sichtbar.length === 0 && <p className="empty-state" style={{ padding: 8 }}>Keine Treffer.</p>}
-          </div>
+            {sichtbar.length === 0 && <li className="leer">Keine Treffer.</li>}
+          </ul>
         </>
       )}
-    </div>
+      <button type="button" className="knopf leise" onClick={onSchliessen}>
+        Abbrechen
+      </button>
+    </dialog>
   );
 }

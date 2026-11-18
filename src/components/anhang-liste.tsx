@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { createAnhang, dateiAnhaengen, dateienZumAnhaengen, deleteAnhang, type AnhangZielTyp } from "@/app/anhang/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { track } from "@/lib/analytics";
+import Link from "next/link";
+import { Icon } from "@/components/nav-icon";
 
 type Anhang = Tables<"anhang">;
 
@@ -64,61 +66,57 @@ export function AnhangListe({
     track("anhang_geloescht", { ziel_typ: zielTyp });
   }
 
+  // Design B3: Anhänge als getönte Pillen; Link und Entfernen sind getrennte Ziele (keine Schaltfläche im Link)
   return (
-    <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+    <div className="anhang-liste">
       {anhaenge.map((a) => (
-        <a
-          key={a.id}
-          href={a.url}
-          target={a.datei_id ? undefined : "_blank"}
-          rel={a.datei_id ? undefined : "noopener noreferrer"}
-          className="tag"
-          onClick={() => track("anhang_geoeffnet", { ziel_typ: zielTyp })}
-        >
-          {a.datei_id ? "📎 " : ""}
-          {a.titel}
-          <button
-            type="button"
-            aria-label={`Anhang ${a.titel} entfernen`}
-            onClick={(e) => {
-              e.preventDefault();
-              handleDelete(a.id);
-            }}
-            style={{ marginLeft: 6, border: "none", background: "none", color: "inherit", cursor: "pointer" }}
+        <span key={a.id} className="anhang">
+          <Icon name={a.datei_id ? "anhang" : "link"} groesse={14} />
+          <a
+            href={a.url}
+            target={a.datei_id ? undefined : "_blank"}
+            rel={a.datei_id ? undefined : "noopener noreferrer"}
+            onClick={() => track("anhang_geoeffnet", { ziel_typ: zielTyp })}
           >
-            ✕
+            {a.titel}
+          </a>
+          <button type="button" className="anhang-weg" aria-label={`Anhang ${a.titel} entfernen`} onClick={() => handleDelete(a.id)}>
+            <Icon name="schliessen" groesse={14} />
           </button>
-        </a>
+        </span>
       ))}
 
-      <form onSubmit={handleSubmit} className="row" style={{ gap: 6 }}>
+      <form onSubmit={handleSubmit} className="anhang-form">
         <input
           type="text"
+          inputMode="url"
+          className="anhang-feld"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Link hinzufügen…"
-          style={{ fontSize: 12 }}
+          placeholder="Link einfügen"
+          aria-label="Link als Anhang hinzufügen"
         />
-        <button type="submit" className="unteraufgabe-add" disabled={isPending || url.trim() === ""}>
-          + Link
+        <button type="submit" className="knopf leise klein" disabled={isPending || url.trim() === ""}>
+          <Icon name="plus" groesse={16} />
+          Link
         </button>
       </form>
 
       {dateien === null ? (
-        <button type="button" className="unteraufgabe-add" onClick={dateiAuswahlOeffnen} disabled={isPending}>
-          📎 Datei aus Ablage
+        <button type="button" className="knopf leise klein" onClick={dateiAuswahlOeffnen} disabled={isPending}>
+          <Icon name="anhang" groesse={16} />
+          Datei aus der Ablage
         </button>
       ) : dateien.length === 0 ? (
-        <span className="muted" style={{ fontSize: 12 }}>
-          Noch keine Dateien in der <a href="/dateiablage">Dateiablage</a>.{" "}
-          <button type="button" className="unteraufgabe-add" onClick={() => setDateien(null)}>
+        <span className="anhang-hinweis">
+          Noch keine Dateien in der <Link href="/dateiablage">Dateiablage</Link>.
+          <button type="button" className="knopf leise klein" onClick={() => setDateien(null)}>
             OK
           </button>
         </span>
       ) : (
         <select
-          className="field"
-          style={{ width: "auto", fontSize: 12, padding: "5px 8px" }}
+          className="anhang-feld"
           autoFocus
           defaultValue=""
           aria-label="Datei aus der Dateiablage anhängen"
@@ -136,7 +134,11 @@ export function AnhangListe({
         </select>
       )}
 
-      {error && <p className="auth-error" style={{ fontSize: 12, width: "100%" }}>{error}</p>}
+      {error && (
+        <p className="formular-fehler anhang-fehler" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

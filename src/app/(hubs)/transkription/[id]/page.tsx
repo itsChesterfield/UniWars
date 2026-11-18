@@ -6,7 +6,7 @@ import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { TranskriptAnsicht } from "@/components/transkription/transkript-ansicht";
 import { absaetzeLesen, type TeilStatus } from "@/lib/transkription/transkript";
 
-export const metadata = { title: "Transkript · UniWars" };
+export const metadata = { title: "Transkript · UniVerse" };
 
 /** TRA-03 … TRA-05 und KI-04 für ein Transkript. */
 export default async function TranskriptSeite({ params }: { params: Promise<{ id: string }> }) {

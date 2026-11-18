@@ -8,12 +8,21 @@ import {
   einstellungenLesen,
   pausieren,
   restzeit,
+  klickMinuten,
+  zugMinuten,
+  kreisStand,
   startZustand,
   starten,
+  stellBereich,
   ueberspringen,
   zuruecksetzen,
   alsUhr,
   dauerText,
+  flowSetzen,
+  istAbgelaufen,
+  flowBeenden,
+  anzeigeZeit,
+  istFlow,
 } from "./work-station/timer.ts";
 import { tabelleFehlt } from "./hubs/datenbank.ts";
 
@@ -164,7 +173,7 @@ test("Fälligkeit und Berlin-Mitternacht", () => {
 test("Work Station: Einstellungen werden begrenzt", () => {
   assert.deepEqual(einstellungenLesen(null), WS_STANDARD);
   assert.deepEqual(einstellungenLesen({ fokus: 200, kurzePause: 0, langePause: "20", runden: 9, ton: false }), {
-    fokus: 90,
+    fokus: 180,
     kurzePause: 1,
     langePause: 20,
     runden: 8,
@@ -422,4 +431,82 @@ test("Whiteboard: Rahmen, Verschieben, Größe, Einlesen, Verlauf", () => {
   for (let i = 0; i < 60; i++) v = wb.merken(v, []);
   assert.equal(v.zurueck.length, 50);
   assert.equal(v.vor.length, 0);
+});
+
+test("Fokus mit Aufgabe: nach der Runde wird gefragt, ob sie erledigt ist (nicht bei Prüfungen)", () => {
+  const basis = startZustand(WS_STANDARD, "fach-1");
+  const mitAbgabe = { ...starten({ ...basis, aufgabe: { typ: "deadline" as const, id: "d1", titel: "Hausarbeit" } }, 0) };
+  const { zustand, sitzung } = abschliessen(mitAbgabe);
+  assert.equal(zustand.modus, "kurz");
+  assert.deepEqual(zustand.frage, { typ: "deadline", id: "d1", titel: "Hausarbeit" });
+  assert.equal(zustand.aufgabe?.id, "d1");
+  assert.ok(sitzung);
+
+  const mitPruefung = starten({ ...basis, aufgabe: { typ: "pruefung" as const, id: "p1", titel: "Klausur" } }, 0);
+  assert.equal(abschliessen(mitPruefung).zustand.frage ?? null, null);
+
+  // Die Pause danach behält Aufgabe und offene Frage
+  const pause = abschliessen(starten(zustand, 0)).zustand;
+  assert.equal(pause.modus, "fokus");
+  assert.equal(pause.aufgabe?.id, "d1");
+});
+
+test("Timer am Kreis ziehen: Runde = 1 Stunde, weiterziehen über 12 Uhr gibt mehr Zeit", () => {
+  const b = stellBereich("fokus");
+  assert.deepEqual([b.min, b.max, b.schritt, b.runde], [5, 180, 5, 60]);
+  // Klick: Stelle in der aktuellen Runde
+  assert.equal(klickMinuten(90, b, 25), 15);
+  assert.equal(klickMinuten(300, b, 25), 50);
+  assert.equal(klickMinuten(90, b, 100), 75);
+  assert.equal(klickMinuten(2, b, 25), 5);
+  // Ziehen über 12 Uhr hinaus: 55 → 65 statt Sprung auf 5
+  let z = zugMinuten(55, 330, 350, b);
+  z = zugMinuten(z.roh, 350, 10, b);
+  z = zugMinuten(z.roh, 10, 30, b);
+  assert.equal(z.minuten, 65);
+  // Zurück unter das Minimum bleibt am Minimum, vor über das Maximum am Maximum
+  assert.equal(zugMinuten(5, 30, 300, b).minuten, 5);
+  assert.equal(zugMinuten(180, 0, 90, b).minuten, 180);
+  // Sofort wieder zurück wirkt (roh am Rand begrenzt)
+  assert.equal(zugMinuten(zugMinuten(180, 0, 90, b).roh, 90, 60, b).minuten, 175);
+  // Punkt-Stand: 60 = volle Runde, 75 = eine Runde + ein Viertel
+  assert.deepEqual(kreisStand(60, b), { anteil: 1, volleRunden: 0 });
+  assert.deepEqual(kreisStand(75, b), { anteil: 0.25, volleRunden: 1 });
+  assert.equal(stellBereich("kurz").runde, 30);
+  assert.equal(alsUhr(90 * 60_000), "1:30:00");
+});
+
+test("Flow-Modus: zählt hoch, Pause hält an, Beenden ab 5 Minuten zählt als Runde", () => {
+  const MIN = 60_000;
+  const basis = { ...startZustand(WS_STANDARD, "f1"), aufgabe: { typ: "todo" as const, id: "t1", titel: "Lesen" } };
+  let z = flowSetzen(basis, true);
+  assert.equal(istFlow(z), true);
+  assert.equal(anzeigeZeit(z, 0), 0);
+  z = starten(z, 1_000);
+  assert.equal(anzeigeZeit(z, 1_000 + 20 * MIN), 20 * MIN);
+  // läuft nie ab
+  assert.equal(istAbgelaufen(z, 1_000 + 999 * MIN), false);
+  // Pause hält die Zeit fest, weiter zählt danach weiter
+  z = pausieren(z, 1_000 + 20 * MIN);
+  assert.equal(anzeigeZeit(z, 1_000 + 90 * MIN), 20 * MIN);
+  z = starten(z, 1_000 + 90 * MIN);
+  assert.equal(anzeigeZeit(z, 1_000 + 130 * MIN), 60 * MIN);
+  // Während es läuft, lässt sich nicht auf Timer zurückschalten
+  assert.equal(flowSetzen(z, false), z);
+  const ende = flowBeenden(z, 1_000 + 130 * MIN);
+  assert.deepEqual(ende.sitzung, { start: 1_000, minuten: 60, abgeschlossen: true });
+  assert.equal(ende.zustand.modus, "kurz");
+  assert.equal(ende.zustand.erledigteRunden, 1);
+  assert.equal(ende.zustand.frage?.id, "t1");
+  // Nach der Pause geht es wieder im Flow weiter
+  const danach = abschliessen(starten(ende.zustand, 0)).zustand;
+  assert.equal(istFlow(danach), true);
+  assert.equal(danach.dauerMs, 0);
+  // Unter 5 Minuten: nichts gespeichert, zurück auf Anfang
+  const kurz = flowBeenden(starten(flowSetzen(startZustand(), true), 0), 3 * MIN);
+  assert.equal(kurz.sitzung, null);
+  assert.equal(istFlow(kurz.zustand), true);
+  assert.equal(anzeigeZeit(kurz.zustand, 0), 0);
+  // Zurück auf festen Timer: wieder die eingestellte Dauer
+  assert.equal(flowSetzen(flowSetzen(startZustand(), true), false).dauerMs, 25 * MIN);
 });

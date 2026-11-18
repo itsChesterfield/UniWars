@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { DokumentEditor } from "@/components/textverarbeitung/dokument-editor";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
@@ -21,12 +21,7 @@ export default async function DokumentSeite({
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Textverarbeitung" />
-        <EinrichtungHinweis hub="Die Textverarbeitung" />
-      </>
-    );
+    return <Einrichtung bereich="Die Textverarbeitung" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);

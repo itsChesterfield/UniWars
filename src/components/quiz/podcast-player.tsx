@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { aktivHalten } from "@/lib/inaktivitaet";
 import Link from "next/link";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
+import { Icon } from "@/components/nav-icon";
 import { SPRECHER_NAME, type PodcastSegment } from "@/lib/ki/quiz";
 import { track } from "@/lib/analytics";
 
@@ -120,41 +121,63 @@ export function PodcastPlayer({ titel, segmente, vorlesen }: { titel: string; se
 
   return (
     <div className="pc-seite">
-      <div className="card pc-kopf">
-        <Link href="/transkription" className="faint pc-zurueck">
-          ← Transkription
-        </Link>
-        <h1 className="pc-titel">🎧 {titel}</h1>
-        <p className="muted">
-          {SPRECHER_NAME[1]} & {SPRECHER_NAME[2]} · {segmente.length} Abschnitte
-        </p>
-        {vorlesen ? (
-          <div className="pc-steuerung">
-            <button type="button" className="icon-knopf" aria-label="Zurück" disabled={aktuell === 0} onClick={() => void abspielenAb(Math.max(0, aktuell - 1))}>
-              ⏮
-            </button>
-            <button type="button" className="btnp pc-play" onClick={() => (spielt ? anhalten() : void abspielenAb(aktuell))}>
-              {laedt ? "…" : spielt ? "❚❚ Pause" : aktuell > 0 ? "▶ Weiter" : "▶ Abspielen"}
-            </button>
-            <button type="button" className="icon-knopf" aria-label="Vor" disabled={aktuell >= segmente.length - 1} onClick={() => void abspielenAb(Math.min(segmente.length - 1, aktuell + 1))}>
-              ⏭
-            </button>
-            <select className="field pc-tempo" aria-label="Tempo" value={tempo} onChange={(e) => setTempo(Number(e.target.value))}>
-              {[0.75, 1, 1.25, 1.5, 1.75, 2].map((t) => (
-                <option key={t} value={t}>
-                  {t}×
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <p className="faint">Sprachausgabe ist nicht eingerichtet – du kannst das Skript lesen.</p>
-        )}
-        <div className="pc-balken" aria-hidden>
-          <div style={{ width: `${((aktuell + (spielt ? 0.5 : 0)) / segmente.length) * 100}%` }} />
+      <Link href="/transkription" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Transkription
+      </Link>
+      <header className="seitenkopf">
+        <div>
+          <h1>{titel}</h1>
+          <p>
+            {SPRECHER_NAME[1]} und {SPRECHER_NAME[2]}, <span className="zahl">{segmente.length}</span> Abschnitte
+          </p>
         </div>
-        {fehler && <p className="auth-error">{fehler}</p>}
-      </div>
+      </header>
+      {vorlesen ? (
+        <div className="pc-steuerung">
+          <button
+            type="button"
+            className="knopf leise nur-symbol"
+            aria-label="Vorheriger Abschnitt"
+            title="Vorheriger Abschnitt"
+            disabled={aktuell === 0}
+            onClick={() => void abspielenAb(Math.max(0, aktuell - 1))}
+          >
+            <Icon name="zurueck" groesse={20} />
+          </button>
+          <button type="button" className="knopf haupt" aria-busy={laedt} onClick={() => (spielt ? anhalten() : void abspielenAb(aktuell))}>
+            <Icon name={spielt ? "pause" : "abspielen"} groesse={16} />
+            {spielt ? "Pause" : aktuell > 0 ? "Weiter" : "Abspielen"}
+          </button>
+          <button
+            type="button"
+            className="knopf leise nur-symbol"
+            aria-label="Nächster Abschnitt"
+            title="Nächster Abschnitt"
+            disabled={aktuell >= segmente.length - 1}
+            onClick={() => void abspielenAb(Math.min(segmente.length - 1, aktuell + 1))}
+          >
+            <Icon name="vor" groesse={20} />
+          </button>
+          <select className="pc-tempo" aria-label="Tempo" value={tempo} onChange={(e) => setTempo(Number(e.target.value))}>
+            {[0.75, 1, 1.25, 1.5, 1.75, 2].map((t) => (
+              <option key={t} value={t}>
+                {t.toLocaleString("de-DE")}×
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <p className="qz-hinweis">Die Sprachausgabe ist nicht eingerichtet. Du kannst das Skript lesen.</p>
+      )}
+      <span className="balkenf" aria-hidden>
+        <i style={{ width: `${((aktuell + (spielt ? 0.5 : 0)) / segmente.length) * 100}%` }} />
+      </span>
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
 
       <ol className="pc-skript" ref={liste}>
         {segmente.map((s, i) => (

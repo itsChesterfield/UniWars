@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { praesentationFachSetzen, praesentationLoeschen, praesentationSpeichern } from "@/app/(hubs)/praesentationen/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
 import { BildAuswahl } from "@/components/hubs/bild-auswahl";
 import { FolieAnsicht } from "@/components/praesentationen/folie-ansicht";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
@@ -47,7 +48,6 @@ export function PraesentationsEditor({
   const [design, setDesign] = useState(startDesign);
   const [folien, setFolien] = useState<Folie[]>(startFolien.length ? startFolien : [neueFolie("TITEL", startTitel)]);
   const [aktivId, setAktivId] = useState(folien[0].id);
-  const [layoutWahl, setLayoutWahl] = useState(false);
   const [kontext, setKontext] = useState<{ index: number; x: number; y: number } | null>(null);
   const [ziehen, setZiehen] = useState<number | null>(null);
   const [ziel, setZiel] = useState<number | null>(null);
@@ -72,7 +72,6 @@ export function PraesentationsEditor({
 
   // PRÄ-03: Folien verwalten
   function hinzufuegen(layout: Layout) {
-    setLayoutWahl(false);
     if (folien.length >= MAX_FOLIEN) return;
     const neu = neueFolie(layout);
     const liste = [...folien];
@@ -125,87 +124,87 @@ export function PraesentationsEditor({
 
   return (
     <div className="prae-seite">
+      <Link href="/praesentationen" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Alle Präsentationen
+      </Link>
       <div className="txt-kopf">
-        <Link href="/praesentationen" className="hub-zurueck-link">
-          ← Alle Präsentationen
-        </Link>
-        <div className="txt-kopf-zeile">
-          <input
-            className="notiz-titel txt-titel"
-            value={titel}
-            aria-label="Name der Präsentation"
-            maxLength={200}
-            autoFocus={istNeu}
-            onFocus={(e) => {
-              if (istNeu) e.target.select();
-            }}
+        <input
+          className="txt-titel"
+          value={titel}
+          aria-label="Name der Präsentation"
+          maxLength={200}
+          autoFocus={istNeu}
+          onFocus={(e) => {
+            if (istNeu) e.target.select();
+          }}
+          onChange={(e) => {
+            setTitel(e.target.value);
+            aendern({ titel: e.target.value });
+          }}
+        />
+        <div className="txt-kopf-aktionen">
+          <span className={`speicher-status ${status}`} aria-live="polite">
+            {SPEICHER_TEXT[status]}
+          </span>
+          <select
+            className="txt-fach"
+            aria-label="Fach"
+            value={fachId ?? ""}
             onChange={(e) => {
-              setTitel(e.target.value);
-              aendern({ titel: e.target.value });
+              setFachId(e.target.value || null);
+              praesentationFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "praesentation_fach" }));
             }}
-          />
-          <div className="txt-kopf-aktionen">
-            <span className={`speicher-status ${status}`} aria-live="polite">
-              {SPEICHER_TEXT[status]}
-            </span>
-            <select
-              className="field txt-fach"
-              aria-label="Fach"
-              value={fachId ?? ""}
-              onChange={(e) => {
-                setFachId(e.target.value || null);
-                praesentationFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "praesentation_fach" }));
-              }}
-            >
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            {/* PRÄ-05 */}
-            <select
-              className="field txt-fach"
-              aria-label="Design"
-              value={design}
-              onChange={(e) => {
-                const d = e.target.value as Design;
-                setDesign(d);
-                aendern({ design: d });
-                track("praesentation_design", { design: d });
-              }}
-            >
-              {DESIGNS.map((d) => (
-                <option key={d.wert} value={d.wert}>
-                  Design: {d.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btnp"
-              onClick={() => {
-                setPraesentieren(0);
-                track("praesentation_gestartet", { folien: folien.length });
-              }}
-            >
-              ▶ Präsentieren
-            </button>
-            <DreiPunkteMenue
-              label="Exportieren und mehr"
-              punkte={[
-                {
-                  label: "Als PDF exportieren (Drucken)",
-                  onClick: () => {
-                    track("praesentation_exportiert", { format: "pdf" });
-                    window.print();
-                  },
+          >
+            <option value="">Ohne Fach</option>
+            {faecher.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          {/* PRÄ-05 */}
+          <select
+            className="txt-fach"
+            aria-label="Design"
+            value={design}
+            onChange={(e) => {
+              const d = e.target.value as Design;
+              setDesign(d);
+              aendern({ design: d });
+              track("praesentation_design", { design: d });
+            }}
+          >
+            {DESIGNS.map((d) => (
+              <option key={d.wert} value={d.wert}>
+                Design: {d.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="knopf haupt klein"
+            onClick={() => {
+              setPraesentieren(0);
+              track("praesentation_gestartet", { folien: folien.length });
+            }}
+          >
+            <Icon name="abspielen" groesse={16} />
+            Präsentieren
+          </button>
+          <DreiPunkteMenue
+            label="Exportieren und mehr"
+            punkte={[
+              {
+                label: "Als PDF exportieren (Drucken)",
+                onClick: () => {
+                  track("praesentation_exportiert", { format: "pdf" });
+                  window.print();
                 },
-                { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
-              ]}
-            />
-          </div>
+              },
+              { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -239,12 +238,13 @@ export function PraesentationsEditor({
                 }}
                 className={`${f.id === aktiv.id ? "aktiv" : ""} ${ziel === i && ziehen !== i ? "ziel" : ""}`}
               >
-                <span className="prae-nummer">{i + 1}</span>
+                <span className="prae-nummer" aria-hidden>
+                  {i + 1}
+                </span>
                 <button
                   type="button"
                   className="prae-miniatur"
-                  aria-label={`Folie ${i + 1}${f.titel ? `: ${f.titel}` : ""}`}
-                  aria-current={f.id === aktiv.id}
+                  aria-current={f.id === aktiv.id ? "true" : undefined}
                   onClick={() => setAktivId(f.id)}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -252,25 +252,24 @@ export function PraesentationsEditor({
                     setKontext({ index: i, x: e.clientX, y: e.clientY });
                   }}
                 >
-                  <FolieAnsicht folie={f} design={design} />
+                  {/* Name aus Nummer und Titel, die Vorschau ist nur zum Ansehen (WCAG 2.5.3) */}
+                  <span className="sr-only">
+                    Folie {i + 1}
+                    {f.titel ? `: ${f.titel}` : ""}
+                  </span>
+                  <span aria-hidden>
+                    <FolieAnsicht folie={f} design={design} />
+                  </span>
                 </button>
               </li>
             ))}
           </ol>
           <div className="prae-neu">
-            <button type="button" className="btng" onClick={() => setLayoutWahl((o) => !o)} aria-expanded={layoutWahl}>
-              + Folie
-            </button>
-            {layoutWahl && (
-              <div className="drei-punkte-menue prae-layouts" role="menu">
-                {LAYOUTS.map((l) => (
-                  <button key={l.wert} type="button" role="menuitem" onClick={() => hinzufuegen(l.wert)}>
-                    <strong>{l.name}</strong>
-                    <span className="muted">{l.beschreibung}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <DreiPunkteMenue
+              label="Neue Folie"
+              knopfText="Neue Folie"
+              punkte={LAYOUTS.map((l) => ({ label: `${l.name}: ${l.beschreibung}`, onClick: () => hinzufuegen(l.wert) }))}
+            />
           </div>
         </aside>
 
@@ -285,10 +284,10 @@ export function PraesentationsEditor({
             onBildWaehlen={() => setBildFuer(aktiv.id)}
           />
           <div className="prae-buehne-leiste">
-            <label className="row" style={{ gap: 6 }}>
-              <span className="muted">Layout:</span>
+            <label className="prae-layout">
+              Layout
               <select
-                className="field txt-fach"
+                className="txt-fach"
                 value={aktiv.layout}
                 onChange={(e) => folieAendern({ layout: e.target.value as Layout })}
               >
@@ -299,13 +298,15 @@ export function PraesentationsEditor({
                 ))}
               </select>
             </label>
-            <span className="faint">
-              Folie {aktivIndex + 1} von {folien.length}
+            <span className="prae-stand">
+              Folie <span className="zahl">{aktivIndex + 1}</span> von <span className="zahl">{folien.length}</span>
             </span>
-            <button type="button" className="btng" onClick={() => folieDuplizieren(aktivIndex)}>
+            <button type="button" className="knopf leise klein" onClick={() => folieDuplizieren(aktivIndex)}>
+              <Icon name="kopieren" groesse={16} />
               Duplizieren
             </button>
-            <button type="button" className="btng" onClick={() => folieLoeschen(aktivIndex)} disabled={folien.length <= 1}>
+            <button type="button" className="knopf gefahr klein" onClick={() => folieLoeschen(aktivIndex)} disabled={folien.length <= 1}>
+              <Icon name="loeschen" groesse={16} />
               Löschen
             </button>
           </div>
@@ -396,6 +397,7 @@ function Vollbild({ folien, design, start, onEnde }: { folien: Folie[]; design: 
     <div
       ref={ref}
       className="prae-vollbild"
+      data-theme="nacht"
       data-design={design}
       tabIndex={-1}
       role="dialog"
@@ -408,10 +410,10 @@ function Vollbild({ folien, design, start, onEnde }: { folien: Folie[]; design: 
       </div>
       <div className="prae-vollbild-info" onClick={(e) => e.stopPropagation()}>
         <span>
-          {index + 1} / {folien.length}
+          {index + 1} von {folien.length}
         </span>
-        <button type="button" onClick={beenden}>
-          Esc · Beenden
+        <button type="button" className="knopf leise klein" onClick={beenden}>
+          Beenden (Esc)
         </button>
       </div>
     </div>

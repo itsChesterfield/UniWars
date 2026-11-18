@@ -49,7 +49,7 @@ function einmalLaden(url: URL, opt: Required<Optionen>, abbruch: AbortSignal): P
       {
         method: "GET",
         headers: {
-          "user-agent": "Mozilla/5.0 (compatible; UniWars-Dateiablage/1.0)",
+          "user-agent": "Mozilla/5.0 (compatible; UniVerse-Dateiablage/1.0)",
           accept: "application/pdf,image/*,audio/*,application/*;q=0.9,*/*;q=0.5",
           "accept-encoding": "identity",
         },

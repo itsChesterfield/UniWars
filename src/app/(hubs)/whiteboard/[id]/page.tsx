@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { elementeLesen } from "@/lib/whiteboard/elemente";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { WhiteboardEditor } from "@/components/whiteboard/whiteboard-editor";
 
 export default async function WhiteboardEditorSeite({ params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +14,7 @@ export default async function WhiteboardEditorSeite({ params }: { params: Promis
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Whiteboard" />
-        <EinrichtungHinweis hub="Das Whiteboard" />
-      </>
-    );
+    return <Einrichtung bereich="Das Whiteboard" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/nav-icon";
 import { falscheAlsKarten, freiBewerten, quizSchwaechenErweitern, versuchSpeichern } from "@/app/(hubs)/karteikarten/quiz-actions";
 import { alsKarte, bewerten, schwaechen, TYP_NAME, type Antwort, type Bewertung, type QuizFrage, type VersuchAntwort } from "@/lib/ki/quiz";
 import type { QuellInfo } from "@/lib/ki/quiz-server";
@@ -78,62 +79,71 @@ export function QuizSpielen({
 
   const typen = [...new Set(fragen.map((f) => f.typ))];
   return (
-    <div className="card qz-start">
-      <h1 className="qz-start-titel">🎯 {quiz.titel}</h1>
-      <p className="muted">
-        {fragen.length} Fragen · {typen.map((t) => TYP_NAME[t]).join(", ")}
-        {verlauf.length > 0 && ` · ${verlauf.length} ${verlauf.length === 1 ? "Durchgang" : "Durchgänge"}`}
-      </p>
-      {quiz.quellen.length > 0 && <p className="faint qz-klein">Aus: {quiz.quellen.map((q) => q.titel).join(", ")}</p>}
-      <div className="qz-start-knoepfe">
-        <button type="button" className="btnp" onClick={() => starten("alle")}>
-          ▶ Alle Fragen
-        </button>
-        <button type="button" className="btng" disabled={!schwach.fragen.length} onClick={() => starten("schwaechen")}>
-          Schwächen üben ({schwach.fragen.length})
-        </button>
-        <button
-          type="button"
-          className="btng"
-          disabled={!schwach.themen.length || erweitern.laeuft}
-          title="Neue Fragen zu den Themen, bei denen du Fehler gemacht hast"
-          onClick={() => {
-            setErweitern({ laeuft: true, fehler: null });
-            quizSchwaechenErweitern(quiz.id)
-              .then((a) => {
-                if (!a.ok) return setErweitern({ laeuft: false, fehler: a.fehler });
-                setFragen((f) => [...f, ...a.daten.neu]);
-                setErweitern({ laeuft: false, fehler: null });
-                setRunde({ modus: "alle", fragen: a.daten.neu });
-                track("quiz_schwaechen_erweitert", { anzahl: a.daten.neu.length });
-              })
-              .catch((err) => {
-                fehlerMelden(err, { ort: "quiz_erweitern" });
-                setErweitern({ laeuft: false, fehler: "Das hat nicht geklappt." });
-              });
-          }}
-        >
-          {erweitern.laeuft ? "Erstelle neue Fragen …" : "✨ Neue Fragen zu meinen Schwächen"}
-        </button>
-      </div>
-      {schwach.themen.length > 0 && (
-        <p className="qz-klein">
-          <span className="muted">Daran solltest du arbeiten:</span>{" "}
-          {schwach.themen.map((t) => (
-            <span key={t} className="tag qz-thema">
-              {t}
-            </span>
-          ))}
-        </p>
-      )}
-      {erweitern.fehler && <p className="auth-error">{erweitern.fehler}</p>}
-      <p className="faint qz-klein">
-        Tipp: Bei einer Frage nicht weiter? <kbd>Strg</kbd> + <kbd>J</kbd> – UniVerse Studio erklärt sie dir.
-      </p>
-      <Link href="/karteikarten" className="btng qz-zurueck">
-        ← Karteikarten
+    <>
+      <Link href="/karteikarten" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Karteikarten
       </Link>
-    </div>
+      <header className="seitenkopf">
+        <div>
+          <h1>{quiz.titel}</h1>
+          <p>
+            {fragen.length} Fragen: {typen.map((t) => TYP_NAME[t]).join(", ")}
+            {verlauf.length > 0 && `. ${verlauf.length} ${verlauf.length === 1 ? "Durchgang" : "Durchgänge"}`}
+          </p>
+        </div>
+      </header>
+      <section className="qz-start">
+        {quiz.quellen.length > 0 && <p className="qz-hinweis">Aus: {quiz.quellen.map((q) => q.titel).join(", ")}</p>}
+        <div className="qz-knoepfe">
+          <button type="button" className="knopf haupt" onClick={() => starten("alle")}>
+            <Icon name="abspielen" groesse={16} />
+            Alle Fragen
+          </button>
+          <button type="button" className="knopf neben" disabled={!schwach.fragen.length} onClick={() => starten("schwaechen")}>
+            Schwächen üben <span className="zahl">{schwach.fragen.length}</span>
+          </button>
+          <button
+            type="button"
+            className="knopf leise"
+            disabled={!schwach.themen.length || erweitern.laeuft}
+            aria-busy={erweitern.laeuft}
+            title="Neue Fragen zu den Themen, bei denen du Fehler gemacht hast"
+            onClick={() => {
+              setErweitern({ laeuft: true, fehler: null });
+              quizSchwaechenErweitern(quiz.id)
+                .then((a) => {
+                  if (!a.ok) return setErweitern({ laeuft: false, fehler: a.fehler });
+                  setFragen((f) => [...f, ...a.daten.neu]);
+                  setErweitern({ laeuft: false, fehler: null });
+                  setRunde({ modus: "alle", fragen: a.daten.neu });
+                  track("quiz_schwaechen_erweitert", { anzahl: a.daten.neu.length });
+                })
+                .catch((err) => {
+                  fehlerMelden(err, { ort: "quiz_erweitern" });
+                  setErweitern({ laeuft: false, fehler: "Das hat nicht geklappt." });
+                });
+            }}
+          >
+            <Icon name="studio" groesse={16} />
+            {erweitern.laeuft ? "Studio schreibt Fragen" : "Neue Fragen zu meinen Schwächen"}
+          </button>
+        </div>
+        {schwach.themen.length > 0 && (
+          <p>
+            Daran solltest du arbeiten: <strong>{schwach.themen.join(", ")}</strong>
+          </p>
+        )}
+        {erweitern.fehler && (
+          <p className="formular-fehler" role="alert">
+            {erweitern.fehler}
+          </p>
+        )}
+        <p className="qz-hinweis">
+          Bei einer Frage nicht weiter? <kbd>Strg</kbd> + <kbd>J</kbd>, dann erklärt sie dir UniVerse Studio.
+        </p>
+      </section>
+    </>
   );
 }
 
@@ -231,28 +241,33 @@ function Durchgang({
   const beantwortet = antwort !== null && !(typeof antwort === "string" && !antwort.trim());
 
   return (
-    <div className="card qz-frage-karte">
-      <div className="qz-fortschritt" aria-label={`Frage ${i + 1} von ${fragen.length}`}>
-        <div style={{ width: `${(i / fragen.length) * 100}%` }} />
-      </div>
-      <div className="qz-frage-kopf muted">
-        <span>
-          Frage {i + 1} / {fragen.length}
+    <section className="qz-frage-karte" aria-labelledby="qz-frage">
+      <div className="qz-frage-kopf">
+        <span className="zahl">
+          {i + 1} / {fragen.length}
         </span>
-        <span className="tag">{TYP_NAME[frage.typ]}</span>
+        <span>{TYP_NAME[frage.typ]}</span>
       </div>
-      <h2 className="qz-frage">{frage.typ === "wf" ? `Wahr oder falsch? ${frage.frage}` : frage.frage}</h2>
+      <span className="balkenf" role="progressbar" aria-label="Fortschritt im Quiz" aria-valuemin={0} aria-valuemax={fragen.length} aria-valuenow={i}>
+        <i style={{ width: `${(i / fragen.length) * 100}%` }} />
+      </span>
+      <h1 id="qz-frage" className="qz-frage">
+        {frage.typ === "wf" ? `Wahr oder falsch? ${frage.frage}` : frage.frage}
+      </h1>
 
       <Eingabe frage={frage} antwort={antwort} setAntwort={setAntwort} gesperrt={!!aktuell} />
 
       {aktuell && (
         <div className={`qz-feedback ${aktuell.richtig ? "richtig" : aktuell.punkte > 0 ? "teils" : "falsch"}`} role="status">
-          <strong>{aktuell.richtig ? "✅ Richtig!" : aktuell.punkte > 0 ? "🟡 Teilweise richtig" : "❌ Nicht ganz"}</strong>
+          <strong>
+            <Icon name={aktuell.richtig ? "haken" : aktuell.punkte > 0 ? "warnung" : "schliessen"} groesse={16} />
+            {aktuell.richtig ? "Richtig." : aktuell.punkte > 0 ? "Teilweise richtig." : "Nicht ganz."}
+          </strong>
           {!aktuell.richtig && <p>{aktuell.feedback}</p>}
           {aktuell.richtig && frage.typ === "frei" && <p>{aktuell.feedback}</p>}
           {frage.typ === "frei" && (
             <p>
-              <span className="muted">Musterlösung:</span> {frage.musterloesung}
+              <strong>Musterlösung:</strong> {frage.musterloesung}
             </p>
           )}
           {frage.erklaerung && (
@@ -267,10 +282,11 @@ function Durchgang({
           {quelle && (
             <button
               type="button"
-              className="lr-beleg-knopf"
+              className="knopf leise klein"
               onClick={() => inZweiterAnsichtOeffnen(quelle.art === "pdf" ? `/pdf-reader/${quelle.id}${beleg?.[2] ? `?seite=${beleg[2]}` : ""}` : `/notizen?id=${quelle.id}`, "rechts")}
             >
-              📖 {quelle.titel}
+              <Icon name={quelle.art === "pdf" ? "pdf" : "notizen"} groesse={16} />
+              {quelle.titel}
               {beleg?.[2] ? `, S. ${beleg[2]}` : ""} öffnen
             </button>
           )}
@@ -279,14 +295,17 @@ function Durchgang({
 
       <div className="qz-frage-knoepfe">
         {aktuell ? (
-          <button type="button" className="btnp" onClick={weiter} autoFocus>
-            {i + 1 < fragen.length ? "Weiter →" : "Ergebnis ansehen"}
+          <button type="button" className="knopf haupt" onClick={weiter} autoFocus>
+            {i + 1 < fragen.length ? "Weiter" : "Ergebnis ansehen"}
           </button>
         ) : (
           <>
+            <button type="button" className="knopf haupt" aria-busy={pruefe} disabled={!beantwortet || pruefe} onClick={() => void pruefen()}>
+              {pruefe ? "Studio bewertet" : "Prüfen"}
+            </button>
             <button
               type="button"
-              className="btng"
+              className="knopf leise"
               onClick={() => {
                 setAntwort(frage.typ === "zuordnen" ? [] : frage.typ === "mc" || frage.typ === "wf" ? -1 : "");
                 const b: Bewertung = { punkte: 0, richtig: false, feedback: "Übersprungen." };
@@ -296,13 +315,10 @@ function Durchgang({
             >
               Weiß ich nicht
             </button>
-            <button type="button" className="btnp" disabled={!beantwortet || pruefe} onClick={() => void pruefen()}>
-              {pruefe ? "KI bewertet …" : "Prüfen"}
-            </button>
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -319,10 +335,11 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
               key={j}
               type="button"
               disabled={gesperrt}
+              aria-pressed={antwort === j}
               className={`qz-option ${antwort === j ? "gewaehlt" : ""} ${gesperrt && j === frage.richtig ? "richtig" : ""} ${gesperrt && antwort === j && j !== frage.richtig ? "falsch" : ""}`}
               onClick={() => setAntwort(j)}
             >
-              <span className="qz-option-nr">{j + 1}</span> {o}
+              <span className="qz-option-nr zahl">{j + 1}</span> {o}
             </button>
           ))}
         </div>
@@ -335,10 +352,12 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
               key={String(w)}
               type="button"
               disabled={gesperrt}
+              aria-pressed={antwort === w}
               className={`qz-option ${antwort === w ? "gewaehlt" : ""} ${gesperrt && w === frage.richtig ? "richtig" : ""} ${gesperrt && antwort === w && w !== frage.richtig ? "falsch" : ""}`}
               onClick={() => setAntwort(w)}
             >
-              {w ? "✓ Wahr" : "✗ Falsch"}
+              <Icon name={w ? "haken" : "schliessen"} groesse={16} />
+              {w ? "Wahr" : "Falsch"}
             </button>
           ))}
         </div>
@@ -346,7 +365,7 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
     case "luecke":
       return (
         <input
-          className="field qz-text"
+          className="qz-text"
           placeholder="Was gehört in die Lücke?"
           value={typeof antwort === "string" ? antwort : ""}
           disabled={gesperrt}
@@ -357,7 +376,7 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
     case "frei":
       return (
         <textarea
-          className="field qz-text qz-frei"
+          className="qz-text"
           rows={5}
           placeholder="Antworte in eigenen Worten – die KI bewertet den Inhalt (Strg+Enter zum Prüfen)."
           value={typeof antwort === "string" ? antwort : ""}
@@ -367,7 +386,7 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
-              (e.currentTarget.closest(".qz-frage-karte")?.querySelector(".qz-frage-knoepfe .btnp") as HTMLButtonElement | null)?.click();
+              (e.currentTarget.closest(".qz-frage-karte")?.querySelector(".qz-frage-knoepfe .knopf.haupt") as HTMLButtonElement | null)?.click();
             }
           }}
         />
@@ -380,7 +399,6 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
             <label key={j} className={`qz-paar ${gesperrt ? (wahl[j] === j ? "richtig" : "falsch") : ""}`}>
               <span>{p.links}</span>
               <select
-                className="field"
                 disabled={gesperrt}
                 value={wahl[j] ?? ""}
                 onChange={(e) => {
@@ -396,7 +414,7 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
                   </option>
                 ))}
               </select>
-              {gesperrt && wahl[j] !== j && <small className="faint">→ {p.rechts}</small>}
+              {gesperrt && wahl[j] !== j && <small>richtig: {p.rechts}</small>}
             </label>
           ))}
         </div>
@@ -426,26 +444,31 @@ function Ergebnisseite({
   const [stapel, setStapel] = useState<{ id: string | null; laeuft: boolean; fehler: string | null }>({ id: null, laeuft: false, fehler: null });
 
   return (
-    <div className="card qz-ergebnis">
+    <section className="qz-ergebnis">
       <div className="qz-ergebnis-kreis" style={{ ["--p" as string]: `${prozent}%` }}>
-        <span>{prozent}%</span>
+        <span className="zahl">{prozent} %</span>
       </div>
-      <h2>{prozent >= 90 ? "Stark! 🎉" : prozent >= 70 ? "Gut gemacht! 👍" : prozent >= 50 ? "Solide – da geht noch was." : "Dranbleiben – Übung macht's."}</h2>
-      <p className="muted">
-        {Math.round(punkte * 10) / 10} von {ergebnisse.length} Punkten
+      <h1>{prozent >= 90 ? "Stark." : prozent >= 70 ? "Gut gemacht." : prozent >= 50 ? "Solide, da geht noch was." : "Dranbleiben, Übung macht's."}</h1>
+      <p>
+        <span className="zahl">{(Math.round(punkte * 10) / 10).toLocaleString("de-DE")}</span> von <span className="zahl">{ergebnisse.length}</span> Punkten
       </p>
 
       {falsche.length > 0 && (
         <>
-          <h3 className="qz-ergebnis-titel">Noch nicht sicher ({falsche.length})</h3>
-          <ul className="qz-falsch-liste">
+          <div className="abschnitt-kopf">
+            <h2 className="abschnitt-titel">Noch nicht sicher</h2>
+            <span className="abschnitt-info">{falsche.length}</span>
+          </div>
+          <ul className="entry-list">
             {falsche.map((e) => {
               const f = fragen.find((x) => x.id === e.frageId);
               if (!f) return null;
               return (
-                <li key={e.frageId}>
-                  <strong>{f.frage}</strong>
-                  <span className="muted">{alsKarte(f).rueckseite.split("\n\n")[0]}</span>
+                <li key={e.frageId} className="entry-row">
+                  <div className="entry-info">
+                    <span className="qz-falsch-frage">{f.frage}</span>
+                    <span className="qz-hinweis">{alsKarte(f).rueckseite.split("\n\n")[0]}</span>
+                  </div>
                 </li>
               );
             })}
@@ -453,16 +476,18 @@ function Ergebnisseite({
         </>
       )}
 
-      <div className="qz-start-knoepfe">
+      <div className="qz-knoepfe">
         {falsche.length > 0 &&
           (stapel.id ? (
-            <Link href={`/karteikarten/${stapel.id}/lernen`} className="btnp">
-              🗂️ Karteikarten lernen
+            <Link href={`/karteikarten/${stapel.id}/lernen`} className="knopf haupt">
+              <Icon name="karteikarten" groesse={16} />
+              Karteikarten lernen
             </Link>
           ) : (
             <button
               type="button"
-              className="btnp"
+              className="knopf haupt"
+              aria-busy={stapel.laeuft}
               disabled={stapel.laeuft}
               onClick={() => {
                 setStapel({ id: null, laeuft: true, fehler: null });
@@ -474,22 +499,27 @@ function Ergebnisseite({
                   .catch(() => setStapel({ id: null, laeuft: false, fehler: "Das hat nicht geklappt." }));
               }}
             >
-              🗂️ Falsche als Karteikarten speichern
+              <Icon name="karteikarten" groesse={16} />
+              Falsche als Karteikarten speichern
             </button>
           ))}
         {anzahlSchwaechen > 0 && (
-          <button type="button" className="btng" onClick={() => onNochmal("schwaechen")}>
-            Schwächen üben ({anzahlSchwaechen})
+          <button type="button" className="knopf neben" onClick={() => onNochmal("schwaechen")}>
+            Schwächen üben <span className="zahl">{anzahlSchwaechen}</span>
           </button>
         )}
-        <button type="button" className="btng" onClick={() => onNochmal("alle")}>
+        <button type="button" className="knopf leise" onClick={() => onNochmal("alle")}>
           Nochmal alle
         </button>
-        <button type="button" className="btng" onClick={onZurueck}>
+        <button type="button" className="knopf leise" onClick={onZurueck}>
           Übersicht
         </button>
       </div>
-      {stapel.fehler && <p className="auth-error">{stapel.fehler}</p>}
-    </div>
+      {stapel.fehler && (
+        <p className="formular-fehler" role="alert">
+          {stapel.fehler}
+        </p>
+      )}
+    </section>
   );
 }

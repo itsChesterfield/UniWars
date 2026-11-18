@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { TabellenListe } from "@/components/tabellen/tabellen-liste";
 
-export const metadata = { title: "Tabellen · UniWars" };
+export const metadata = { title: "Tabellen · UniVerse" };
 
 export default async function TabellenSeite() {
   const supabase = await createClient();
@@ -14,12 +14,7 @@ export default async function TabellenSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Tabellen" />
-        <EinrichtungHinweis hub="Tabellen" />
-      </>
-    );
+    return <Einrichtung bereich="Tabellen" />;
   }
   if (error) throw new Error(error.message);
 

@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { PraesentationsListe } from "@/components/praesentationen/praesentations-liste";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Präsentationen · UniWars" };
+export const metadata = { title: "Präsentationen · UniVerse" };
 
 export default async function PraesentationenSeite() {
   const supabase = await createClient();
@@ -15,12 +15,7 @@ export default async function PraesentationenSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Präsentationen" />
-        <EinrichtungHinweis hub="Präsentationen" />
-      </>
-    );
+    return <Einrichtung bereich="Präsentationen" />;
   }
   if (error) throw new Error(error.message);
 

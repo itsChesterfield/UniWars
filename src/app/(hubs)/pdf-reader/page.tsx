@@ -5,7 +5,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfListe, type PdfEintrag, type PdfFach } from "@/components/pdf-reader/pdf-liste";
 
-export const metadata = { title: "PDF Reader · UniWars" };
+export const metadata = { title: "PDF Reader · UniVerse" };
 
 /** PDF-01: Liste aller PDFs aus der Dateiablage. */
 export default async function PdfReaderSeite() {
@@ -52,15 +52,17 @@ export default async function PdfReaderSeite() {
 
   return (
     <>
-      <HubKopf
-        titel="PDF Reader"
-        untertitel="Skripte und Folien lesen und in Ordnern sortieren. PDFs einfach vom Computer hierher ziehen."
-        aktionen={
-          <Link href="/dateiablage" className="btng">
+      <header className="seitenkopf">
+        <div>
+          <h1>PDF Reader</h1>
+          <p>Skripte und Folien lesen und in Ordnern sortieren. PDFs einfach vom Computer hierher ziehen.</p>
+        </div>
+        <div className="rechts">
+          <Link href="/dateiablage" className="knopf leise">
             Zur Dateiablage
           </Link>
-        }
-      />
+        </div>
+      </header>
       <Suspense fallback={null}>
         <PdfListe startPdfs={eintraege} startOrdner={ordner ?? []} faecher={fachOrdner} />
       </Suspense>

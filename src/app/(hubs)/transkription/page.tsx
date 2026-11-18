@@ -13,7 +13,7 @@ import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const maxDuration = 300;
 
-export const metadata = { title: "Transkription · UniWars" };
+export const metadata = { title: "Transkription · UniVerse" };
 
 /** Transkriptions-Hub: aufnehmen (TRA-01), Datei wählen (TRA-02), Liste der Transkripte. */
 export default async function TranskriptionSeite({

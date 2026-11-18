@@ -997,6 +997,8 @@ export type Database = {
       }
       lern_session: {
         Row: {
+          aufgabe_id: string | null
+          aufgabe_typ: string | null
           dauer_minuten: number
           fach_id: string | null
           id: string
@@ -1004,6 +1006,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aufgabe_id?: string | null
+          aufgabe_typ?: string | null
           dauer_minuten: number
           fach_id?: string | null
           id?: string
@@ -1011,6 +1015,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aufgabe_id?: string | null
+          aufgabe_typ?: string | null
           dauer_minuten?: number
           fach_id?: string | null
           id?: string
@@ -2245,6 +2251,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aufgabe_arbeitszeit: {
+        Args: { p_id: string; p_typ: string }
+        Returns: { minuten: number; user_id: string; username: string | null }[]
+      }
       hochschule_zur_domain: { Args: { p_domain: string }; Returns: string }
       benachrichtigungen_fuer_faellige_deadlines: {
         Args: never

@@ -2,11 +2,11 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { berlinDatum, berlinUhrzeit, berlinWochentag } from "@/lib/zeit";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { NotizenHub, type LaufendeVorlesung } from "@/components/notizen/notizen-hub";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Notizen · UniWars" };
+export const metadata = { title: "Notizen · UniVerse" };
 
 export default async function NotizenSeite() {
   const supabase = await createClient();
@@ -23,12 +23,7 @@ export default async function NotizenSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Notizen" />
-        <EinrichtungHinweis hub="Notizen" />
-      </>
-    );
+    return <Einrichtung bereich="Notizen" />;
   }
   if (error) throw new Error(error.message);
 

@@ -4,7 +4,7 @@ import { HubKopf } from "@/components/hubs/hub-bausteine";
 import { GedaechtnisVerwaltung } from "@/components/ki/gedaechtnis-verwaltung";
 import { eintraegeLesen, kennenlernenStatus, rhythmusText, rueckblick } from "@/lib/ki/gedaechtnis";
 
-export const metadata = { title: "Was Studio über dich weiß · UniWars" };
+export const metadata = { title: "Was Studio über dich weiß · UniVerse" };
 
 /** Persönliches Modell: alles einsehen, korrigieren, löschen – und den Wissensstand sehen */
 export default async function GedaechtnisSeite() {
