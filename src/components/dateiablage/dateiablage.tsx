@@ -33,6 +33,7 @@ import {
   type DateiArt,
 } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
+import { MATERIAL_ARTEN, materialPfad, type HubMaterial } from "@/lib/dateiablage/material";
 import { linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -62,7 +63,7 @@ function icon(name: string): IconName {
   return typ.art === "office" ? (OFFICE_ICON[endung(name)] ?? "notizen") : ART_ICON[typ.art];
 }
 
-/** Farbquadrat des Fachs; der Ordner „Allgemein“ hat ein Ordnersymbol. */
+/** Fachfarbe und Ordnersymbol für Lose Blätter. */
 function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
   return ordner.id ? (
     <span className="f" style={{ "--c": ordner.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
@@ -73,7 +74,7 @@ function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
 
 const DRAG_TYP = "application/x-uniwars-datei";
 
-export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien: Datei[]; ordner: Ordner[]; limit: number }) {
+export function Dateiablage({ initialDateien, material, ordner, limit }: { initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; limit: number }) {
   const router = useRouter();
   const pfad = usePathname();
   const searchParams = useSearchParams();
@@ -101,11 +102,20 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
     const liste = dateien.filter((d) => (d.fach_id ?? null) === aktuellerOrdner.id);
     const faktor = sortierung.absteigend ? -1 : 1;
     return liste.sort((a, b) => {
-      if (sortierung.spalte === "name") return faktor * a.name.localeCompare(b.name, "de", { numeric: true });
       if (sortierung.spalte === "groesse") return faktor * (Number(a.groesse) - Number(b.groesse));
       return faktor * a.erstellt_am.localeCompare(b.erstellt_am);
     });
   }, [dateien, aktuellerOrdner.id, sortierung]);
+
+  const materialImOrdner = material.filter((m) => m.fachId === aktuellerOrdner.id);
+  const eintraege = [
+    ...imOrdner.map((datei) => ({ titel: datei.name, datei, hub: null })),
+    ...materialImOrdner.map((hub) => ({ titel: hub.titel, datei: null, hub })),
+  ];
+  if (sortierung.spalte === "name") {
+    const faktor = sortierung.absteigend ? -1 : 1;
+    eintraege.sort((a, b) => faktor * a.titel.localeCompare(b.titel, "de", { numeric: true }));
+  }
 
   function ordnerOeffnen(id: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -116,7 +126,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
   }
 
   function anzahl(id: string | null) {
-    return dateien.filter((d) => (d.fach_id ?? null) === id).length;
+    return dateien.filter((d) => d.fach_id === id).length + material.filter((m) => m.fachId === id).length;
   }
 
   // --- DAT-02 Hochladen ---------------------------------------------------
@@ -360,7 +370,6 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
       <header className="seitenkopf">
         <div>
           <h1>Dateiablage</h1>
-          <p>Alle Uni-Dateien an einem Ort, nach Fach geordnet.</p>
         </div>
         <div className="rechts">{hochladenKnopf}</div>
       </header>
@@ -460,7 +469,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
 
         <section
           className={`dat-inhalt${ziehenUeber ? " dat-ablegen" : ""}`}
-          aria-label={`Dateien in ${aktuellerOrdner.name}`}
+          aria-label={`Unterlagen in ${aktuellerOrdner.name}`}
           onDragOver={(e) => {
             if (e.dataTransfer.types.includes("Files") || e.dataTransfer.types.includes("text/uri-list")) {
               e.preventDefault();
@@ -519,13 +528,13 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
             </ul>
           )}
 
-          {imOrdner.length === 0 ? (
+          {eintraege.length === 0 ? (
             <Zustand
               art="leer"
               region
               ebene={3}
               icon="dateiablage"
-              titel={dateien.length === 0 ? "Noch keine Dateien." : `Noch keine Dateien in ${aktuellerOrdner.name}.`}
+              titel="Noch keine Unterlagen"
               aktion={
                 <button type="button" className="knopf neben klein" onClick={() => eingabe.current?.click()} disabled={voll}>
                   <Icon name="hochladen" groesse={16} />
@@ -533,9 +542,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                 </button>
               }
             >
-              {dateien.length === 0
-                ? "Lade Skripte, Folien oder Aufnahmen hoch, zieh sie hierher oder füg einen Link zur Datei mit Strg+V ein."
-                : "Zieh Dateien hierher oder lade sie hoch. Sie landen automatisch in diesem Ordner."}
+              Lade eine Datei hoch oder ordne vorhandenes Lernmaterial diesem Fach zu.
             </Zustand>
           ) : (
             <div className="dat-tabelle-wrap">
@@ -553,16 +560,24 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                         Größe{pfeil("groesse")}
                       </button>
                     </th>
-                    <th className="dat-spalte-datum" aria-sort={ariaSort("datum")}>
-                      <button type="button" onClick={() => sortierenNach("datum")}>
-                        Hochgeladen am{pfeil("datum")}
-                      </button>
-                    </th>
+                    <th className="dat-spalte-material">Typ</th>
                     <th aria-label="Aktionen" />
                   </tr>
                 </thead>
                 <tbody>
-                  {imOrdner.map((d) => (
+                  {eintraege.map(({ datei: d, hub }) => hub ? (
+                    <tr key={`${hub.art}:${hub.id}`}>
+                      <td className="dat-spalte-typ" aria-hidden>
+                        <span className="dat-typ"><Icon name={MATERIAL_ARTEN[hub.art].icon} groesse={14} /></span>
+                      </td>
+                      <td className="dat-spalte-name">
+                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false}>{hub.titel}</Link>
+                      </td>
+                      <td className="dat-spalte-groesse" />
+                      <td className="dat-spalte-material">{MATERIAL_ARTEN[hub.art].name}</td>
+                      <td />
+                    </tr>
+                  ) : d && (
                     <tr
                       key={d.id}
                       data-datei={d.id}
@@ -594,9 +609,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                         )}
                       </td>
                       <td className="dat-spalte-groesse mono">{groesseText(Number(d.groesse))}</td>
-                      <td className="dat-spalte-datum">
-                        {new Date(d.erstellt_am).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                      </td>
+                      <td className="dat-spalte-material">{endung(d.name).toUpperCase() || "Datei"}</td>
                       <td className="dat-spalte-aktion">
                         <DreiPunkteMenue
                           punkte={[

@@ -4294,7 +4294,7 @@ kbd {
 }
 
 .dat-spalte-groesse,
-.dat-spalte-datum {
+.dat-spalte-material {
   color: var(--text-2);
   white-space: nowrap;
 }
@@ -4326,6 +4326,7 @@ kbd {
   font: inherit;
   font-weight: 550;
   text-align: left;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -5371,7 +5372,7 @@ dialog.dat-vorschau::backdrop {
     overflow: visible;
   }
 
-  .dat-spalte-datum {
+  .dat-spalte-material {
     display: none;
   }
 

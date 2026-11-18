@@ -50,7 +50,9 @@ export function Literaturverwaltung({
   pdfs: { id: string; name: string }[];
   kiVerfuegbar?: boolean;
 }) {
-  const fachFilter = useSearchParams().get("fachId");
+  const suchparameter = useSearchParams();
+  const fachFilter = suchparameter.get("fachId");
+  const quelleId = suchparameter.get("id");
   const [quellen, setQuellen] = useState(initialQuellen);
   const [suche, setSuche] = useState("");
   const [sortierung, setSortierung] = useState<{ spalte: Spalte; ab: boolean }>({ spalte: "autor", ab: false });
@@ -71,6 +73,7 @@ export function Literaturverwaltung({
     const q = suche.trim().toLocaleLowerCase("de-DE");
     const liste = quellen.filter(
       (x) =>
+        (!quelleId || x.id === quelleId) &&
         (!fachFilter || x.fach_id === fachFilter) &&
         (!q || [x.autoren, x.titel, String(x.jahr), x.verlag ?? "", x.notiz ?? ""].some((f) => f.toLocaleLowerCase("de-DE").includes(q))),
     );
@@ -94,7 +97,7 @@ export function Literaturverwaltung({
       const wb = wert(b);
       return faktor * (typeof wa === "number" && typeof wb === "number" ? wa - wb : String(wa).localeCompare(String(wb), "de"));
     });
-  }, [quellen, suche, fachFilter, sortierung, faecher]);
+  }, [quellen, suche, fachFilter, quelleId, sortierung, faecher]);
 
   function sortieren(spalte: Spalte) {
     setSortierung((s) => (s.spalte === spalte ? { spalte, ab: !s.ab } : { spalte, ab: spalte === "jahr" }));
@@ -153,7 +156,7 @@ export function Literaturverwaltung({
         </div>
         {quellen.length > 0 && <div className="rechts">{neuKnopf("haupt", "Quelle")}</div>}
       </header>
-      <FachFilterChips faecher={faecher} />
+      {quelleId ? <Link href="/literaturverwaltung" className="knopf leise klein">Alle Quellen</Link> : <FachFilterChips faecher={faecher} />}
 
       {formular && (
         <QuellenFormular
