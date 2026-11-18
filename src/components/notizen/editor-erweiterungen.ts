@@ -21,7 +21,9 @@ import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
 import { Mathematics } from "@tiptap/extension-mathematics";
+import { DOMSerializer, type DOMOutputSpec } from "@tiptap/pm/model";
 import { zielZerlegen, istPdfName } from "@/lib/notizen/wikilinks";
+import { ICONS, symbolTeile, type IconName } from "@/lib/icons";
 
 // ---------------------------------------------------------------------------
 // Hilfen: Inline-HTML-Schnipsel im Markdown lesen (<tag …>Inhalt</tag>)
@@ -170,12 +172,32 @@ const Ausrichtungsblock = Extension.create({
 // ---------------------------------------------------------------------------
 
 export const CALLOUTS = {
-  info: { name: "Info", icon: "ℹ️" },
-  tipp: { name: "Tipp", icon: "💡" },
-  merke: { name: "Merke", icon: "📌" },
-  warnung: { name: "Warnung", icon: "⚠️" },
-  frage: { name: "Frage", icon: "❓" },
-} as const;
+  info: { name: "Info", icon: "info" },
+  tipp: { name: "Tipp", icon: "tipp" },
+  merke: { name: "Merke", icon: "anheften" },
+  warnung: { name: "Warnung", icon: "warnung" },
+  frage: { name: "Frage", icon: "frage" },
+} as const satisfies Record<string, { name: string; icon: IconName }>;
+
+const SVG = "http://www.w3.org/2000/svg";
+const SVG_ATTRIBUTE = { viewBox: "0 0 24 24", width: "16", height: "16", fill: "none", stroke: "currentColor", "stroke-width": "1.7", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" };
+
+/** Symbol aus dem eigenen Satz als ProseMirror-Ausgabe (Design B3, statt Emoji) */
+function symbolSpec(name: IconName): DOMOutputSpec {
+  const teile = symbolTeile(ICONS[name]).map((t): DOMOutputSpec =>
+    t.art === "rect"
+      ? [`${SVG} rect`, { x: String(t.x), y: String(t.y), width: String(t.b), height: String(t.h), rx: String(t.r) }]
+      : t.art === "circle"
+        ? [`${SVG} circle`, { cx: String(t.x), cy: String(t.y), r: String(t.r) }]
+        : [`${SVG} path`, { d: t.d }],
+  );
+  return [`${SVG} svg`, SVG_ATTRIBUTE, ...teile];
+}
+
+/** dasselbe als DOM-Knoten (für Node-Views) */
+function symbolKnoten(name: IconName): globalThis.Node {
+  return DOMSerializer.renderSpec(document, symbolSpec(name)).dom;
+}
 export type CalloutTyp = keyof typeof CALLOUTS;
 
 function calloutTyp(wert: string): CalloutTyp {
@@ -211,7 +233,7 @@ const Callout = Node.create({
     return [
       "div",
       mergeAttributes(HTMLAttributes, { class: "md-callout" }),
-      ["div", { class: "md-callout-titel", contenteditable: "false" }, `${info.icon} ${info.name}`],
+      ["div", { class: "md-callout-titel", contenteditable: "false" }, symbolSpec(info.icon), info.name],
       ["div", { class: "md-callout-inhalt" }, 0],
     ];
   },
@@ -314,8 +336,8 @@ export const Wikilink = Node.create<WikilinkOptionen>({
             ? "PDF nicht gefunden"
             : "Notiz gibt es noch nicht – Klick legt sie an"
           : `${art === "pdf" ? "PDF öffnen" : "Notiz öffnen"} (Strg/⌘+Klick: daneben)`;
-      const symbol = art === "pdf" || istPdfName(name) ? "📕 " : "";
-      dom.textContent = `${symbol}${node.attrs.label || (seite ? `${name.replace(/\.pdf$/i, "")} · S. ${seite}` : name)}`;
+      if (art === "pdf" || istPdfName(name)) dom.append(symbolKnoten("pdf"));
+      dom.append(node.attrs.label || (seite ? `${name.replace(/\.pdf$/i, "")} · S. ${seite}` : name));
       return { dom };
     };
   },

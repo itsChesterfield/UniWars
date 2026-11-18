@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { tabelleFachSetzen, tabelleLoeschen, tabelleSpeichern } from "@/app/(hubs)/tabellen/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
 import { OHNE_TITEL_TABELLE } from "@/components/tabellen/tabellen-liste";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import { KiFormelDialog } from "@/components/tabellen/ki-formel-dialog";
@@ -72,7 +73,7 @@ export function TabellenEditor({
   const [bearbeitung, setBearbeitung] = useState<Bearbeitung | null>(null);
   const [kontext, setKontext] = useState<Kontext | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
-  const rasterRef = useRef<HTMLDivElement>(null);
+  const rasterRef = useRef<HTMLTableElement>(null);
   const { status, aendern, jetztSpeichern } = useAutoSpeichern<{ titel: string; daten: TabellenDaten }>((a) => tabelleSpeichern(id, a));
   const [kiFormel, setKiFormel] = useState<string | null>(null);
 
@@ -296,106 +297,109 @@ export function TabellenEditor({
 
   return (
     <div className="tab-seite">
+      <Link href="/tabellen" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Alle Tabellen
+      </Link>
       <div className="txt-kopf">
-        <Link href="/tabellen" className="hub-zurueck-link">
-          ← Alle Tabellen
-        </Link>
-        <div className="txt-kopf-zeile">
-          <input
-            className="notiz-titel txt-titel"
-            value={titel}
-            placeholder={OHNE_TITEL_TABELLE}
-            aria-label="Titel"
-            maxLength={300}
-            autoFocus={istNeu}
+        <input
+          className="txt-titel"
+          value={titel}
+          placeholder={OHNE_TITEL_TABELLE}
+          aria-label="Titel"
+          maxLength={300}
+          autoFocus={istNeu}
+          onChange={(e) => {
+            setTitel(e.target.value);
+            aendern({ titel: e.target.value });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") rasterRef.current?.focus();
+          }}
+        />
+        <div className="txt-kopf-aktionen">
+          <span className={`speicher-status ${status}`} aria-live="polite">
+            {SPEICHER_TEXT[status]}
+          </span>
+          <select
+            className="txt-fach"
+            aria-label="Fach"
+            value={fachId ?? ""}
             onChange={(e) => {
-              setTitel(e.target.value);
-              aendern({ titel: e.target.value });
+              setFachId(e.target.value || null);
+              tabelleFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "tabelle_fach" }));
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") rasterRef.current?.focus();
-            }}
+          >
+            <option value="">Ohne Fach</option>
+            {faecher.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          <DreiPunkteMenue
+            label="Exportieren und mehr"
+            punkte={[
+              { label: "Als CSV exportieren", onClick: () => void exportieren("csv") },
+              { label: "Als Excel (.xlsx) exportieren", onClick: () => void exportieren("xlsx") },
+              { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
+            ]}
           />
-          <div className="txt-kopf-aktionen">
-            <span className={`speicher-status ${status}`} aria-live="polite">
-              {SPEICHER_TEXT[status]}
-            </span>
-            <select
-              className="field txt-fach"
-              aria-label="Fach"
-              value={fachId ?? ""}
-              onChange={(e) => {
-                setFachId(e.target.value || null);
-                tabelleFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "tabelle_fach" }));
-              }}
-            >
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            <DreiPunkteMenue
-              label="Exportieren und mehr"
-              punkte={[
-                { label: "Als CSV exportieren", onClick: () => void exportieren("csv") },
-                { label: "Als Excel (.xlsx) exportieren", onClick: () => void exportieren("xlsx") },
-                { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
-              ]}
-            />
-          </div>
         </div>
       </div>
 
       {/* TAB-05 */}
-      <div className="txt-werkzeuge tab-werkzeuge" role="toolbar" aria-label="Formatierung">
-        <button
-          type="button"
-          className={`md-knopf md-fett ${ankerZelle?.f ? "an" : ""}`}
-          aria-pressed={Boolean(ankerZelle?.f)}
-          title="Fett (Strg+B)"
-          aria-label="Fett"
-          onClick={fettUmschalten}
-        >
-          B
-        </button>
-        <span className="txt-trenner" />
-        <span className="tab-farben" role="group" aria-label="Hintergrundfarbe">
-          <button type="button" className="tab-farbe tab-farbe-keine" title="Kein Hintergrund" aria-label="Kein Hintergrund" onClick={() => hintergrund(null)}>
-            ⌀
+      <div className="wz txt-werkzeuge tab-werkzeuge" role="toolbar" aria-label="Formatierung">
+        <div className="wz-zeile">
+          <button
+            type="button"
+            className={`wz-knopf ${ankerZelle?.f ? "an" : ""}`}
+            aria-pressed={Boolean(ankerZelle?.f)}
+            title="Fett (Strg+B)"
+            onClick={fettUmschalten}
+          >
+            <b aria-hidden>F</b>
+            <span className="sr-only">Fett</span>
           </button>
-          {FARBEN.map((f) => (
-            <button
-              key={f.wert}
-              type="button"
-              className={`tab-farbe ${ankerZelle?.bg === f.wert ? "an" : ""}`}
-              style={{ background: f.wert }}
-              title={f.name}
-              aria-label={`Hintergrund ${f.name}`}
-              onClick={() => hintergrund(f.wert)}
-            />
-          ))}
-        </span>
-        <span className="txt-trenner" />
-        <select
-          className="field txt-block"
-          aria-label="Zahlenformat"
-          value={ankerZelle?.fmt ?? "std"}
-          onChange={(e) => zahlenformat(e.target.value as Zahlenformat)}
-        >
-          <option value="std">Standard</option>
-          <option value="2">2 Nachkommastellen</option>
-          <option value="%">Prozent</option>
-        </select>
-        <span className="txt-trenner" />
-        <button type="button" className="md-knopf" title="Zeile unter der Auswahl einfügen" onClick={() => strukturAendern("danach", "zeile", anker.z)}>
-          + Zeile
-        </button>
-        <button type="button" className="md-knopf" title="Spalte rechts der Auswahl einfügen" onClick={() => strukturAendern("danach", "spalte", anker.s)}>
-          + Spalte
-        </button>
-        {hinweis && <span className="tab-hinweis">{hinweis}</span>}
+          <span className="wz-trenner" />
+          <span className="tab-farben" role="group" aria-label="Hintergrundfarbe">
+            <button type="button" className="tab-farbe tab-farbe-keine" title="Kein Hintergrund" aria-label="Kein Hintergrund" onClick={() => hintergrund(null)}>
+              <Icon name="schliessen" groesse={14} />
+            </button>
+            {FARBEN.map((f) => (
+              <button
+                key={f.wert}
+                type="button"
+                className={`tab-farbe ${ankerZelle?.bg === f.wert ? "an" : ""}`}
+                style={{ "--c": f.wert } as React.CSSProperties}
+                title={f.name}
+                aria-label={`Hintergrund ${f.name}`}
+                aria-pressed={ankerZelle?.bg === f.wert}
+                onClick={() => hintergrund(f.wert)}
+              />
+            ))}
+          </span>
+          <span className="wz-trenner" />
+          <select className="wz-auswahl" aria-label="Zahlenformat" value={ankerZelle?.fmt ?? "std"} onChange={(e) => zahlenformat(e.target.value as Zahlenformat)}>
+            <option value="std">Standard</option>
+            <option value="2">2 Nachkommastellen</option>
+            <option value="%">Prozent</option>
+          </select>
+          <span className="wz-trenner" />
+          <button type="button" className="wz-knopf" title="Zeile unter der Auswahl einfügen" onClick={() => strukturAendern("danach", "zeile", anker.z)}>
+            <Icon name="plus" groesse={16} />
+            Zeile
+          </button>
+          <button type="button" className="wz-knopf" title="Spalte rechts der Auswahl einfügen" onClick={() => strukturAendern("danach", "spalte", anker.s)}>
+            <Icon name="plus" groesse={16} />
+            Spalte
+          </button>
+          {hinweis && (
+            <span className="tab-hinweis" role="status">
+              {hinweis}
+            </span>
+          )}
+        </div>
       </div>
 
       {kiFormel && (
@@ -418,14 +422,13 @@ export function TabellenEditor({
 
       {/* TAB-04: Formelzeile */}
       <div className="tab-formelzeile">
-        <span className="tab-adresse mono" aria-label="Ausgewählte Zelle">
+        <span className="tab-adresse" aria-label="Ausgewählte Zelle">
           {auswahlText}
         </span>
         <span className="tab-fx" aria-hidden>
           fx
         </span>
         <input
-          className="field mono"
           aria-label="Inhalt bzw. Formel der Zelle"
           value={leistenWert}
           placeholder="Wert oder Formel, z. B. =SUMME(A1:A10)"
@@ -441,14 +444,14 @@ export function TabellenEditor({
           }}
         />
         {ankerZelle?.w?.startsWith("=") && !bearbeitung && (
-          <span className={`tab-ergebnis mono ${ankerWert !== undefined && istFehler(ankerWert) ? "fehler" : ""}`}>
+          <span className={`tab-ergebnis ${ankerWert !== undefined && istFehler(ankerWert) ? "fehler" : ""}`}>
             = {anzeigen(ankerWert, ankerZelle.fmt)}
           </span>
         )}
       </div>
 
-      <div className="tab-raster card" ref={rasterRef} tabIndex={0} onKeyDown={rasterTaste} aria-label="Tabelle" role="grid">
-        <table>
+      <div className="tab-raster">
+        <table ref={rasterRef} tabIndex={0} onKeyDown={rasterTaste} aria-label="Tabelle" role="grid">
           <thead>
             <tr>
               <th className="tab-ecke" />
@@ -543,14 +546,14 @@ export function TabellenEditor({
           </tbody>
         </table>
       </div>
-      <p className="faint tab-tipp">
+      <p className="tab-tipp">
         Tipp: Enter springt nach unten, Tab nach rechts. Formeln beginnen mit „=“, z. B. =SUMME(A1:A10), =MITTELWERT(B2:B5), =A1*2.
         Rechtsklick auf Zeilen- oder Spaltenkopf zum Einfügen/Löschen.
       </p>
 
       {kontext && (
         <div className="drei-punkte-menue tab-kontext" style={{ left: kontext.x, top: kontext.y }} role="menu" onClick={(e) => e.stopPropagation()}>
-          <span className="faint dat-verschieben-titel">
+          <span className="dat-verschieben-titel">
             {kontext.art === "zeile" ? `Zeile ${kontext.index + 1}` : `Spalte ${spaltenName(kontext.index)}`}
           </span>
           <button type="button" role="menuitem" onClick={() => strukturAendern("davor", kontext.art, kontext.index)}>

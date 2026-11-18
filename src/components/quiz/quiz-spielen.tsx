@@ -80,8 +80,8 @@ export function QuizSpielen({
   const typen = [...new Set(fragen.map((f) => f.typ))];
   return (
     <>
-      <Link href="/karteikarten" className="knopf leise klein kk-zurueck">
-        <Icon name="zurueck" groesse={16} />
+      <Link href="/karteikarten" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
         Karteikarten
       </Link>
       <header className="seitenkopf">

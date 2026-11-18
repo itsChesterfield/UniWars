@@ -5,6 +5,12 @@
    unten auf die neuen, bis die Bereiche einzeln umgestellt sind.
    ========================================================================== */
 :root {
+  /* Whiteboard-Papier: in beiden Designs hell (Entscheidung Didi), deshalb ohne Design-Umschaltung */
+  --papier: #fffdf8;
+  --papier-text-2: #5c544a;
+  --papier-linie: rgba(42, 35, 24, 0.16);
+  --papier-akzent: #946318;
+
   /* Schrift: Bricolage Grotesque für alles, JetBrains Mono nur für Zahlen und Zeiten */
   --font-display: var(--font-body);
   --font-mono: var(--font-zahl), ui-monospace, monospace;
@@ -1038,7 +1044,6 @@ input[type="checkbox"] {
   }
 }
 
-
 .progress-track {
   height: 8px;
   border-radius: 4px;
@@ -1337,6 +1342,14 @@ input[type="checkbox"] {
 .qz-frage-karte :is(input, select, textarea),
 .ws-fach select,
 .lr-dazu select,
+.notiz-suche,
+.notiz-schnellsuche input,
+.notiz-fach select,
+.lit-suche,
+.txt-fach,
+.tab-formelzeile input,
+.txt-quellen input,
+.wz-feld input:not([type="checkbox"]),
 .rechner-feld input {
   height: 40px;
   padding: 0 var(--space-3);
@@ -1944,7 +1957,6 @@ input[type="checkbox"] {
     border-top: 1px solid var(--linie);
   }
 }
-
 
 /* --- Quick-Add modal --- */
 
@@ -2631,25 +2643,6 @@ dialog.card {
   margin: 8px 0 0;
 }
 
-.hub-vorschlag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  text-align: left;
-  border: 1px solid var(--accent);
-  background: var(--accent-soft);
-  color: var(--text);
-  border-radius: var(--radius-m);
-  padding: 10px 14px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.hub-vorschlag strong {
-  color: var(--accent-strong);
-}
-
 .hub-formular {
   display: flex;
   flex-direction: column;
@@ -2711,54 +2704,78 @@ a.btng:hover {
 .drei-punkte {
   position: relative;
   flex: none;
+  display: inline-flex;
 }
 
+/* Menüs (Design B3): Fläche mit Ring und weichem Schatten, Einträge ohne Rand */
 .drei-punkte-menue {
   position: absolute;
   right: 0;
-  top: calc(100% + 4px);
+  top: calc(100% + var(--space-1));
   z-index: 30;
-  min-width: 170px;
+  min-width: 176px;
   display: flex;
   flex-direction: column;
-  padding: 5px;
+  padding: var(--space-1);
+  border: 0;
   border-radius: var(--radius-m);
-  border: 1px solid var(--border);
-  background: var(--card);
-  box-shadow: var(--shadow);
+  background: var(--flaeche);
+  color: var(--text);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 16px 32px -16px var(--schatten);
+}
+
+/* „Mehr“-Menü als modaler Dialog am Knopf (Lage setzt die Komponente) */
+dialog.drei-punkte-menue {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+}
+
+dialog.drei-punkte-menue::backdrop {
+  background: transparent;
+}
+
+dialog.drei-punkte-menue [role="menu"] {
+  display: flex;
+  flex-direction: column;
 }
 
 .drei-punkte-menue button {
-  text-align: left;
-  border: none;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-s);
   background: none;
   color: var(--text);
-  padding: 8px 10px;
-  border-radius: var(--radius-m);
-  font-size: 13px;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
   cursor: pointer;
 }
 
-.drei-punkte-menue button:hover {
-  background: var(--card2);
+.drei-punkte-menue button:hover,
+.drei-punkte-menue button:focus-visible {
+  background: var(--hover);
 }
 
 .drei-punkte-menue button.gefahr {
-  color: var(--danger);
+  color: var(--fehler-text);
 }
 
 .speicher-status {
-  font-size: 12px;
-  color: var(--faint);
+  font-size: var(--text-xs);
+  color: var(--text-3);
   white-space: nowrap;
 }
 
 .speicher-status.speichert {
-  color: var(--muted);
+  color: var(--text-2);
 }
 
 .speicher-status.fehler {
-  color: var(--danger);
+  color: var(--fehler-text);
 }
 
 kbd {
@@ -2804,116 +2821,6 @@ kbd {
 
 .hub-zurueck {
   display: none;
-}
-
-/* --- Notizen --- */
-
-.notiz-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hub-liste-leer {
-  padding: 12px 4px;
-}
-
-.notiz-zeile {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 9px 10px;
-  border-radius: var(--radius-m);
-  cursor: pointer;
-}
-
-.notiz-zeile:hover {
-  background: var(--card2);
-}
-
-.notiz-zeile.aktiv {
-  background: var(--accent-soft);
-}
-
-.notiz-zeile-kopf {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-}
-
-.notiz-zeile-titel {
-  flex: 1;
-  min-width: 0;
-  font-weight: 600;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.notiz-zeile .icon-knopf {
-  width: 24px;
-  height: 24px;
-}
-
-.notiz-zeile-vorschau {
-  font-size: 12.5px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.notiz-zeile-datum {
-  font-size: 11px;
-}
-
-.notiz-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.notiz-editor-leiste {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.notiz-fach {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  margin-right: auto;
-}
-
-.notiz-fach .field {
-  width: auto;
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-.notiz-titel {
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font-family: var(--font-display), system-ui, sans-serif;
-  font-size: 26px;
-  padding: 2px 0;
-  width: 100%;
-  outline: none;
-}
-
-.notiz-titel::placeholder {
-  color: var(--faint);
 }
 
 /* --- Markdown-Editor (TipTap) --- */
@@ -3106,20 +3013,24 @@ kbd {
   margin-top: var(--space-8);
 }
 
-.kk-zurueck {
+/* Zurück-Link über einer Ansicht (leiser kleiner Knopf, links ausgerichtet) */
+.zurueck-link {
   align-self: flex-start;
   max-width: 100%;
   margin-top: var(--space-4);
   overflow: hidden;
 }
 
-.kk-name {
+/* Name als Link in einer Zeile: Text-Farbe, volle Zeilenhöhe als Trefferfläche */
+.kk-name,
+.objekt-name {
   line-height: var(--space-6);
   color: var(--text);
   text-decoration: none;
 }
 
-.kk-name:hover {
+.kk-name:hover,
+.objekt-name:hover {
   text-decoration: underline;
 }
 
@@ -3256,7 +3167,7 @@ kbd {
   padding-top: var(--space-4);
 }
 
-.kk-lernen-kopf .kk-zurueck {
+.kk-lernen-kopf .zurueck-link {
   margin: 0 auto 0 0;
 }
 
@@ -4218,7 +4129,6 @@ dialog.dat-vorschau::backdrop {
   box-shadow: inset 0 0 0 1px var(--linie);
 }
 
-
 .pdf-name {
   flex: 1 1 140px;
   min-width: 0;
@@ -4816,129 +4726,178 @@ dialog.dat-vorschau::backdrop {
   }
 }
 
-/* --- Literaturverwaltung --- */
-
-.lit-karte {
-  gap: 14px;
-}
+/* --- Literaturverwaltung (Design B3, Welle 5c): Tabelle ohne Karte, Formular als Dialog --- */
 
 .lit-werkzeuge {
   display: flex;
-  gap: 10px;
+  align-items: center;
   flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
-.lit-werkzeuge .field {
-  flex: 1 1 220px;
-  max-width: 420px;
-  padding: 8px 11px;
+.lit-suche {
+  flex: 1 1 240px;
+  max-width: 400px;
 }
 
 .lit-verzeichnis {
-  border: 1px solid var(--accent);
-  background: var(--accent-soft);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-m);
-  padding: 14px 16px;
+  background: color-mix(in srgb, var(--akzent) 8%, transparent);
 }
 
 .lit-verzeichnis ol {
-  margin: 10px 0 0;
-  padding-left: 0;
-  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
-  user-select: text;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
 }
 
+/* APA: hängender Einzug */
 .lit-verzeichnis li {
-  padding-left: 2em;
-  text-indent: -2em;
+  padding-left: var(--space-6);
+  text-indent: calc(-1 * var(--space-6));
 }
 
-.lit-tabelle td {
-  vertical-align: top;
+.lit-tabelle-wrap {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .lit-spalte-wahl {
-  width: 30px;
+  width: 40px;
+}
+
+/* hält den versteckten Namen „Aktionen“ in der Tabelle */
+.lit-tabelle th:last-child {
+  position: relative;
+}
+
+.lit-spalte-wahl input {
+  width: 16px;
+  height: 16px;
+}
+
+.lit-tabelle th button {
+  min-width: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .lit-spalte-autor,
-.lit-spalte-jahr,
 .lit-spalte-typ,
 .lit-spalte-fach {
   white-space: nowrap;
 }
 
-.lit-spalte-titel {
+.lit-spalte-jahr {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lit-spalte-fach {
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.lit-tabelle .lit-spalte-titel {
   min-width: 200px;
+  white-space: normal;
 }
 
 .lit-spalte-titel .dat-name-knopf {
-  white-space: normal;
   display: inline;
+  white-space: normal;
 }
 
 .lit-pdf {
-  margin-left: 8px;
-  font-size: 12px;
-  white-space: nowrap;
+  margin-left: var(--space-2);
+}
+
+.lit-typ {
+  display: inline-block;
+  padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-2);
+  font-size: var(--text-xs);
 }
 
 .lit-aktionen {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  width: auto;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
-.lit-zitieren {
-  padding: 5px 10px;
-  font-size: 12px;
-}
-
-.lit-toast {
+/* Rückmeldung nach dem Kopieren (Kopieren selbst ist unsichtbar) */
+.lit-status {
   position: fixed;
-  bottom: 24px;
   left: 50%;
-  transform: translateX(-50%);
+  bottom: var(--space-8);
   z-index: 60;
-  padding: 10px 18px;
-  border-radius: 999px;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
   background: var(--text);
-  color: var(--card);
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: var(--shadow);
+  color: var(--flaeche);
+  font-size: var(--text-sm);
+  transform: translateX(-50%);
 }
 
-.lit-felder {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+.lit-status:empty {
+  display: none;
 }
 
-.lit-breit {
-  grid-column: span 2;
+.formular-dialog.lit-dialog {
+  width: min(640px, calc(100% - var(--space-8)));
 }
 
-.lit-voll {
+.lit-felder label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.lit-felder .lit-breit,
+.lit-felder .lit-voll {
   grid-column: 1 / -1;
 }
 
-.lit-felder textarea.field {
-  resize: vertical;
-  font-family: inherit;
+.lit-vorschau {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  font-size: var(--text-sm);
 }
 
-.lit-vorschau {
-  margin: 0;
-  font-size: 13px;
-  padding: 10px 12px;
-  border-radius: var(--radius-m);
-  background: var(--card2);
+.lit-vorschau span {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+@media (max-width: 760px) {
+  .lit-tabelle :is(.lit-spalte-autor, .lit-spalte-jahr, .lit-spalte-typ, .lit-spalte-fach) {
+    display: none;
+  }
+
+  .lit-tabelle .lit-spalte-titel {
+    min-width: 128px;
+  }
+}
+
+.crud-form .ki-gefuellt {
+  box-shadow: inset 0 0 0 1px var(--warnung);
+  background: color-mix(in srgb, var(--warnung) 12%, var(--flaeche));
 }
 
 @media (max-width: 760px) {
@@ -5026,18 +4985,11 @@ dialog.dat-vorschau::backdrop {
     padding: 4px 6px;
   }
 
-  .lit-felder {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  
 
-  .lit-breit {
-    grid-column: auto;
-  }
+  
 
-  .lit-spalte-typ,
-  .lit-spalte-fach {
-    display: none;
-  }
+  
 }
 
 /* =========================================================================
@@ -5046,133 +4998,6 @@ dialog.dat-vorschau::backdrop {
 
 .nur-druck {
   display: none;
-}
-
-.txt-liste-zeile {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.txt-liste-zeile .pdf-liste-zeile {
-  flex: 1;
-  min-width: 0;
-}
-
-.txt-seite {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.txt-kopf {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.txt-kopf-zeile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.txt-titel {
-  flex: 1 1 260px;
-  min-width: 0;
-}
-
-.txt-kopf-aktionen {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.txt-fach,
-select.field.txt-fach {
-  width: auto;
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-.txt-werkzeuge {
-  position: sticky;
-  top: 8px;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 3px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
-  box-shadow: var(--shadow);
-}
-
-.txt-block,
-select.field.txt-block {
-  width: auto;
-  padding: 5px 8px;
-  font-size: 13px;
-}
-
-.txt-trenner {
-  width: 1px;
-  height: 22px;
-  background: var(--border);
-  margin: 0 4px;
-}
-
-.md-unter {
-  text-decoration: underline;
-}
-
-.md-knopf.aus {
-  opacity: 0.35;
-}
-
-.txt-quellen {
-  left: 0;
-  right: auto;
-  width: 320px;
-  max-width: 85vw;
-  gap: 6px;
-  padding: 8px;
-}
-
-.txt-quellen .field {
-  padding: 7px 10px;
-}
-
-.txt-quellen-liste {
-  max-height: 280px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.txt-quellen-liste button {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.txt-quellen-liste span {
-  font-size: 12px;
-}
-
-.txt-koerper {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-
-.txt-koerper.mit-ki {
-  grid-template-columns: 200px minmax(0, 1fr) 330px;
 }
 
 .txt-ki-knopf.an {
@@ -5320,155 +5145,6 @@ select.field.txt-block {
   font-size: 12px;
 }
 
-.txt-gliederung {
-  position: sticky;
-  top: 70px;
-  max-height: calc(100vh - 110px);
-  overflow-y: auto;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
-}
-
-.txt-gliederung h3 {
-  font-size: 15px;
-  margin-bottom: 8px;
-}
-
-.txt-gliederung ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.txt-gliederung button {
-  width: 100%;
-  text-align: left;
-  border: none;
-  background: none;
-  padding: 5px 6px;
-  border-radius: var(--radius-m);
-  color: var(--text);
-  font-size: 13px;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.txt-gliederung button:hover {
-  background: var(--card2);
-}
-
-.txt-gliederung-1 {
-  font-weight: 700;
-}
-
-.txt-gliederung-3 {
-  color: var(--muted) !important;
-}
-
-.txt-papier-wrap {
-  min-width: 0;
-}
-
-.txt-papier {
-  max-width: 820px;
-  margin: 0 auto;
-  min-height: 70vh;
-  padding: 56px 64px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  box-shadow: var(--shadow);
-}
-
-.txt-inhalt {
-  min-height: 60vh;
-  font-size: 16px;
-  line-height: 1.7;
-}
-
-.txt-inhalt h1,
-.txt-inhalt h2,
-.txt-inhalt h3 {
-  scroll-margin-top: 80px;
-}
-
-.txt-inhalt blockquote {
-  margin: 0 0 0.8em;
-  padding: 4px 16px;
-  border-left: 3px solid var(--accent);
-  color: var(--muted);
-  font-style: italic;
-}
-
-.txt-inhalt img {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--radius-s);
-  display: block;
-  margin: 0.6em 0;
-}
-
-.txt-inhalt img.ProseMirror-selectednode {
-  outline: 2px solid var(--accent);
-}
-
-.txt-inhalt table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0 0 1em;
-  table-layout: fixed;
-}
-
-.txt-inhalt th,
-.txt-inhalt td {
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  vertical-align: top;
-  position: relative;
-}
-
-.txt-inhalt th {
-  background: var(--card2);
-  font-weight: 700;
-  text-align: left;
-}
-
-.txt-inhalt td > p,
-.txt-inhalt th > p {
-  margin: 0;
-}
-
-.txt-inhalt .selectedCell::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--accent-soft);
-  pointer-events: none;
-}
-
-.txt-fuss {
-  position: sticky;
-  bottom: 10px;
-  align-self: flex-end;
-  display: flex;
-  gap: 14px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  box-shadow: var(--shadow);
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.txt-auswahl {
-  color: var(--accent-strong);
-}
-
 /* Bildauswahl (Textverarbeitung + Präsentationen) */
 dialog.bild-auswahl {
   width: min(720px, 92vw);
@@ -5519,21 +5195,8 @@ dialog.bild-auswahl {
   white-space: nowrap;
 }
 
-@media (max-width: 1200px) and (min-width: 901px) {
-  .txt-koerper.mit-ki {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
-
-  .txt-koerper.mit-ki .txt-gliederung {
-    display: none;
-  }
-}
-
 @media (max-width: 900px) {
-  .txt-koerper,
-  .txt-koerper.mit-ki {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  
 
   /* KI-ALL-10: Feedback auf dem Handy bildschirmfüllend */
   .txt-ki-leiste {
@@ -5557,13 +5220,318 @@ dialog.bild-auswahl {
     box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
   }
 
+  
+
+  
+}
+
+/* --- Textverarbeitung (Design B3, Welle 5b): Kopf ohne Karte, Leiste wie in den Notizen, Papier mit Ring --- */
+
+.txt-seite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.txt-kopf {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+
+.txt-titel {
+  flex: 1 1 288px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.txt-titel::placeholder {
+  color: var(--text-3);
+}
+
+.txt-kopf-aktionen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.txt-fach {
+  height: 32px;
+  max-width: 240px;
+  font-size: var(--text-sm);
+}
+
+.wz.txt-werkzeuge {
+  position: sticky;
+  top: var(--space-2);
+  z-index: 20;
+  background: color-mix(in srgb, var(--text) 4%, var(--flaeche));
+}
+
+.txt-werkzeuge .wz-zeile {
+  border-top: 0;
+  padding: var(--space-1) var(--space-2);
+}
+
+.txt-quellen h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.txt-quellen input {
+  width: 100%;
+}
+
+.txt-quellen-liste {
+  max-height: 320px;
+  margin: var(--space-2) 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.txt-quellen-liste button {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.txt-quellen-liste button:hover {
+  background: var(--hover);
+}
+
+.txt-quellen-liste span,
+.txt-quellen-liste .leer {
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.txt-quellen-liste .leer {
+  padding: var(--space-2) var(--space-3);
+}
+
+.txt-koerper {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.txt-koerper.mit-ki {
+  grid-template-columns: 200px minmax(0, 1fr) 320px;
+}
+
+.txt-gliederung {
+  position: sticky;
+  top: var(--space-16);
+  max-height: calc(100dvh - var(--space-24));
+  overflow-y: auto;
+}
+
+.txt-gliederung h2 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.txt-gliederung p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.txt-gliederung ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.txt-gliederung button {
+  width: 100%;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2) var(--space-1) calc(var(--space-2) + var(--einzug, 0px));
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.txt-gliederung button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.txt-gliederung-1 {
+  font-weight: 600;
+}
+
+.txt-papier-wrap {
+  min-width: 0;
+}
+
+/* Papier: eigene Fläche mit Ring, damit die Seite als Seite lesbar bleibt */
+.txt-papier {
+  max-width: 816px;
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-s);
+  background: var(--flaeche-2);
+  box-shadow: 0 0 0 1px var(--linie);
+}
+
+.txt-inhalt {
+  min-height: 60vh;
+  font-size: var(--text-md);
+  line-height: 1.7;
+}
+
+.txt-inhalt :is(h1, h2, h3) {
+  scroll-margin-top: var(--space-20);
+}
+
+.txt-inhalt blockquote {
+  margin: 0 0 0.8em;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text-2);
+  font-style: italic;
+}
+
+.txt-inhalt img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.6em 0;
+  border-radius: var(--radius-s);
+}
+
+.txt-inhalt img.ProseMirror-selectednode {
+  outline: 2px solid var(--akzent);
+}
+
+.txt-inhalt table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.txt-inhalt :is(th, td) {
+  position: relative;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--linie-2);
+  vertical-align: top;
+}
+
+.txt-inhalt th {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  font-weight: 650;
+  text-align: left;
+}
+
+.txt-inhalt :is(td, th) > p {
+  margin: 0;
+}
+
+.txt-inhalt .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--akzent) 18%, transparent);
+  pointer-events: none;
+}
+
+/* Zähler unten rechts: getönte Pille, Zahlen in Mono */
+.txt-fuss {
+  position: sticky;
+  bottom: var(--space-3);
+  align-self: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 8%, var(--flaeche));
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.txt-fuss .zahl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.txt-auswahl,
+.txt-auswahl .zahl {
+  color: var(--akzent-text);
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  .txt-koerper.mit-ki {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .txt-koerper.mit-ki .txt-gliederung {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .txt-koerper,
+  .txt-koerper.mit-ki {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .txt-gliederung {
     display: none;
   }
 
   .txt-papier {
-    padding: 28px 22px;
+    padding: var(--space-6) var(--space-5);
   }
+
+  .txt-titel {
+    font-size: var(--text-xl);
+  }
+}
+
+/* Listen der Werkzeug-Bereiche (ObjektListe): Einträge ohne Titel leiser */
+.objekt-name.ohne {
+  color: var(--text-3);
+  font-weight: 500;
 }
 
 /* TXT-06: PDF-Export über den Druckdialog */
@@ -5575,6 +5543,7 @@ dialog.bild-auswahl {
 
   .sidebar,
   .hub-zurueck-link,
+  .zurueck-link,
   .txt-kopf,
   .txt-werkzeuge,
   .txt-gliederung,
@@ -5596,17 +5565,22 @@ dialog.bild-auswahl {
     min-height: 0 !important;
   }
 
+  
+
+  
+
+  
+
   .txt-koerper {
     display: block;
   }
 
   .txt-papier {
     max-width: none;
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    background: #fff;
     min-height: 0;
+    padding: 0;
+    background: #fff;
+    box-shadow: none;
   }
 
   .txt-inhalt {
@@ -5626,133 +5600,132 @@ dialog.bild-auswahl {
    Hubs Stufe 3: Tabellen
    ========================================================================= */
 
+/* Design B3, Welle 5c: Kopf und Leiste wie die Textverarbeitung, Raster mit Linien über Token */
 .tab-seite {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
-}
-
-.tab-werkzeuge {
-  position: static;
-  box-shadow: none;
 }
 
 .tab-farben {
   display: inline-flex;
-  gap: 4px;
   align-items: center;
+  gap: var(--space-1);
 }
 
 .tab-farbe {
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-s);
-  border: 1px solid var(--border);
-  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  font-size: 12px;
-  color: var(--muted);
-  background: var(--card);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--c, var(--flaeche));
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  color: var(--text-2);
+  cursor: pointer;
 }
 
 .tab-farbe.an {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--akzent);
   outline-offset: 1px;
 }
 
 .tab-hinweis {
-  margin-left: 8px;
-  font-size: 12px;
-  color: var(--danger);
+  margin-left: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--fehler-text);
 }
 
 .tab-formelzeile {
   display: flex;
   align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .tab-adresse {
   min-width: 64px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-m);
-  background: var(--card);
-  font-size: 13px;
-  font-weight: 700;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
   text-align: center;
 }
 
 .tab-fx {
   font-style: italic;
-  font-family: inherit;
-  color: var(--muted);
+  color: var(--text-3);
 }
 
-.tab-formelzeile .field {
-  flex: 1 1 260px;
-  padding: 7px 10px;
-  font-size: 13px;
+.tab-formelzeile input {
+  flex: 1 1 256px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
 }
 
 .tab-ergebnis {
-  font-size: 13px;
-  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 .tab-ergebnis.fehler {
-  color: var(--danger);
+  color: var(--fehler-text);
 }
 
 .tab-raster {
-  padding: 0;
-  overflow: auto;
-  max-height: calc(100vh - 290px);
+  max-height: calc(100vh - 288px);
   min-height: 300px;
-  outline: none;
-}
-
-.tab-raster:focus-visible {
-  box-shadow: 0 0 0 2px var(--accent);
+  overflow: auto;
+  border-radius: var(--radius-m);
+  box-shadow: 0 0 0 1px var(--linie-2);
 }
 
 .tab-raster table {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   user-select: none;
 }
 
-.tab-raster th,
-.tab-raster td {
-  border-right: 1px solid var(--border-soft);
-  border-bottom: 1px solid var(--border-soft);
+.tab-raster table:focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: -2px;
+}
+
+.tab-raster :is(th, td) {
   height: 28px;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
+  border-right: 1px solid var(--linie);
+  border-bottom: 1px solid var(--linie);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .tab-raster td {
+  position: relative;
   width: 104px;
   min-width: 104px;
   max-width: 104px;
-  background: var(--card);
+  background: var(--flaeche);
   color: var(--text);
   cursor: cell;
-  position: relative;
 }
 
 .tab-raster td.zahl {
-  text-align: right;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .tab-raster td.fehler {
-  color: var(--danger);
+  color: var(--fehler-text);
   font-weight: 600;
 }
 
@@ -5761,25 +5734,30 @@ dialog.bild-auswahl {
 }
 
 .tab-raster td.bereich {
-  box-shadow: inset 0 0 0 999px rgba(185, 130, 42, 0.12);
+  box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--akzent) 14%, transparent);
 }
 
 .tab-raster td.anker {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
   z-index: 1;
+  outline: 2px solid var(--akzent);
+  outline-offset: -2px;
+}
+
+.tab-raster thead th,
+.tab-zeilenkopf,
+.tab-ecke {
+  background: var(--flaeche-2);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
 }
 
 .tab-raster thead th {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: var(--card2);
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
 }
 
 .tab-zeilenkopf,
@@ -5787,14 +5765,9 @@ dialog.bild-auswahl {
   position: sticky;
   left: 0;
   z-index: 2;
-  width: 46px;
-  min-width: 46px;
-  background: var(--card2);
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
+  width: 48px;
+  min-width: 48px;
+  font-family: var(--font-mono);
 }
 
 .tab-raster thead .tab-ecke {
@@ -5802,21 +5775,21 @@ dialog.bild-auswahl {
 }
 
 .tab-raster th.markiert {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--akzent) 16%, var(--flaeche-2));
+  color: var(--akzent-text);
 }
 
 .tab-eingabe {
   position: absolute;
   inset: 0;
   width: 100%;
-  border: none;
-  outline: 2px solid var(--accent);
+  padding: 0 var(--space-2);
+  border: 0;
+  outline: 2px solid var(--akzent);
   outline-offset: -2px;
-  padding: 0 6px;
-  font: inherit;
-  background: var(--card);
+  background: var(--flaeche);
   color: var(--text);
+  font: inherit;
 }
 
 .tab-kontext {
@@ -5827,8 +5800,9 @@ dialog.bild-auswahl {
 }
 
 .tab-tipp {
-  font-size: 12px;
   margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
 @media (max-width: 760px) {
@@ -5837,9 +5811,9 @@ dialog.bild-auswahl {
   }
 
   .tab-raster td {
-    width: 86px;
-    min-width: 86px;
-    max-width: 86px;
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
   }
 }
 
@@ -5847,73 +5821,78 @@ dialog.bild-auswahl {
    Hubs Stufe 3: Präsentationen
    ========================================================================= */
 
+/* --- Präsentationen (Design B3, Welle 5c): Kopf wie die Textverarbeitung, Miniaturen ohne Karte --- */
+
 .prae-seite {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
 .prae-koerper {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
-  gap: 18px;
+  gap: var(--space-6);
   align-items: start;
 }
 
 .prae-miniaturen {
   position: sticky;
-  top: 12px;
-  max-height: calc(100vh - 150px);
+  top: var(--space-3);
+  max-height: calc(100dvh - var(--space-32));
   overflow-y: auto;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
+  scrollbar-width: thin;
 }
 
 .prae-miniaturen ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .prae-miniaturen li {
   display: flex;
-  gap: 6px;
   align-items: flex-start;
-  border-radius: var(--radius-m);
-  border-top: 3px solid transparent;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+  border-radius: var(--radius-s);
 }
 
+/* Ablageziel beim Ziehen: getönter Streifen oben in der Akzentfarbe */
 .prae-miniaturen li.ziel {
-  border-top-color: var(--accent);
+  box-shadow: inset 0 2px 0 var(--akzent);
 }
 
 .prae-nummer {
   width: 16px;
-  font-size: 11px;
-  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-3);
   text-align: right;
-  padding-top: 2px;
 }
 
 .prae-miniatur {
   flex: 1;
   min-width: 0;
   padding: 0;
-  border: 2px solid var(--border);
+  border: 0;
   border-radius: var(--radius-s);
   background: none;
-  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--linie-2);
   overflow: hidden;
+  cursor: pointer;
 }
 
-.prae-miniaturen li.aktiv .prae-miniatur {
-  border-color: var(--accent);
+.prae-miniatur[aria-current] {
+  box-shadow: 0 0 0 2px var(--akzent);
+}
+
+.prae-miniatur > span {
+  display: block;
 }
 
 .prae-miniatur .folie {
@@ -5921,52 +5900,92 @@ dialog.bild-auswahl {
 }
 
 .prae-neu {
-  position: relative;
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }
 
-.prae-neu > .btng {
+.prae-neu .drei-punkte,
+.prae-neu .knopf {
   width: 100%;
   justify-content: center;
-}
-
-.prae-layouts {
-  left: 0;
-  right: auto;
-  top: auto;
-  bottom: calc(100% + 4px);
-  width: 230px;
-}
-
-.prae-layouts button {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.prae-layouts span {
-  font-size: 11.5px;
 }
 
 .prae-buehne {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .prae-buehne > .folie {
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
   border-radius: var(--radius-m);
+  box-shadow: 0 0 0 1px var(--linie-2);
 }
 
 .prae-buehne-leiste {
   display: flex;
   align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
-  font-size: 13px;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.prae-layout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.prae-stand {
+  margin-right: auto;
+}
+
+.prae-stand .zahl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.folie-bild-knopf {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+}
+
+.folie-bild-leer {
+  gap: var(--space-2);
+}
+
+/* Vollbild: Stand und Beenden unten rechts, immer lesbar (auch ohne Zeigen) */
+.prae-vollbild-info {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+@media (max-width: 900px) {
+  .prae-koerper {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .prae-miniaturen {
+    position: static;
+    max-height: none;
+    order: 2;
+  }
+
+  .prae-miniaturen ol {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .prae-miniaturen li {
+    flex: 0 0 144px;
+  }
 }
 
 /* --- Folie (16:9, skaliert über Container-Einheiten) --- */
@@ -6131,14 +6150,6 @@ textarea.folie-punkte {
   border-radius: 0.8cqw;
 }
 
-.folie-bild-knopf {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  font-size: 12px;
-  background: var(--card);
-}
-
 .folie-bild-leer {
   flex: 1;
   display: flex;
@@ -6169,32 +6180,6 @@ textarea.folie-punkte {
 
 .prae-vollbild-folie {
   width: min(100vw, calc(100vh * 16 / 9));
-}
-
-.prae-vollbild-info {
-  position: fixed;
-  right: 16px;
-  bottom: 12px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  opacity: 0.4;
-  transition: opacity 0.2s;
-}
-
-.prae-vollbild-info:hover {
-  opacity: 1;
-}
-
-.prae-vollbild-info button {
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  border-radius: var(--radius-m);
-  padding: 4px 10px;
-  cursor: pointer;
 }
 
 /* --- PRÄ-07: PDF-Export --- */
@@ -6233,35 +6218,16 @@ textarea.folie-punkte {
   }
 }
 
-@media (max-width: 900px) {
-  .prae-koerper {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .prae-miniaturen {
-    position: static;
-    max-height: none;
-    order: 2;
-  }
-
-  .prae-miniaturen ol {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  .prae-miniaturen li {
-    flex: 0 0 140px;
-  }
-}
-
 /* =========================================================================
    Hubs Stufe 4: MindMap und Whiteboard (gemeinsame Zeichenfläche)
    ========================================================================= */
 
+/* Design B3, Welle 6: Kopf und Leiste wie Textverarbeitung, Zeichenfläche mit Ring.
+   Das Whiteboard-Papier bleibt in beiden Designs hell (Entscheidung Didi), die Bedienung folgt dem Design. */
 .zf-seite {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   height: calc(100vh - 68px);
   min-height: 460px;
@@ -6270,60 +6236,43 @@ textarea.folie-punkte {
 .zf-titel {
   flex: 1 1 200px;
   min-width: 0;
-  font-size: 26px;
   overflow: hidden;
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.zf-leiste {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
-}
-
-.zf-leiste .md-knopf {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.zf-leiste .md-knopf:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .zf-leiste kbd {
-  font-size: 10px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
 }
 
-.zf-farben {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
+.zf-leiste .tab-farbe:disabled {
+  background: color-mix(in srgb, var(--c) 30%, var(--flaeche));
+  cursor: not-allowed;
 }
 
-.zf-farben .tab-farbe:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.zf-farbmenue {
-  gap: 6px;
-  padding: 8px;
-}
-
-.zf-zoom {
-  min-width: 44px;
+.zf-zoom,
+.wb-zoom {
+  min-width: 48px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--text-2);
   text-align: center;
-  font-size: 12px;
-  color: var(--muted);
+}
+
+.zf-farbmenue .zf-farben {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) var(--space-2);
 }
 
 .zf-flaeche {
@@ -6331,16 +6280,16 @@ textarea.folie-punkte {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  background: var(--card);
-  outline: none;
+  background: var(--flaeche-2);
+  box-shadow: 0 0 0 1px var(--linie-2);
   touch-action: none;
   user-select: none;
 }
 
 .zf-flaeche:focus-visible {
-  box-shadow: 0 0 0 2px var(--accent);
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
 }
 
 .zf-svg {
@@ -6355,29 +6304,49 @@ textarea.folie-punkte {
   cursor: grabbing;
 }
 
+.zf-auswahl {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+
 .zf-plus {
   cursor: pointer;
+}
+
+.zf-plus circle {
+  fill: var(--flaeche);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.zf-plus path {
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .zf-knoten-eingabe {
   width: 100%;
   height: 100%;
-  border: none;
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: var(--radius-m);
-  padding: 0 8px;
+  background: var(--flaeche);
+  color: var(--text);
   font: 600 15px var(--font-body), system-ui, sans-serif;
   text-align: center;
-  background: #fffdf8;
-  color: #2a2318;
-  outline: 2px solid #2a2318;
+  outline: 2px solid var(--akzent);
 }
 
 .zf-hilfe {
   position: absolute;
-  left: 12px;
-  bottom: 8px;
+  left: var(--space-3);
+  bottom: var(--space-2);
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
   pointer-events: none;
 }
 
@@ -6387,107 +6356,118 @@ textarea.folie-punkte {
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wb-werkzeuge {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--border);
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-radius: var(--radius-m);
-  background: var(--card);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
   overflow-y: auto;
 }
 
 .wb-werkzeug {
-  width: 36px;
-  height: 36px;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  border-radius: var(--radius-m);
-  background: transparent;
-  color: var(--muted);
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
   cursor: pointer;
 }
 
-.wb-werkzeug:hover {
-  background: var(--card2);
+.wb-werkzeug:hover:not(:disabled) {
+  background: var(--hover);
   color: var(--text);
 }
 
 .wb-werkzeug.an {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+  color: var(--akzent-text);
 }
 
 .wb-werkzeug:disabled {
-  opacity: 0.35;
-  cursor: default;
+  color: var(--text-3);
+  cursor: not-allowed;
 }
 
 .wb-farbe {
-  width: 22px;
-  height: 22px;
   flex: none;
-  border-radius: 50%;
-  border: 2px solid var(--card);
-  box-shadow: 0 0 0 1px var(--border);
-  cursor: pointer;
+  width: 24px;
+  height: 24px;
   padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  cursor: pointer;
 }
 
 .wb-farbe.an {
-  box-shadow: 0 0 0 2px var(--accent);
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
 }
 
 .wb-staerke {
   display: block;
-  width: 18px;
-  border-radius: 4px;
+  width: 16px;
+  border-radius: var(--radius-s);
   background: currentColor;
 }
 
 .wb-trenner {
+  flex: none;
   width: 24px;
   height: 1px;
-  flex: none;
-  background: var(--border);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
+  background: var(--linie-2);
 }
 
-.wb-zoom {
-  font-size: 10.5px;
-  color: var(--muted);
+.zf-flaeche.wb-flaeche {
+  background: var(--papier);
+  box-shadow: 0 0 0 1px var(--linie-2);
 }
 
-.wb-flaeche {
-  background: #fffdf8;
+.wb-flaeche .zf-hilfe,
+.wb-leer {
+  color: var(--papier-text-2);
 }
 
-.dashboard[data-theme="nacht"] .wb-flaeche {
-  background: #fffdf8;
+.wb-rasterpunkt {
+  fill: var(--papier-linie);
+}
+
+.wb-auswahl {
+  fill: none;
+  stroke: var(--papier-akzent);
+}
+
+.wb-griff {
+  fill: var(--papier);
+  stroke: var(--papier-akzent);
 }
 
 .wb-texteingabe {
   position: absolute;
+  z-index: 5;
   min-width: 160px;
   min-height: 1.6em;
-  padding: 0;
   margin: 0;
-  border: 1px dashed #b9822a;
-  background: rgba(255, 253, 248, 0.9);
+  padding: 0;
+  border: 0;
+  outline: 1px dashed var(--papier-akzent);
+  background: color-mix(in srgb, var(--papier) 90%, transparent);
   font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.25;
   resize: both;
-  outline: none;
-  z-index: 5;
   field-sizing: content;
 }
 
@@ -6497,15 +6477,15 @@ textarea.folie-punkte {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 24px;
   margin: 0;
+  padding: var(--space-6);
+  text-align: center;
   pointer-events: none;
 }
 
 @media (max-width: 760px) {
   .zf-seite {
-    height: calc(100dvh - 110px);
+    height: calc(100dvh - 112px);
   }
 
   .wb-arbeitsbereich {
@@ -6521,7 +6501,7 @@ textarea.folie-punkte {
   .wb-trenner {
     width: 1px;
     height: 24px;
-    margin: 0 4px;
+    margin: 0 var(--space-1);
   }
 
   .zf-hilfe {
@@ -8703,8 +8683,6 @@ html[data-eingebettet] .dashboard-main {
   border-left: 1px solid var(--border-soft);
 }
 
-
-
 .pdf-leiste .pdf-name {
   flex: 0 1 auto;
   max-width: 190px;
@@ -9068,8 +9046,6 @@ button.pdf-pfad-teil:hover {
   margin-right: var(--space-1);
 }
 
-
-
 /* --- Stundenplan aus Foto (Design B3: Ring statt Rand, Abstände aus den Token) --- */
 .sp-foto-hinweis {
   display: flex;
@@ -9212,15 +9188,6 @@ button.pdf-pfad-teil:hover {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.notiz-pdf select {
-  max-width: 180px;
-}
-
-.notiz-pdf-oeffnen {
-  padding: 4px 10px;
-  font-size: 12px;
 }
 
 /* --- Zentraler Hub: Notch mit den Bereichen als eigene Seiten ---
@@ -9473,129 +9440,602 @@ button.pdf-pfad-teil:hover {
 }
 
 /* =====================================================================
-   Notizen: Word-artige Werkzeugleiste, Obsidian-artige Verlinkungen
+   Notizen (Design B3, Welle 5a): Liste links wie eine Kontextspalte,
+   Notiz rechts ohne Karte, Word-artige Leiste, Obsidian-artige Verlinkungen
    ===================================================================== */
 
-.md-editor-voll {
-  gap: 10px;
+/* aufklappendes Feld der Werkzeugleiste: Fläche mit Ring und weichem Schatten */
+.wz-feld {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + var(--space-1));
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 16px 32px -16px var(--schatten);
 }
 
-.wz {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+.notiz-vorlagen h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.notiz-vorlagen ul {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.notiz-vorlagen li button {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
+  gap: var(--space-half);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
   border-radius: var(--radius-m);
-  background: var(--card2);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-vorlagen li button:hover {
+  background: var(--hover);
+}
+
+.notiz-vorlagen small {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* laufende Vorlesung: getönter Hinweis mit einer Aktion */
+.notiz-vorlesung {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
+  font-size: var(--text-sm);
+}
+
+.notiz-vorlesung svg {
+  color: var(--akzent-text);
+}
+
+.notiz-vorlesung .knopf {
+  margin-left: auto;
+}
+
+.notiz-layout {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.notiz-layout[data-liste="zu"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.notiz-layout[data-liste="zu"] > .notiz-spalte {
+  display: none;
+}
+
+.notiz-spalte {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: calc(100dvh - var(--space-24));
+}
+
+.notiz-spalte-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.notiz-suche {
+  flex: 1;
+  min-width: 0;
+}
+
+.notiz-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.notiz-liste {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.notiz-eintrag {
+  display: flex;
+  align-items: start;
+  border-radius: var(--radius-m);
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.notiz-eintrag:hover {
+  background: var(--hover);
+}
+
+.notiz-eintrag:has([aria-current]) {
+  background: var(--aktiv);
+}
+
+.notiz-eintrag > .knopf {
+  margin: var(--space-1) var(--space-1) 0 0;
+  color: var(--text-3);
+}
+
+.notiz-eintrag > .knopf[aria-pressed="true"] {
+  color: var(--akzent-text);
+}
+
+.notiz-oeffnen {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-half) var(--space-2);
+  padding: var(--space-2) var(--space-1) var(--space-2) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notiz-name.ohne {
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.notiz-vorschau,
+.notiz-datum {
+  grid-column: 2;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notiz-datum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+
+.notiz-inhalt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* geöffnete Notizen als Reiter, davor Liste, Zurück und Vor */
+.notiz-reiter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--linie);
+}
+
+.notiz-reiter ul {
+  display: flex;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.notiz-reiter li {
+  flex: none;
+  display: flex;
+  align-items: center;
+  max-width: 224px;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.notiz-reiter li:has([aria-current]) {
+  background: var(--aktiv);
+}
+
+.notiz-reiter-titel {
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.notiz-reiter-titel[aria-current] {
+  color: var(--text);
+  font-weight: 550;
+}
+
+.notiz-reiter-zu {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+}
+
+.notiz-reiter-zu:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.notiz-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.notiz-editor-leiste {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.knopf.notiz-zurueck {
+  display: none;
+}
+
+.notiz-fach {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-right: auto;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.notiz-fach select {
+  height: 32px;
+  max-width: 280px;
+  font-size: var(--text-sm);
+}
+
+.notiz-titel {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.notiz-titel::placeholder {
+  color: var(--text-3);
+}
+
+.notiz-arbeitsflaeche {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 224px;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.notiz-seite {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.notiz-seite h2 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.notiz-seite p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.notiz-gliederung,
+.notiz-verweise {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notiz-gliederung button,
+.notiz-verweise button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2) var(--space-1) calc(var(--space-2) + var(--einzug, 0px));
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-gliederung button:hover,
+.notiz-verweise button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.notiz-verweise svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.notiz-verweise button.fehlt {
+  color: var(--text-3);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+}
+
+/* Strg+O in den Notizen: Notiz per Name öffnen */
+.formular-dialog.notiz-schnellsuche {
+  width: min(560px, calc(100% - var(--space-8)));
+  margin-top: 12vh;
+  padding: var(--space-3);
+}
+
+.notiz-schnellsuche input {
+  width: 100%;
+}
+
+.notiz-schnellsuche ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.notiz-schnellsuche li button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notiz-schnellsuche li button svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.notiz-schnellsuche li button.an,
+.notiz-schnellsuche li button:hover {
+  background: var(--aktiv);
+}
+
+.notiz-schnellsuche .notiz-datum {
+  margin-left: auto;
+}
+
+/* --- Werkzeugleiste: Registerkarten wie in Word, einklappbar --- */
+
+.wz {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.wz-kopf {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+}
+
+.wz-reiter,
+.wz-mini,
+.wz-gruppe {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-half);
+}
+
+.wz-reiter button {
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wz-reiter button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.wz-reiter button[aria-selected="true"] {
+  background: var(--aktiv);
+  color: var(--text);
+}
+
+.wz-reiter button.kontext {
+  color: var(--akzent-text);
+}
+
+.wz-einklappen {
+  margin-left: auto;
 }
 
 .wz-zeile {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 2px 4px;
-}
-
-.wz-gruppe {
-  display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  border-top: 1px solid var(--linie);
 }
 
 .wz-trenner {
   width: 1px;
-  height: 22px;
-  margin: 0 4px;
-  background: var(--border);
+  height: var(--space-5);
+  margin: 0 var(--space-1);
+  background: var(--linie-2);
 }
 
 .wz-knopf {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 6px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-m);
-  background: transparent;
-  color: var(--text);
+  gap: var(--space-1);
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-sm);
   cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    color var(--dur-micro) var(--ease-out);
 }
 
 .wz-knopf:hover:not(:disabled) {
-  background: var(--card);
-  border-color: var(--border-soft);
+  background: var(--hover);
+  color: var(--text);
 }
 
-.wz-knopf.an {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border-color: transparent;
+.wz-knopf.an,
+.wz-knopf[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+  color: var(--akzent-text);
 }
 
 .wz-knopf:disabled {
-  opacity: 0.35;
-  cursor: default;
+  background: none;
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.wz-knopf > span[aria-hidden] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .wz-knopf.breit {
-  font-size: 12.5px;
-  padding: 0 9px;
+  padding: 0 var(--space-3);
 }
 
 .wz-text {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.wz-verlinken {
-  color: var(--accent-strong);
-}
-
-.wz-pfeil {
-  font-size: 9px;
-  opacity: 0.6;
+  font-size: var(--text-md);
+  font-weight: 500;
 }
 
 .wz-auswahl {
-  height: 30px;
-  padding: 0 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
   color: var(--text);
   font: inherit;
-  font-size: 13px;
-  max-width: 120px;
+  font-size: var(--text-sm);
 }
 
 .wz-absatz {
-  max-width: 140px;
+  width: 136px;
 }
 
 .wz-farbknopf {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  font-weight: 700;
+  gap: var(--space-half);
   line-height: 1;
 }
 
 .wz-farbstrich {
-  display: block;
   width: 16px;
   height: 4px;
-  margin-top: 2px;
-  border-radius: 2px;
+  border-radius: var(--space-half);
 }
 
 .wz-aufklapp {
@@ -9603,185 +10043,154 @@ button.pdf-pfad-teil:hover {
 }
 
 .wz-feld {
-  position: absolute;
-  top: calc(100% + 6px);
   left: 0;
-  z-index: 30;
-  min-width: 200px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
+  min-width: 224px;
+  padding: var(--space-3);
 }
 
 .wz-farben {
   display: grid;
-  grid-template-columns: repeat(5, 26px);
-  gap: 6px;
+  grid-template-columns: repeat(5, 24px);
+  gap: var(--space-2);
 }
 
 .wz-farbe {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
+  border: 0;
   border-radius: var(--radius-s);
-  border: 1px solid rgb(0 0 0 / 0.15);
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
   cursor: pointer;
 }
 
-.wz-farbe:hover {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.wz-text-knopf {
+.wz-farben .knopf {
   grid-column: 1 / -1;
-  margin-top: 4px;
-  border: none;
-  background: none;
-  color: var(--accent-strong);
-  font: inherit;
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-  padding: 2px 0;
 }
 
 .wz-liste {
   display: flex;
   flex-direction: column;
-  min-width: 170px;
+  gap: var(--space-half);
 }
 
-.wz-liste button {
-  border: none;
+.wz-liste button,
+.wz-treffer button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-s);
   background: none;
-  text-align: left;
-  font: inherit;
-  font-size: 13.5px;
   color: var(--text);
-  padding: 6px 8px;
-  border-radius: var(--radius-m);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
   cursor: pointer;
 }
 
-.wz-liste button:hover {
-  background: var(--card2);
+.wz-liste button:hover,
+.wz-treffer button:hover,
+.wz-treffer button.an {
+  background: var(--aktiv);
 }
 
-.wz-eingabe {
+.wz-liste svg,
+.wz-treffer svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.wz-eingabe,
+.wz-verlinken-feld {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 280px;
+  gap: var(--space-2);
+  width: 288px;
 }
 
 .wz-eingabe label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--muted);
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
-.wz-eingabe .btnp {
-  align-self: flex-start;
-}
-
-.wz-check {
-  flex-direction: row !important;
+.wz-eingabe label.wz-check {
+  flex-direction: row;
   align-items: center;
-  gap: 6px !important;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.wz-eingabe .knopf {
+  align-self: flex-start;
 }
 
 .wz-raster-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
 .wz-raster {
   display: grid;
-  grid-template-columns: repeat(6, 20px);
-  gap: 3px;
+  grid-template-columns: repeat(6, 24px);
+  gap: var(--space-1);
 }
 
 .wz-raster button {
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: var(--card);
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
   cursor: pointer;
-  padding: 0;
 }
 
 .wz-raster button.an {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-}
-
-.wz-tabelle {
-  padding-top: 4px;
-  border-top: 1px solid var(--border-soft);
-}
-
-.wz-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-right: 4px;
-}
-
-.wz-verlinken-feld {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: min(340px, 80vw);
+  background: color-mix(in srgb, var(--akzent) 40%, transparent);
 }
 
 .wz-seite {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
-.wz-seite .field {
-  width: 70px;
-  padding: 4px 8px;
+.wz-feld .wz-seite input {
+  width: 72px;
 }
 
 .wz-treffer {
   list-style: none;
+  max-height: 240px;
   margin: 0;
   padding: 0;
-  max-height: 260px;
   overflow-y: auto;
 }
 
-.wz-treffer button {
-  width: 100%;
-  border: none;
-  background: none;
-  text-align: left;
-  font: inherit;
-  font-size: 13.5px;
-  color: var(--text);
-  padding: 6px 8px;
-  border-radius: var(--radius-m);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wz-treffer button:hover,
-.wz-treffer button.an {
-  background: var(--accent-soft);
+.wz-treffer .leer {
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 /* --- Inhalte im Notiz-Editor --- */
+
+.md-editor-voll {
+  gap: var(--space-3);
+}
+
 .md-notiz {
   min-height: 420px;
 }
@@ -9791,40 +10200,36 @@ button.pdf-pfad-teil:hover {
 .md-notiz h3 { font-size: 1.25em; }
 .md-notiz h4 { font-size: 1.1em; }
 .md-notiz h5 { font-size: 1em; }
-.md-notiz h6 { font-size: 0.9em; color: var(--muted); }
+.md-notiz h6 { font-size: 0.9em; color: var(--text-2); }
 
-.md-notiz h1,
-.md-notiz h2,
-.md-notiz h3,
-.md-notiz h4,
-.md-notiz h5,
-.md-notiz h6 {
+.md-notiz :is(h1, h2, h3, h4, h5, h6) {
   margin: 1em 0 0.4em;
   line-height: 1.25;
 }
 
 .md-notiz blockquote {
   margin: 0.6em 0;
-  padding: 2px 14px;
-  border-left: 3px solid var(--accent);
-  color: var(--muted);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text-2);
 }
 
 .md-notiz hr {
-  border: none;
-  border-top: 1px solid var(--border);
   margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--linie-2);
 }
 
 .md-notiz mark {
-  background: #fef08a;
+  padding: 0 var(--space-half);
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--warnung) 32%, transparent);
   color: inherit;
-  border-radius: 3px;
-  padding: 0 2px;
 }
 
 .md-notiz a[href] {
-  color: var(--accent-strong);
+  color: var(--akzent-text);
   text-decoration: underline;
 }
 
@@ -9833,33 +10238,32 @@ button.pdf-pfad-teil:hover {
   border-radius: var(--radius-m);
 }
 
-.md-notiz img.ProseMirror-selectednode {
-  outline: 2px solid var(--accent);
+.md-notiz img.ProseMirror-selectednode,
+.md-wikilink.ProseMirror-selectednode {
+  outline: 2px solid var(--akzent);
 }
 
 .md-notiz table {
-  border-collapse: collapse;
-  margin: 0.8em 0;
   width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
   table-layout: fixed;
 }
 
-.md-notiz th,
-.md-notiz td {
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  vertical-align: top;
+.md-notiz :is(th, td) {
   position: relative;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--linie-2);
+  vertical-align: top;
 }
 
 .md-notiz th {
-  background: var(--card2);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
   font-weight: 600;
   text-align: left;
 }
 
-.md-notiz td p,
-.md-notiz th p {
+.md-notiz :is(td, th) p {
   margin: 0;
 }
 
@@ -9867,71 +10271,12 @@ button.pdf-pfad-teil:hover {
   content: "";
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--akzent) 18%, transparent);
   pointer-events: none;
 }
 
 .md-notiz .tableWrapper {
   overflow-x: auto;
-}
-
-/* Callouts wie in Obsidian */
-.md-callout {
-  margin: 0.8em 0;
-  padding: 10px 14px;
-  border-radius: var(--radius-m);
-  border-left: 4px solid var(--callout, #3b82f6);
-  background: color-mix(in srgb, var(--callout, #3b82f6) 10%, transparent);
-}
-
-.md-callout[data-callout="tipp"] { --callout: #16a34a; }
-.md-callout[data-callout="merke"] { --callout: #9333ea; }
-.md-callout[data-callout="warnung"] { --callout: #ea580c; }
-.md-callout[data-callout="frage"] { --callout: #0891b2; }
-
-.md-callout-titel {
-  font-weight: 700;
-  font-size: 0.9em;
-  margin-bottom: 4px;
-  color: var(--callout, #3b82f6);
-  user-select: none;
-}
-
-.md-callout-inhalt > :last-child {
-  margin-bottom: 0;
-}
-
-/* Verlinkungen [[…]] */
-.md-wikilink {
-  display: inline;
-  padding: 1px 6px;
-  border-radius: var(--radius-s);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: normal;
-}
-
-.md-wikilink:hover {
-  text-decoration: underline;
-}
-
-.md-wikilink-pdf {
-  background: color-mix(in srgb, #dc2626 12%, transparent);
-  color: #b91c1c;
-}
-
-.md-wikilink-fehlt,
-.md-wikilink-pdf-fehlt {
-  background: transparent;
-  color: var(--muted);
-  border: 1px dashed var(--border);
-}
-
-.md-wikilink.ProseMirror-selectednode {
-  outline: 2px solid var(--accent);
 }
 
 .md-notiz .tiptap-mathematics-render {
@@ -9940,270 +10285,142 @@ button.pdf-pfad-teil:hover {
 
 .md-notiz [data-type="block-math"] {
   display: block;
-  text-align: center;
   margin: 0.8em 0;
+  text-align: center;
 }
 
-/* --- Layout der Notizen-App --- */
-.notiz-kopf-aktionen {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.notiz-kopf-aktionen kbd {
-  font-size: 11px;
-  opacity: 0.6;
-  font-family: inherit;
-}
-
-.notiz-neu-gruppe {
-  position: relative;
-  display: inline-flex;
-}
-
-.notiz-neu-gruppe > .btnp:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.notiz-neu-pfeil {
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
-  border-left: 1px solid rgb(255 255 255 / 0.3) !important;
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-}
-
-.notiz-vorlagen {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px;
-  min-width: 260px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.16);
-}
-
-.notiz-vorlagen button {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 13.5px;
-  color: var(--text);
-  padding: 8px 10px;
+/* Hinweisboxen wie in Obsidian: getönt in einer Farbe des Designs, Symbol im Titel */
+.md-callout {
+  --callout: var(--f3);
+  margin: 0.8em 0;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-m);
-  text-align: left;
-  cursor: pointer;
+  background: color-mix(in srgb, var(--callout) 12%, transparent);
 }
 
-.notiz-vorlagen button:hover {
-  background: var(--card2);
-}
+.md-callout[data-callout="tipp"] { --callout: var(--ok); }
+.md-callout[data-callout="merke"] { --callout: var(--f4); }
+.md-callout[data-callout="warnung"] { --callout: var(--warnung); }
+.md-callout[data-callout="frage"] { --callout: var(--f1); }
 
-.notiz-vorlagen .muted {
-  font-size: 12px;
-}
-
-.notiz-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.notiz-tag {
-  border: 1px solid var(--border-soft);
-  background: var(--card);
-  color: var(--muted);
-  font: inherit;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.notiz-tag.an {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  border-color: transparent;
-}
-
-.notiz-inhalt {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.notiz-karte {
-  display: flex;
-  flex-direction: column;
-}
-
-.notiz-tabs {
+.md-callout-titel {
   display: flex;
   align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  user-select: none;
 }
 
-.notiz-tab {
-  display: inline-flex;
-  align-items: center;
-  max-width: 200px;
-  border: 1px solid var(--border-soft);
-  border-radius: 9px 9px 0 0;
-  background: var(--card2);
-  flex: none;
+.md-callout-titel svg {
+  color: var(--callout);
 }
 
-.notiz-tab.an {
-  background: var(--card);
-  border-color: var(--border);
-  border-bottom-color: var(--card);
+.md-callout-inhalt > :last-child {
+  margin-bottom: 0;
 }
 
-.notiz-tab-titel {
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--text);
-  padding: 5px 4px 5px 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.notiz-tab:not(.an) .notiz-tab-titel {
-  color: var(--muted);
-}
-
-.notiz-tab-zu {
-  border: none;
-  background: none;
-  color: var(--faint);
-  font-size: 15px;
-  padding: 0 8px 0 2px;
-  cursor: pointer;
-}
-
-.notiz-tab-zu:hover {
-  color: var(--text);
-}
-
-.notiz-arbeitsflaeche {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
-  gap: 18px;
-  align-items: start;
-}
-
-.notiz-seite {
-  position: sticky;
-  top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  font-size: 13px;
-}
-
-.notiz-seite h4 {
-  margin: 0 0 6px;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
-.notiz-seite p {
-  margin: 0;
-  font-size: 12.5px;
-}
-
-.notiz-gliederung,
-.notiz-verweise {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.notiz-gliederung button,
-.notiz-verweise button {
-  width: 100%;
-  border: none;
-  background: none;
-  text-align: left;
-  font: inherit;
-  font-size: 13px;
-  color: var(--text);
-  padding: 4px 6px;
+/* Verlinkungen [[…]] */
+.md-wikilink {
+  padding: 0 var(--space-1);
   border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.notiz-gliederung button:hover,
-.notiz-verweise button:hover {
-  background: var(--card2);
+.md-wikilink:hover {
+  text-decoration: underline;
 }
 
-.notiz-verweise button.fehlt {
-  color: var(--faint);
+.md-wikilink svg {
+  margin-right: var(--space-1);
+  vertical-align: -0.15em;
 }
 
-.notiz-schnellsuche {
-  width: min(560px, 92vw);
-  padding: 12px;
-  margin-top: 12vh;
+.md-wikilink-pdf {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--fehler-text);
 }
 
-.notiz-schnellsuche::backdrop {
-  background: rgb(0 0 0 / 0.35);
-}
-
-.notiz-schnellsuche ul {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  max-height: 50vh;
-  overflow-y: auto;
-}
-
-.notiz-schnellsuche li button {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  border: none;
+.md-wikilink-fehlt,
+.md-wikilink-pdf-fehlt {
   background: none;
-  text-align: left;
-  font: inherit;
-  font-size: 14px;
-  color: var(--text);
-  padding: 8px 10px;
-  border-radius: var(--radius-m);
-  cursor: pointer;
+  color: var(--text-2);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
 }
 
-.notiz-schnellsuche li button.an,
-.notiz-schnellsuche li button:hover {
-  background: var(--accent-soft);
+/* offene Notiz: der Text bekommt den Platz */
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .seitenkopf p {
+  display: none;
+}
+
+html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .seitenkopf {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .notiz-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notiz-layout[data-ansicht="inhalt"] > .notiz-spalte,
+  .notiz-layout[data-ansicht="liste"] > .notiz-inhalt {
+    display: none;
+  }
+
+  .notiz-spalte,
+  .notiz-seite {
+    position: static;
+    max-height: none;
+  }
+
+  .notiz-arbeitsflaeche {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .knopf.notiz-zurueck {
+    display: inline-flex;
+  }
+
+  .notiz-reiter .knopf.notiz-liste-auf {
+    display: none;
+  }
+
+  .notiz-fach select {
+    max-width: 180px;
+  }
+
+  .wz-absatz {
+    width: 120px;
+  }
+
+  .wz-trenner {
+    display: none;
+  }
+
+  .notiz-titel {
+    font-size: var(--text-xl);
+  }
+
+  /* offene Notiz am Handy: Kopf und Fach-Filter weg, „Alle Notizen“ führt zurück */
+  .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > :is(.seitenkopf, .fach-filter-chips) {
+    display: none;
+  }
+
+  /* offenes Feld in der Leiste: eigene Zeile statt über den Knöpfen */
+  .wz-aufklapp:has(> .wz-feld) {
+    flex-basis: 100%;
+  }
+
+  .wz-feld {
+    position: static;
+    margin-top: var(--space-1);
+  }
 }
 
 .pdf-notiz-seiten {
@@ -10218,199 +10435,6 @@ button.pdf-pfad-teil:hover {
   border: none;
   font: inherit;
   font-size: 11.5px;
-}
-
-@media (max-width: 1250px) {
-  .notiz-arbeitsflaeche {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .notiz-seite {
-    position: static;
-    border-top: 1px solid var(--border-soft);
-    padding-top: 12px;
-  }
-}
-
-@media (max-width: 760px) {
-  .wz {
-    position: static;
-  }
-
-  .wz-auswahl {
-    max-width: 100px;
-  }
-}
-
-/* Notizen: Abstände liegen auf der Karte, nicht auf dem Rahmen mit den Tabs */
-.notiz-layout .hub-inhalt.notiz-inhalt {
-  padding: 0;
-  min-height: 0;
-}
-
-.notiz-karte {
-  min-height: 420px;
-  padding: 18px 22px;
-}
-
-@media (max-width: 760px) {
-  .notiz-layout .hub-inhalt.notiz-inhalt {
-    padding: 0;
-  }
-
-  .notiz-karte {
-    padding: 14px;
-  }
-}
-
-/* --- Notiz-Leiste: Registerkarten wie in Word, schmal und einklappbar --- */
-.wz {
-  top: 8px;
-  gap: 0;
-  padding: 0;
-  border-color: var(--border-soft);
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 0.06);
-  overflow: visible;
-}
-
-.wz-reiter {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px 6px;
-  min-height: 32px;
-}
-
-.wz:not(.wz-zu) .wz-reiter {
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.wz-schnell {
-  display: inline-flex;
-  margin-right: 6px;
-  padding-right: 6px;
-  border-right: 1px solid var(--border-soft);
-}
-
-.wz-reiter-knopf {
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--muted);
-  padding: 4px 10px;
-  border-radius: var(--radius-s);
-  cursor: pointer;
-  position: relative;
-}
-
-.wz-reiter-knopf:hover {
-  color: var(--text);
-  background: var(--card2);
-}
-
-.wz-reiter-knopf.an {
-  color: var(--accent-strong);
-}
-
-.wz-reiter-knopf.an::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: -4px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-}
-
-.wz-reiter-knopf.kontext {
-  color: #0f766e;
-}
-
-.wz-mini {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  margin-left: 6px;
-  padding-left: 6px;
-  border-left: 1px solid var(--border-soft);
-}
-
-.wz-einklappen {
-  margin-left: auto;
-  border: none;
-  background: none;
-  color: var(--faint);
-  font-size: 15px;
-  line-height: 1;
-  width: 26px;
-  height: 24px;
-  border-radius: var(--radius-s);
-  cursor: pointer;
-}
-
-.wz-einklappen:hover {
-  color: var(--text);
-  background: var(--card2);
-}
-
-.wz .wz-zeile {
-  padding: 4px 6px;
-  gap: 1px 3px;
-}
-
-.wz .wz-tabelle {
-  border-top: none;
-  padding-top: 4px;
-}
-
-.wz .wz-knopf {
-  min-width: 26px;
-  height: 26px;
-  padding: 0 5px;
-  font-size: 13px;
-  border-radius: var(--radius-s);
-}
-
-.wz .wz-knopf.breit {
-  font-size: 12px;
-  padding: 0 8px;
-}
-
-.wz .wz-auswahl {
-  height: 26px;
-  font-size: 12.5px;
-  padding: 0 4px;
-  border-color: var(--border-soft);
-}
-
-.wz .wz-trenner {
-  height: 18px;
-  margin: 0 3px;
-}
-
-.wz .wz-text {
-  font-size: 12.5px;
-}
-
-.wz svg {
-  width: 15px;
-  height: 15px;
-}
-
-@media (max-width: 760px) {
-  .wz {
-    position: sticky;
-    top: 56px;
-  }
-
-  .wz-reiter {
-    flex-wrap: wrap;
-  }
 }
 
 /* =====================================================================
@@ -11748,72 +11772,6 @@ html[data-eingebettet] .dashboard-main:has(> .pdf-reader) {
 html[data-eingebettet] .dashboard-main > .pdf-reader {
   height: calc(100vh - 8px);
   height: calc(100dvh - 8px);
-}
-
-/* Notizen in der zweiten Ansicht: Überschrift weg, sobald eine Notiz offen ist – der Text zählt */
-html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf {
-  display: none;
-}
-
-html[data-eingebettet] .notiz-karte {
-  padding: 10px 12px;
-  border: none;
-  box-shadow: none;
-}
-
-html[data-eingebettet] .notiz-inhalt {
-  gap: 4px;
-}
-
-/* Notizen: die Karte füllt die Höhe des Fensters */
-.notiz-karte {
-  min-height: calc(100vh - 190px);
-}
-
-html[data-eingebettet] .notiz-karte {
-  min-height: calc(100vh - 60px);
-}
-
-/* Notizliste eingeklappt: die offene Notiz nutzt die ganze Breite */
-@media (min-width: 761px) {
-  .notiz-layout[data-liste="zu"] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .notiz-layout[data-liste="zu"] > .hub-liste {
-    display: none;
-  }
-}
-
-.notiz-liste-zu {
-  align-self: flex-start;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.notiz-liste-zu:hover {
-  color: var(--text);
-}
-
-@media (max-width: 760px) {
-  .notiz-liste-zu,
-  .notiz-liste-auf {
-    display: none;
-  }
-}
-
-/* Offene Notiz: kompakte Kopfzeile */
-.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf .muted {
-  display: none;
-}
-
-.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .hub-kopf h1 {
-  font-size: 22px;
 }
 
 /* Dashboard-Suchfeld öffnet die Befehlspalette */
@@ -14410,6 +14368,11 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   .seitenkopf {
     flex-wrap: wrap;
     padding: var(--space-6) 0 var(--space-5);
+  }
+
+  .seitenkopf .rechts {
+    flex-wrap: wrap;
+    margin-left: 0;
   }
 
   .bearbleiste {
