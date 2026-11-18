@@ -41,6 +41,13 @@ export async function sitzungSpeichern(eingabe: {
     .limit(1);
   if (vorhanden && vorhanden.length > 0) return;
 
+  // Nur Aufgaben, die man selbst sehen darf (RLS), sonst landet die Zeit bei fremden Aufgaben
+  let aufgabe: { aufgabe_typ: AufgabeTyp; aufgabe_id: string } | null = null;
+  if (eingabe.aufgabe && AUFGABE_TYPEN.includes(eingabe.aufgabe.typ) && istUuid(eingabe.aufgabe.id)) {
+    const { data: sichtbar } = await supabase.from(eingabe.aufgabe.typ).select("id").eq("id", eingabe.aufgabe.id).maybeSingle();
+    if (sichtbar) aufgabe = { aufgabe_typ: eingabe.aufgabe.typ, aufgabe_id: eingabe.aufgabe.id };
+  }
+
   const { error } = await supabase
     .from("lern_session")
     .insert({
@@ -48,9 +55,7 @@ export async function sitzungSpeichern(eingabe: {
       start: startIso,
       dauer_minuten: minuten,
       fach_id: eingabe.fachId || null,
-      ...(eingabe.aufgabe && AUFGABE_TYPEN.includes(eingabe.aufgabe.typ) && istUuid(eingabe.aufgabe.id)
-        ? { aufgabe_typ: eingabe.aufgabe.typ, aufgabe_id: eingabe.aufgabe.id }
-        : {}),
+      ...(aufgabe ?? {}),
     });
   if (error) throw new Error(error.message);
 

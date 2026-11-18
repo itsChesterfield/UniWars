@@ -26,6 +26,8 @@ function useRaumTeilnehmer(topic: string, eigenerTopic: string | null): { liste:
       const { data } = await supabase.auth.getUser();
       if (aus) return;
       await supabase.realtime.setAuth();
+      // Raum inzwischen gewechselt oder Seite verlassen: keinen Kanal mehr öffnen
+      if (aus) return;
       // Eigener Zuschau-Kanal mit zufälligem Schlüssel: zuschauen ist unsichtbar
       kanal = supabase.channel(topic, { config: { private: true, presence: { key: `zuschauer-${crypto.randomUUID()}` } } });
       const aktualisieren = () => {
@@ -70,8 +72,9 @@ function Platz({ t, jetzt }: { t: Teilnehmer; jetzt: number }) {
  */
 export function Fokusraum({ raeume, hochschuleBestaetigt }: { raeume: Raum[]; hochschuleBestaetigt: boolean }) {
   const wahl = useFokusraum();
-  const [aktivTopic, setAktivTopic] = useState(wahl?.topic ?? raumTopic(raeume[0]));
-  const raum = raeume.find((r) => raumTopic(r) === aktivTopic) ?? raeume[0];
+  // Ohne eigene Auswahl den beigetretenen Raum zeigen (auch nach dem Neuladen, wenn die Wahl erst nach dem ersten Rendern bekannt ist)
+  const [aktivTopic, setAktivTopic] = useState<string | null>(null);
+  const raum = raeume.find((r) => raumTopic(r) === (aktivTopic ?? wahl?.topic)) ?? raeume[0];
   const topic = raumTopic(raum);
   const { liste, status } = useRaumTeilnehmer(topic, wahl?.topic ?? null);
   const jetzt = useJetzt(liste.some((t) => t.l));
@@ -79,14 +82,19 @@ export function Fokusraum({ raeume, hochschuleBestaetigt }: { raeume: Raum[]; ho
   const lernen = liste.filter((t) => t.m === "fokus" && t.l).length;
 
   // Freigaben: im Raum „Alle“ anonym, in Hochschule/Gruppe mit Namen
-  const [nameZeigen, setNameZeigen] = useState(raum.art !== "alle");
+  const [nameWahl, setNameZeigen] = useState<{ topic: string; an: boolean } | null>(null);
+  const nameZeigen = nameWahl?.topic === topic ? nameWahl.an : raum.art !== "alle";
   const [fachZeigen, setFachZeigen] = useState(false);
 
   function beitreten(mitFokus: boolean) {
     fokusraumSchreiben({ topic, titel: raum.titel, nameZeigen, fachZeigen });
     if (mitFokus) {
       const z = timerLesen() ?? startZustand();
-      if (!z.laeuft) timerSchreiben(starten(z.modus === "fokus" ? z : { ...startZustand(z.einstellungen, z.fachId), aufgabe: z.aufgabe ?? null }, Date.now()));
+      // In einer Pause direkt in die nächste Fokus-Runde; Runden und Aufgabe bleiben erhalten
+      if (!z.laeuft)
+        timerSchreiben(
+          starten(z.modus === "fokus" ? z : { ...startZustand(z.einstellungen, z.fachId), erledigteRunden: z.erledigteRunden, aufgabe: z.aufgabe ?? null, frage: z.frage ?? null }, Date.now()),
+        );
     }
     track("fokusraum_beigetreten", { raum: raum.art, name: nameZeigen, fach: fachZeigen, mit_fokus: mitFokus });
   }
@@ -120,7 +128,6 @@ export function Fokusraum({ raeume, hochschuleBestaetigt }: { raeume: Raum[]; ho
             className={raumTopic(r) === topic ? "an" : undefined}
             onClick={() => {
               setAktivTopic(raumTopic(r));
-              setNameZeigen(r.art !== "alle");
             }}
           >
             {r.art === "gruppe" ? `Gruppe: ${r.titel}` : r.titel}
@@ -166,7 +173,7 @@ export function Fokusraum({ raeume, hochschuleBestaetigt }: { raeume: Raum[]; ho
           ) : (
             <>
               <label className="fr-freigabe">
-                <input type="checkbox" checked={nameZeigen} onChange={(e) => setNameZeigen(e.target.checked)} />
+                <input type="checkbox" checked={nameZeigen} onChange={(e) => setNameZeigen({ topic, an: e.target.checked })} />
                 Namen zeigen
               </label>
               <label className="fr-freigabe">

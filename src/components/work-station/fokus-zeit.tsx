@@ -3,40 +3,37 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { arbeitszeitLaden, type Arbeitszeit } from "@/app/(hubs)/work-station/actions";
-import { dauerText, startZustand, type AufgabeTyp } from "@/lib/work-station/timer";
-import { timerLesen, timerSchreiben } from "@/lib/work-station/timer-store";
+import { dauerText, type AufgabeTyp } from "@/lib/work-station/timer";
 import { track } from "@/lib/analytics";
 
 /**
  * Aufgaben-Detail: Fokuszeit an dieser Aufgabe (inkl. Unteraufgaben), bei Gruppenarbeit je Person,
  * dazu „Fokus starten“ mit dieser Aufgabe in der Work Station.
  */
-export function FokusZeit({ typ, id, titel, fachId }: { typ: AufgabeTyp; id: string; titel: string; fachId: string | null }) {
+export function FokusZeit({ typ, id }: { typ: AufgabeTyp; id: string }) {
   const router = useRouter();
-  const [zeiten, setZeiten] = useState<{ fuer: string; liste: Arbeitszeit[] } | null>(null);
+  const [zeiten, setZeiten] = useState<{ fuer: string; liste: Arbeitszeit[] | "fehler" } | null>(null);
   const schluessel = `${typ}:${id}`;
 
   useEffect(() => {
     let aktuell = true;
     arbeitszeitLaden({ typ, id })
       .then((liste) => aktuell && setZeiten({ fuer: schluessel, liste }))
-      .catch(() => undefined);
+      .catch(() => aktuell && setZeiten({ fuer: schluessel, liste: "fehler" }));
     return () => {
       aktuell = false;
     };
   }, [typ, id, schluessel]);
 
-  const liste = zeiten?.fuer === schluessel ? zeiten.liste : null;
+  const stand = zeiten?.fuer === schluessel ? zeiten.liste : null;
+  const liste = stand === "fehler" ? null : stand;
   const gesamt = (liste ?? []).reduce((n, z) => n + z.minuten, 0);
   const max = Math.max(1, ...(liste ?? []).map((z) => z.minuten));
 
   function fokusStarten() {
-    const z = timerLesen();
-    // Läuft schon ein Timer, nur die Aufgabe wechseln; sonst frisch vorbereiten
-    const basis = z ?? startZustand(undefined, fachId);
-    timerSchreiben({ ...basis, aufgabe: { typ, id, titel }, fachId: fachId ?? basis.fachId });
+    // Die Work Station übernimmt die Aufgabe (mit den eigenen Timer-Einstellungen)
     track("fokus_aus_aufgabe", { typ });
-    router.push("/work-station");
+    router.push(`/work-station?aufgabe=${typ}:${id}`);
   }
 
   return (
@@ -49,7 +46,9 @@ export function FokusZeit({ typ, id, titel, fachId }: { typ: AufgabeTyp; id: str
           Fokus starten
         </button>
       </div>
-      {liste === null ? (
+      {stand === "fehler" ? (
+        <p className="detail-leer">Die Fokuszeit lässt sich gerade nicht laden.</p>
+      ) : liste === null ? (
         <p className="detail-leer">Wird geladen …</p>
       ) : gesamt === 0 ? (
         <p className="detail-leer">Noch keine Fokuszeit. Starte eine Runde in der Work Station und wähle diese Aufgabe.</p>

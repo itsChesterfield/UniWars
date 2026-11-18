@@ -57,7 +57,9 @@ function BisherGearbeitet({ aufgabe }: { aufgabe: FokusAufgabe }) {
       window.removeEventListener(SITZUNG_GESPEICHERT_EVENT, laden);
     };
   }, [aufgabe.typ, aufgabe.id, schluessel]);
-  const zeiten = liste?.fuer === schluessel ? liste.zeiten : [];
+  // Solange noch geladen wird (oder das Laden scheitert), nichts behaupten
+  if (liste?.fuer !== schluessel) return null;
+  const zeiten = liste.zeiten;
   const gesamt = zeiten.reduce((n, z) => n + z.minuten, 0);
   if (!gesamt) return <p className="ws-bisher">Noch keine Fokuszeit für diese Aufgabe.</p>;
   return (
@@ -86,6 +88,7 @@ export function WorkStation({
   heute,
   heuteFehler = false,
   aufgaben = [],
+  startAufgabe = null,
 }: {
   einstellungen: WsEinstellungen;
   faecher: FachOption[];
@@ -94,6 +97,8 @@ export function WorkStation({
   /** Lernzeit von heute ließ sich nicht laden; der Timer läuft trotzdem */
   heuteFehler?: boolean;
   aufgaben?: AufgabeOption[];
+  /** Aus dem Aufgaben-Detail „Fokus starten“: diese Aufgabe vorauswählen */
+  startAufgabe?: AufgabeOption | null;
 }) {
   const router = useRouter();
   const gespeichert = useTimerZustand();
@@ -106,6 +111,18 @@ export function WorkStation({
   const ziehen = useRef(false);
   const speicherTimer = useRef<number | null>(null);
   const raumWahl = useFokusraum();
+
+  // „Fokus starten“ aus dem Aufgaben-Detail: Aufgabe übernehmen, mit den eigenen Einstellungen
+  useEffect(() => {
+    if (!startAufgabe) return;
+    const basis = timerLesen() ?? startZustand(einstellungen, startAufgabe.fachId ?? vorschlag?.fachId ?? null);
+    timerSchreiben({
+      ...basis,
+      aufgabe: { typ: startAufgabe.typ, id: startAufgabe.id, titel: startAufgabe.titel },
+      fachId: startAufgabe.fachId ?? basis.fachId,
+    });
+    router.replace("/work-station", { scroll: false });
+  }, [startAufgabe, einstellungen, vorschlag, router]);
 
   // Nach jeder gespeicherten Sitzung die Tagesübersicht neu laden.
   useEffect(() => {

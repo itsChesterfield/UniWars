@@ -6,8 +6,8 @@ import { WorkStation, type TagesEintrag, type AufgabeOption } from "@/components
 
 export const metadata = { title: "Work Station · UniVerse" };
 
-export default async function WorkStationSeite({ searchParams }: { searchParams: Promise<{ fach?: string }> }) {
-  const { fach: fachAusLink } = await searchParams;
+export default async function WorkStationSeite({ searchParams }: { searchParams: Promise<{ fach?: string; aufgabe?: string }> }) {
+  const { fach: fachAusLink, aufgabe: aufgabeAusLink } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,6 +39,27 @@ export default async function WorkStationSeite({ searchParams }: { searchParams:
     ...(pruefungen ?? []).map((p) => ({ typ: "pruefung" as const, id: p.id, titel: p.titel, fachId: p.fach_id, gruppe: "Prüfungsvorbereitung", wann: kurzDatum(p.datum) })),
   ];
 
+  // „Fokus starten“ aus dem Aufgaben-Detail (?aufgabe=typ:id); fehlt sie in der Liste (z. B. Unteraufgabe), einzeln laden
+  let startAufgabe: AufgabeOption | null = null;
+  const [linkTyp, linkId] = typeof aufgabeAusLink === "string" ? aufgabeAusLink.split(":") : [];
+  if (linkTyp && linkId) {
+    startAufgabe = aufgaben.find((a) => a.typ === linkTyp && a.id === linkId) ?? null;
+    if (!startAufgabe && /^[0-9a-f-]{36}$/i.test(linkId)) {
+      const einzeln =
+        linkTyp === "deadline"
+          ? (await supabase.from("deadline").select("id, titel, fach_id").eq("id", linkId).maybeSingle()).data
+          : linkTyp === "todo"
+            ? (await supabase.from("todo").select("id, titel, fach_id").eq("id", linkId).maybeSingle()).data
+            : linkTyp === "pruefung"
+              ? (await supabase.from("pruefung").select("id, titel, fach_id").eq("id", linkId).maybeSingle()).data
+              : null;
+      if (einzeln) {
+        startAufgabe = { typ: linkTyp as AufgabeOption["typ"], id: einzeln.id, titel: einzeln.titel, fachId: einzeln.fach_id, gruppe: linkTyp === "todo" ? "To-dos" : linkTyp === "pruefung" ? "Prüfungsvorbereitung" : "Abgaben und Fristen", wann: null };
+        aufgaben.push(startAufgabe);
+      }
+    }
+  }
+
   const liste = faecher ?? [];
   // KI-12: Aktionskarte "Lernsession" öffnet die Work Station mit vorausgewähltem Fach
   const ausLink = typeof fachAusLink === "string" ? liste.find((f) => f.id === fachAusLink) : undefined;
@@ -61,6 +82,7 @@ export default async function WorkStationSeite({ searchParams }: { searchParams:
       vorschlag={vorschlag}
       heute={heute}
       aufgaben={aufgaben}
+      startAufgabe={startAufgabe}
       heuteFehler={Boolean(fachFehler || sitzungFehler)}
     />
   );
