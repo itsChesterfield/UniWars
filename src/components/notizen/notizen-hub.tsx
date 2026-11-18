@@ -18,7 +18,7 @@ import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import { markdownAlsText } from "@/lib/markdown-text";
 import { DiktatKnopf } from "@/components/ki/diktat-knopf";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { KiMarkierung } from "@/components/ki/ki-markierung";
@@ -29,6 +29,7 @@ import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 import { NotizEditorFlaeche } from "@/components/notizen/notiz-editor-flaeche";
 import type { LinkZiel } from "@/components/notizen/werkzeugleiste";
 import type { LinkAufloesung } from "@/components/notizen/editor-erweiterungen";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
 export type PdfOption = { id: string; name: string };
@@ -663,9 +664,7 @@ function NotizEditor({
             ))}
           </select>
         </label>
-        <span className={`speicher-status ${status}`} aria-live="polite">
-          {SPEICHER_TEXT[status]}
-        </span>
+        <SpeicherStatusAnzeige status={status} />
         <button
           type="button"
           className="knopf leise klein nur-symbol"

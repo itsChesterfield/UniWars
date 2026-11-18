@@ -7,7 +7,7 @@ import { tabelleFachSetzen, tabelleLoeschen, tabelleSpeichern } from "@/app/(hub
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Icon } from "@/components/nav-icon";
 import { OHNE_TITEL_TABELLE } from "@/components/tabellen/tabellen-liste";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import { KiFormelDialog } from "@/components/tabellen/ki-formel-dialog";
 import {
   FEHLER,
@@ -29,6 +29,7 @@ import {
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 type Pos = { s: number; z: number };
 type Bearbeitung = { s: number; z: number; wert: string; quelle: "zelle" | "leiste" };
@@ -318,9 +319,7 @@ export function TabellenEditor({
           }}
         />
         <div className="txt-kopf-aktionen">
-          <span className={`speicher-status ${status}`} aria-live="polite">
-            {SPEICHER_TEXT[status]}
-          </span>
+          <SpeicherStatusAnzeige status={status} />
           <select
             className="txt-fach"
             aria-label="Fach"

@@ -18,6 +18,7 @@ import {
 } from "@/lib/karteikarten/wiederholung";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { berlinTageZwischen } from "@/lib/zeit";
+import { RollText } from "@/components/bewegung/roll-text";
 
 type LernKarte = KartenStand & {
   id: string;
@@ -300,9 +301,7 @@ export function Lernmodus({
     <div className="kk-lernen">
       <div className="kk-lernen-kopf">
         {zurueck}
-        <span className="zahl">
-          {runde.index + 1} / {runde.karten.length}
-        </span>
+        <RollText className="zahl" wert={`${runde.index + 1} / ${runde.karten.length}`} />
         <button type="button" className="knopf leise klein" onClick={() => beenden(runde)}>
           Beenden
         </button>

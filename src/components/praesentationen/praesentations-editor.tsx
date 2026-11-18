@@ -8,7 +8,7 @@ import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Icon } from "@/components/nav-icon";
 import { BildAuswahl } from "@/components/hubs/bild-auswahl";
 import { FolieAnsicht } from "@/components/praesentationen/folie-ansicht";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import {
   DESIGNS,
   LAYOUTS,
@@ -22,6 +22,7 @@ import {
 } from "@/lib/praesentationen/folien";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 type Aenderung = { titel: string; design: Design; folien: Folie[] };
 
@@ -144,9 +145,7 @@ export function PraesentationsEditor({
           }}
         />
         <div className="txt-kopf-aktionen">
-          <span className={`speicher-status ${status}`} aria-live="polite">
-            {SPEICHER_TEXT[status]}
-          </span>
+          <SpeicherStatusAnzeige status={status} />
           <select
             className="txt-fach"
             aria-label="Fach"
