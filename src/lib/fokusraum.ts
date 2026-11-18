@@ -25,11 +25,25 @@ export type Anwesenheit = {
 
 export type Teilnehmer = Anwesenheit & { key: string; ich: boolean };
 
+const MODI = ["fokus", "kurz", "lang"];
+const text = (v: unknown, max: number): string | null => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+const zahl = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+/** Ein Eintrag aus der Anwesenheit; andere Clients können beliebiges senden, daher streng prüfen */
+function pruefen(roh: unknown): Anwesenheit | null {
+  if (!roh || typeof roh !== "object") return null;
+  const a = roh as Record<string, unknown>;
+  if (typeof a.m !== "string" || !MODI.includes(a.m)) return null;
+  return { n: text(a.n, 40), f: text(a.f, 60), m: a.m, l: a.l === true, e: zahl(a.e), r: Math.min(Math.max(0, zahl(a.r) ?? 0), 24 * 3600_000) };
+}
+
 /** Presence-Zustand → Liste: wer gerade Fokus hat zuerst, dann Pausen; eigener Platz vorn */
-export function teilnehmerListe(zustand: Record<string, Anwesenheit[]>, ichKey: string | null): Teilnehmer[] {
+export function teilnehmerListe(zustand: Record<string, unknown[]>, ichKey: string | null): Teilnehmer[] {
   return Object.entries(zustand)
-    .map(([key, eintraege]) => ({ ...eintraege[eintraege.length - 1], key, ich: key === ichKey }))
-    .filter((t) => typeof t.m === "string")
+    .flatMap(([key, eintraege]) => {
+      const a = pruefen(Array.isArray(eintraege) ? eintraege[eintraege.length - 1] : null);
+      return a ? [{ ...a, key, ich: key === ichKey }] : [];
+    })
     .sort((a, b) => Number(b.ich) - Number(a.ich) || Number(b.m === "fokus" && b.l) - Number(a.m === "fokus" && a.l) || (a.n ?? "~").localeCompare(b.n ?? "~", "de"));
 }
 

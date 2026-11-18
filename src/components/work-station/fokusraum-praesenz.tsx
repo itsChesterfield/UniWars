@@ -60,6 +60,8 @@ export function FokusraumPraesenz({ name, faecher }: { name: string; faecher: { 
       const { data } = await supabase.auth.getUser();
       if (aus || !data.user) return;
       await supabase.realtime.setAuth();
+      // Raum inzwischen gewechselt oder Seite verlassen: keinen Kanal mehr öffnen
+      if (aus) return;
       const ich = data.user.id;
       const k = supabase.channel(topic, { config: { private: true, presence: { key: ich } } });
       kanal.current = k;
