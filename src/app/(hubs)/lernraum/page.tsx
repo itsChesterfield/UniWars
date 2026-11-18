@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { Icon } from "@/components/nav-icon";
 import { Einrichtung, Zustand } from "@/components/zustand";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 export const metadata = { title: "Lernraum · UniVerse" };
 
@@ -60,7 +61,7 @@ export default async function LernraumUebersicht() {
                   </span>
                 </div>
                 <Link href={`/lernraum/${f.id}`} className="knopf neben klein">
-                  Öffnen
+                  <PfeilText>Öffnen</PfeilText>
                 </Link>
               </li>
             );

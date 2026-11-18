@@ -16791,3 +16791,58 @@ html[data-bewegung="reduziert"] .lade-skelett {
 [data-bewegung="reduziert"] .pfeil-vorn {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
+
+/* Work Station, Ende einer Fokusphase (Bewegung, wie das Ende im Lernmodus): eine Lichtspur schließt den Kreis,
+   darüber zeichnet sich ein Haken; beides blendet danach aus. Keyframes aus dem Lernmodus. */
+.ws-kreis-schluss {
+  fill: none;
+  stroke: var(--akzent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  animation:
+    kk-schluss-zeichnen var(--dur-spur) var(--ease-out) forwards,
+    kk-schluss-aus var(--dur-spur) var(--ease-in) calc(var(--dur-spur) + var(--dur-long)) forwards;
+}
+
+.ws-kreis .ws-haken {
+  position: absolute;
+  top: 18%;
+  left: calc(50% - 12px);
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--akzent-text);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transform: none;
+  animation: kk-schluss-aus var(--dur-long) var(--ease-in) 2400ms forwards;
+}
+
+.ws-haken path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: kk-haken-zeichnen var(--dur-long) var(--ease-out) var(--dur-spur) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-kreis-schluss {
+    display: none;
+  }
+
+  .ws-haken path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+[data-bewegung="reduziert"] .ws-kreis-schluss {
+  display: none;
+}
+
+[data-bewegung="reduziert"] .ws-haken path {
+  stroke-dashoffset: 0;
+}

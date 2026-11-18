@@ -116,6 +116,13 @@ export function WorkStation({
   /** Was die Uhr zeigt: Restzeit oder im Flow die bisherige Zeit */
   const uhr = anzeigeZeit(zustand, jetzt);
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+  // Ende einer Fokusphase (Bewegung): der Kreis schließt sich als Lichtspur, ein Haken zeichnet sich.
+  // Nicht beim Überspringen oder Zurücksetzen; `n` zählt die Abschlüsse und startet die Zeichnung neu.
+  const [abschluss, setAbschluss] = useState({ modus: zustand.modus, runden: zustand.erledigteRunden, n: 0, still: false });
+  if (zustand.modus !== abschluss.modus || zustand.erledigteRunden !== abschluss.runden) {
+    const fertig = abschluss.modus === "fokus" && zustand.modus !== "fokus" && !abschluss.still;
+    setAbschluss({ modus: zustand.modus, runden: zustand.erledigteRunden, n: abschluss.n + (fertig ? 1 : 0), still: false });
+  }
   const kreisRef = useRef<HTMLDivElement>(null);
   /** Laufender Zug am Kreis: letzter Winkel und ungerundete Minuten */
   const zug = useRef<{ winkel: number; roh: number } | null>(null);
@@ -153,6 +160,7 @@ export function WorkStation({
   }
 
   function zuruecksetzenKlick() {
+    setAbschluss((a) => ({ ...a, still: true }));
     const { zustand: neu, sitzung } = zuruecksetzen(zustand, Date.now());
     timerSchreiben(neu);
     void sitzungMelden(sitzung, zustand.fachId, zustand.modus === "fokus" ? (zustand.aufgabe ?? null) : null);
@@ -160,6 +168,7 @@ export function WorkStation({
   }
 
   function ueberspringenKlick() {
+    setAbschluss((a) => ({ ...a, still: true }));
     const { zustand: neu, sitzung } = ueberspringen(zustand, Date.now());
     timerSchreiben(neu);
     void sitzungMelden(sitzung, zustand.fachId, zustand.modus === "fokus" ? (zustand.aufgabe ?? null) : null);
@@ -359,7 +368,13 @@ export function WorkStation({
                 strokeDasharray={UMFANG}
                 strokeDashoffset={UMFANG * (1 - kreisAnteil)}
               />
+              {abschluss.n > 0 && <circle key={abschluss.n} className="ws-kreis-schluss" cx="120" cy="120" r={RADIUS} pathLength={100} />}
             </svg>
+            {abschluss.n > 0 && (
+              <svg key={abschluss.n} className="ws-haken" viewBox="-8 -8 16 16" aria-hidden>
+                <path d="M-4 0.5 L-1.2 3.3 L4.4 -3.2" pathLength={1} />
+              </svg>
+            )}
             {stellbar && (
               <span
                 className="ws-griff"

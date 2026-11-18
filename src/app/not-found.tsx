@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Zustand } from "@/components/zustand";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 /**
  * Design B3: Adressen, die es nicht gibt, und `notFound()` außerhalb der Bereiche.
@@ -15,7 +16,7 @@ export default function NichtGefunden() {
         titel="Diese Seite gibt es nicht."
         aktion={
           <Link href="/" className="knopf haupt">
-            Zum Zentralen Hub
+            <PfeilText>Zum Zentralen Hub</PfeilText>
           </Link>
         }
       >

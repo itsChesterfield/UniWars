@@ -12,6 +12,7 @@ import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { ampel } from "@/lib/ki/gedaechtnis";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 export type QuelleUi = {
   art: "pdf" | "notiz";
@@ -212,7 +213,7 @@ export function Lernraum({
               ebene={3}
               aktion={
                 <Link href="/dateiablage" className="knopf neben klein">
-                  Zur Dateiablage
+                  <PfeilText>Zur Dateiablage</PfeilText>
                 </Link>
               }
             >

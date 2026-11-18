@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfListe, type PdfEintrag, type PdfFach } from "@/components/pdf-reader/pdf-liste";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 export const metadata = { title: "PDF Reader · UniVerse" };
 
@@ -59,7 +60,7 @@ export default async function PdfReaderSeite() {
         </div>
         <div className="rechts">
           <Link href="/dateiablage" className="knopf leise">
-            Zur Dateiablage
+            <PfeilText>Zur Dateiablage</PfeilText>
           </Link>
         </div>
       </header>
