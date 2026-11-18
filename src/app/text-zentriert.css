@@ -1,6 +1,12 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full */
 /* Alle Schriften auf der Website mittig zentrieren.
    !important, damit auch Inline-Styles (z. B. TipTap-TextAlign im Notizen-Editor)
    überschrieben werden. */
+html,
+body {
+  overflow-x: clip;
+}
+
 * {
   text-align: center !important;
 }
