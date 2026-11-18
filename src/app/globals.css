@@ -3324,7 +3324,6 @@ kbd {
 
 .kk-lernkarte {
   border-radius: var(--radius-m);
-  perspective: 1400px;
   cursor: pointer;
 }
 
@@ -3332,14 +3331,10 @@ kbd {
   position: relative;
   display: grid;
   min-height: 320px;
-  transform-style: preserve-3d;
-  transition: transform var(--dur-long) var(--ease-out);
 }
 
-.kk-lernkarte.umgedreht .kk-lernkarte-innen {
-  transform: rotateY(180deg);
-}
-
+/* Aufdecken: Scharfstellen (Entscheidung 15.11.). Die Frage verliert kurz die Schärfe und geht,
+   die Antwort wird Absatz für Absatz scharf, wie beim Lesen. Eine neue Karte blendet ein. */
 .kk-seite {
   grid-area: 1 / 1;
   display: flex;
@@ -3353,13 +3348,88 @@ kbd {
   box-shadow: inset 0 0 0 1px var(--linie);
   color: var(--text);
   text-align: center;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+}
+
+.kk-vorne {
+  animation: lade-ein var(--dur-short) var(--ease-out) both;
 }
 
 .kk-hinten {
-  transform: rotateY(180deg);
+  visibility: hidden;
   background: var(--flaeche-3);
+}
+
+.kk-lernkarte.umgedreht .kk-vorne {
+  visibility: hidden;
+  animation: kk-frage-weg 380ms cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+.kk-lernkarte.umgedreht .kk-hinten {
+  visibility: visible;
+  animation: lade-ein var(--dur-short) var(--ease-out) both;
+}
+
+.kk-lernkarte.umgedreht .kk-hinten .md-inhalt > * {
+  animation: kk-scharf 420ms cubic-bezier(0.2, 0.7, 0.2, 1) 140ms both;
+}
+
+.kk-lernkarte.umgedreht .kk-hinten .md-inhalt > :nth-child(2) {
+  animation-delay: calc(140ms + var(--stagger));
+}
+
+.kk-lernkarte.umgedreht .kk-hinten .md-inhalt > :nth-child(3) {
+  animation-delay: calc(140ms + var(--stagger) * 2);
+}
+
+.kk-lernkarte.umgedreht .kk-hinten .md-inhalt > :nth-child(n + 4) {
+  animation-delay: calc(140ms + var(--stagger) * 3);
+}
+
+@keyframes kk-frage-weg {
+  0% {
+    visibility: visible;
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+
+  45% {
+    visibility: visible;
+    opacity: 0.75;
+    filter: blur(2.5px);
+    transform: translateY(calc(var(--weg) * -1)) scale(0.96);
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+    filter: blur(0);
+    transform: translateY(calc(var(--weg) * -2)) scale(0.9);
+  }
+}
+
+@keyframes kk-scharf {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(2px);
+  }
+
+  60% {
+    opacity: 0.85;
+    filter: blur(1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kk-lernkarte.umgedreht .kk-vorne {
+    animation: none;
+  }
+
+  .kk-lernkarte.umgedreht .kk-hinten .md-inhalt > * {
+    animation-name: lade-ein;
+    animation-delay: 0ms;
+  }
 }
 
 .kk-seite .md-inhalt {
@@ -3614,10 +3684,100 @@ kbd {
   }
 }
 
+/* Ende: die Linien der Ablage fliegen in den Ring, erst danach erscheinen die Bögen.
+   Dann zeichnet eine Lichtspur den Ring nach, schließt sich zum Haken und erlischt wieder. */
+.kk-ring.sammelt .kk-ring-bogen {
+  opacity: 0;
+  animation: none;
+}
+
+.kk-ring-schluss {
+  fill: none;
+  stroke: var(--akzent);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  animation:
+    kk-schluss-zeichnen var(--dur-spur) var(--ease-out) forwards,
+    kk-schluss-aus var(--dur-spur) var(--ease-in) calc(var(--dur-spur) + var(--dur-long)) forwards;
+}
+
+@keyframes kk-schluss-zeichnen {
+  to {
+    stroke-dasharray: 100 0;
+  }
+}
+
+@keyframes kk-schluss-aus {
+  to {
+    opacity: 0;
+  }
+}
+
+.kk-ring .kk-ring-haken {
+  width: 20px;
+  height: 20px;
+  margin-bottom: var(--space-1);
+  overflow: visible;
+  fill: none;
+  stroke: var(--akzent-text);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kk-ring-haken.zeichnet path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: kk-haken-zeichnen var(--dur-long) var(--ease-out) var(--dur-spur) forwards;
+}
+
+@keyframes kk-haken-zeichnen {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Flüge (lib/bewegung/fluege.ts): eigene Ebene über der Seite, nur transform und opacity */
+.bewegung-flug {
+  position: fixed;
+  z-index: 90;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.bewegung-flug.papier {
+  border-radius: var(--radius-m);
+  background: var(--flaeche-3);
+  box-shadow: inset 0 0 0 1px var(--linie);
+}
+
+.bewegung-flug.papier i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--flug-farbe);
+  opacity: 0;
+}
+
+.bewegung-flug.linie {
+  background: var(--flug-farbe);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kk-fach-linien i,
-  .kk-ring-bogen {
+  .kk-ring-bogen,
+  .kk-ring-schluss,
+  .kk-ring-haken.zeichnet path {
     animation: none;
+  }
+
+  .kk-ring-schluss {
+    display: none;
+  }
+
+  .kk-ring-haken.zeichnet path {
+    stroke-dashoffset: 0;
   }
 }
 
