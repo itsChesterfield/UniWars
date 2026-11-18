@@ -8,7 +8,9 @@ import {
   einstellungenLesen,
   pausieren,
   restzeit,
-  minutenAusWinkel,
+  klickMinuten,
+  zugMinuten,
+  kreisStand,
   startZustand,
   starten,
   stellBereich,
@@ -166,7 +168,7 @@ test("Fälligkeit und Berlin-Mitternacht", () => {
 test("Work Station: Einstellungen werden begrenzt", () => {
   assert.deepEqual(einstellungenLesen(null), WS_STANDARD);
   assert.deepEqual(einstellungenLesen({ fokus: 200, kurzePause: 0, langePause: "20", runden: 9, ton: false }), {
-    fokus: 90,
+    fokus: 180,
     kurzePause: 1,
     langePause: 20,
     runden: 8,
@@ -444,18 +446,27 @@ test("Fokus mit Aufgabe: nach der Runde wird gefragt, ob sie erledigt ist (nicht
   assert.equal(pause.aufgabe?.id, "d1");
 });
 
-test("Timer am Kreis ziehen: Winkel → Minuten, ohne Sprung über 12 Uhr", () => {
+test("Timer am Kreis ziehen: Runde = 1 Stunde, weiterziehen über 12 Uhr gibt mehr Zeit", () => {
   const b = stellBereich("fokus");
-  assert.deepEqual([b.min, b.max, b.schritt], [5, 90, 5]);
-  assert.equal(minutenAusWinkel(240, b, 25), 60);
-  assert.equal(minutenAusWinkel(90, b, 25), 25);
-  assert.equal(minutenAusWinkel(2, b, 25), 5);
-  assert.equal(minutenAusWinkel(3, b, 85), 90);
-  assert.equal(minutenAusWinkel(355, b, 10), 5);
-  assert.equal(minutenAusWinkel(-120, b, 50), 60);
-  assert.equal(stellBereich("kurz").schritt, 1);
-  // Direkter Klick unten links bei kleinem Wert: die angeklickte Stelle gilt (nicht das Minimum)
-  assert.equal(minutenAusWinkel(300, b, null), 75);
-  assert.equal(minutenAusWinkel(300, b, 25), 5);
-  assert.equal(minutenAusWinkel(20, b, null), 5);
+  assert.deepEqual([b.min, b.max, b.schritt, b.runde], [5, 180, 5, 60]);
+  // Klick: Stelle in der aktuellen Runde
+  assert.equal(klickMinuten(90, b, 25), 15);
+  assert.equal(klickMinuten(300, b, 25), 50);
+  assert.equal(klickMinuten(90, b, 100), 75);
+  assert.equal(klickMinuten(2, b, 25), 5);
+  // Ziehen über 12 Uhr hinaus: 55 → 65 statt Sprung auf 5
+  let z = zugMinuten(55, 330, 350, b);
+  z = zugMinuten(z.roh, 350, 10, b);
+  z = zugMinuten(z.roh, 10, 30, b);
+  assert.equal(z.minuten, 65);
+  // Zurück unter das Minimum bleibt am Minimum, vor über das Maximum am Maximum
+  assert.equal(zugMinuten(5, 30, 300, b).minuten, 5);
+  assert.equal(zugMinuten(180, 0, 90, b).minuten, 180);
+  // Sofort wieder zurück wirkt (roh am Rand begrenzt)
+  assert.equal(zugMinuten(zugMinuten(180, 0, 90, b).roh, 90, 60, b).minuten, 175);
+  // Punkt-Stand: 60 = volle Runde, 75 = eine Runde + ein Viertel
+  assert.deepEqual(kreisStand(60, b), { anteil: 1, volleRunden: 0 });
+  assert.deepEqual(kreisStand(75, b), { anteil: 0.25, volleRunden: 1 });
+  assert.equal(stellBereich("kurz").runde, 30);
+  assert.equal(alsUhr(90 * 60_000), "1:30:00");
 });

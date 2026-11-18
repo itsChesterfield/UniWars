@@ -12,7 +12,7 @@ export type WsEinstellungen = {
 export const WS_STANDARD: WsEinstellungen = { fokus: 25, kurzePause: 5, langePause: 15, runden: 4, ton: true };
 
 export const WS_GRENZEN = {
-  fokus: [5, 90],
+  fokus: [5, 180],
   kurzePause: [1, 30],
   langePause: [5, 60],
   runden: [2, 8],
@@ -168,9 +168,12 @@ export function einstellungenAnwenden(z: TimerZustand, einstellungen: WsEinstell
 
 export function alsUhr(ms: number): string {
   const sekunden = Math.ceil(ms / 1000);
-  const m = Math.floor(sekunden / 60);
+  const h = Math.floor(sekunden / 3600);
+  const m = Math.floor(sekunden / 60) % 60;
   const s = sekunden % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const uhr = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  // Ab einer Stunde mit Stunden (1:30:00), sonst wie gewohnt (25:00)
+  return h > 0 ? `${h}:${uhr}` : uhr;
 }
 
 export function dauerText(minuten: number): string {
@@ -180,23 +183,38 @@ export function dauerText(minuten: number): string {
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
 
-/** Welche Einstellung der Kreis gerade stellt (Fokus, kurze oder lange Pause), Grenzen und Schrittweite */
-export function stellBereich(modus: Modus): { feld: "fokus" | "kurzePause" | "langePause"; min: number; max: number; schritt: number } {
-  if (modus === "kurz") return { feld: "kurzePause", min: WS_GRENZEN.kurzePause[0], max: WS_GRENZEN.kurzePause[1], schritt: 1 };
-  if (modus === "lang") return { feld: "langePause", min: WS_GRENZEN.langePause[0], max: WS_GRENZEN.langePause[1], schritt: 5 };
-  return { feld: "fokus", min: WS_GRENZEN.fokus[0], max: WS_GRENZEN.fokus[1], schritt: 5 };
+export type StellBereich = { feld: "fokus" | "kurzePause" | "langePause"; min: number; max: number; schritt: number; runde: number };
+
+/** Welche Einstellung der Kreis gerade stellt, Grenzen, Schrittweite und Minuten pro voller Kreisrunde */
+export function stellBereich(modus: Modus): StellBereich {
+  if (modus === "kurz") return { feld: "kurzePause", min: WS_GRENZEN.kurzePause[0], max: WS_GRENZEN.kurzePause[1], schritt: 1, runde: 30 };
+  if (modus === "lang") return { feld: "langePause", min: WS_GRENZEN.langePause[0], max: WS_GRENZEN.langePause[1], schritt: 5, runde: 60 };
+  // Fokus wie eine Uhr: eine Runde ist eine Stunde, weiterziehen gibt die nächste Stunde dazu
+  return { feld: "fokus", min: WS_GRENZEN.fokus[0], max: WS_GRENZEN.fokus[1], schritt: 5, runde: 60 };
+}
+
+const winkelNorm = (w: number) => ((w % 360) + 360) % 360;
+const aufSchritt = (m: number, b: StellBereich) => Math.min(b.max, Math.max(b.min, Math.round(m / b.schritt) * b.schritt));
+
+/** Wo der Punkt steht (0 bis 1 einer Kreisrunde) und wie viele volle Runden darunter liegen */
+export function kreisStand(minuten: number, b: StellBereich): { anteil: number; volleRunden: number } {
+  const volleRunden = Math.max(0, Math.ceil(minuten / b.runde) - 1);
+  return { anteil: (minuten - volleRunden * b.runde) / b.runde, volleRunden };
+}
+
+/** Direkter Klick auf den Kreis (0° oben, im Uhrzeigersinn): Stelle innerhalb der aktuellen Runde */
+export function klickMinuten(winkel: number, b: StellBereich, vorher: number): number {
+  const { volleRunden } = kreisStand(vorher, b);
+  return aufSchritt(volleRunden * b.runde + (winkelNorm(winkel) / 360) * b.runde, b);
 }
 
 /**
- * Punkt am Kreis ziehen: Winkel (0° oben, im Uhrzeigersinn) → Minuten. Ein voller Kreis ist das Maximum.
- * Beim Ziehen springt der Wert über die 12-Uhr-Stelle nicht von max auf min (und umgekehrt), sondern bleibt am Rand.
- * `vorher = null`: direkter Klick auf den Kreis, dann gilt einfach die angeklickte Stelle.
+ * Ziehen: Der Winkel-Unterschied zur letzten Position zählt, so geht es über 12 Uhr hinaus in die nächste Runde.
+ * `roh` ist der ungerundete Wert (am Rand begrenzt, damit Zurückziehen sofort wirkt).
  */
-export function minutenAusWinkel(winkel: number, b: { min: number; max: number; schritt: number }, vorher: number | null): number {
-  const w = ((winkel % 360) + 360) % 360;
-  let m = Math.round(((w / 360) * b.max) / b.schritt) * b.schritt;
-  const viertel = b.max / 4;
-  if (vorher !== null && vorher > b.max - viertel && m < viertel) m = b.max;
-  else if (vorher !== null && vorher < b.min + viertel && m > b.max - viertel) m = b.min;
-  return Math.min(b.max, Math.max(b.min, m));
+export function zugMinuten(roh: number, vonWinkel: number, nachWinkel: number, b: StellBereich): { roh: number; minuten: number } {
+  let d = winkelNorm(nachWinkel - vonWinkel);
+  if (d > 180) d -= 360;
+  const neu = Math.min(b.max, Math.max(b.min, roh + (d / 360) * b.runde));
+  return { roh: neu, minuten: aufSchritt(neu, b) };
 }

@@ -20,7 +20,9 @@ import {
   starten,
   ueberspringen,
   zuruecksetzen,
-  minutenAusWinkel,
+  klickMinuten,
+  kreisStand,
+  zugMinuten,
   stellBereich,
   type AufgabeTyp,
   type FokusAufgabe,
@@ -108,7 +110,8 @@ export function WorkStation({
   const rest = restzeit(zustand, jetzt);
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
   const kreisRef = useRef<HTMLDivElement>(null);
-  const ziehen = useRef(false);
+  /** Laufender Zug am Kreis: letzter Winkel und ungerundete Minuten */
+  const zug = useRef<{ winkel: number; roh: number } | null>(null);
   const speicherTimer = useRef<number | null>(null);
   const raumWahl = useFokusraum();
 
@@ -171,7 +174,10 @@ export function WorkStation({
   const stellbar = !zustand.laeuft && zustand.restMs === zustand.dauerMs;
   const bereich = stellBereich(zustand.modus);
   const stellMinuten = zustand.einstellungen[bereich.feld];
-  const kreisAnteil = stellbar ? stellMinuten / bereich.max : zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
+  const stand = kreisStand(stellMinuten, bereich);
+  const kreisAnteil = stellbar ? stand.anteil : zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
+  // Mehr als eine Runde eingestellt: die Spur darunter zeigt die vollen Runden
+  const volleRunden = stellbar ? stand.volleRunden : 0;
   const griffWinkel = kreisAnteil * 2 * Math.PI;
   const griffX = 120 + RADIUS * Math.sin(griffWinkel);
   const griffY = 120 - RADIUS * Math.cos(griffWinkel);
@@ -182,18 +188,34 @@ export function WorkStation({
     timerSchreiben(einstellungenAnwenden(aktuell, { ...aktuell.einstellungen, [bereich.feld]: minuten }));
   }
 
-  /** `klick`: erster Druck auf den Kreis, dann zählt genau die angeklickte Stelle */
-  function ausZeiger(x: number, y: number, klick = false) {
+  /** Winkel des Zeigers zur Kreismitte (0° oben, im Uhrzeigersinn) */
+  function winkelAus(x: number, y: number): number | null {
     const r = kreisRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const winkel = (Math.atan2(x - (r.left + r.width / 2), -(y - (r.top + r.height / 2))) * 180) / Math.PI;
-    const vorher = klick ? null : (timerLesen() ?? zustand).einstellungen[bereich.feld];
-    minutenSetzen(minutenAusWinkel(winkel, bereich, vorher));
+    if (!r) return null;
+    return (Math.atan2(x - (r.left + r.width / 2), -(y - (r.top + r.height / 2))) * 180) / Math.PI;
+  }
+
+  function zugStart(x: number, y: number, amGriff: boolean) {
+    const winkel = winkelAus(x, y);
+    if (winkel === null) return;
+    const vorher = (timerLesen() ?? zustand).einstellungen[bereich.feld];
+    // Druck auf den Griff ändert nichts, erst das Ziehen; ein Klick auf den Kreis setzt die Stelle
+    const roh = amGriff ? vorher : klickMinuten(winkel, bereich, vorher);
+    if (!amGriff) minutenSetzen(roh);
+    zug.current = { winkel, roh };
+  }
+
+  function zugWeiter(x: number, y: number) {
+    const winkel = winkelAus(x, y);
+    if (!zug.current || winkel === null) return;
+    const { roh, minuten } = zugMinuten(zug.current.roh, zug.current.winkel, winkel, bereich);
+    zug.current = { winkel, roh };
+    minutenSetzen(minuten);
   }
 
   function zugEnde() {
-    if (!ziehen.current) return;
-    ziehen.current = false;
+    if (!zug.current) return;
+    zug.current = null;
     speichernSpaeter();
   }
 
@@ -286,18 +308,16 @@ export function WorkStation({
             onPointerDown={(e) => {
               if (!stellbar) return;
               e.currentTarget.setPointerCapture(e.pointerId);
-              ziehen.current = true;
-              // Druck auf den Griff selbst ändert nichts, erst das Ziehen
-              if (e.target !== e.currentTarget.querySelector(".ws-griff")) ausZeiger(e.clientX, e.clientY, true);
+              zugStart(e.clientX, e.clientY, e.target === e.currentTarget.querySelector(".ws-griff"));
             }}
-            onPointerMove={(e) => ziehen.current && ausZeiger(e.clientX, e.clientY)}
+            onPointerMove={(e) => zugWeiter(e.clientX, e.clientY)}
             onPointerUp={zugEnde}
             // Touch abgebrochen (z. B. Systemgeste): Ziehen sauber beenden
             onPointerCancel={zugEnde}
             onLostPointerCapture={zugEnde}
           >
             <svg viewBox="0 0 240 240" aria-hidden>
-              <circle className="ws-kreis-spur" cx="120" cy="120" r={RADIUS} />
+              <circle className={`ws-kreis-spur${volleRunden > 0 ? " voll" : ""}`} cx="120" cy="120" r={RADIUS} />
               <circle
                 className="ws-kreis-fortschritt"
                 cx="120"
@@ -316,7 +336,7 @@ export function WorkStation({
                 aria-valuemin={bereich.min}
                 aria-valuemax={bereich.max}
                 aria-valuenow={stellMinuten}
-                aria-valuetext={`${stellMinuten} Minuten`}
+                aria-valuetext={dauerText(stellMinuten)}
                 style={{ left: `${(griffX / 240) * 100}%`, top: `${(griffY / 240) * 100}%` }}
                 onKeyDown={(e) => {
                   const schritte: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 3, PageDown: -3 };
@@ -357,7 +377,7 @@ export function WorkStation({
             </button>
           </div>
           <p className="ws-hinweis">
-            {stellbar ? "Zieh den Punkt am Kreis, um die Dauer einzustellen. " : ""}Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.
+            {stellbar ? `Zieh den Punkt am Kreis, um die Dauer einzustellen. Eine Runde sind ${bereich.runde} Minuten${bereich.max > bereich.runde ? ", weiterziehen gibt mehr Zeit" : ""}. ` : ""}Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.
           </p>
         </section>
 

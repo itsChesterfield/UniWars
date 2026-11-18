@@ -15889,6 +15889,23 @@ html[data-bewegung="reduziert"] .lade-skelett {
 .ws-kreis.stellbar {
   touch-action: none;
   cursor: pointer;
+  /* Beim Ziehen keinen Text markieren */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Beim Einstellen folgt der Bogen dem Punkt sofort (die Ablauf-Animation würde hinterherhinken) */
+.ws-kreis.stellbar .ws-kreis-fortschritt {
+  transition: none;
+}
+
+/* Mehr als eine Runde eingestellt: die Spur zeigt die vollen Runden */
+.ws-kreis-spur.voll {
+  stroke: color-mix(in oklab, var(--akzent) 30%, var(--flaeche-3));
+}
+
+.ws-timer-karte:is([data-modus="kurz"], [data-modus="lang"]) .ws-kreis-spur.voll {
+  stroke: color-mix(in oklab, var(--ok) 30%, var(--flaeche-3));
 }
 
 .ws-griff {
