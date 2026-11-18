@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { mindmapFachSetzen, mindmapLoeschen, mindmapSpeichern } from "@/app/(hubs)/mindmap/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as mm from "@/lib/mindmap/knoten";
 import { SVG_SCHRIFT, svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
@@ -251,89 +252,101 @@ export function MindmapEditor({
 
   return (
     <div className="zf-seite">
+      <Link href="/mindmap" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
+        Alle MindMaps
+      </Link>
       <div className="txt-kopf">
-        <Link href="/mindmap" className="hub-zurueck-link">
-          ← Alle MindMaps
-        </Link>
-        <div className="txt-kopf-zeile">
-          <h1 className="zf-titel">{name}</h1>
-          <div className="txt-kopf-aktionen">
-            <span className={`speicher-status ${status}`} aria-live="polite">
-              {SPEICHER_TEXT[status]}
-            </span>
-            <select
-              className="field txt-fach"
-              aria-label="Fach"
-              value={fachId ?? ""}
-              onChange={(e) => {
-                setFachId(e.target.value || null);
-                mindmapFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "mindmap_fach" }));
-              }}
-            >
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="btng" onClick={() => void exportieren()}>
-              Als PNG exportieren
-            </button>
-            <DreiPunkteMenue punkte={[{ label: "MindMap löschen", onClick: () => void entfernen(), gefahr: true }]} />
-          </div>
+        <h1 className="zf-titel">{name}</h1>
+        <div className="txt-kopf-aktionen">
+          <span className={`speicher-status ${status}`} aria-live="polite">
+            {SPEICHER_TEXT[status]}
+          </span>
+          <select
+            className="txt-fach"
+            aria-label="Fach"
+            value={fachId ?? ""}
+            onChange={(e) => {
+              setFachId(e.target.value || null);
+              mindmapFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "mindmap_fach" }));
+            }}
+          >
+            <option value="">Ohne Fach</option>
+            {faecher.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          <DreiPunkteMenue
+            label="Exportieren und mehr"
+            punkte={[
+              { label: "Als PNG exportieren", onClick: () => void exportieren() },
+              { label: "MindMap löschen", onClick: () => void entfernen(), gefahr: true },
+            ]}
+          />
         </div>
       </div>
 
-      <div className="zf-leiste" role="toolbar" aria-label="MindMap-Werkzeuge">
-        <button type="button" className="md-knopf" onClick={() => neuerKnoten("kind")} disabled={!auswahl} title="Unterpunkt (Tab)">
-          + Unterpunkt <kbd>Tab</kbd>
-        </button>
-        <button type="button" className="md-knopf" onClick={() => neuerKnoten("geschwister")} disabled={!auswahl} title="Weiterer Punkt (Enter)">
-          + Punkt <kbd>Enter</kbd>
-        </button>
-        <button
-          type="button"
-          className="md-knopf"
-          disabled={!ausgewaehlt}
-          onClick={() => ausgewaehlt && setBearbeiten({ id: ausgewaehlt.id, text: ausgewaehlt.text, neu: false })}
-        >
-          Umbenennen <kbd>F2</kbd>
-        </button>
-        <button
-          type="button"
-          className="md-knopf"
-          disabled={!ausgewaehlt || ausgewaehlt.parent_id === null}
-          onClick={() => ausgewaehlt && loeschenKnoten(ausgewaehlt.id)}
-        >
-          Löschen <kbd>Entf</kbd>
-        </button>
-        <span className="txt-trenner" />
-        <span className="zf-farben" role="group" aria-label="Farbe des Knotens">
-          {mm.KNOTEN_FARBEN.map((f) => (
-            <button
-              key={f.wert}
-              type="button"
-              className={`tab-farbe ${ausgewaehlt?.farbe === f.wert ? "an" : ""}`}
-              style={{ background: f.wert }}
-              title={f.name}
-              aria-label={`Farbe ${f.name}`}
-              disabled={!ausgewaehlt}
-              onClick={() => ausgewaehlt && datenAendern(mm.aendern(daten, ausgewaehlt.id, { farbe: f.wert }))}
-            />
-          ))}
-        </span>
-        <span className="txt-trenner" />
-        <button type="button" className="md-knopf" onClick={() => zoomen(1 / 1.2)} aria-label="Verkleinern">
-          −
-        </button>
-        <span className="mono zf-zoom">{Math.round(ansicht.zoom * 100)} %</span>
-        <button type="button" className="md-knopf" onClick={() => zoomen(1.2)} aria-label="Vergrößern">
-          +
-        </button>
-        <button type="button" className="md-knopf" onClick={zentrieren}>
-          ⌖ Zentrieren
-        </button>
+      <div className="wz zf-leiste" role="toolbar" aria-label="MindMap-Werkzeuge">
+        <div className="wz-zeile">
+          <button type="button" className="wz-knopf" onClick={() => neuerKnoten("kind")} disabled={!auswahl} title="Unterpunkt (Tab)">
+            <Icon name="plus" groesse={16} />
+            Unterpunkt <kbd>Tab</kbd>
+          </button>
+          <button type="button" className="wz-knopf" onClick={() => neuerKnoten("geschwister")} disabled={!auswahl} title="Weiterer Punkt (Enter)">
+            <Icon name="plus" groesse={16} />
+            Punkt <kbd>Enter</kbd>
+          </button>
+          <button
+            type="button"
+            className="wz-knopf"
+            disabled={!ausgewaehlt}
+            onClick={() => ausgewaehlt && setBearbeiten({ id: ausgewaehlt.id, text: ausgewaehlt.text, neu: false })}
+          >
+            <Icon name="stift" groesse={16} />
+            Umbenennen <kbd>F2</kbd>
+          </button>
+          <button
+            type="button"
+            className="wz-knopf"
+            disabled={!ausgewaehlt || ausgewaehlt.parent_id === null}
+            onClick={() => ausgewaehlt && loeschenKnoten(ausgewaehlt.id)}
+          >
+            <Icon name="loeschen" groesse={16} />
+            Löschen <kbd>Entf</kbd>
+          </button>
+          <span className="wz-trenner" />
+          <span className="tab-farben" role="group" aria-label="Farbe des Knotens">
+            {mm.KNOTEN_FARBEN.map((f) => (
+              <button
+                key={f.wert}
+                type="button"
+                className={`tab-farbe ${ausgewaehlt?.farbe === f.wert ? "an" : ""}`}
+                style={{ "--c": f.wert } as React.CSSProperties}
+                title={f.name}
+                aria-label={`Farbe ${f.name}`}
+                aria-pressed={ausgewaehlt?.farbe === f.wert}
+                disabled={!ausgewaehlt}
+                onClick={() => ausgewaehlt && datenAendern(mm.aendern(daten, ausgewaehlt.id, { farbe: f.wert }))}
+              />
+            ))}
+          </span>
+          <span className="wz-trenner" />
+          <button type="button" className="wz-knopf" onClick={() => zoomen(1 / 1.2)} title="Verkleinern">
+            <Icon name="minus" groesse={16} />
+            <span className="sr-only">Verkleinern</span>
+          </button>
+          <span className="zf-zoom">{Math.round(ansicht.zoom * 100)} %</span>
+          <button type="button" className="wz-knopf" onClick={() => zoomen(1.2)} title="Vergrößern">
+            <Icon name="plus" groesse={16} />
+            <span className="sr-only">Vergrößern</span>
+          </button>
+          <button type="button" className="wz-knopf" onClick={zentrieren}>
+            <Icon name="ziel" groesse={16} />
+            Zentrieren
+          </button>
+        </div>
       </div>
 
       <div
@@ -397,9 +410,9 @@ export function MindmapEditor({
                   }}
                 >
                   {gewaehlt && (
-                    <rect className="ui" x={-4} y={-4} width={b + 8} height={h + 8} rx={istWurzel ? 16 : 13} fill="none" stroke="#2a2318" strokeWidth={2} strokeDasharray="5 4" />
+                    <rect className="ui zf-auswahl" x={-4} y={-4} width={b + 8} height={h + 8} rx={istWurzel ? 16 : 13} />
                   )}
-                  <rect width={b} height={h} rx={istWurzel ? 12 : 10} fill={k.farbe} stroke={istWurzel ? "#2a2318" : "none"} strokeWidth={istWurzel ? 1.5 : 0} />
+                  <rect width={b} height={h} rx={istWurzel ? 12 : 10} fill={k.farbe} stroke={istWurzel ? textFarbe(k.farbe) : "none"} strokeOpacity={0.4} strokeWidth={istWurzel ? 1.5 : 0} />
                   {wirdBearbeitet ? (
                     <foreignObject x={4} y={4} width={Math.max(b, 220) - 8} height={h - 8}>
                       <input
@@ -448,8 +461,8 @@ export function MindmapEditor({
                       }}
                     >
                       <title>Unterpunkt hinzufügen</title>
-                      <circle r={11} fill="#ffffff" stroke="#2a2318" strokeWidth={1.5} />
-                      <path d="M -5 0 H 5 M 0 -5 V 5" stroke="#2a2318" strokeWidth={2} strokeLinecap="round" />
+                      <circle r={12} />
+                      <path d="M -5 0 H 5 M 0 -5 V 5" />
                     </g>
                   )}
                 </g>
@@ -458,12 +471,12 @@ export function MindmapEditor({
             </>}
           </g>
         </svg>
-        <p className="zf-hilfe faint">Mausrad: Zoom · Fläche ziehen: verschieben · Doppelklick: Text · Rechtsklick: Farbe</p>
+        <p className="zf-hilfe">Mausrad: Zoom, Fläche ziehen: verschieben, Doppelklick: Text, Rechtsklick: Farbe</p>
       </div>
 
       {farbMenue && (
         <div className="drei-punkte-menue tab-kontext zf-farbmenue" style={{ left: farbMenue.x, top: farbMenue.y }} role="menu" onClick={(e) => e.stopPropagation()}>
-          <span className="faint dat-verschieben-titel">Farbe</span>
+          <span className="dat-verschieben-titel">Farbe</span>
           <div className="zf-farben">
             {mm.KNOTEN_FARBEN.map((f) => (
               <button
@@ -471,7 +484,7 @@ export function MindmapEditor({
                 type="button"
                 role="menuitem"
                 className="tab-farbe"
-                style={{ background: f.wert }}
+                style={{ "--c": f.wert } as React.CSSProperties}
                 aria-label={f.name}
                 title={f.name}
                 onClick={() => {

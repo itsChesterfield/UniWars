@@ -5,6 +5,12 @@
    unten auf die neuen, bis die Bereiche einzeln umgestellt sind.
    ========================================================================== */
 :root {
+  /* Whiteboard-Papier: in beiden Designs hell (Entscheidung Didi), deshalb ohne Design-Umschaltung */
+  --papier: #fffdf8;
+  --papier-text-2: #5c544a;
+  --papier-linie: rgba(42, 35, 24, 0.16);
+  --papier-akzent: #946318;
+
   /* Schrift: Bricolage Grotesque für alles, JetBrains Mono nur für Zahlen und Zeiten */
   --font-display: var(--font-body);
   --font-mono: var(--font-zahl), ui-monospace, monospace;
@@ -6216,10 +6222,12 @@ textarea.folie-punkte {
    Hubs Stufe 4: MindMap und Whiteboard (gemeinsame Zeichenfläche)
    ========================================================================= */
 
+/* Design B3, Welle 6: Kopf und Leiste wie Textverarbeitung, Zeichenfläche mit Ring.
+   Das Whiteboard-Papier bleibt in beiden Designs hell (Entscheidung Didi), die Bedienung folgt dem Design. */
 .zf-seite {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   height: calc(100vh - 68px);
   min-height: 460px;
@@ -6228,60 +6236,43 @@ textarea.folie-punkte {
 .zf-titel {
   flex: 1 1 200px;
   min-width: 0;
-  font-size: 26px;
   overflow: hidden;
+  font-size: var(--text-2xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.zf-leiste {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--card);
-}
-
-.zf-leiste .md-knopf {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.zf-leiste .md-knopf:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .zf-leiste kbd {
-  font-size: 10px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
 }
 
-.zf-farben {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
+.zf-leiste .tab-farbe:disabled {
+  background: color-mix(in srgb, var(--c) 30%, var(--flaeche));
+  cursor: not-allowed;
 }
 
-.zf-farben .tab-farbe:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.zf-farbmenue {
-  gap: 6px;
-  padding: 8px;
-}
-
-.zf-zoom {
-  min-width: 44px;
+.zf-zoom,
+.wb-zoom {
+  min-width: 48px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--text-2);
   text-align: center;
-  font-size: 12px;
-  color: var(--muted);
+}
+
+.zf-farbmenue .zf-farben {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) var(--space-2);
 }
 
 .zf-flaeche {
@@ -6289,16 +6280,16 @@ textarea.folie-punkte {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  background: var(--card);
-  outline: none;
+  background: var(--flaeche-2);
+  box-shadow: 0 0 0 1px var(--linie-2);
   touch-action: none;
   user-select: none;
 }
 
 .zf-flaeche:focus-visible {
-  box-shadow: 0 0 0 2px var(--accent);
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
 }
 
 .zf-svg {
@@ -6313,29 +6304,49 @@ textarea.folie-punkte {
   cursor: grabbing;
 }
 
+.zf-auswahl {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+
 .zf-plus {
   cursor: pointer;
+}
+
+.zf-plus circle {
+  fill: var(--flaeche);
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.zf-plus path {
+  stroke: var(--text);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .zf-knoten-eingabe {
   width: 100%;
   height: 100%;
-  border: none;
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: var(--radius-m);
-  padding: 0 8px;
+  background: var(--flaeche);
+  color: var(--text);
   font: 600 15px var(--font-body), system-ui, sans-serif;
   text-align: center;
-  background: #fffdf8;
-  color: #2a2318;
-  outline: 2px solid #2a2318;
+  outline: 2px solid var(--akzent);
 }
 
 .zf-hilfe {
   position: absolute;
-  left: 12px;
-  bottom: 8px;
+  left: var(--space-3);
+  bottom: var(--space-2);
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--text-xs);
+  color: var(--text-2);
   pointer-events: none;
 }
 
@@ -6345,107 +6356,118 @@ textarea.folie-punkte {
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .wb-werkzeuge {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border: 1px solid var(--border);
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-radius: var(--radius-m);
-  background: var(--card);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
   overflow-y: auto;
 }
 
 .wb-werkzeug {
-  width: 36px;
-  height: 36px;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  border-radius: var(--radius-m);
-  background: transparent;
-  color: var(--muted);
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text-2);
   cursor: pointer;
 }
 
-.wb-werkzeug:hover {
-  background: var(--card2);
+.wb-werkzeug:hover:not(:disabled) {
+  background: var(--hover);
   color: var(--text);
 }
 
 .wb-werkzeug.an {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+  color: var(--akzent-text);
 }
 
 .wb-werkzeug:disabled {
-  opacity: 0.35;
-  cursor: default;
+  color: var(--text-3);
+  cursor: not-allowed;
 }
 
 .wb-farbe {
-  width: 22px;
-  height: 22px;
   flex: none;
-  border-radius: 50%;
-  border: 2px solid var(--card);
-  box-shadow: 0 0 0 1px var(--border);
-  cursor: pointer;
+  width: 24px;
+  height: 24px;
   padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  cursor: pointer;
 }
 
 .wb-farbe.an {
-  box-shadow: 0 0 0 2px var(--accent);
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
 }
 
 .wb-staerke {
   display: block;
-  width: 18px;
-  border-radius: 4px;
+  width: 16px;
+  border-radius: var(--radius-s);
   background: currentColor;
 }
 
 .wb-trenner {
+  flex: none;
   width: 24px;
   height: 1px;
-  flex: none;
-  background: var(--border);
-  margin: 4px 0;
+  margin: var(--space-1) 0;
+  background: var(--linie-2);
 }
 
-.wb-zoom {
-  font-size: 10.5px;
-  color: var(--muted);
+.zf-flaeche.wb-flaeche {
+  background: var(--papier);
+  box-shadow: 0 0 0 1px var(--linie-2);
 }
 
-.wb-flaeche {
-  background: #fffdf8;
+.wb-flaeche .zf-hilfe,
+.wb-leer {
+  color: var(--papier-text-2);
 }
 
-.dashboard[data-theme="nacht"] .wb-flaeche {
-  background: #fffdf8;
+.wb-rasterpunkt {
+  fill: var(--papier-linie);
+}
+
+.wb-auswahl {
+  fill: none;
+  stroke: var(--papier-akzent);
+}
+
+.wb-griff {
+  fill: var(--papier);
+  stroke: var(--papier-akzent);
 }
 
 .wb-texteingabe {
   position: absolute;
+  z-index: 5;
   min-width: 160px;
   min-height: 1.6em;
-  padding: 0;
   margin: 0;
-  border: 1px dashed #b9822a;
-  background: rgba(255, 253, 248, 0.9);
+  padding: 0;
+  border: 0;
+  outline: 1px dashed var(--papier-akzent);
+  background: color-mix(in srgb, var(--papier) 90%, transparent);
   font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.25;
   resize: both;
-  outline: none;
-  z-index: 5;
   field-sizing: content;
 }
 
@@ -6455,15 +6477,15 @@ textarea.folie-punkte {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 24px;
   margin: 0;
+  padding: var(--space-6);
+  text-align: center;
   pointer-events: none;
 }
 
 @media (max-width: 760px) {
   .zf-seite {
-    height: calc(100dvh - 110px);
+    height: calc(100dvh - 112px);
   }
 
   .wb-arbeitsbereich {
@@ -6479,7 +6501,7 @@ textarea.folie-punkte {
   .wb-trenner {
     width: 1px;
     height: 24px;
-    margin: 0 4px;
+    margin: 0 var(--space-1);
   }
 
   .zf-hilfe {
