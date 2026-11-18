@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { Icon } from "@/components/nav-icon";
 
 export type QuellOption = { art: "pdf" | "notiz"; id: string; titel: string; fach_id: string | null };
 export type Fach = { id: string; name: string; farbe?: string | null };
@@ -18,6 +19,7 @@ export function QuellenWahl({
   wert: QuellWahl;
   onAendern: (w: QuellWahl) => void;
 }) {
+  const id = useId();
   const [suche, setSuche] = useState("");
   const sichtbar = useMemo(() => {
     const s = suche.trim().toLowerCase();
@@ -35,30 +37,31 @@ export function QuellenWahl({
   }
 
   return (
-    <div className="qz-quellen">
-      <label>
-        <span>Fach</span>
-        <select className="field" value={wert.fachId ?? ""} onChange={(e) => fachWaehlen(e.target.value)}>
-          <option value="">Alle Fächer (einzeln auswählen)</option>
-          {faecher.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <input className="field" placeholder="PDFs und Notizen durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+    <>
+      <label htmlFor={`${id}-fach`}>Fach</label>
+      <select id={`${id}-fach`} value={wert.fachId ?? ""} onChange={(e) => fachWaehlen(e.target.value)}>
+        <option value="">Alle Fächer (einzeln auswählen)</option>
+        {faecher.map((f) => (
+          <option key={f.id} value={f.id}>
+            {f.name}
+          </option>
+        ))}
+      </select>
+      <label htmlFor={`${id}-suche`}>Quellen</label>
+      <input id={`${id}-suche`} type="search" placeholder="PDFs und Notizen durchsuchen" value={suche} onChange={(e) => setSuche(e.target.value)} />
       <div className="qz-quellen-liste" role="group" aria-label="Quellen">
-        {sichtbar.length === 0 && <p className="faint">Keine PDFs oder Notizen gefunden.</p>}
+        {sichtbar.length === 0 && <p className="qz-hinweis">Keine PDFs oder Notizen gefunden.</p>}
         {sichtbar.map((o) => (
           <label key={o.id} className="qz-quelle">
             <input type="checkbox" checked={gewaehlt.has(o.id)} onChange={() => umschalten(o)} />
-            <span>{o.art === "pdf" ? "📕" : "📝"}</span>
-            <span className="qz-quelle-titel">{o.titel}</span>
+            <Icon name={o.art === "pdf" ? "pdf" : "notizen"} groesse={16} />
+            <span>{o.titel}</span>
           </label>
         ))}
       </div>
-      <small className="faint">{wert.quellen.length} ausgewählt</small>
-    </div>
+      <span className="qz-hinweis">
+        <span className="zahl">{wert.quellen.length}</span> ausgewählt
+      </span>
+    </>
   );
 }

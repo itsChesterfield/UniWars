@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { podcastErstellen, podcastLoeschen } from "@/app/(hubs)/transkription/podcast-actions";
+import { Icon } from "@/components/nav-icon";
+import { Auswahl } from "@/components/quiz/quiz-bereich";
+import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
 import type { PodcastLaenge } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
@@ -24,62 +27,63 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
     const id = window.setTimeout(() => setNeu(true), 0);
     return () => window.clearTimeout(id);
   }, [kiVerfuegbar]);
+  const neuKnopf = kiVerfuegbar && (
+    <button type="button" className="knopf neben klein" onClick={() => setNeu(true)}>
+      <Icon name="plus" groesse={16} />
+      Neuer Podcast
+    </button>
+  );
+
   return (
-    <section className="qz-bereich" aria-labelledby="pc-titel">
-      <div className="qz-kopf">
-        <div>
-          <h2 id="pc-titel" className="qz-titel">🎧 Lern-Podcasts</h2>
-          <p className="muted qz-untertitel">Dein Skript als Gespräch zum Anhören – für unterwegs, beim Sport oder vor dem Einschlafen.</p>
-        </div>
-        {kiVerfuegbar && (
-          <button type="button" className="btnp" onClick={() => setNeu(true)}>
-            + Neuer Podcast
-          </button>
-        )}
+    <section className="kk-abschnitt" aria-labelledby="pc-titel">
+      <div className="abschnitt-kopf">
+        <h2 id="pc-titel" className="abschnitt-titel">
+          Lern-Podcasts
+        </h2>
+        <span className="abschnitt-info">dein Material als Gespräch zweier Stimmen</span>
+        {podcasts.length > 0 && <span className="rechts">{neuKnopf}</span>}
       </div>
       {podcasts.length === 0 ? (
-        <p className="empty-state">Noch kein Podcast. Erstell einen aus einem Fach oder einzelnen PDFs und Notizen.</p>
+        <Zustand art="leer" icon="kopfhoerer" titel="Noch kein Podcast." region ebene={3} aktion={neuKnopf}>
+          Dein Skript als Gespräch zum Anhören, für unterwegs, beim Sport oder vor dem Einschlafen.
+        </Zustand>
       ) : (
-        <div className="kk-raster">
+        <ul className="entry-list">
           {podcasts.map((p) => {
             const fach = faecher.find((f) => f.id === p.fach_id);
             return (
-              <article key={p.id} className="card kk-kachel">
-                <div className="kk-kachel-kopf">
-                  <Link href={`/transkription/podcast/${p.id}`} className="kk-kachel-name">
-                    🎧 {p.titel}
+              <li key={p.id} className="entry-row fach-zeile">
+                <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
+                <div className="entry-info">
+                  <Link href={`/transkription/podcast/${p.id}`} className="entry-title kk-name">
+                    {p.titel}
+                  </Link>
+                  <span className="entry-meta">
+                    {fach?.name ?? "Ohne Fach"}, {p.segmente} Abschnitte, {new Date(p.erstellt_am).toLocaleDateString("de-DE")}
+                  </span>
+                </div>
+                <div className="entry-actions">
+                  <Link href={`/transkription/podcast/${p.id}`} className="knopf neben klein">
+                    <Icon name="abspielen" groesse={16} />
+                    Anhören
                   </Link>
                   <button
                     type="button"
-                    className="icon-knopf"
-                    aria-label="Podcast löschen"
+                    className="knopf gefahr klein nur-symbol"
+                    aria-label={`Podcast „${p.titel}“ löschen`}
                     title="Löschen"
                     onClick={() => {
                       if (!window.confirm(`Podcast „${p.titel}“ löschen?`)) return;
                       void podcastLoeschen(p.id).then(() => router.refresh());
                     }}
                   >
-                    🗑
+                    <Icon name="loeschen" groesse={16} />
                   </button>
                 </div>
-                {fach && (
-                  <div className="kk-kachel-fach muted">
-                    <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-                  </div>
-                )}
-                <div className="qz-kachel-zahlen muted">
-                  <span>{p.segmente} Abschnitte</span>
-                  <span>{new Date(p.erstellt_am).toLocaleDateString("de-DE")}</span>
-                </div>
-                <div className="kk-kachel-knoepfe">
-                  <Link href={`/transkription/podcast/${p.id}`} className="btnp">
-                    ▶ Anhören
-                  </Link>
-                </div>
-              </article>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
       {neu && <PodcastNeuDialog faecher={faecher} optionen={optionen} onSchliessen={() => setNeu(false)} />}
     </section>
@@ -123,43 +127,40 @@ function PodcastNeuDialog({ faecher, optionen, onSchliessen }: { faecher: Fach[]
   return (
     <dialog
       ref={ref}
-      className="quick-add-modal qz-dialog"
+      className="formular-dialog"
+      aria-labelledby="podcast-neu-titel"
       onCancel={(e) => {
         e.preventDefault();
         if (!laeuft) onSchliessen();
       }}
     >
-      <form onSubmit={erstellen} className="hub-formular">
-        <h3>Neuer Lern-Podcast</h3>
+      <form onSubmit={erstellen} className="crud-form">
+        <h3 id="podcast-neu-titel">Neuer Lern-Podcast</h3>
         <QuellenWahl faecher={faecher} optionen={optionen} wert={wahl} onAendern={setWahl} />
-        <div className="qz-feld">
-          <span>Länge</span>
-          <span className="segwrap" role="radiogroup" aria-label="Länge">
-            {(
-              [
-                ["kurz", "~3 Min"],
-                ["normal", "~6 Min"],
-                ["lang", "~10 Min"],
-              ] as [PodcastLaenge, string][]
-            ).map(([l, name]) => (
-              <button key={l} type="button" role="radio" aria-checked={laenge === l} className={`seg ${laenge === l ? "on" : ""}`} onClick={() => setLaenge(l)}>
-                {name}
-              </button>
-            ))}
-          </span>
-        </div>
-        <label>
-          <span>Schwerpunkt (optional)</span>
-          <input className="field" value={fokus} maxLength={300} placeholder="z. B. „nur Kapitel 3“ oder „Fokus auf Formeln“" onChange={(e) => setFokus(e.target.value)} />
-        </label>
-        {fehler && <p className="auth-error">{fehler}</p>}
-        {laeuft && <p className="faint">Das Skript wird geschrieben – das dauert etwa eine Minute …</p>}
-        <div className="hub-formular-knoepfe">
-          <button type="button" className="btng" onClick={onSchliessen} disabled={laeuft}>
-            Abbrechen
+        <Auswahl
+          name="Länge"
+          werte={[
+            ["kurz", "etwa 3 min"],
+            ["normal", "etwa 6 min"],
+            ["lang", "etwa 10 min"],
+          ]}
+          wert={laenge}
+          onWahl={setLaenge}
+        />
+        <label htmlFor="podcast-fokus">Schwerpunkt (optional)</label>
+        <input id="podcast-fokus" value={fokus} maxLength={300} placeholder="z. B. „nur Kapitel 3“ oder „Fokus auf Formeln“" onChange={(e) => setFokus(e.target.value)} />
+        {fehler && (
+          <p className="formular-fehler" role="alert">
+            {fehler}
+          </p>
+        )}
+        {laeuft && <p className="qz-hinweis">Das Skript wird geschrieben. Das dauert etwa eine Minute.</p>}
+        <div className="crud-form-actions">
+          <button type="submit" className="knopf haupt" aria-busy={laeuft} disabled={laeuft}>
+            {laeuft ? "Skript wird geschrieben" : "Podcast erstellen"}
           </button>
-          <button type="submit" className="btnp" disabled={laeuft}>
-            {laeuft ? "Erstelle …" : "Podcast erstellen"}
+          <button type="button" className="knopf leise" onClick={onSchliessen} disabled={laeuft}>
+            Abbrechen
           </button>
         </div>
       </form>
