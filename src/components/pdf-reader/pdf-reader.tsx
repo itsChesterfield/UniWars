@@ -2,6 +2,8 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import {
   markierungAendern,
@@ -697,16 +699,16 @@ export function PdfReader({
   return (
     <div ref={readerRef} className={`pdf-reader ${vollbild ? "vollbild" : ""}`}>
       <div className="pdf-leiste" role="toolbar" aria-label="PDF-Steuerung">
-        <Link href="/pdf-reader" className="btng pdf-zurueck" title="Alle PDFs">
-          ←
+        <Link href="/pdf-reader" className="knopf leise klein nur-symbol pdf-zurueck" aria-label="Alle PDFs" title="Alle PDFs">
+          <Icon name="pfeil-links" groesse={16} />
         </Link>
         <span className="pdf-name" title={datei.name}>
           {datei.name}
         </span>
 
         <div className="pdf-gruppe">
-          <button type="button" className="icon-knopf" aria-label="Vorherige Seite" onClick={() => zuSeite(seite - 1)} disabled={seite <= 1}>
-            ◀
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Vorherige Seite" onClick={() => zuSeite(seite - 1)} disabled={seite <= 1}>
+            <Icon name="pfeil-links" groesse={16} />
           </button>
           <span className="pdf-seitenzahl">
             <input
@@ -724,18 +726,18 @@ export function PdfReader({
           </span>
           <button
             type="button"
-            className="icon-knopf"
+            className="knopf leise klein nur-symbol"
             aria-label="Nächste Seite"
             onClick={() => zuSeite(seite + 1)}
             disabled={seite >= anzahl}
           >
-            ▶
+            <Icon name="pfeil-rechts" groesse={16} />
           </button>
         </div>
 
         <div className="pdf-gruppe">
-          <button type="button" className="icon-knopf" aria-label="Verkleinern" onClick={() => zoomSchritt(-1)} disabled={aktuellerMassstab <= MIN_ZOOM}>
-            −
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Verkleinern" onClick={() => zoomSchritt(-1)} disabled={aktuellerMassstab <= MIN_ZOOM}>
+            <Icon name="minus" groesse={16} />
           </button>
           <select
             className="field pdf-zoom"
@@ -755,16 +757,15 @@ export function PdfReader({
               </option>
             ))}
           </select>
-          <button type="button" className="icon-knopf" aria-label="Vergrößern" onClick={() => zoomSchritt(1)} disabled={aktuellerMassstab >= MAX_ZOOM}>
-            +
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Vergrößern" onClick={() => zoomSchritt(1)} disabled={aktuellerMassstab >= MAX_ZOOM}>
+            <Icon name="plus" groesse={16} />
           </button>
         </div>
 
         <div className="pdf-gruppe">
-          <span className="pdf-ansicht-wahl" role="group" aria-label="Ansicht">
+          <span className="segment pdf-ansicht-wahl" role="group" aria-label="Ansicht">
             <button
               type="button"
-              className={!seitenweise ? "an" : ""}
               aria-pressed={!seitenweise}
               title="Alle Seiten untereinander, fließend scrollen"
               onClick={() => seitenweise && ansichtUmschalten()}
@@ -773,9 +774,8 @@ export function PdfReader({
             </button>
             <button
               type="button"
-              className={seitenweise ? "an" : ""}
               aria-pressed={seitenweise}
-              title="Seite für Seite blättern (◀ ▶, Pfeiltasten oder Mausrad am Seitenende)"
+              title="Seite für Seite blättern (Pfeile, Pfeiltasten oder Mausrad am Seitenende)"
               onClick={() => !seitenweise && ansichtUmschalten()}
             >
               Seiten
@@ -783,7 +783,7 @@ export function PdfReader({
           </span>
           <button
             type="button"
-            className={`icon-knopf ${vollbild ? "an" : ""}`}
+            className="knopf leise klein nur-symbol"
             aria-pressed={vollbild}
             aria-label={vollbild ? "Vollbild beenden" : "Vollbild"}
             title={vollbild ? "Vollbild beenden (Esc)" : "Vollbild"}
@@ -798,7 +798,7 @@ export function PdfReader({
         <div className="pdf-gruppe pdf-stift-gruppe">
           <button
             type="button"
-            className={`icon-knopf pdf-stift ${stift ? "an" : ""}`}
+            className="knopf leise klein nur-symbol pdf-stift"
             style={stift ? ({ "--marker": FARB_INFO[stift].wert } as React.CSSProperties) : undefined}
             aria-label={stift ? "Textmarker ausschalten" : "Textmarker einschalten"}
             title={stift ? "Textmarker aus (Esc)" : "Textmarker: ausgewählter Text wird sofort markiert"}
@@ -819,7 +819,7 @@ export function PdfReader({
         <div className="pdf-gruppe">
           <button
             type="button"
-            className={`icon-knopf ${istLesezeichen ? "pdf-lesezeichen-an" : ""}`}
+            className="knopf leise klein nur-symbol pdf-lesezeichen"
             aria-label={istLesezeichen ? "Lesezeichen entfernen" : "Lesezeichen setzen"}
             title={istLesezeichen ? "Lesezeichen entfernen" : "Lesezeichen auf dieser Seite"}
             aria-pressed={istLesezeichen}
@@ -832,17 +832,18 @@ export function PdfReader({
           </button>
           <button
             type="button"
-            className={`icon-knopf ${seitenleiste ? "an" : ""}`}
+            className="knopf leise klein nur-symbol"
+            aria-pressed={seitenleiste}
             aria-label="Markierungen und Lesezeichen"
             title="Markierungen und Lesezeichen"
             aria-expanded={seitenleiste}
             onClick={() => setSeitenleiste((s) => !s)}
           >
-            ☰
+            <Icon name="menue" groesse={16} />
           </button>
           <button
             type="button"
-            className="icon-knopf"
+            className="knopf leise klein nur-symbol"
             aria-label="Im PDF suchen (Strg+F)"
             title="Suchen (Strg+F)"
             onClick={() => {
@@ -850,7 +851,7 @@ export function PdfReader({
               requestAnimationFrame(() => suchFeld.current?.focus());
             }}
           >
-            🔍
+            <Icon name="suchen" groesse={16} />
           </button>
         </div>
       </div>
@@ -869,7 +870,7 @@ export function PdfReader({
               if (e.key === "Escape") setSuchOffen(false);
             }}
           />
-          <span className="muted pdf-treffer" aria-live="polite">
+          <span className="pdf-treffer" aria-live="polite">
             {normSuche.length < 2
               ? ""
               : sucht
@@ -878,14 +879,14 @@ export function PdfReader({
                   ? "Keine Treffer"
                   : `Treffer ${trefferIndex + 1} von ${treffer.length}`}
           </span>
-          <button type="button" className="icon-knopf" aria-label="Vorheriger Treffer" onClick={() => trefferWechseln(-1)} disabled={!treffer.length}>
-            ↑
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Vorheriger Treffer" onClick={() => trefferWechseln(-1)} disabled={!treffer.length}>
+            <Icon name="hoch" groesse={16} />
           </button>
-          <button type="button" className="icon-knopf" aria-label="Nächster Treffer" onClick={() => trefferWechseln(1)} disabled={!treffer.length}>
-            ↓
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Nächster Treffer" onClick={() => trefferWechseln(1)} disabled={!treffer.length}>
+            <Icon name="runter" groesse={16} />
           </button>
-          <button type="button" className="icon-knopf" aria-label="Suche schließen" onClick={() => setSuchOffen(false)}>
-            ✕
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Suche schließen" onClick={() => setSuchOffen(false)}>
+            <Icon name="schliessen" groesse={16} />
           </button>
         </div>
       )}
@@ -893,45 +894,49 @@ export function PdfReader({
       <div className={`pdf-koerper ${seitenleiste ? "mit-leiste" : ""}`}>
         {seitenleiste && (
           <aside className="pdf-seitenleiste" aria-label="Markierungen und Lesezeichen">
-            <div className="segwrap pdf-leisten-tabs" role="tablist">
+            <div className="segment pdf-leisten-tabs" role="tablist" aria-label="Seitenleiste">
               <button
                 type="button"
                 role="tab"
                 aria-selected={leistenTab === "notizen"}
                 title="Notizen zu dieser PDF"
-                className={`seg ${leistenTab === "notizen" ? "on" : ""}`}
                 onClick={() => setLeistenTab("notizen")}
               >
-                📝&nbsp;{notizen.length}
+                <Icon name="notizen" groesse={16} />
+                <span className="vh">Notizen </span>
+                <span className="zahl">{notizen.length}</span>
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={leistenTab === "markierungen"}
                 title="Markierungen"
-                className={`seg ${leistenTab === "markierungen" ? "on" : ""}`}
                 onClick={() => setLeistenTab("markierungen")}
               >
-                🖍&nbsp;{markierungen.length}
+                <Icon name="markieren" groesse={16} />
+                <span className="vh">Markierungen </span>
+                <span className="zahl">{markierungen.length}</span>
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={leistenTab === "lesezeichen"}
                 title="Lesezeichen"
-                className={`seg ${leistenTab === "lesezeichen" ? "on" : ""}`}
                 onClick={() => setLeistenTab("lesezeichen")}
               >
-                🔖&nbsp;{lesezeichen.length}
+                <Icon name="lesezeichen" groesse={16} />
+                <span className="vh">Lesezeichen </span>
+                <span className="zahl">{lesezeichen.length}</span>
               </button>
             </div>
             {leistenTab === "notizen" ? (
               <div className="pdf-notizen">
-                <button type="button" className="btnp pdf-notiz-neu" disabled={notizLaeuft} onClick={() => void neueNotiz()}>
-                  + Notiz zu dieser PDF
+                <button type="button" className="knopf neben klein pdf-notiz-neu" disabled={notizLaeuft} aria-busy={notizLaeuft} onClick={() => void neueNotiz()}>
+                  <Icon name="plus" groesse={16} />
+                  Notiz zu dieser PDF
                 </button>
                 {notizen.length === 0 ? (
-                  <p className="empty-state">
+                  <p className="pdf-leer">
                     Noch keine Notiz verlinkt diese PDF. Leg eine an – oder verlinke die PDF in einer Notiz über „[[ ]] Verlinken“.
                   </p>
                 ) : (
@@ -966,13 +971,14 @@ export function PdfReader({
                 onKopieren={alleKopieren}
               />
             ) : lesezeichen.length === 0 ? (
-              <p className="empty-state">Noch keine Lesezeichen. Setze eins mit dem Lesezeichen-Symbol oben.</p>
+              <p className="pdf-leer">Noch keine Lesezeichen. Setze eins mit dem Lesezeichen-Symbol oben.</p>
             ) : (
               <ul>
                 {lesezeichen.map((s) => (
                   <li key={s}>
                     <button type="button" className={s === seite ? "aktiv" : ""} onClick={() => zuSeite(s)}>
-                      🔖 Seite {s}
+                      <Icon name="lesezeichen" groesse={14} />
+                      Seite {s}
                     </button>
                   </li>
                 ))}
@@ -994,8 +1000,12 @@ export function PdfReader({
           }}
           onClick={klickAufSeite}
         >
-          {ladeFehler && <p className="auth-error">{ladeFehler}</p>}
-          {!ladeFehler && !doc && <p className="muted pdf-laden">PDF wird geladen …</p>}
+          {ladeFehler && (
+            <Zustand art="fehler" region ebene={2} titel="Die PDF lässt sich nicht öffnen." aktion={<Link href="/pdf-reader" className="knopf leise klein">Alle PDFs</Link>}>
+              {ladeFehler}
+            </Zustand>
+          )}
+          {!ladeFehler && !doc && <p className="pdf-laden">PDF wird geladen …</p>}
           {doc &&
             masse.map((m, i) =>
               seitenweise && i !== seite - 1 ? null : (
