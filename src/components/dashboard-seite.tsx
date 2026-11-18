@@ -45,6 +45,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: settingsRoh, error: settingsError },
     { data: kalenderVerbindung },
     { data: faelligeKarten },
+    { data: zuletztDateien },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -62,6 +63,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
       .maybeSingle(),
     // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
     supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000),
+    // Szene „Zuletzt geöffnet“ der Hub-Bühne
+    supabase.from("datei").select("id, name, mime_typ, geaendert_am, fach_id").order("geaendert_am", { ascending: false }).limit(6),
   ]);
 
   const error =
@@ -124,6 +127,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         bereich={bereich}
         mensa={mensa}
         semester={semesterText}
+        dateien={zuletztDateien ?? []}
       />
     </Suspense>
   );
