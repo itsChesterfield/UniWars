@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { AnalyticsNutzer } from "@/components/analytics-nutzer";
 import { NoteManager } from "@/components/note-manager";
+import { useNeueIds } from "@/components/bewegung/neue-ids";
 import { KalenderButton } from "@/components/kalender-button";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
@@ -13,7 +14,6 @@ import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
 import { TodoManager } from "@/components/todo-manager";
-import { useNeueIds } from "@/components/bewegung/neue-ids";
 import { PruefungManager } from "@/components/pruefung-manager";
 import {
   NotenKopf,
