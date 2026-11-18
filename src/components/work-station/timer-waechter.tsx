@@ -74,7 +74,10 @@ export function FokusFrage() {
     starte(async () => {
       try {
         await fokusAufgabeErledigt({ typ: frage.typ, id: frage.id });
-        timerSchreiben({ ...aktuell, frage: null, aufgabe: null });
+        // Neu lesen: der Timer läuft während der Anfrage weiter (z. B. Pause gestartet)
+        const danach = timerLesen() ?? aktuell;
+        const gleich = (a?: FokusAufgabe | null) => a?.typ === frage.typ && a.id === frage.id;
+        timerSchreiben({ ...danach, frage: gleich(danach.frage) ? null : (danach.frage ?? null), aufgabe: gleich(danach.aufgabe) ? null : (danach.aufgabe ?? null) });
         router.refresh();
       } catch (err) {
         fehlerMelden(err, { ort: "fokus_aufgabe_erledigt" });
