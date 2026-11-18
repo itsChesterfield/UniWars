@@ -16944,6 +16944,16 @@ html[data-bewegung="reduziert"] .lade-skelett {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
 
+/* Admin-Bereich (Plan Paket 1.4): Unterseiten als Knopf-Reihe, bis Paket 2 sie aufbaut. */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 /* Rollen-Schild neben dem Namen (Plan Paket 1.5): Mod gelb über das Warn-Token,
    Admin rot über das Fehler-Token. Text bleibt Satzschreibweise, ohne Laufweite. */
 .rollen-badge {
