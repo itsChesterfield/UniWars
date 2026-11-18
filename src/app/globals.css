@@ -13820,6 +13820,47 @@ a.knopf:hover {
   color: var(--text);
 }
 
+/* Segment-Markierung (Bewegung, wie die Reiter bei Mistral): eine eigene Fläche unter den Knöpfen, die in
+   --dur-short zum gewählten Eintrag gleitet. Lage setzt SegmentMarke; ohne Skript gilt der Knopf-Hintergrund. */
+.segment {
+  position: relative;
+  isolation: isolate;
+  --marke-farbe: var(--flaeche-3);
+}
+
+.segment[data-marke]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--marke-b);
+  height: var(--marke-h);
+  border-radius: inherit;
+  background: var(--marke-farbe);
+  transform: translate(var(--marke-x), var(--marke-y));
+  pointer-events: none;
+}
+
+.segment[data-marke="gleitet"]::before {
+  transition: transform var(--dur-short) var(--ease-out);
+}
+
+.segment[data-marke] > button[aria-pressed="true"],
+.segment[data-marke] > button[aria-selected="true"] {
+  background: none;
+}
+
+.ws-art {
+  --marke-farbe: var(--flaeche);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment[data-marke]::before {
+    transition: none;
+  }
+}
+
 .hubbox .symbolknopf {
   display: grid;
   place-items: center;
