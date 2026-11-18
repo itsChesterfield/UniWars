@@ -13,6 +13,7 @@ import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
 import { TodoManager } from "@/components/todo-manager";
+import { useNeueIds } from "@/components/bewegung/neue-ids";
 import { PruefungManager } from "@/components/pruefung-manager";
 import {
   NotenKopf,
@@ -127,6 +128,7 @@ export function DashboardContent({
   }
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
+  const neueNoten = useNeueIds(notes);
 
 
 
@@ -253,6 +255,7 @@ export function DashboardContent({
           <NoteManager
             key={`noten-${filterKey}`}
             initialNotes={gefilterteNotes}
+            neuIds={neueNoten}
             faecher={faecher}
             embedded
             versteckeErstellen

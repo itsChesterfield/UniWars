@@ -9,6 +9,7 @@ import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
 import { notenText } from "@/lib/noten";
+import { RollText } from "@/components/bewegung/roll-text";
 
 type Note = Tables<"note">;
 
@@ -30,17 +31,22 @@ export function NoteManager({
   faecher,
   embedded = false,
   versteckeErstellen = false,
+  neuIds,
 }: {
   initialNotes: Note[];
   faecher: FachOption[];
   embedded?: boolean;
   versteckeErstellen?: boolean;
+  /** Seit dem letzten Stand neu (z. B. über Schnell erfassen); erscheinen einmal mit kurzem Weg */
+  neuIds?: ReadonlySet<string>;
 }) {
   const [notes, setNotes] = useState(initialNotes);
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<NoteInput>(leeresFormular(faecher[0]?.id ?? null));
   const [error, setError] = useState<string | null>(null);
+  // Neu angelegte Note erscheint einmal mit kurzem Weg (Bewegung)
+  const [neu, setNeu] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const sortiert = [...notes].sort(
@@ -78,6 +84,7 @@ export function NoteManager({
         } else {
           const created = await createNote(form);
           setNotes((prev) => [...prev, created]);
+          setNeu(created.id);
           posthog.capture("note_angelegt", { note_id: created.id });
         }
         setFormOpen(false);
@@ -141,7 +148,7 @@ export function NoteManager({
         {sortiert.map((n) => {
           const fach = faecher.find((f) => f.id === n.fach_id);
           return (
-            <li key={n.id} className="entry-row fach-zeile">
+            <li key={n.id} className={`entry-row fach-zeile${n.id === neu || neuIds?.has(n.id) ? " zeile-neu" : ""}`}>
               <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
               <div className="entry-info">
                 <span className="entry-title">{n.titel}</span>
@@ -150,7 +157,7 @@ export function NoteManager({
                 </span>
               </div>
               <span className={`note-wert zahl${n.wert === null ? " ausstehend" : ""}`}>
-                {n.wert === null ? "ausstehend" : notenText(n.wert)}
+                {n.wert === null ? "ausstehend" : <RollText wert={notenText(n.wert)} />}
               </span>
               <div className="entry-actions">
                 <button type="button" className="knopf leise klein" onClick={() => openEditForm(n)}>

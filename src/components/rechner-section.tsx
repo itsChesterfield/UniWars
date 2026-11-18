@@ -102,7 +102,9 @@ export function NotenDurchschnittProFach({
                 {anzahl} {anzahl === 1 ? "Note" : "Noten"}
               </span>
             </div>
-            <span className="note-wert zahl">{notenText(schnitt)}</span>
+            <span className="note-wert zahl">
+              <RollText wert={notenText(schnitt)} />
+            </span>
           </li>
         ))}
       </ul>

@@ -7,9 +7,10 @@ import { rollZeichen } from "@/lib/bewegung";
  * Wert, der beim Wechsel rollt (wie die Preise bei Mistral): Der alte Wert schiebt sich in seiner Zeile nach oben
  * hinaus, der neue kommt von unten. Geänderte Zeichen rollen einzeln und um 30 ms versetzt.
  * Für Zähler und Zahlen, nicht für Text, der beim Lesen stört. Bei reduzierter Bewegung wird nur überblendet.
+ * `start`: Wert, von dem aus beim ersten Zeigen einmal gerollt wird (z. B. „0 %“ beim Quiz-Ergebnis).
  */
-export function RollText({ wert, className }: { wert: string; className?: string }) {
-  const [stand, setStand] = useState<{ wert: string; alt: string | null; n: number }>({ wert, alt: null, n: 0 });
+export function RollText({ wert, className, start }: { wert: string; className?: string; start?: string }) {
+  const [stand, setStand] = useState<{ wert: string; alt: string | null; n: number }>({ wert, alt: start ?? null, n: 0 });
   if (stand.wert !== wert) setStand({ wert, alt: stand.wert, n: stand.n + 1 });
 
   const zeichen = rollZeichen(stand.alt, wert);

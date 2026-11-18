@@ -16791,3 +16791,21 @@ html[data-bewegung="reduziert"] .lade-skelett {
 [data-bewegung="reduziert"] .pfeil-vorn {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
+
+/* Neue Zeile (Bewegung): erscheint einmal mit --weg, nur Lage und Deckkraft */
+@keyframes zeile-ein {
+  from {
+    opacity: 0;
+    transform: translateY(var(--weg));
+  }
+}
+
+.zeile-neu {
+  animation: zeile-ein var(--dur-short) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zeile-neu {
+    animation-name: roll-ein-still;
+  }
+}

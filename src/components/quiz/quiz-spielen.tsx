@@ -11,6 +11,7 @@ import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { studioMelden } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
+import { RollText } from "@/components/bewegung/roll-text";
 
 type Modus = "alle" | "schwaechen";
 type Ergebnis = { frageId: string; punkte: number; bewertung: Bewertung };
@@ -447,7 +448,7 @@ function Ergebnisseite({
   return (
     <section className="qz-ergebnis">
       <div className="qz-ergebnis-kreis" style={{ ["--p" as string]: `${prozent}%` }}>
-        <span className="zahl">{prozent} %</span>
+        <RollText className="zahl" wert={`${prozent} %`} start="0 %" />
       </div>
       <h1>{prozent >= 90 ? "Stark." : prozent >= 70 ? "Gut gemacht." : prozent >= 50 ? "Solide, da geht noch was." : "Dranbleiben, Übung macht's."}</h1>
       <p>
