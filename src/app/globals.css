@@ -17238,6 +17238,368 @@ html[data-bewegung="reduziert"] .lade-skelett {
 }
 
 /* ==========================================================================
+   Einrichtung beim ersten Login (Entscheidung Didi, 18.11., Prototyp D)
+   Eine Frage pro Bildschirm, ohne Symbolleiste. Wechsel seitlich, nur transform und opacity.
+   ========================================================================== */
+.einr {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.einr-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: 72px;
+  padding: 0 var(--space-10);
+}
+
+.einr-marke {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--akzent);
+}
+
+.einr-marke b {
+  font-size: var(--text-lg);
+  font-weight: 650;
+  color: var(--text);
+}
+
+.einr-marke b span {
+  color: var(--akzent-text);
+}
+
+.einr-stand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.einr-bahn {
+  display: block;
+  width: 160px;
+  height: 2px;
+  overflow: hidden;
+  background: var(--linie-2);
+}
+
+.einr-bahn i {
+  display: block;
+  height: 100%;
+  background: var(--akzent);
+  transform-origin: left;
+  transition: transform var(--dur-long) var(--ease-out);
+}
+
+.einr-spaeter {
+  font-size: var(--text-sm);
+}
+
+.einr-mitte {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: var(--space-8) var(--space-10);
+}
+
+.einr-stufe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 560px;
+}
+
+.einr-stufe.vor {
+  animation: einr-von-rechts var(--dur-long) var(--ease-out) both;
+}
+
+.einr-stufe.zurueck {
+  animation: einr-von-links var(--dur-long) var(--ease-out) both;
+}
+
+@keyframes einr-von-rechts {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes einr-von-links {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+.einr-stufe .steig-z {
+  animation: steig-ein 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.einr-ueber {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 550;
+  color: var(--akzent-text);
+}
+
+.einr-stufe h1 {
+  margin: 0;
+  font-size: var(--text-3xl);
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.einr-stufe h1:focus {
+  outline: none;
+}
+
+.einr-text {
+  margin: 0;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.einr-aktionen {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.einr .knopf.gross {
+  min-height: 48px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+.einr-feld {
+  margin-top: var(--space-2);
+}
+
+.einr-gewaehlt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1px var(--linie);
+}
+
+.einr-gewaehlt b {
+  flex: 1;
+  font-weight: 550;
+}
+
+.einr-haken {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  clip-path: circle(50%);
+  background: var(--akzent);
+  color: var(--auf-akzent);
+}
+
+.einr-ablage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 200px;
+  margin-top: var(--space-2);
+  padding: var(--space-6);
+  border: 0;
+  border-radius: var(--radius-l);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1.5px var(--linie-2);
+  font: inherit;
+  color: var(--text);
+  text-align: center;
+  cursor: pointer;
+  transition: box-shadow var(--dur-short) var(--ease-out);
+}
+
+.einr-ablage svg {
+  color: var(--text-2);
+}
+
+.einr-ablage b {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.einr-ablage span {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.einr-ablage:hover {
+  box-shadow: inset 0 0 0 1.5px var(--akzent);
+}
+
+.einr-google {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
+.einr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.einr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-l);
+  background: color-mix(in srgb, var(--akzent) 12%, transparent);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.einr-chip svg {
+  color: var(--text-3);
+  transition: color var(--dur-short) var(--ease-out);
+}
+
+.einr-chip:hover svg {
+  color: var(--text);
+}
+
+.einr-fq {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-s);
+}
+
+.einr-neu {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.einr-neu .field {
+  flex: 1;
+}
+
+.einr-ring {
+  color: var(--akzent);
+}
+
+.einr-ring .kreis,
+.einr-ring .hak {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.einr-ring .kreis {
+  animation: einr-zeichnen 640ms var(--ease-out) forwards;
+}
+
+.einr-ring .hak {
+  animation: einr-zeichnen 320ms var(--ease-out) 520ms forwards;
+}
+
+@keyframes einr-zeichnen {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.einr-fuss {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 88px;
+  padding: 0 var(--space-10);
+  border-top: 1px solid var(--linie);
+}
+
+.einr-weit {
+  flex: 1;
+}
+
+@media (max-width: 760px) {
+  .einr-kopf {
+    gap: var(--space-3);
+    min-height: 60px;
+    padding: 0 var(--space-5);
+  }
+
+  .einr-bahn {
+    width: 64px;
+  }
+
+  .einr-mitte {
+    place-items: start center;
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .einr-stufe h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .einr-aktionen {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .einr-fuss {
+    gap: var(--space-3);
+    min-height: 76px;
+    padding: 0 var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .einr-stufe.vor,
+  .einr-stufe.zurueck,
+  .einr-stufe .steig-z,
+  .einr-ring .kreis,
+  .einr-ring .hak {
+    animation: none;
+  }
+
+  .einr-ring .kreis,
+  .einr-ring .hak {
+    stroke-dashoffset: 0;
+  }
+}
+
+html[data-bewegung="reduziert"] .einr-stufe.vor,
+html[data-bewegung="reduziert"] .einr-stufe.zurueck,
+html[data-bewegung="reduziert"] .einr-stufe .steig-z,
+html[data-bewegung="reduziert"] .einr-ring .kreis,
+html[data-bewegung="reduziert"] .einr-ring .hak {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+
+
+/* ==========================================================================
    Bewegung: gemeinsame Bausteine (Prototyp „Bewegung“, 15.11.; Mistral-Muster, 18.11.)
    Flächen höchstens --weg, nur Lage und Deckkraft. Licht nur, wenn etwas arbeitet.
    Bei reduzierter Bewegung bleiben Überblendungen; Ladeanzeigen bleiben sichtbar.
