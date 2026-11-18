@@ -3324,8 +3324,20 @@ kbd {
   color: var(--text-3);
 }
 
+/* „Antwort zeigen“ so breit wie die Karte; die Taste nur als leise Beschriftung */
 .kk-aufdecken {
-  align-self: center;
+  align-self: stretch;
+  gap: var(--space-2);
+}
+
+.kk-aufdecken kbd {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, currentColor 64%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 400;
 }
 
 .kk-tipp {
@@ -3335,7 +3347,7 @@ kbd {
   color: var(--text-2);
 }
 
-/* Vier Bewertungen (Spaced Repetition), getönt in der Farbe der Bewertung */
+/* Vier Bewertungen (Spaced Repetition): Pillen, nur „Gut“ im Akzent, die anderen neutral */
 .kk-antworten {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3343,15 +3355,16 @@ kbd {
 }
 
 .kk-antwort {
-  --farbe: var(--ok);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-2);
+  justify-content: center;
+  gap: var(--space-half);
+  min-height: 72px;
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--farbe) 14%, transparent);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
   color: var(--text);
   font: inherit;
   cursor: pointer;
@@ -3361,39 +3374,49 @@ kbd {
 }
 
 .kk-antwort:hover {
-  background: color-mix(in srgb, var(--farbe) 22%, transparent);
+  background: color-mix(in srgb, var(--text) 11%, transparent);
 }
 
 .kk-antwort:active {
   transform: scale(0.98);
 }
 
-.kk-antwort.nochmal,
+.kk-antwort.gut {
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+}
+
+.kk-antwort.gut:hover {
+  background: color-mix(in srgb, var(--akzent) 22%, transparent);
+}
+
 .kk-auswertung .nochmal,
 .kk-fach.nochmal,
 .kk-ring-bogen.nochmal {
   --farbe: var(--color-error);
 }
 
-.kk-antwort.schwer,
 .kk-auswertung .schwer,
 .kk-fach.schwer,
 .kk-ring-bogen.schwer {
   --farbe: var(--warnung);
 }
 
-.kk-antwort.gut,
 .kk-auswertung .gut,
 .kk-fach.gut,
 .kk-ring-bogen.gut {
   --farbe: var(--ok);
 }
 
-.kk-antwort.einfach,
 .kk-auswertung .einfach,
 .kk-fach.einfach,
 .kk-ring-bogen.einfach {
   --farbe: var(--akzent);
+}
+
+.kk-antwort-name {
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 
 .kk-antwort-zeit {
@@ -3402,18 +3425,29 @@ kbd {
   color: var(--text-2);
 }
 
-.kk-antwort-name {
-  font-size: var(--text-md);
-  font-weight: 600;
+.kk-antwort.gut .kk-antwort-zeit {
+  color: inherit;
 }
 
+/* Taste nur als leise Beschriftung, am Handy und auf Touch-Geräten gar nicht */
 .kk-antwort kbd {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
+  font-weight: 400;
 }
 
-@media (hover: none) {
-  .kk-antwort kbd {
+@media (hover: none), (max-width: 760px) {
+  .kk-antwort kbd,
+  .kk-aufdecken kbd {
     display: none;
+  }
+
+  .kk-antwort {
+    min-height: 56px;
   }
 }
 
