@@ -33,7 +33,7 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import type { DetailZielTyp } from "@/app/aufgaben-detail/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
-import { HubUebersicht } from "@/components/hub/hub-uebersicht";
+import { HubBuehne, type BuehneDaten } from "@/components/hub/hub-buehne";
 import { HauptNotch } from "@/components/haupt-notch";
 import type { FaelligeKarten } from "@/components/hub/hub-bausteine";
 
@@ -72,6 +72,7 @@ export function DashboardContent({
   bereich: bereichStart = "uebersicht",
   mensa = null,
   semester = null,
+  dateien = [],
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -95,6 +96,8 @@ export function DashboardContent({
   mensa?: Speiseplan | null;
   /** Kurzinfo zum Semester für „Diese Woche“ */
   semester?: string | null;
+  /** zuletzt geänderte Dateien (Szene „Zuletzt geöffnet“ der Hub-Bühne) */
+  dateien?: BuehneDaten["dateien"];
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -280,7 +283,7 @@ export function DashboardContent({
 
       {bereich === "uebersicht" ? (
         <>
-          <HubUebersicht
+          <HubBuehne
             d={{
               name: username,
               faecher,
@@ -295,8 +298,9 @@ export function DashboardContent({
               mensa,
               mensaGewaehlt: Boolean(settings.mensa_id),
               semester,
+              notenschnitt,
+              dateien,
             }}
-            layoutRoh={settings.hub_layout}
           />
         </>
       ) : (
