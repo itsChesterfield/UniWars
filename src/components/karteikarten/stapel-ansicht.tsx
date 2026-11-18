@@ -91,8 +91,8 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
 
   return (
     <>
-      <Link href="/karteikarten" className="knopf leise klein kk-zurueck">
-        <Icon name="zurueck" groesse={16} />
+      <Link href="/karteikarten" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
         Alle Stapel
       </Link>
       <header className="seitenkopf">

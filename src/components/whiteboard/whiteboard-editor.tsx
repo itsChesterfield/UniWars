@@ -11,6 +11,7 @@ import {
 } from "@/app/(hubs)/whiteboard/actions";
 import { uploadAbschliessen, uploadVorbereiten } from "@/app/(hubs)/dateiablage/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon as Zeichen } from "@/components/nav-icon";
 import { bildUrl } from "@/components/hubs/bild-auswahl";
 import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as wb from "@/lib/whiteboard/elemente";
@@ -38,7 +39,7 @@ const tb = (t: string, px: number) => textBreite(t, `${px}px`);
 
 function Icon({ d }: { d: string }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {d.split("|").map((p, i) => (
         <path key={i} d={p} />
       ))}
@@ -469,42 +470,40 @@ export function WhiteboardEditor({
 
   return (
     <div className="zf-seite">
+      <Link href="/whiteboard" className="knopf leise klein zurueck-link">
+        <Zeichen name="pfeil-links" groesse={16} />
+        Alle Whiteboards
+      </Link>
       <div className="txt-kopf">
-        <Link href="/whiteboard" className="hub-zurueck-link">
-          ← Alle Whiteboards
-        </Link>
-        <div className="txt-kopf-zeile">
-          <h1 className="zf-titel">{name}</h1>
-          <div className="txt-kopf-aktionen">
-            <span className={`speicher-status ${status}`} aria-live="polite">
-              {hinweis ?? SPEICHER_TEXT[status]}
-            </span>
-            <select
-              className="field txt-fach"
-              aria-label="Fach"
-              value={fachId ?? ""}
-              onChange={(e) => {
-                setFachId(e.target.value || null);
-                whiteboardFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "whiteboard_fach" }));
-              }}
-            >
-              <option value="">Ohne Fach</option>
-              {faecher.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="btng" onClick={() => void exportieren()}>
-              Als PNG exportieren
-            </button>
-            <DreiPunkteMenue
-              punkte={[
-                { label: "Umbenennen", onClick: () => void umbenennen() },
-                { label: "Whiteboard löschen", onClick: () => void entfernen(), gefahr: true },
-              ]}
-            />
-          </div>
+        <h1 className="zf-titel">{name}</h1>
+        <div className="txt-kopf-aktionen">
+          <span className={`speicher-status ${status}`} aria-live="polite">
+            {hinweis ?? SPEICHER_TEXT[status]}
+          </span>
+          <select
+            className="txt-fach"
+            aria-label="Fach"
+            value={fachId ?? ""}
+            onChange={(e) => {
+              setFachId(e.target.value || null);
+              whiteboardFachSetzen(id, e.target.value || null).catch((err) => fehlerMelden(err, { ort: "whiteboard_fach" }));
+            }}
+          >
+            <option value="">Ohne Fach</option>
+            {faecher.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+          <DreiPunkteMenue
+            label="Exportieren und mehr"
+            punkte={[
+              { label: "Als PNG exportieren", onClick: () => void exportieren() },
+              { label: "Umbenennen", onClick: () => void umbenennen() },
+              { label: "Whiteboard löschen", onClick: () => void entfernen(), gefahr: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -518,6 +517,7 @@ export function WhiteboardEditor({
               className={`wb-werkzeug ${werkzeug === w.wert ? "an" : ""}`}
               title={`${w.name} (${w.taste})`}
               aria-label={w.name}
+              aria-keyshortcuts={w.taste}
               aria-pressed={werkzeug === w.wert}
               onClick={() => {
                 setWerkzeug(w.wert);
@@ -534,7 +534,7 @@ export function WhiteboardEditor({
               key={f.wert}
               type="button"
               className={`wb-farbe ${farbe === f.wert ? "an" : ""}`}
-              style={{ background: f.wert }}
+              style={{ "--c": f.wert } as React.CSSProperties}
               title={f.name}
               aria-label={`Farbe ${f.name}`}
               aria-pressed={farbe === f.wert}
@@ -569,18 +569,18 @@ export function WhiteboardEditor({
           ))}
           <span className="wb-trenner" />
           <button type="button" className="wb-werkzeug" title="Rückgängig (Strg+Z)" aria-label="Rückgängig" onClick={rueckgaengig} disabled={!verlauf.zurueck.length}>
-            ↶
+            <Zeichen name="rueckgaengig" groesse={18} />
           </button>
           <button type="button" className="wb-werkzeug" title="Wiederholen (Strg+Y)" aria-label="Wiederholen" onClick={wiederholen} disabled={!verlauf.vor.length}>
-            ↷
+            <Zeichen name="wiederholen" groesse={18} />
           </button>
           <span className="wb-trenner" />
           <button type="button" className="wb-werkzeug" title="Verkleinern" aria-label="Verkleinern" onClick={() => zoomen(1 / 1.2)}>
-            −
+            <Zeichen name="minus" groesse={18} />
           </button>
-          <span className="mono wb-zoom">{Math.round(ansicht.zoom * 100)}%</span>
+          <span className="wb-zoom">{Math.round(ansicht.zoom * 100)} %</span>
           <button type="button" className="wb-werkzeug" title="Vergrößern" aria-label="Vergrößern" onClick={() => zoomen(1.2)}>
-            +
+            <Zeichen name="plus" groesse={18} />
           </button>
         </div>
 
@@ -609,7 +609,7 @@ export function WhiteboardEditor({
           <svg className="zf-svg" width="100%" height="100%">
             <defs>
               <pattern id="wb-raster" width={24 * ansicht.zoom} height={24 * ansicht.zoom} patternUnits="userSpaceOnUse" x={ansicht.x} y={ansicht.y}>
-                <circle cx={1} cy={1} r={1} fill="var(--border)" />
+                <circle cx={1} cy={1} r={1} className="wb-rasterpunkt" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#wb-raster)" />
@@ -632,16 +632,15 @@ export function WhiteboardEditor({
                     y={auswahlRahmen.y1 - 6}
                     width={auswahlRahmen.x2 - auswahlRahmen.x1 + 12}
                     height={auswahlRahmen.y2 - auswahlRahmen.y1 + 12}
-                    fill="none"
-                    stroke="#b9822a"
+                    className="wb-auswahl"
                     strokeWidth={1.5 / ansicht.zoom}
                     strokeDasharray={`${6 / ansicht.zoom} ${4 / ansicht.zoom}`}
                     pointerEvents="none"
                   />
                   {gewaehlt.typ === "linie" ? (
                     <>
-                      <circle data-griff="a" data-fuer={gewaehlt.id} cx={gewaehlt.x1} cy={gewaehlt.y1} r={7 / ansicht.zoom} fill="#fff" stroke="#b9822a" strokeWidth={2 / ansicht.zoom} style={{ cursor: "move" }} />
-                      <circle data-griff="b" data-fuer={gewaehlt.id} cx={gewaehlt.x2} cy={gewaehlt.y2} r={7 / ansicht.zoom} fill="#fff" stroke="#b9822a" strokeWidth={2 / ansicht.zoom} style={{ cursor: "move" }} />
+                      <circle data-griff="a" data-fuer={gewaehlt.id} cx={gewaehlt.x1} cy={gewaehlt.y1} r={7 / ansicht.zoom} className="wb-griff" strokeWidth={2 / ansicht.zoom} style={{ cursor: "move" }} />
+                      <circle data-griff="b" data-fuer={gewaehlt.id} cx={gewaehlt.x2} cy={gewaehlt.y2} r={7 / ansicht.zoom} className="wb-griff" strokeWidth={2 / ansicht.zoom} style={{ cursor: "move" }} />
                     </>
                   ) : gewaehlt.typ === "rechteck" || gewaehlt.typ === "kreis" || gewaehlt.typ === "bild" ? (
                     <rect
@@ -651,8 +650,7 @@ export function WhiteboardEditor({
                       y={auswahlRahmen.y2 - 6 / ansicht.zoom}
                       width={12 / ansicht.zoom}
                       height={12 / ansicht.zoom}
-                      fill="#fff"
-                      stroke="#b9822a"
+                      className="wb-griff"
                       strokeWidth={2 / ansicht.zoom}
                       style={{ cursor: "nwse-resize" }}
                     />
@@ -691,9 +689,9 @@ export function WhiteboardEditor({
             />
           )}
           {elemente.length === 0 && !entwurf && (
-            <p className="wb-leer faint">Wähle ein Werkzeug und leg los. Bilder kannst du hierher ziehen oder mit Strg+V einfügen.</p>
+            <p className="wb-leer">Wähle ein Werkzeug und leg los. Bilder kannst du hierher ziehen oder mit Strg+V einfügen.</p>
           )}
-          <p className="zf-hilfe faint">Mausrad: Zoom · Alt/Mittelklick + Ziehen: verschieben · Strg+Z: rückgängig · Entf: Auswahl löschen</p>
+          <p className="zf-hilfe">Mausrad: Zoom, Alt oder Mittelklick und Ziehen: verschieben, Strg+Z: rückgängig, Entf: Auswahl löschen</p>
         </div>
       </div>
     </div>
