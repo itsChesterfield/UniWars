@@ -4,7 +4,6 @@ import { TrackEvent } from "@/components/track-event";
 import { AnmeldeMeldung, AnmeldeRahmen } from "@/components/anmeldung/anmelde-rahmen";
 import { AnmeldeKnopf } from "@/components/anmeldung/anmelde-knopf";
 import { Icon } from "@/components/nav-icon";
-import { EMAIL_VERGEBEN } from "@/lib/anmeldung";
 
 type Feld = "nutzername" | "email" | "passwort";
 
@@ -70,21 +69,7 @@ export default async function SignupPage({
               {...an("email")}
             />
             {feld === "email" && fehler && (
-              <FeldFehler id="fehler-email">
-                {fehler}
-                {fehler === EMAIL_VERGEBEN && (
-                  <>
-                    {" "}
-                    <Link className="link" href={`/login?email=${encodeURIComponent(p.email ?? "")}`}>
-                      Anmelden
-                    </Link>{" "}
-                    oder{" "}
-                    <Link className="link" href="/forgot-password">
-                      Passwort zurücksetzen
-                    </Link>
-                  </>
-                )}
-              </FeldFehler>
+              <FeldFehler id="fehler-email">{fehler}</FeldFehler>
             )}
           </div>
 

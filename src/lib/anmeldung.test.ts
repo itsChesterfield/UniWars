@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { adresse, anmeldeFehler, bestaetigenText, emailSchonVergeben, registrierFehler, sendeFehler } from "./anmeldung.ts";
+import { adresse, anmeldeFehler, bestaetigenText, registrierFehler, sendeFehler } from "./anmeldung.ts";
 
 test("anmeldeFehler: nicht bestätigt über Code und Text", () => {
   assert.deepEqual(anmeldeFehler({ message: "x", code: "email_not_confirmed" }), { art: "unbestaetigt" });
@@ -16,16 +16,12 @@ test("anmeldeFehler: falsches Passwort und Unbekanntes auf Deutsch", () => {
 
 test("registrierFehler: Nutzername, E-Mail, Passwort", () => {
   assert.equal(registrierFehler({ message: "USERNAME_TAKEN" }).feld, "nutzername");
-  assert.equal(registrierFehler({ message: "", code: "user_already_exists" }).feld, "email");
+  // Vergebene E-Mail wird nicht verraten (AGENTS.md 3.6)
+  const vergeben = registrierFehler({ message: "User already registered", code: "user_already_exists" });
+  assert.equal(vergeben.feld, null);
+  assert.ok(!/konto|vergeben|registriert/i.test(vergeben.text.replace("Das Konto konnte", "")));
   assert.equal(registrierFehler({ message: "", code: "weak_password" }).feld, "passwort");
   assert.equal(registrierFehler({ message: "boom" }).feld, null);
-});
-
-test("emailSchonVergeben: nur bei leerer Identitätenliste", () => {
-  assert.equal(emailSchonVergeben({ identities: [] }), true);
-  assert.equal(emailSchonVergeben({ identities: [{}] }), false);
-  assert.equal(emailSchonVergeben({}), false);
-  assert.equal(emailSchonVergeben(null), false);
 });
 
 test("sendeFehler nennt die Wartezeit", () => {

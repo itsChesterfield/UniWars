@@ -16384,11 +16384,8 @@ html[data-bewegung="reduziert"] .lade-skelett {
 }
 
 .anm-feld-fehler svg {
+  flex: none;
   margin-top: 1px;
-}
-
-.anm-feld-fehler .link {
-  font-size: var(--text-xs);
 }
 
 .anm-bleiben {
@@ -16453,6 +16450,7 @@ html[data-bewegung="reduziert"] .lade-skelett {
 }
 
 .anm-meldung svg {
+  flex: none;
   margin-top: 2px;
 }
 

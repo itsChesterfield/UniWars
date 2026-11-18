@@ -31,27 +31,20 @@ export function sendeFehler(error: AuthFehler): string {
   return "Der Link konnte nicht verschickt werden. Bitte versuch es später noch einmal.";
 }
 
-/** Fehler beim Registrieren (ohne den Fall „E-Mail vergeben“, den Supabase nicht als Fehler meldet) */
+/**
+ * Fehler beim Registrieren. Ob eine E-Mail schon ein Konto hat, verrät die App nie (AGENTS.md 3.6,
+ * Entscheidung Didi 18.11.): Supabase meldet das bei eingeschalteter Bestätigung ohnehin nicht als Fehler,
+ * und ein „user_already_exists“ landet beim allgemeinen Text.
+ */
 export function registrierFehler(error: AuthFehler): { feld: "nutzername" | "email" | "passwort" | null; text: string } {
   const code = error.code ?? "";
   if (error.message.includes("USERNAME_TAKEN")) return { feld: "nutzername", text: "Dieser Nutzername ist schon vergeben." };
-  if (code === "user_already_exists" || code === "email_exists") return { feld: "email", text: EMAIL_VERGEBEN };
   if (code === "email_address_invalid" || code === "validation_failed") return { feld: "email", text: "Diese E-Mail-Adresse ist ungültig." };
   if (code === "weak_password") return { feld: "passwort", text: "Das Passwort ist zu schwach. Nimm mindestens 6 Zeichen." };
   if (code === "over_email_send_rate_limit" || error.status === 429) {
     return { feld: null, text: "Gerade wurden zu viele E-Mails verschickt. Bitte versuch es später noch einmal." };
   }
   return { feld: null, text: "Das Konto konnte nicht erstellt werden. Bitte versuch es gleich noch einmal." };
-}
-
-export const EMAIL_VERGEBEN = "Zu dieser E-Mail gibt es schon ein Konto.";
-
-/**
- * Bei eingeschalteter E-Mail-Bestätigung meldet Supabase eine schon registrierte Adresse nicht als Fehler,
- * sondern gibt ein Konto ohne Identitäten zurück (Schutz vor Ausspähen). Didi (18.11.): offen sagen.
- */
-export function emailSchonVergeben(user: { identities?: unknown[] | null } | null | undefined): boolean {
-  return Array.isArray(user?.identities) && user.identities.length === 0;
 }
 
 /** Adresse mit Suchparametern; leere Werte fallen weg */

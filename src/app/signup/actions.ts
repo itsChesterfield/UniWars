@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { adresse, EMAIL_VERGEBEN, emailSchonVergeben, registrierFehler } from "@/lib/anmeldung";
+import { adresse, registrierFehler } from "@/lib/anmeldung";
 
 export async function signup(formData: FormData) {
   const supabase = await createClient();
@@ -35,13 +35,11 @@ export async function signup(formData: FormData) {
     redirect(zurueck(f.text, f.feld));
   }
 
-  // Bestätigung an: Supabase meldet eine schon registrierte Adresse nicht als Fehler (Konto ohne Identitäten)
-  if (emailSchonVergeben(data.user)) redirect(zurueck(EMAIL_VERGEBEN, "email"));
-
   revalidatePath("/", "layout");
 
   // Mit E-Mail-Bestätigung gibt signUp keine Session zurück: zurück ins Anmeldefenster,
-  // dort steht die kurze Meldung „Bestätige noch deine E-Mail“ (Entscheidung Didi, 18.11.)
+  // dort steht die kurze Meldung „Bestätige noch deine E-Mail“ (Entscheidung Didi, 18.11.).
+  // Eine schon registrierte E-Mail landet bewusst genauso (AGENTS.md 3.6: nichts verraten).
   if (!data.session) redirect(adresse("/login", { bestaetigen: "1", email }));
 
   redirect("/");
