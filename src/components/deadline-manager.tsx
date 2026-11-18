@@ -18,6 +18,7 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
+import { useFesteFolge } from "@/components/bewegung/feste-folge";
 
 type Deadline = Tables<"deadline">;
 
@@ -60,12 +61,15 @@ export function DeadlineManager({
   embedded = false,
   versteckeErstellen = false,
   userId,
+  kopf,
 }: {
   initialDeadlines: Deadline[];
   faecher: FachOption[];
   embedded?: boolean;
   versteckeErstellen?: boolean;
   userId?: string;
+  /** Abschnittskopf mit der Zahl offener Deadlines (rollt beim Abhaken) */
+  kopf?: (offen: number | null) => React.ReactNode;
 }) {
   const { oeffne } = useAufgabenDetail();
 
@@ -86,6 +90,8 @@ export function DeadlineManager({
     if (a.erledigt !== b.erledigt) return a.erledigt ? 1 : -1;
     return new Date(a.faellig_am).getTime() - new Date(b.faellig_am).getTime();
   });
+  const { folge, listeProps } = useFesteFolge(sortiert);
+  const offen = sortiert.filter((d) => !d.erledigt).length;
 
   function openCreateForm() {
     setEditId(null);
@@ -137,14 +143,15 @@ export function DeadlineManager({
 
   function handleToggleErledigt(d: Deadline) {
     const naechsterStatus = !d.erledigt;
+    // Sofort abhaken (Bewegung: Kästchen füllt sich, Zeile tritt zurück); bei Fehler zurücknehmen
+    const setzen = (erledigt: boolean) => setDeadlines((prev) => prev.map((x) => (x.id === d.id ? { ...x, erledigt } : x)));
+    setzen(naechsterStatus);
     startTransition(async () => {
       try {
         await toggleDeadlineErledigt(d.id, naechsterStatus);
-        setDeadlines((prev) =>
-          prev.map((x) => (x.id === d.id ? { ...x, erledigt: naechsterStatus } : x)),
-        );
         if (naechsterStatus) posthog.capture("deadline_erledigt", { deadline_id: d.id });
       } catch (err) {
+        setzen(d.erledigt);
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
       }
     });
@@ -164,6 +171,7 @@ export function DeadlineManager({
 
   const inhalt = (
     <>
+      {kopf?.(sortiert.length ? offen : null)}
       {!versteckeErstellen && (
         <div className="liste-kopf">
           <button type="button" onClick={openCreateForm} className="knopf neben klein">
@@ -194,8 +202,8 @@ export function DeadlineManager({
         </Zustand>
       )}
 
-      <ul className="entry-list">
-        {sortiert.map((d) => {
+      <ul className="entry-list" {...listeProps}>
+        {folge.map((d) => {
           const dringend = istDringend(d);
           const fach = faecher.find((f) => f.id === d.fach_id);
           return (

@@ -13,6 +13,7 @@ import { FachManager } from "@/components/fach-manager";
 import { StundenplanManager } from "@/components/stundenplan-manager";
 import { DeadlineManager } from "@/components/deadline-manager";
 import { TodoManager } from "@/components/todo-manager";
+import { RollText } from "@/components/bewegung/roll-text";
 import { PruefungManager } from "@/components/pruefung-manager";
 import {
   NotenKopf,
@@ -182,8 +183,8 @@ export function DashboardContent({
   const aufgabenKarte = (klasse: string) => (
         <div className={`aufgaben-seite ${klasse}`}>
           <section aria-labelledby="abschnitt-deadlines">
-            <h2 id="abschnitt-deadlines" className="abschnitt-titel">Deadlines</h2>
             <DeadlineManager
+              kopf={(offen) => <AbschnittKopf id="abschnitt-deadlines" titel="Deadlines" offen={offen} />}
               key={`deadline-${filterKey}`}
               initialDeadlines={gefilterteDeadlines}
               faecher={faecher}
@@ -194,8 +195,8 @@ export function DashboardContent({
 
           </section>
           <section aria-labelledby="abschnitt-todos">
-            <h2 id="abschnitt-todos" className="abschnitt-titel">To-Dos</h2>
             <TodoManager
+              kopf={(offen) => <AbschnittKopf id="abschnitt-todos" titel="To-Dos" offen={offen} />}
               key={`todo-${filterKey}`}
               initialTodos={gefilterteTodos}
               faecher={faecher}
@@ -333,5 +334,15 @@ export function DashboardContent({
         <DetailAnsicht zielTyp={detailZielTyp} zielId={detailZielId} onClose={schliesseDetail} />
       )}
     </>
+  );
+}
+
+/** Abschnittskopf mit der Zahl offener Einträge; die Zahl rollt beim Abhaken (Bewegung) */
+function AbschnittKopf({ id, titel, offen }: { id: string; titel: string; offen: number | null }) {
+  return (
+    <h2 id={id} className="abschnitt-titel">
+      {titel}
+      {offen != null && <RollText wert={`${offen} offen`} className="abschnitt-zahl" />}
+    </h2>
   );
 }
