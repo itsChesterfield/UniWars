@@ -121,8 +121,8 @@ export function PodcastPlayer({ titel, segmente, vorlesen }: { titel: string; se
 
   return (
     <div className="pc-seite">
-      <Link href="/transkription" className="knopf leise klein kk-zurueck">
-        <Icon name="zurueck" groesse={16} />
+      <Link href="/transkription" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
         Transkription
       </Link>
       <header className="seitenkopf">

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { datenLesen } from "@/lib/tabellen/formeln";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { TabellenEditor } from "@/components/tabellen/tabellen-editor";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
@@ -21,12 +21,7 @@ export default async function TabelleSeite({
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Tabellen" />
-        <EinrichtungHinweis hub="Tabellen" />
-      </>
-    );
+    return <Einrichtung bereich="Tabellen" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);

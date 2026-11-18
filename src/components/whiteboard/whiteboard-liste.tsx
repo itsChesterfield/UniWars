@@ -9,9 +9,10 @@ export function WhiteboardListe({ eintraege, faecher }: { eintraege: ObjektEintr
     <ObjektListe
       hub="Whiteboard"
       untertitel="Frei skizzieren – Rechenwege, Diagramme, Ideen."
-      icon="✏️"
+      icon="whiteboard"
       neuLabel="Neues Whiteboard"
-      leerText="Noch keine Whiteboards. Skizziere hier Rechenwege oder Diagramme."
+      leerTitel="Noch keine Whiteboards."
+      leerText="Skizziere hier Rechenwege oder Diagramme."
       ohneTitel="Unbenanntes Whiteboard"
       basisPfad="/whiteboard"
       eventName="whiteboard"

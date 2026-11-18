@@ -17,9 +17,10 @@ export function TabellenListe({
     <ObjektListe
       hub="Tabellen"
       untertitel="Kleine Rechnungen und Übersichten – mit Formeln wie =SUMME(A1:A10)."
-      icon="📊"
+      icon="tabelle"
       neuLabel="Neue Tabelle"
-      leerText="Noch keine Tabellen. Rechne z. B. deinen Notenschnitt oder werte Messwerte aus."
+      leerTitel="Noch keine Tabellen."
+      leerText="Rechne zum Beispiel deinen Notenschnitt oder werte Messwerte aus."
       ohneTitel={OHNE_TITEL_TABELLE}
       basisPfad="/tabellen"
       eventName="tabelle"

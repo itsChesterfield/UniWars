@@ -160,8 +160,8 @@ export function Lernmodus({
   }
 
   const zurueck = (
-    <Link href={`/karteikarten/${stapel.id}`} className="knopf leise klein kk-zurueck">
-      <Icon name="zurueck" groesse={16} />
+    <Link href={`/karteikarten/${stapel.id}`} className="knopf leise klein zurueck-link">
+      <Icon name="pfeil-links" groesse={16} />
       {stapel.name}
     </Link>
   );
