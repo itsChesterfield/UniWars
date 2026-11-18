@@ -3156,8 +3156,104 @@ kbd {
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 720px;
+  max-width: 1020px;
   margin: 0 auto;
+}
+
+/* Bühne: Karte links, die Ablage der Runde rechts daneben */
+.kk-buehne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.kk-spielfeld {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Ablage: vier Fächer, jede bewertete Karte legt sich als Linie auf ihr Fach */
+.kk-ablage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.kk-ablage-titel {
+  font-size: var(--text-sm);
+  font-weight: 550;
+  color: var(--text-2);
+}
+
+.kk-faecher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kk-fach {
+  --farbe: var(--ok);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+  height: 200px;
+}
+
+.kk-fach-linien {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-half);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.kk-fach-linien i {
+  flex: none;
+  height: 1px;
+  background: var(--farbe);
+  transform-origin: left;
+  animation: kk-fach-ein var(--dur-short) var(--ease-out);
+}
+
+@keyframes kk-fach-ein {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+}
+
+.kk-fach-fuss {
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--linie);
+  font-size: var(--text-xs);
+}
+
+.kk-fach-name {
+  color: var(--text-3);
+}
+
+.kk-fach-fuss .zahl {
+  color: var(--text);
+}
+
+@media (max-width: 60rem) {
+  .kk-buehne {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kk-fach {
+    height: 96px;
+  }
 }
 
 .kk-lernen-kopf {
@@ -3273,22 +3369,30 @@ kbd {
 }
 
 .kk-antwort.nochmal,
-.kk-auswertung .nochmal {
+.kk-auswertung .nochmal,
+.kk-fach.nochmal,
+.kk-ring-bogen.nochmal {
   --farbe: var(--color-error);
 }
 
 .kk-antwort.schwer,
-.kk-auswertung .schwer {
+.kk-auswertung .schwer,
+.kk-fach.schwer,
+.kk-ring-bogen.schwer {
   --farbe: var(--warnung);
 }
 
 .kk-antwort.gut,
-.kk-auswertung .gut {
+.kk-auswertung .gut,
+.kk-fach.gut,
+.kk-ring-bogen.gut {
   --farbe: var(--ok);
 }
 
 .kk-antwort.einfach,
-.kk-auswertung .einfach {
+.kk-auswertung .einfach,
+.kk-fach.einfach,
+.kk-ring-bogen.einfach {
   --farbe: var(--akzent);
 }
 
@@ -3332,29 +3436,104 @@ kbd {
   color: var(--text-2);
 }
 
+/* Ergebnis der Runde: Ring mit den Anteilen, daneben die Zahlen als Text */
+.kk-ergebnis {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.kk-ring {
+  position: relative;
+  flex: none;
+  width: 148px;
+  height: 148px;
+}
+
+.kk-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kk-ring-bahn {
+  fill: none;
+  stroke: var(--linie);
+  stroke-width: 2;
+}
+
+.kk-ring-bogen {
+  --farbe: var(--ok);
+  fill: none;
+  stroke: var(--farbe);
+  stroke-width: 2.6;
+  animation: kk-ring-ein var(--dur-long) var(--ease-out);
+}
+
+@keyframes kk-ring-ein {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+.kk-ring-zahl {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  color: var(--text);
+}
+
+.kk-ring-zahl small {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
 .kk-auswertung {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .kk-auswertung li {
+  --farbe: var(--ok);
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 32px;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
-.kk-auswertung .balkenf {
-  --c: var(--farbe);
-  margin-top: 0;
+.kk-auswertung i {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--farbe);
 }
 
 .kk-auswertung .zahl {
+  color: var(--text);
   text-align: right;
+}
+
+@media (max-width: 30rem) {
+  .kk-ergebnis {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kk-fach-linien i,
+  .kk-ring-bogen {
+    animation: none;
+  }
 }
 
 .kk-ende-knoepfe {

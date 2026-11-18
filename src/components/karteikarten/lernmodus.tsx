@@ -55,6 +55,80 @@ function neueRunde(karten: LernKarte[]): Runde {
 
 const summe = (z: Zaehler) => z[1] + z[2] + z[3] + z[4];
 
+/** Im Uhrzeigersinn ab oben: Einfach, Gut, Schwer, Nochmal (Bewegungskonzept „Ablage wird Ring“). */
+const RING_FOLGE = [4, 3, 2, 1] as const;
+const STUFEN = [...BEWERTUNGEN].sort((a, b) => RING_FOLGE.indexOf(a.wert) - RING_FOLGE.indexOf(b.wert));
+
+/**
+ * Vier Fächer neben der Karte: jede bewertete Karte legt sich als Linie auf ihr Fach,
+ * so wächst die Auswertung während der Runde mit. Die Linien sind Schmuck, es zählt die Zahl.
+ */
+function Ablage({ zaehler }: { zaehler: Zaehler }) {
+  return (
+    <aside className="kk-ablage" aria-labelledby="kk-ablage-titel">
+      <h2 className="kk-ablage-titel" id="kk-ablage-titel">
+        Ablage dieser Runde
+      </h2>
+      <ul className="kk-faecher">
+        {BEWERTUNGEN.map((b) => (
+          <li key={b.wert} className={`kk-fach ${b.klasse}`}>
+            <span className="kk-fach-linien" aria-hidden>
+              {Array.from({ length: zaehler[b.wert] }, (_, i) => (
+                <i key={i} />
+              ))}
+            </span>
+            <span className="kk-fach-fuss">
+              <span className="kk-fach-name">{b.name}</span>
+              <span className="zahl">{zaehler[b.wert]}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+/** Ergebnis der Runde als Ring. Die Zahlen stehen daneben als Text, der Ring selbst ist Schmuck. */
+function Ergebnisring({ zaehler, karten }: { zaehler: Zaehler; karten: number }) {
+  const gesamt = summe(zaehler);
+  const anteile = STUFEN.map((b) => ({ ...b, laenge: (zaehler[b.wert] / gesamt) * 100 }));
+  // Jeder Bogen beginnt dort, wo die Bögen vor ihm enden.
+  const boegen = anteile.map((b, i) => ({ ...b, anfang: anteile.slice(0, i).reduce((s, x) => s + x.laenge, 0) }));
+  return (
+    <div className="kk-ergebnis">
+      <div className="kk-ring" aria-hidden>
+        <svg viewBox="-60 -60 120 120">
+          <circle className="kk-ring-bahn" r="50" />
+          {boegen.map((b) => (
+            <circle
+              key={b.wert}
+              className={`kk-ring-bogen ${b.klasse}`}
+              r="50"
+              pathLength={100}
+              strokeDasharray={`${Math.max(0, b.laenge - 1)} 100`}
+              strokeDashoffset={-b.anfang}
+              transform="rotate(-90)"
+            />
+          ))}
+        </svg>
+        <span className="kk-ring-zahl">
+          <span className="zahl">{karten}</span>
+          <small>{karten === 1 ? "Karte" : "Karten"}</small>
+        </span>
+      </div>
+      <ul className="kk-auswertung" aria-label="Bewertungen">
+        {STUFEN.map((b) => (
+          <li key={b.wert} className={b.klasse}>
+            <i aria-hidden />
+            <span>{b.name}</span>
+            <span className="zahl">{zaehler[b.wert]}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Lernmodus({
   stapel,
   karten,
@@ -201,19 +275,7 @@ export function Lernmodus({
             <span className="zahl">{karten}</span> {karten === 1 ? "Karte" : "Karten"} in <span className="zahl">{beantwortet}</span> Antworten.
             {karten >= STREAK_MIN_KARTEN && " Zählt für deinen Streak."}
           </p>
-          {beantwortet > 0 && (
-            <ul className="kk-auswertung" aria-label="Bewertungen">
-              {BEWERTUNGEN.map((b) => (
-                <li key={b.wert} className={b.klasse}>
-                  <span>{b.name}</span>
-                  <span className="balkenf" aria-hidden>
-                    <i style={{ width: `${(runde.zaehler[b.wert] / beantwortet) * 100}%` }} />
-                  </span>
-                  <span className="zahl">{runde.zaehler[b.wert]}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {beantwortet > 0 && <Ergebnisring zaehler={runde.zaehler} karten={karten} />}
           {speicherFehler && (
             <p className="formular-fehler" role="alert">
               Einige Antworten konnten nicht gespeichert werden.
@@ -256,54 +318,60 @@ export function Lernmodus({
         <i style={{ width: `${(runde.index / runde.karten.length) * 100}%` }} />
       </span>
 
-      {/* Klick auf die Karte dreht sie um; per Tastatur über den Knopf darunter oder die Leertaste */}
-      <div className={`kk-lernkarte ${runde.umgedreht ? "umgedreht" : ""}`} onClick={umdrehen}>
-        <div className="kk-lernkarte-innen">
-          <div className="kk-seite kk-vorne" aria-hidden={runde.umgedreht}>
-            <span className="kk-seite-label">Vorderseite</span>
-            <MarkdownAnzeige key={`v-${karte.id}`} wert={karte.vorderseite} label="Vorderseite" />
+      <div className="kk-buehne">
+        <div className="kk-spielfeld">
+          {/* Klick auf die Karte dreht sie um; per Tastatur über den Knopf darunter oder die Leertaste */}
+          <div className={`kk-lernkarte ${runde.umgedreht ? "umgedreht" : ""}`} onClick={umdrehen}>
+            <div className="kk-lernkarte-innen">
+              <div className="kk-seite kk-vorne" aria-hidden={runde.umgedreht}>
+                <span className="kk-seite-label">Vorderseite</span>
+                <MarkdownAnzeige key={`v-${karte.id}`} wert={karte.vorderseite} label="Vorderseite" />
+              </div>
+              <div className="kk-seite kk-hinten" aria-hidden={!runde.umgedreht}>
+                <span className="kk-seite-label">Rückseite</span>
+                <MarkdownAnzeige key={`r-${karte.id}`} wert={karte.rueckseite} label="Rückseite" />
+              </div>
+            </div>
           </div>
-          <div className="kk-seite kk-hinten" aria-hidden={!runde.umgedreht}>
-            <span className="kk-seite-label">Rückseite</span>
-            <MarkdownAnzeige key={`r-${karte.id}`} wert={karte.rueckseite} label="Rückseite" />
-          </div>
-        </div>
-      </div>
 
-      {kiVerfuegbar && (
-        <div className="kk-vorlesen">
-          {/* KI-14: Seite vorlesen (außerhalb der Karte, damit der Klick sie nicht umdreht) */}
-          <VorlesenKnopf
-            key={`${karte.id}-${runde.umgedreht ? "r" : "v"}`}
-            text={runde.umgedreht ? karte.rueckseite : karte.vorderseite}
-            cacheKey={`kk-${karte.id}-${runde.umgedreht ? "r" : "v"}`}
-            label={runde.umgedreht ? "Rückseite vorlesen" : "Vorderseite vorlesen"}
-          />
-        </div>
-      )}
+          {kiVerfuegbar && (
+            <div className="kk-vorlesen">
+              {/* KI-14: Seite vorlesen (außerhalb der Karte, damit der Klick sie nicht umdreht) */}
+              <VorlesenKnopf
+                key={`${karte.id}-${runde.umgedreht ? "r" : "v"}`}
+                text={runde.umgedreht ? karte.rueckseite : karte.vorderseite}
+                cacheKey={`kk-${karte.id}-${runde.umgedreht ? "r" : "v"}`}
+                label={runde.umgedreht ? "Rückseite vorlesen" : "Vorderseite vorlesen"}
+              />
+            </div>
+          )}
 
-      {runde.umgedreht && (
-        <p className="kk-tipp">
-          Nicht verstanden? <kbd>Strg</kbd> + <kbd>J</kbd>, dann erklärt dir UniVerse Studio diese Karte.
-        </p>
-      )}
+          {runde.umgedreht && (
+            <p className="kk-tipp">
+              Nicht verstanden? <kbd>Strg</kbd> + <kbd>J</kbd>, dann erklärt dir UniVerse Studio diese Karte.
+            </p>
+          )}
 
-      {runde.umgedreht ? (
-        <div className="kk-antworten" role="group" aria-label="Wie gut wusstest du es?">
-          {BEWERTUNGEN.map((b) => (
-            <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
-              <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
-              <span className="kk-antwort-name">{b.name}</span>
-              <kbd>{b.wert}</kbd>
+          {runde.umgedreht ? (
+            <div className="kk-antworten" role="group" aria-label="Wie gut wusstest du es?">
+              {BEWERTUNGEN.map((b) => (
+                <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
+                  <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
+                  <span className="kk-antwort-name">{b.name}</span>
+                  <kbd>{b.wert}</kbd>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button type="button" className="knopf haupt kk-aufdecken" onClick={umdrehen} autoFocus>
+              Antwort zeigen
+              <kbd>Leertaste</kbd>
             </button>
-          ))}
+          )}
         </div>
-      ) : (
-        <button type="button" className="knopf haupt kk-aufdecken" onClick={umdrehen} autoFocus>
-          Antwort zeigen
-          <kbd>Leertaste</kbd>
-        </button>
-      )}
+
+        <Ablage zaehler={runde.zaehler} />
+      </div>
     </div>
   );
 }
