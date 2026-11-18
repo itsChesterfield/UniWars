@@ -1335,6 +1335,8 @@ input[type="checkbox"] {
 /* Eingabefelder des Designs B3 (Formulare und Rechner): Fläche mit innerem Ring, ohne Rand */
 .crud-form :is(input:not([type="checkbox"]), select, textarea),
 .qz-frage-karte :is(input, select, textarea),
+.ws-fach select,
+.lr-dazu select,
 .rechner-feld input {
   height: 40px;
   padding: 0 var(--space-3);
@@ -3461,41 +3463,51 @@ kbd {
   }
 }
 
-/* --- Work Station --- */
+/* --- Work Station (Design B3, Welle 4): Timer links, heute gelernt rechts --- */
 
 .ws-raster {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-10);
   align-items: start;
 }
 
 .ws-timer-karte {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 24px;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6);
+  border-radius: var(--radius-l);
+  background: var(--flaeche-2);
 }
 
 .ws-fach {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
-.ws-fach .field {
-  width: auto;
+.ws-fach select {
   min-width: 180px;
 }
 
 .ws-vorschlag {
-  margin: -4px 0 0;
-  font-size: 12.5px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.ws-vorschlag svg {
+  flex-shrink: 0;
+  color: var(--akzent-text);
 }
 
 .ws-kreis {
@@ -3510,23 +3522,24 @@ kbd {
   transform: rotate(-90deg);
 }
 
-.ws-kreis-spur {
+.ws-kreis-spur,
+.ws-kreis-fortschritt {
   fill: none;
-  stroke: var(--border);
-  stroke-width: 10;
+  stroke-width: 8;
+}
+
+.ws-kreis-spur {
+  stroke: var(--flaeche-3);
 }
 
 .ws-kreis-fortschritt {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 10;
+  stroke: var(--akzent);
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.5s linear;
+  transition: stroke-dashoffset var(--dur-long) linear;
 }
 
-.ws-timer-karte[data-modus="kurz"] .ws-kreis-fortschritt,
-.ws-timer-karte[data-modus="lang"] .ws-kreis-fortschritt {
-  stroke: var(--success);
+.ws-timer-karte:is([data-modus="kurz"], [data-modus="lang"]) .ws-kreis-fortschritt {
+  stroke: var(--ok);
 }
 
 .ws-kreis-text {
@@ -3536,102 +3549,44 @@ kbd {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
-.ws-modus {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--accent-strong);
-}
-
-.ws-timer-karte[data-modus="kurz"] .ws-modus,
-.ws-timer-karte[data-modus="lang"] .ws-modus {
-  color: var(--success);
+.ws-modus,
+.ws-runde {
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 .ws-zeit {
-  font-size: clamp(40px, 12vw, 56px);
-  font-weight: 700;
+  font-size: var(--text-3xl);
+  font-weight: 600;
   line-height: 1;
-}
-
-.ws-runde {
-  font-size: 12px;
 }
 
 .ws-knoepfe {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
+  gap: var(--space-2);
 }
 
 .ws-haupt {
-  min-width: 110px;
-  justify-content: center;
+  min-width: 120px;
 }
 
 .ws-hinweis {
-  font-size: 12px;
   margin: 0;
   text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
-.ws-heute {
-  gap: 14px;
-}
-
-.ws-balken {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.crud-form label.ws-ton {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  font-size: 13px;
-}
-
-.ws-balken .progress-track {
-  margin-top: 6px;
-}
-
-.ws-einstellungen {
-  gap: 14px;
-}
-
-.ws-einstellungen-felder {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 14px;
-}
-
-.ws-einstellungen-felder label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.ws-einstellungen-felder .field {
-  max-width: 100px;
-}
-
-.ws-grenze {
-  font-size: 11px;
-  font-weight: 400;
-}
-
-label.ws-ton {
-  flex-direction: row;
   align-items: center;
-  align-self: end;
-  gap: 8px;
-  padding-bottom: 8px;
+  gap: var(--space-2);
+  color: var(--text);
 }
 
 /* --- Sidebar: Timer-Restzeit (WS-06) und Mobil-Menü --- */
@@ -10462,161 +10417,159 @@ button.pdf-pfad-teil:hover {
    Lernraum (wie NotebookLM): Quellen | Chat | Studio
    ===================================================================== */
 
-.lr-raster {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
-}
-
-.lr-kachel {
-  gap: 6px;
-  border-top: 4px solid var(--accent);
-  text-decoration: none;
-  color: var(--text);
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.lr-kachel:hover {
-  transform: translateY(-2px);
-  text-decoration: none;
-}
-
-.lr-kachel-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 650;
-  font-size: 16px;
-}
-
 .lr-klein {
   font-size: 12px;
 }
 
+/* Lernraum (Design B3, Welle 4): Quellen links, Fragen und Stand rechts */
 .lr {
   display: grid;
-  grid-template-columns: 270px minmax(0, 1fr) 300px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--space-10);
   align-items: start;
 }
 
-.lr .card {
-  padding: 14px 16px;
-  gap: 10px;
-}
-
-.lr-kopf {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.lr-kopf h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  margin: 0;
-}
-
-.lr-kopf-aktionen {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.lr-quellen,
-.lr-studio {
-  position: sticky;
-  top: 12px;
-  max-height: calc(100vh - 24px);
-  overflow-y: auto;
-}
-
 .lr-quellen-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.lr-quellen-liste li.aus {
-  opacity: 0.5;
+.lr-quellen-liste > li {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--linie);
+}
+
+.lr-quellen-liste > li:last-child {
+  border-bottom: 0;
 }
 
 .lr-quelle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
+}
+
+.lr-quelle input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--akzent);
 }
 
 .lr-quelle-titel {
+  display: flex;
   flex: 1;
+  align-items: center;
+  gap: var(--space-2);
   min-width: 0;
-  border: none;
-  background: none;
-  text-align: left;
-  font: inherit;
-  font-size: 13px;
-  color: var(--text);
-  padding: 5px 4px;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: var(--radius-s);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-md);
+  text-align: left;
   cursor: pointer;
+}
+
+.lr-quelle-titel:hover {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.lr-quelle-titel svg {
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+
+.lr-quelle-titel span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.lr-quelle-titel:hover {
-  background: var(--card2);
+.lr-quellen-liste li.aus .lr-quelle-titel {
+  color: var(--text-3);
 }
 
 .lr-status {
   display: block;
-  margin-left: 26px;
-  font-size: 11.5px;
-  color: var(--muted);
+  margin-left: var(--space-6);
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
 .lr-ueberblick {
-  margin: 4px 0 8px 26px;
-  padding: 10px;
-  border-radius: var(--radius-m);
-  background: var(--card2);
-  font-size: 13px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0 var(--space-6);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--flaeche-2);
+  font-size: var(--text-sm);
 }
 
 .lr-ueberblick p {
   margin: 0;
 }
 
-.lr-themen {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+.lr-dazu {
+  margin-top: var(--space-3);
+}
+
+.lr-dazu select {
+  width: 100%;
 }
 
 .lr-vorschlag {
-  border: 1px solid var(--border-soft);
-  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
   color: var(--text);
   font: inherit;
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   text-align: left;
-  padding: 6px 10px;
-  border-radius: var(--radius-m);
   cursor: pointer;
 }
 
 .lr-vorschlag:hover {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+}
+
+.lr-vorschlag svg {
+  flex-shrink: 0;
+  color: var(--akzent-text);
+}
+
+.lr-stand-kopf {
+  margin-top: var(--space-8);
+}
+
+.lr-stand .balkenf {
+  --c: var(--ok);
+}
+
+.lr-stand.wackelt .balkenf {
+  --c: var(--warnung);
+}
+
+.lr-stand.fehlt .balkenf {
+  --c: var(--color-error);
+}
+
+.lr-schwaches {
+  margin-top: var(--space-3);
 }
 
 .lr-chat {
@@ -10789,8 +10742,10 @@ button.pdf-pfad-teil:hover {
 
 .lr-vorschlaege {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .lr-eingabe {
@@ -10922,26 +10877,9 @@ button.pdf-pfad-teil:hover {
   color: var(--muted);
 }
 
-@media (max-width: 1250px) {
-  .lr {
-    grid-template-columns: 250px minmax(0, 1fr);
-  }
-
-  .lr-studio {
-    grid-column: 1 / -1;
-    position: static;
-    max-height: none;
-  }
-}
-
 @media (max-width: 860px) {
   .lr {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lr-quellen {
-    position: static;
-    max-height: 40vh;
   }
 }
 
@@ -11096,16 +11034,6 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 
 .studio-web a {
   color: var(--accent);
-}
-
-.lr-studio-hinweis {
-  font-size: 13px;
-}
-
-.lr-studio-hinweis {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 @media print {
@@ -12218,24 +12146,6 @@ html[data-eingebettet] .notiz-karte {
 
 .gd-thema-info {
   font-size: 11.5px;
-}
-
-.lr-kompetenz {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.lr-kompetenz h3 {
-  font-size: 15px;
-  margin: 0;
-}
-
-.lr-schwaches {
-  align-self: flex-start;
 }
 
 @media (max-width: 760px) {
