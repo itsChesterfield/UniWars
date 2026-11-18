@@ -52,6 +52,8 @@ export const ICONS = {
   hochladen: "M12 15.5V4|m7 9 5-5 5 5|M5 20h14",
   tauschen: "M7 4 3.5 7.5 7 11|M3.5 7.5h14|m17 13 3.5 3.5L17 20|M20.5 16.5h-14",
   menue: "M4 7h16M4 12h16M4 17h16",
+  aufzaehlung: "M9 6h11|M9 12h11|M9 18h11|M4.5 6h.01|M4.5 12h.01|M4.5 18h.01",
+  nummerierung: "M10 6h10|M10 12h10|M10 18h10|M4 5h1v4|M4 9h2|M6 18H4l2-2.5a1 1 0 0 0-2-.8",
   mehr: "circle:5.5,12,1|circle:12,12,1|circle:18.5,12,1",
   kopieren: "rect:8,8,12,12,2|M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3",
   schere: "circle:6,6,2.5|circle:6,18,2.5|M8 7.5 20 17M8 16.5 20 7",

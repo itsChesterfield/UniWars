@@ -172,8 +172,8 @@ export function Lernraum({
           }}
         />
       )}
-      <Link href="/lernraum" className="knopf leise klein kk-zurueck">
-        <Icon name="zurueck" groesse={16} />
+      <Link href="/lernraum" className="knopf leise klein zurueck-link">
+        <Icon name="pfeil-links" groesse={16} />
         Lernraum
       </Link>
       <header className="seitenkopf">

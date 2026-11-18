@@ -9,9 +9,10 @@ export function MindmapListe({ eintraege, faecher }: { eintraege: ObjektEintrag[
     <ObjektListe
       hub="MindMap"
       untertitel="Themen visuell strukturieren – Tab für einen Unterpunkt, Enter für einen weiteren Punkt."
-      icon="🧠"
+      icon="mindmap"
       neuLabel="Neue MindMap"
-      leerText="Noch keine MindMaps. Sammle die Themen deiner nächsten Klausur auf einen Blick."
+      leerTitel="Noch keine MindMaps."
+      leerText="Sammle die Themen deiner nächsten Klausur auf einen Blick."
       ohneTitel="Unbenannte MindMap"
       basisPfad="/mindmap"
       eventName="mindmap"
