@@ -51,8 +51,12 @@
   /* Bewegung */
   --dur-micro: 120ms;
   --dur-short: 200ms;
-  --dur-long: 420ms;
+  --dur-long: 320ms;
+  --dur-spur: 640ms;
   --ease-out: cubic-bezier(0.22, 0.9, 0.24, 1);
+  --ease-in: cubic-bezier(0.4, 0, 0.9, 0.5);
+  --weg: 6px;
+  --stagger: 30ms;
 
   --z-raised: 10;
   --z-sticky: 200;
@@ -9207,11 +9211,125 @@ button.pdf-pfad-teil:hover {
   white-space: nowrap;
 }
 
-.pdf-upload-balken {
-  --c: var(--akzent);
-  flex: 1;
+.pdf-upload-stand {
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+/* Hochladen: Lichtspur läuft mit dem Fortschritt um das Symbol und schließt sich zum Haken */
+.upload-marke {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--text-2);
+}
+
+.upload-marke svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.upload-bahn {
+  stroke: var(--linie);
+  stroke-width: 1.4;
+}
+
+.upload-spur {
+  stroke: var(--akzent);
+  stroke-width: 1.6;
+  transition: stroke-dasharray var(--dur-short) var(--ease-out);
+}
+
+.upload-haken {
+  stroke: var(--akzent-text);
+  stroke-width: 1.8;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: upload-haken var(--dur-long) var(--ease-out) var(--dur-micro) forwards;
+}
+
+.pdf-uploads li.fertig .upload-spur {
+  animation: upload-spur-aus var(--dur-long) var(--ease-in) var(--dur-long) forwards;
+}
+
+.pdf-uploads li.fehler .upload-marke {
+  color: var(--fehler-text);
+}
+
+@keyframes upload-haken {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes upload-spur-aus {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Ortswechsel: goldener Punkt (lib/bewegung/punkt.ts), Ziel leuchtet kurz im Akzent, eigenes Ziehbild */
+.ortswechsel-punkt {
+  position: fixed;
+  top: -4px;
+  left: -4px;
+  z-index: 90;
+  width: 8px;
+  height: 8px;
+  clip-path: circle(50%);
+  background: var(--akzent);
+  pointer-events: none;
+}
+
+.ortswechsel-ziel {
+  animation: ortswechsel-ziel var(--dur-long) var(--ease-out);
+}
+
+@keyframes ortswechsel-ziel {
+  40% {
+    transform: translateY(calc(var(--weg) * -0.5));
+  }
+}
+
+.ziehbild {
+  position: fixed;
+  top: -200px;
+  left: 0;
   max-width: 240px;
-  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--akzent);
+  color: var(--auf-akzent);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-spur {
+    transition: none;
+  }
+
+  .upload-haken,
+  .pdf-uploads li.fertig .upload-spur,
+  .ortswechsel-ziel {
+    animation: none;
+  }
+
+  .upload-haken {
+    stroke-dashoffset: 0;
+  }
 }
 
 .pdf-explorer-tipp {
