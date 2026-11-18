@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/sidebar";
 import { QuickAdd } from "@/components/quick-add";
 import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
+import { aktuelleRolle } from "@/lib/rollen";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
@@ -49,6 +50,8 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   ]);
 
   const name = anzeigeName(settings, user);
+  // Rolle einmal pro Request; nur Admins bekommen den Admin-Bereich in der Symbolleiste
+  const rolle = (await aktuelleRolle()) ?? "user";
   const kiVerfuegbar = kiKonfiguriert();
   const theme = settings?.theme ?? "HELL";
   const darstellung = darstellungLesen(settings?.darstellung);
@@ -56,7 +59,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
 
   return (
     <DesignRahmen theme={theme} darstellung={darstellung}>
-      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
+      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} rolle={rolle} />
       <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
       <SegmentMarke />
       <div className="arbeitsflaeche">

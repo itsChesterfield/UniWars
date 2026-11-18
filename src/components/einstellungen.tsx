@@ -19,6 +19,8 @@ import { PersoenlichkeitWahl } from "@/components/ki/persoenlichkeit-wahl";
 import type { Lernprofil } from "@/lib/ki/lernraum";
 import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
 import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
+import { RollenBadge } from "@/components/RollenBadge";
+import type { Rolle } from "@/lib/rollen-kern";
 import { ProfilAvatar } from "@/components/profil-avatar";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -60,6 +62,7 @@ function Meldung({ ergebnis }: { ergebnis: Ergebnis | null }) {
 export function Einstellungen({
   name,
   email,
+  rolle = "user",
   neueEmail,
   avatarUrl,
   kiEingewilligt,
@@ -70,6 +73,8 @@ export function Einstellungen({
 }: {
   name: string;
   email: string;
+  /** Rolle im Profil-Schild: Admin rot, Mod gelb (Plan Paket 1.5) */
+  rolle?: Rolle;
   /** E-Mail-Änderung wartet noch auf Bestätigung */
   neueEmail: string | null;
   avatarUrl: string | null;
@@ -139,6 +144,7 @@ export function Einstellungen({
       <Abschnitt titel="Profil" untertitel="So sehen dich andere, z. B. beim Teilen von Deadlines und im Chat.">
         <div className="einst-profil">
           <ProfilAvatar name={nameWert || name} url={avatarUrl} groesse={84} />
+          <RollenBadge rolle={rolle} />
           <div className="einst-profil-knoepfe">
             <input
               ref={bildEingabe}

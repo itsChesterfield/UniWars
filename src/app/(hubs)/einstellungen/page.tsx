@@ -14,6 +14,7 @@ import { berlinDatum } from "@/lib/zeit";
 import { adminKonfiguriert } from "@/lib/supabase/admin";
 import { mailKonfiguriert } from "@/lib/mail";
 import { domainAusMail } from "@/lib/hochschulen";
+import { aktuelleRolle } from "@/lib/rollen";
 
 export const metadata = { title: "Einstellungen · UniVerse" };
 
@@ -23,6 +24,8 @@ export default async function EinstellungenSeite() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  // Rolle für das Schild im Profil (Plan Paket 1.5)
+  const rolle = (await aktuelleRolle()) ?? "user";
   const domain = user.email ? domainAusMail(user.email) : null;
   const [{ data: settings }, { data: verif }, { data: anmeldeHs }] =
     await Promise.all([
@@ -72,6 +75,7 @@ export default async function EinstellungenSeite() {
       <Einstellungen
         name={anzeigeName(settings, user)}
         email={user.email ?? ""}
+        rolle={rolle}
         neueEmail={user.new_email ?? null}
         avatarUrl={await profilbildUrl(supabase, settings?.avatar_pfad)}
         kiEingewilligt={Boolean(settings?.ki_einwilligung)}

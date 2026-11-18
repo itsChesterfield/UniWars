@@ -11,6 +11,7 @@ import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { NavIcon } from "@/components/nav-icon";
+import { RollenBadge } from "@/components/RollenBadge";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
 import { KURZNAMEN, hubVonId, hubsInGruppen } from "@/lib/hubs/navigation";
@@ -19,6 +20,7 @@ import { HUB_DRAG_TYP } from "@/lib/geteilte-ansicht";
 import { logout } from "@/app/logout/actions";
 import { abmelden, track } from "@/lib/analytics";
 import type { Enums } from "@/lib/supabase/types";
+import type { Rolle } from "@/lib/rollen-kern";
 import { NACH_OBEN, NACH_UNTEN } from "@/components/bereich-uebergang";
 import { designWaehlen, usePersoenlich, useSystemDunkel } from "@/lib/personalisierung-store";
 import { DESIGN_NAMEN, bereichHref, sichtbaresDesign, tabLeiste, type Symbolleiste } from "@/lib/personalisierung";
@@ -62,7 +64,7 @@ function Funke() {
   );
 }
 
-function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: string; avatarUrl: string | null; theme: Enums<"theme"> }) {
+function ProfilMenue({ name, email, avatarUrl, theme, rolle }: { name: string; email: string; avatarUrl: string | null; theme: Enums<"theme">; rolle: Rolle }) {
   const [offen, setOffen] = useState(false);
   const [laeuft, starte] = useTransition();
   const rahmen = useRef<HTMLDivElement>(null);
@@ -108,6 +110,7 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
             <ProfilAvatar name={name} url={avatarUrl} groesse={32} />
             <span>
               <b>{name}</b>
+              <RollenBadge rolle={rolle} />
               <small>{email}</small>
             </span>
           </div>
@@ -153,6 +156,7 @@ export function Sidebar({
   theme = "HELL",
   symbolleiste,
   kiVerfuegbar = false,
+  rolle = "user",
 }: {
   /** Anzeigename (Nutzername) */
   name: string;
@@ -163,6 +167,8 @@ export function Sidebar({
   symbolleiste: Symbolleiste;
   /** KI-12: Mistral-Key gesetzt → Knopf für UniVerse Studio (Strg+J) */
   kiVerfuegbar?: boolean;
+  /** Rolle des angemeldeten Nutzers; nur Admins sehen den Admin-Bereich (serverseitig gefiltert) */
+  rolle?: Rolle;
 }) {
   const pfad = usePathname();
   const [zuNachKlick, setZuNachKlick] = useState(false);
@@ -243,6 +249,21 @@ export function Sidebar({
               </span>
             </button>
           )}
+          {rolle === "admin" && (
+            <Link
+              href="/admin"
+              className="rpunkt"
+              aria-label="Admin"
+              aria-current={pfad.startsWith("/admin") ? "page" : undefined}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 3.5l7 2.8v5.2c0 4.6-3 8.9-7 10.5-4-1.6-7-5.9-7-10.5V6.3Z" />
+              </svg>
+              <span className="tip" aria-hidden>
+                Admin
+              </span>
+            </Link>
+          )}
           <Link
             href="/einstellungen"
             className="rpunkt"
@@ -257,7 +278,7 @@ export function Sidebar({
               Einstellungen
             </span>
           </Link>
-          <ProfilMenue name={name} email={email} avatarUrl={avatarUrl} theme={theme} />
+          <ProfilMenue name={name} email={email} avatarUrl={avatarUrl} theme={theme} rolle={rolle} />
         </div>
       </nav>
 

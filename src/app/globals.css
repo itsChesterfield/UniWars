@@ -16943,3 +16943,22 @@ html[data-bewegung="reduziert"] .lade-skelett {
 [data-bewegung="reduziert"] .pfeil-vorn {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
+
+/* Rollen-Schild neben dem Namen (Plan Paket 1.5): Mod gelb über das Warn-Token,
+   Admin rot über das Fehler-Token. Text bleibt Satzschreibweise, ohne Laufweite. */
+.rollen-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--warnung);
+  background: var(--warn-soft);
+}
+
+.rollen-badge[data-rolle="admin"] {
+  color: var(--fehler-text);
+  background: color-mix(in srgb, var(--fehler-text) 12%, var(--flaeche));
+}
