@@ -10,10 +10,12 @@ export const maxDuration = 300;
 export default async function QuizSeite({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ modus?: string }> }) {
   const [{ id }, { modus }] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
-  const [{ data: quiz }, { data: versuche }] = await Promise.all([
+  const [{ data: quiz, error }, { data: versuche }] = await Promise.all([
     supabase.from("quiz").select("id, titel, fragen, quellen").eq("id", id).maybeSingle(),
     supabase.from("quiz_versuch").select("antworten").eq("quiz_id", id).order("erstellt_am", { ascending: false }).limit(10),
   ]);
+  if (error?.code === "22P02") notFound(); // keine gültige ID
+  if (error) throw new Error(error.message);
   if (!quiz) notFound();
   return (
     <QuizSpielen

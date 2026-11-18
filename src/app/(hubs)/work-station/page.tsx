@@ -14,7 +14,7 @@ export default async function WorkStationSeite({ searchParams }: { searchParams:
   } = await supabase.auth.getUser();
   const heuteBeginn = berlinMitternacht(berlinDatum()).toISOString();
 
-  const [{ data: settings }, { data: faecher }, { data: sitzungen }] = await Promise.all([
+  const [{ data: settings }, { data: faecher, error: fachFehler }, { data: sitzungen, error: sitzungFehler }] = await Promise.all([
     // Spalte work_station fehlt evtl. noch (Migration) -> dann Standardwerte
     supabase.from("settings").select("work_station").eq("user_id", user?.id ?? "").maybeSingle(),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
@@ -42,6 +42,7 @@ export default async function WorkStationSeite({ searchParams }: { searchParams:
       faecher={liste}
       vorschlag={vorschlag}
       heute={heute}
+      heuteFehler={Boolean(fachFehler || sitzungFehler)}
     />
   );
 }

@@ -8,6 +8,7 @@ import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 const TAGE = [
   ["MO", "Mo"],
@@ -173,20 +174,24 @@ export function StundenplanFotoDialog({
           <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
             <KiLimitHinweis verbleibend={ki.verbleibend} limit={ki.status?.limit ?? 0} />
-            <button type="button" className="btnp" disabled={ki.verbleibend === 0} onClick={() => eingabe.current?.click()}>
-              📷 Foto auswählen
+            <button type="button" className="knopf haupt" disabled={ki.verbleibend === 0} onClick={() => eingabe.current?.click()}>
+              <Icon name="kamera" groesse={16} />
+              Foto auswählen
             </button>
           </div>
         </>
       ) : (
         <>
-          <p className="ki-hinweis">⚠️ Prüf die Einträge – die KI kann sich verlesen. Zeilen mit „Weglassen“ werden nicht eingetragen.</p>
+          <p className="ki-hinweis sp-foto-hinweis">
+            <Icon name="warnung" groesse={16} />
+            Prüf die Einträge, die KI kann sich verlesen. Zeilen mit „Weglassen“ werden nicht eingetragen.
+          </p>
           <div className="sp-foto-raster">
             {vorschau && (
               // eslint-disable-next-line @next/next/no-img-element -- lokale Vorschau (Data-URL)
               <img src={vorschau} alt="Dein Stundenplan-Foto" className="sp-foto-bild" />
             )}
-            <div className="sp-foto-tabelle-wrap">
+            <div className="sp-foto-tabelle-wrap" tabIndex={0} role="region" aria-label="Erkannte Einträge">
               <table className="sp-foto-tabelle">
                 <thead>
                   <tr>
@@ -202,13 +207,13 @@ export function StundenplanFotoDialog({
                     <tr key={z.schluessel} className={z.wahl === "weg" ? "weg" : ""}>
                       <td>
                         <select className="field" value={z.wahl} aria-label="Fach" onChange={(e) => aendern(z.schluessel, { wahl: e.target.value })}>
-                          <option value="neu">＋ Neues Fach anlegen</option>
+                          <option value="neu">Neues Fach anlegen</option>
                           {faecher.map((f) => (
                             <option key={f.id} value={`f:${f.id}`}>
                               {f.name}
                             </option>
                           ))}
-                          <option value="weg">✕ Weglassen</option>
+                          <option value="weg">Weglassen</option>
                         </select>
                         {z.wahl === "neu" && (
                           <input
@@ -252,10 +257,16 @@ export function StundenplanFotoDialog({
           )}
           <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
-            <button type="button" className="btng" disabled={schritt === "speichert"} onClick={() => setSchritt("start")}>
+            <button type="button" className="knopf leise" disabled={schritt === "speichert"} onClick={() => setSchritt("start")}>
               Anderes Foto
             </button>
-            <button type="button" className="btnp" disabled={schritt === "speichert" || anzahl === 0} onClick={() => void uebernehmen()}>
+            <button
+              type="button"
+              className="knopf haupt"
+              disabled={anzahl === 0 && schritt !== "speichert"}
+              aria-busy={schritt === "speichert"}
+              onClick={() => schritt !== "speichert" && void uebernehmen()}
+            >
               {schritt === "speichert" ? "Trägt ein …" : `${anzahl} ${anzahl === 1 ? "Termin" : "Termine"} eintragen${neue ? ` (+${neue} ${neue === 1 ? "Fach" : "Fächer"})` : ""}`}
             </button>
           </div>

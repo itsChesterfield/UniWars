@@ -107,13 +107,13 @@ function Werkzeugleiste({ editor, extra }: { editor: Editor; extra?: (editor: Ed
           key={k.titel}
           type="button"
           title={k.titel}
-          aria-label={k.titel}
           aria-pressed={aktiv[i]}
           className={`md-knopf ${aktiv[i] ? "an" : ""} ${k.label === "B" ? "md-fett" : ""} ${k.label === "I" ? "md-kursiv" : ""}`}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => k.ausfuehren(editor)}
         >
-          {k.label}
+          <span aria-hidden>{k.label}</span>
+          <span className="sr-only">{k.titel}</span>
         </button>
       ))}
       {extra?.(editor)}
@@ -197,7 +197,7 @@ export function MarkdownEditor({
 }
 
 /** Nur anzeigen (z. B. Karteikarte im Lernmodus). */
-export function MarkdownAnzeige({ wert, className }: { wert: string; className?: string }) {
+export function MarkdownAnzeige({ wert, className, label }: { wert: string; className?: string; label?: string }) {
   const editor = useEditor(
     {
       extensions: erweiterungen(),
@@ -205,7 +205,7 @@ export function MarkdownAnzeige({ wert, className }: { wert: string; className?:
       contentType: "markdown",
       editable: false,
       immediatelyRender: false,
-      editorProps: { attributes: { class: "md-inhalt" } },
+      editorProps: { attributes: label ? { class: "md-inhalt", "aria-label": label } : { class: "md-inhalt" } },
     },
     [wert],
   );

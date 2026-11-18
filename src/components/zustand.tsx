@@ -43,3 +43,12 @@ export function Zustand({
     </section>
   );
 }
+
+/** Die Tabellen eines Bereichs fehlen noch in der Datenbank (Migration nicht eingespielt). */
+export function Einrichtung({ bereich }: { bereich: string }) {
+  return (
+    <Zustand art="leer" icon="info" titel={`${bereich} wird gerade eingerichtet.`} ebene={1}>
+      Die Datenbank für diesen Bereich ist noch nicht freigeschaltet. Sobald das Update eingespielt ist, kannst du hier loslegen.
+    </Zustand>
+  );
+}

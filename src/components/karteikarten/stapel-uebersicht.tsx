@@ -1,19 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { stapelAnlegen, stapelBearbeiten, stapelLoeschen, type Stapel } from "@/app/(hubs)/karteikarten/actions";
 import { FachFilterChips } from "@/components/fach-filter-chips";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
 
 export type KartenVorschlag = { stapelId: string; gruende: string[] };
+
+const farbe = (f: FachOption | null) => ({ "--c": f?.farbe ?? "var(--text-3)" }) as CSSProperties;
+const karten = (n: number) => `${n} ${n === 1 ? "Karte" : "Karten"}`;
 
 export function StapelUebersicht({
   stapel,
@@ -31,9 +35,11 @@ export function StapelUebersicht({
 
   const sichtbar = stapel.filter((s) => !fachFilter || s.fach_id === fachFilter);
   const fachVon = (id: string | null) => faecher.find((f) => f.id === id) ?? null;
+  const faellig = stapel.reduce((n, s) => n + s.faellig, 0);
+  const mitFaelligen = stapel.filter((s) => s.faellig > 0).length;
 
   async function loeschen(s: StapelKachel) {
-    const hinweis = s.anzahl > 0 ? ` mit ${s.anzahl} ${s.anzahl === 1 ? "Karte" : "Karten"}` : "";
+    const hinweis = s.anzahl > 0 ? ` mit ${karten(s.anzahl)}` : "";
     if (!window.confirm(`Stapel „${s.name}“${hinweis} wirklich löschen?`)) return;
     try {
       await stapelLoeschen(s.id);
@@ -45,49 +51,53 @@ export function StapelUebersicht({
     }
   }
 
-  const neuKnopf = (
-    <button type="button" className="btnp" onClick={() => setDialog({ modus: "neu" })}>
-      + Neuer Stapel
+  const neu = (klasse: string, text: string) => (
+    <button type="button" className={`knopf ${klasse}`} onClick={() => setDialog({ modus: "neu" })}>
+      <Icon name="plus" groesse={16} />
+      {text}
     </button>
   );
 
   return (
     <>
-      <HubKopf titel="Karteikarten" untertitel="Lernen mit Wiederholung – fällige Karten kommen automatisch wieder." aktionen={neuKnopf} />
+      <header className="seitenkopf">
+        <div>
+          <h1>Karteikarten</h1>
+          <p>
+            {faellig > 0
+              ? `${karten(faellig)} ${faellig === 1 ? "ist" : "sind"} heute fällig, aus ${mitFaelligen} ${mitFaelligen === 1 ? "Stapel" : "Stapeln"}.`
+              : "Lernen mit Wiederholung: Fällige Karten kommen automatisch wieder."}
+          </p>
+        </div>
+        {stapel.length > 0 && <div className="rechts">{neu("haupt", "Neuer Stapel")}</div>}
+      </header>
       <FachFilterChips faecher={faecher} />
 
       {vorschlaege.length > 0 && !fachFilter && (
-        <section className="card kk-vorschlaege" aria-label="Jetzt lernen">
-          <div className="ch">
-            <span className="ct">Jetzt lernen</span>
-            <span className="muted" style={{ fontSize: 12 }}>
-              nach Wiederholung, Prüfungen und Vorlesungen
-            </span>
+        <section className="kk-abschnitt" aria-labelledby="kk-jetzt">
+          <div className="abschnitt-kopf">
+            <h2 id="kk-jetzt" className="abschnitt-titel">
+              Jetzt lernen
+            </h2>
+            <span className="abschnitt-info">nach Wiederholung, Prüfungen und Vorlesungen</span>
           </div>
-          <ul>
+          <ul className="entry-list">
             {vorschlaege.map((v) => {
               const s = stapel.find((x) => x.id === v.stapelId);
               if (!s) return null;
-              const fach = fachVon(s.fach_id);
               return (
-                <li key={v.stapelId}>
-                  <span className="dot" style={{ background: fach?.farbe ?? "#94a3b8" }} aria-hidden />
-                  <span className="kk-vorschlag-text">
-                    <strong>{s.name}</strong>
-                    <span className="kk-vorschlag-gruende">
-                      {v.gruende.map((g) => (
-                        <span key={g} className="tag">
-                          {g}
-                        </span>
-                      ))}
-                    </span>
-                  </span>
+                <li key={v.stapelId} className="entry-row fach-zeile">
+                  <span className="fach-farbe" style={farbe(fachVon(s.fach_id))} aria-hidden />
+                  <div className="entry-info">
+                    <span className="entry-title">{s.name}</span>
+                    <span className="entry-meta">{v.gruende.join(", ")}</span>
+                  </div>
                   <Link
                     href={`/karteikarten/${s.id}/lernen`}
-                    className="btnp"
+                    className="knopf neben klein"
                     onClick={() => track("kk_vorschlag_geoeffnet", { faellig: s.faellig, gruende: v.gruende.length })}
                   >
-                    Lernen{s.faellig > 0 ? ` (${s.faellig})` : ""}
+                    Lernen{s.faellig > 0 && <span className="zahl">{s.faellig}</span>}
                   </Link>
                 </li>
               );
@@ -96,65 +106,57 @@ export function StapelUebersicht({
         </section>
       )}
 
-      {stapel.length === 0 ? (
-        <LeererZustand
-          icon="🗂️"
-          text="Noch keine Karteikarten. Leg deinen ersten Stapel an, z. B. „Mathe 1 – Definitionen“."
-          aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={() => setDialog({ modus: "neu" })}>
-              + Ersten Stapel anlegen
-            </button>
-          }
-        />
-      ) : sichtbar.length === 0 ? (
-        <p className="empty-state">Für dieses Fach gibt es noch keinen Stapel.</p>
-      ) : (
-        <div className="kk-raster">
-          {sichtbar.map((s) => {
-            const fach = fachVon(s.fach_id);
-            return (
-              <article key={s.id} className="card kk-kachel">
-                <div className="kk-kachel-kopf">
-                  <Link href={`/karteikarten/${s.id}`} className="kk-kachel-name">
-                    {s.name}
-                  </Link>
-                  <DreiPunkteMenue
-                    punkte={[
-                      { label: "Bearbeiten", onClick: () => setDialog({ modus: "bearbeiten", stapel: s }) },
-                      { label: "Löschen", onClick: () => void loeschen(s), gefahr: true },
-                    ]}
-                  />
-                </div>
-                <div className="kk-kachel-fach muted">
-                  {fach ? (
-                    <>
-                      <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-                    </>
-                  ) : (
-                    "Ohne Fach"
-                  )}
-                </div>
-                <div className="kk-kachel-zahlen">
-                  <span>
-                    {s.anzahl} {s.anzahl === 1 ? "Karte" : "Karten"}
-                  </span>
-                  <span className={s.faellig > 0 ? "tag tag-accent" : "tag"}>{s.faellig} heute fällig</span>
-                </div>
-                <div className="kk-kachel-knoepfe">
-                  <Link href={`/karteikarten/${s.id}`} className="btng">
-                    Öffnen
-                  </Link>
-                  {s.anzahl > 0 && (
-                    <Link href={`/karteikarten/${s.id}/lernen`} className="btnp">
-                      Lernen
-                    </Link>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+      <section className="kk-abschnitt" aria-labelledby="kk-stapel">
+        <div className="abschnitt-kopf">
+          <h2 id="kk-stapel" className="abschnitt-titel">
+            Stapel
+          </h2>
+          {sichtbar.length > 0 && <span className="abschnitt-info">{sichtbar.length}</span>}
         </div>
-      )}
+        {stapel.length === 0 ? (
+          <Zustand art="leer" icon="karteikarten" titel="Noch keine Stapel." region ebene={3} aktion={neu("neben klein", "Stapel anlegen")}>
+            Leg einen Stapel pro Thema an, zum Beispiel „Mathe 1, Definitionen“. Fällige Karten kommen dann automatisch wieder.
+          </Zustand>
+        ) : sichtbar.length === 0 ? (
+          <Zustand art="leer" icon="karteikarten" titel="In diesem Fach gibt es noch keinen Stapel." region ebene={3} aktion={neu("neben klein", "Stapel anlegen")} />
+        ) : (
+          <ul className="entry-list">
+            {sichtbar.map((s) => {
+              const fach = fachVon(s.fach_id);
+              return (
+                <li key={s.id} className="entry-row fach-zeile">
+                  <span className="fach-farbe" style={farbe(fach)} aria-hidden />
+                  <div className="entry-info">
+                    <Link href={`/karteikarten/${s.id}`} className="entry-title kk-name">
+                      {s.name}
+                    </Link>
+                    <span className="entry-meta">
+                      {fach?.name ?? "Ohne Fach"}, {karten(s.anzahl)}
+                    </span>
+                  </div>
+                  <span className={`kk-faellig${s.faellig > 0 ? " an" : ""}`}>
+                    <span className="zahl">{s.faellig}</span> fällig
+                  </span>
+                  <div className="entry-actions">
+                    {s.anzahl > 0 && (
+                      <Link href={`/karteikarten/${s.id}/lernen`} className="knopf neben klein">
+                        Lernen
+                      </Link>
+                    )}
+                    <DreiPunkteMenue
+                      label={`Weitere Aktionen für ${s.name}`}
+                      punkte={[
+                        { label: "Bearbeiten", onClick: () => setDialog({ modus: "bearbeiten", stapel: s }) },
+                        { label: "Löschen", onClick: () => void loeschen(s), gefahr: true },
+                      ]}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {dialog?.modus === "neu" && (
         <StapelDialog

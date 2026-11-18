@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Markierung } from "@/app/(hubs)/pdf-reader/actions";
 import { FARBEN, FARB_INFO, type Farbe } from "@/lib/pdf-reader/markierungen";
 import { ZITAT_DRAG_TYP, zitatAlsText, type Zitat } from "@/lib/geteilte-ansicht";
+import { Icon } from "@/components/nav-icon";
 
 export type MenuePosition = { x: number; y: number; unten: boolean };
 
@@ -41,7 +42,9 @@ function stil(pos: MenuePosition): React.CSSProperties {
 export function AuswahlMenue({ pos, onMarkieren, onKopieren }: { pos: MenuePosition; onMarkieren: (f: Farbe) => void; onKopieren: () => void }) {
   return (
     <div className={`pdf-markier-menue ${pos.unten ? "unten" : ""}`} style={stil(pos)} role="toolbar" aria-label="Auswahl markieren">
-      <span className="pdf-menue-label">🖍</span>
+      <span className="pdf-menue-label" aria-hidden>
+        <Icon name="markieren" groesse={16} />
+      </span>
       <FarbPunkte onWahl={onMarkieren} />
       <button type="button" className="pdf-menue-knopf" onPointerDown={auswahlBehalten} onMouseDown={auswahlBehalten} onClick={onKopieren}>
         Kopieren
@@ -97,19 +100,20 @@ export function MarkierungMenue({
       <div className="rowb">
         <FarbPunkte aktiv={markierung.farbe} onWahl={onFarbe} />
         <span className="pdf-menue-knoepfe">
-          <button type="button" className={`pdf-menue-knopf ${notizOffen ? "an" : ""}`} onClick={() => setNotizOffen((o) => !o)} title="Notiz">
-            📝
+          <button type="button" className={`pdf-menue-knopf ${notizOffen ? "an" : ""}`} onClick={() => setNotizOffen((o) => !o)} title="Notiz" aria-label="Notiz" aria-pressed={notizOffen}>
+            <Icon name="notizen" groesse={16} />
           </button>
           <button
             type="button"
             className="pdf-menue-knopf"
             title="Text kopieren"
+            aria-label="Text kopieren"
             onClick={() => void navigator.clipboard?.writeText(markierung.text).catch(() => undefined)}
           >
-            ⧉
+            <Icon name="kopieren" groesse={16} />
           </button>
           <button type="button" className="pdf-menue-knopf gefahr" title="Markierung löschen" aria-label="Markierung löschen" onClick={onLoeschen}>
-            🗑
+            <Icon name="loeschen" groesse={16} />
           </button>
         </span>
       </div>
@@ -149,7 +153,7 @@ export function MarkierungsListe({
   const sichtbar = markierungen.filter((m) => !farbFilter || m.farbe === farbFilter);
 
   if (markierungen.length === 0) {
-    return <p className="empty-state">Noch keine Markierungen. Wähle Text im PDF aus und tippe auf eine Farbe – oder schalte oben den Textmarker 🖍 ein.</p>;
+    return <p className="pdf-leer">Noch keine Markierungen. Wähle Text im PDF aus und tippe auf eine Farbe, oder schalte oben den Textmarker ein.</p>;
   }
 
   return (
@@ -178,14 +182,19 @@ export function MarkierungsListe({
             <button type="button" className={m.seite === seite ? "aktiv" : ""} onClick={() => onSpringen(m)}>
               <span className="pdf-markier-seite">S. {m.seite}</span>
               <span className="pdf-markier-text">{m.text.trim() || "(ohne Text)"}</span>
-              {m.notiz && <span className="pdf-markier-notiz">📝 {m.notiz}</span>}
+              {m.notiz && (
+                <span className="pdf-markier-notiz">
+                  <Icon name="notizen" groesse={12} />
+                  {m.notiz}
+                </span>
+              )}
             </button>
             <button type="button" className="pdf-markier-weg" aria-label="Markierung löschen" title="Löschen" onClick={() => onLoeschen(m)}>
-              ✕
+              <Icon name="schliessen" groesse={14} />
             </button>
           </li>
         ))}
-        {sichtbar.length === 0 && <li className="empty-state">Keine Markierungen in dieser Farbe.</li>}
+        {sichtbar.length === 0 && <li className="pdf-leer">Keine Markierungen in dieser Farbe.</li>}
       </ul>
     </>
   );

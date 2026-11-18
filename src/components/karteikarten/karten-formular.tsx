@@ -72,19 +72,23 @@ export function KartenFormular({
           <MarkdownEditor key={`r-${runde}`} wert={rueckseite} onAendern={setRueckseite} kompakt label="Rückseite" platzhalter="Antwort" />
         </div>
       </div>
-      {fehler && <p className="auth-error">{fehler}</p>}
-      <div className="hub-formular-knoepfe">
-        <button type="button" className="btng" onClick={onAbbrechen}>
-          Abbrechen
-        </button>
-        <button type="button" className={mitNaechste ? "btng" : "btnp"} disabled={laeuft} onClick={() => void speichern(false)}>
-          Speichern
-        </button>
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
+      <div className="crud-form-actions">
         {mitNaechste && (
-          <button type="button" className="btnp" disabled={laeuft} onClick={() => void speichern(true)} title="Strg+Enter">
-            Speichern &amp; nächste
+          <button type="button" className="knopf haupt" aria-busy={laeuft} disabled={laeuft} onClick={() => void speichern(true)} title="Strg+Enter">
+            Speichern und nächste
           </button>
         )}
+        <button type="button" className={`knopf ${mitNaechste ? "neben" : "haupt"}`} disabled={laeuft} onClick={() => void speichern(false)}>
+          Speichern
+        </button>
+        <button type="button" className="knopf leise" onClick={onAbbrechen}>
+          Abbrechen
+        </button>
       </div>
     </div>
   );

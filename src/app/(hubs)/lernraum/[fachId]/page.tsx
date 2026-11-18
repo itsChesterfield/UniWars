@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { HubKopf } from "@/components/hubs/hub-bausteine";
 import { Lernraum, type LernNachricht } from "@/components/lernraum/lernraum";
 import { lernraumSichern, quellenListe } from "@/lib/ki/lernraum-server";
 import { profilLesen } from "@/lib/ki/lernraum";
@@ -16,7 +15,9 @@ export default async function LernraumSeite({ params }: { params: Promise<{ fach
   } = await supabase.auth.getUser();
   if (!user) notFound();
   const { data: fach, error } = await supabase.from("fach").select("id, name, farbe").eq("id", fachId).maybeSingle();
-  if (error?.code === "22P02" || !fach) notFound();
+  if (error?.code === "22P02") notFound(); // keine gültige ID
+  if (error) throw new Error(error.message);
+  if (!fach) notFound();
 
   const lernraumId = await lernraumSichern(supabase, user.id, fach.id);
   const [quellen, { data: verlauf }, { data: settings }, { data: pdfs }, { data: notizen }, { data: kompetenz }] = await Promise.all([
@@ -30,8 +31,8 @@ export default async function LernraumSeite({ params }: { params: Promise<{ fach
 
   return (
     <>
-      <HubKopf titel={`Lernraum · ${fach.name}`} untertitel={kiKonfiguriert() ? "Antworten aus deinen Quellen – mit Belegen, Ergänzungen und auf Wunsch Web-Recherche." : "Die KI ist gerade nicht eingerichtet."} />
       <Lernraum
+        kiVerfuegbar={kiKonfiguriert()}
         lernraumId={lernraumId}
         fach={fach}
         startQuellen={quellen.map(({ art, id, titel, herkunft, aktiv, seiten }) => ({ art, id, titel, herkunft, aktiv, seiten }))}

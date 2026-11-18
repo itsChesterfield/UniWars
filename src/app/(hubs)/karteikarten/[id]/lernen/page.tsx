@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { istFaellig } from "@/lib/karteikarten/wiederholung";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { Lernmodus } from "@/components/karteikarten/lernmodus";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
@@ -15,12 +15,7 @@ export default async function LernSeite({ params }: { params: Promise<{ id: stri
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Karteikarten" />
-        <EinrichtungHinweis hub="Karteikarten" />
-      </>
-    );
+    return <Einrichtung bereich="Karteikarten" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);
