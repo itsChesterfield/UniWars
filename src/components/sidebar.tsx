@@ -1,5 +1,6 @@
 "use client";
 
+import { NavMond } from "@/components/bewegung/nav-mond";
 import { Fragment, Suspense, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
@@ -193,6 +194,7 @@ export function Sidebar({
         onMouseLeave={() => setZuNachKlick(false)}
       >
         <TimerWaechter />
+        <NavMond schluessel={`${pfad}|${reihe.join(",")}`} />
         <Link href="/" className="rmarke" aria-label="UniVerse, Zentraler Hub">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <circle cx="12" cy="12" r="4.5" />

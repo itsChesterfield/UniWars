@@ -4166,8 +4166,7 @@ kbd {
 }
 
 .dat-uploads li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(80px, 200px) auto;
+  display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
@@ -4177,29 +4176,28 @@ kbd {
   font-size: var(--text-sm);
 }
 
-.dat-uploads li .balkenf {
-  --c: var(--akzent);
-  margin: 0;
-}
-
 .dat-uploads li.fehler {
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 2fr) auto;
   background: color-mix(in srgb, var(--color-error) 9%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .dat-upload-name {
+  flex: 0 1 280px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dat-upload-info {
+  flex: 1 1 auto;
   font-size: var(--text-xs);
   color: var(--text-2);
 }
 
 .dat-upload-fehler {
+  flex: 1 1 0;
+  min-width: 0;
   font-size: var(--text-xs);
   color: var(--fehler-text);
 }
@@ -5355,12 +5353,12 @@ dialog.dat-vorschau::backdrop {
   }
 
   .dat-uploads li {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    flex-wrap: wrap;
   }
 
-  .dat-uploads li .balkenf {
-    grid-column: 1 / -1;
-    grid-row: 2;
+  .dat-uploads .dat-upload-fehler {
+    order: 1;
+    flex-basis: 100%;
   }
 
   .pdf-reader {
@@ -9471,11 +9469,11 @@ button.pdf-pfad-teil:hover {
   animation: upload-haken var(--dur-long) var(--ease-out) var(--dur-micro) forwards;
 }
 
-.pdf-uploads li.fertig .upload-spur {
+.upload-marke.fertig .upload-spur {
   animation: upload-spur-aus var(--dur-long) var(--ease-in) var(--dur-long) forwards;
 }
 
-.pdf-uploads li.fehler .upload-marke {
+.upload-marke.fehler {
   color: var(--fehler-text);
 }
 
@@ -9536,7 +9534,7 @@ button.pdf-pfad-teil:hover {
   }
 
   .upload-haken,
-  .pdf-uploads li.fertig .upload-spur,
+  .upload-marke.fertig .upload-spur,
   .ortswechsel-ziel {
     animation: none;
   }
@@ -12864,6 +12862,32 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
 .rpunkt[aria-current] {
   background: var(--aktiv);
   color: var(--akzent-text);
+}
+
+/* Hub-Wechsel: goldener Punkt am Rand der Leiste gleitet zum aktiven Bereich (bewegung/nav-mond.tsx) */
+.nav-mond {
+  position: absolute;
+  top: -3px;
+  left: 4px;
+  z-index: 1;
+  width: 6px;
+  height: 6px;
+  clip-path: circle(50%);
+  background: var(--akzent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nav-mond.gleitet {
+  transition:
+    transform var(--dur-short) var(--ease-out),
+    opacity var(--dur-micro) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-mond.gleitet {
+    transition: none;
+  }
 }
 
 .rpunkt .badge,
