@@ -65,6 +65,7 @@ Diese Regeln gelten für **jede** Aufgabe. Wenn eine Anweisung im Plan diesen Re
 6. **Vor dem Einspielen:** prüfen, ob die Live-Datenbank die Änderung verträgt (bestehende Daten, Namenskonflikte).
 7. **Nach dem Einspielen:** den Supabase-Advisor laufen lassen. Neue Warnungen werden behoben oder im PR begründet.
 8. **Jede neue RLS-Regel bekommt einen Test**, der zeigt, dass ein normaler Nutzer das Verbotene **nicht** kann.
+9. **Migrationen nur in die Test-Datenbank einspielen, nie in die Produktion.** Die Produktions-Datenbank ändert nur der Projektinhaber, nach dem Merge. Wenn unklar ist, mit welchem Supabase-Projekt du verbunden bist: stoppen und fragen.
 
 ---
 

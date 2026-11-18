@@ -155,7 +155,7 @@ grep -rn "anzeigeName(" src/
 Die gefundenen Stellen **auflisten und im PR nennen**. An jeder Stelle die Rolle über `rollenVon()` holen (eine Abfrage pro Liste) und `<RollenBadge>` daneben setzen.
 Erwartet werden: Hub-Seitenleiste, Einstellungen/Profil, Fokusraum-Mitglieder, Chat, geteilte Ansichten. Werden weitere Stellen gefunden: auflisten und nachfragen, bevor du sie änderst.
 
-### 1.6 Ersten Admin setzen (macht der Projektinhaber, nicht Mistral)
+### 1.6 Ersten Admin setzen (macht der Projektinhaber, nicht der KI-Agent)
 
 ```sql
 insert into public.user_roles (user_id, role)
