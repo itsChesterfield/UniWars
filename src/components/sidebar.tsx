@@ -11,7 +11,7 @@ import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { NavIcon } from "@/components/nav-icon";
-import { RollenBadge } from "@/components/RollenBadge";
+import { RollenBadge } from "@/components/rollen-badge";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
 import { KURZNAMEN, hubVonId, hubsInGruppen } from "@/lib/hubs/navigation";

@@ -8,7 +8,7 @@ import { adminErfordern, rollenAusZeilen, type Rolle } from "@/lib/rollen-kern";
 export type { Rolle };
 
 /**
- * Rolle des angemeldeten Nutzers (Paket 1, Plan Abschnitt 1.3).
+ * Rolle des angemeldeten Nutzers.
  * Ohne vorherigen getUser()-Aufruf: Die Datenbank prüft das JWT selbst, auth.uid() ist
  * ohne Anmeldung null und die Funktion liefert dann 'user'. Bei einem Fehler ebenfalls 'user'.
  * React cache() gilt nur für die Dauer eines Requests.

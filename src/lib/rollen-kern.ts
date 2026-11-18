@@ -1,5 +1,5 @@
 /**
- * Rollen: user < moderator < admin (Plan docs/plaene/admin-passkey.md, Migration 20261118182307).
+ * Rollen: user < moderator < admin.
  * Ohne Next.js, testbar. Die Reihenfolge der Rollen entspricht dem Enum und darf nie geändert werden.
  */
 

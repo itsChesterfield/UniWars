@@ -19,7 +19,7 @@ import { PersoenlichkeitWahl } from "@/components/ki/persoenlichkeit-wahl";
 import type { Lernprofil } from "@/lib/ki/lernraum";
 import { KiVerlaufLoeschen } from "@/components/assistent/ki-verlauf-loeschen";
 import { KiKontingentAnzeige } from "@/components/ki/ki-kontingent-anzeige";
-import { RollenBadge } from "@/components/RollenBadge";
+import { RollenBadge } from "@/components/rollen-badge";
 import type { Rolle } from "@/lib/rollen-kern";
 import { ProfilAvatar } from "@/components/profil-avatar";
 import { fehlerMelden, track } from "@/lib/analytics";
