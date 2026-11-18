@@ -11,6 +11,7 @@ import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
 import { DesignRahmen } from "@/components/design-rahmen";
+import { SegmentMarke } from "@/components/bewegung/segment-marke";
 import { FokusraumPraesenz } from "@/components/work-station/fokusraum-praesenz";
 import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
 import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
@@ -57,6 +58,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
     <DesignRahmen theme={theme} darstellung={darstellung}>
       <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
       <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
+      <SegmentMarke />
       <div className="arbeitsflaeche">
         <Kopfleiste
           name={name}
