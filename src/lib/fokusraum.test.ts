@@ -43,3 +43,10 @@ test("Fokusraum: fremde, kaputte Einträge werfen nicht und werden bereinigt", (
   assert.equal(e.n?.length, 40);
   assert.equal(e.r, 24 * 3600_000);
 });
+
+test("Fokusraum: Flow zählt hoch", () => {
+  assert.equal(restMs({ l: true, e: 1_000, r: 0, w: true }, 61_000), 60_000);
+  assert.equal(restMs({ l: false, e: null, r: 5_000, w: true }, 99_000), 5_000);
+  const [t] = teilnehmerListe({ a: [{ n: null, f: null, m: "fokus", l: true, e: 1, r: 0, w: true }] }, null);
+  assert.equal(t.w, true);
+});
