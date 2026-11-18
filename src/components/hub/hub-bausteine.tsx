@@ -1,5 +1,6 @@
 "use client";
 
+import { RollText } from "@/components/bewegung/roll-text";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { toggleDeadlineErledigt } from "@/app/deadline/actions";
@@ -171,7 +172,9 @@ function Fakten({ d }: { d: HubDaten }) {
   return (
     <section className="fakten" aria-label="Überblick">
       <Link href="/karteikarten" className="fakt" style={{ "--c": "var(--f3)" } as React.CSSProperties}>
-        <div className="zahl">{d.karten.anzahl}</div>
+        <div className="zahl">
+          <RollText wert={String(d.karten.anzahl)} />
+        </div>
         {d.karten.anzahl > 0 ? (
           <p>
             <b>{d.karten.anzahl === 1 ? "Karteikarte" : "Karteikarten"}</b> heute fällig{top ? (
@@ -188,7 +191,9 @@ function Fakten({ d }: { d: HubDaten }) {
         )}
       </Link>
       <Link href="/termine" className="fakt" style={{ "--c": "var(--f4)" } as React.CSSProperties}>
-        <div className="zahl">{zeiten.length}</div>
+        <div className="zahl">
+          <RollText wert={String(zeiten.length)} />
+        </div>
         <p>
           <b>{zeiten.length === 1 ? "Termin" : "Termine"}</b> heute
           {naechste ? (
@@ -202,7 +207,9 @@ function Fakten({ d }: { d: HubDaten }) {
         </p>
       </Link>
       <Link href="/fortschritt" className="fakt" style={{ "--c": "var(--akzent)" } as React.CSSProperties}>
-        <div className="zahl">{d.streak}</div>
+        <div className="zahl">
+          <RollText wert={String(d.streak)} />
+        </div>
         <p>
           <b>{d.streak === 1 ? "Tag" : "Tage"} in Folge</b> gelernt
           {minuten > 0 ? (

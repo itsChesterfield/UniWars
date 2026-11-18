@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { track } from "@/lib/analytics";
 import { AnalyticsNutzer } from "@/components/analytics-nutzer";
 import { NoteManager } from "@/components/note-manager";
+import { useNeueIds } from "@/components/bewegung/neue-ids";
 import { KalenderButton } from "@/components/kalender-button";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { HeuteView } from "@/components/heute-view";
@@ -128,6 +129,7 @@ export function DashboardContent({
   }
 
   const filterKey = `${fachId ?? "alle"}-${datenStand.version}`;
+  const neueNoten = useNeueIds(notes);
 
 
 
@@ -254,6 +256,7 @@ export function DashboardContent({
           <NoteManager
             key={`noten-${filterKey}`}
             initialNotes={gefilterteNotes}
+            neuIds={neueNoten}
             faecher={faecher}
             embedded
             versteckeErstellen
