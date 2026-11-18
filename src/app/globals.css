@@ -15222,6 +15222,59 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   }
 }
 
+/* Erscheinen (Entscheidung 18.11.): nach dem Neuladen die Kästen nacheinander, 30 ms versetzt, höchstens sechs;
+   nach einem sichtbaren Skelett die ganze Fläche auf einmal. Nur einmal, nie beim Scrollen.
+   Reines CSS über `html[data-erscheinen]`; das Attribut verschwindet danach wieder. */
+@keyframes erscheinen {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+html[data-erscheinen="flaeche"] .dashboard-main > :not(.lade-skelett),
+html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox),
+html[data-erscheinen="kaesten"] .hubbox > :not(.hubraster),
+html[data-erscheinen="kaesten"] .hubraster > * {
+  animation: erscheinen var(--dur-short) var(--ease-out) both;
+}
+
+html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(2) {
+  animation-delay: var(--stagger);
+}
+
+html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(3) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+
+html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(4) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+
+html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(5) {
+  animation-delay: calc(var(--stagger) * 4);
+}
+
+html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(n + 6) {
+  animation-delay: calc(var(--stagger) * 5);
+}
+
+/* Reduziert: nur Überblenden, alles zugleich */
+@media (prefers-reduced-motion: reduce) {
+  html[data-erscheinen="flaeche"] .dashboard-main > :not(.lade-skelett),
+  html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox),
+  html[data-erscheinen="kaesten"] .hubbox > :not(.hubraster),
+  html[data-erscheinen="kaesten"] .hubraster > * {
+    animation-name: lade-ein;
+    animation-delay: 0ms;
+  }
+}
+
+html[data-bewegung="reduziert"][data-erscheinen] .dashboard-main *,
+html[data-bewegung="reduziert"][data-erscheinen] .dashboard-main > * {
+  animation-delay: 0ms !important;
+}
+
 /* Ohne Bewegung steht das Skelett still, erscheint aber weiterhin erst nach 300 ms. */
 @media (prefers-reduced-motion: reduce) {
   .lade-skelett i {

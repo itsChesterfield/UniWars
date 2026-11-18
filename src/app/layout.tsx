@@ -27,14 +27,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="de"
+      data-erscheinen="kaesten"
       suppressHydrationWarning
       className={`${schrift.variable} ${zahlen.variable}`}
     >
       <body>
-        {/* Vor dem ersten Zeichnen: zweiter Hub der geteilten Ansicht ohne Sidebar, eingeklappte Sidebar */}
+        {/* Vor dem ersten Zeichnen: zweiter Hub der geteilten Ansicht ohne Sidebar, eingeklappte Sidebar.
+            data-erscheinen="kaesten": nach dem Neuladen kommen die Kästen nacheinander (nur CSS), danach nie wieder. */}
         <Script id="geteilte-ansicht" strategy="beforeInteractive">
           {`if (window.name === ${JSON.stringify(FRAME_NAME)}) document.documentElement.setAttribute("data-eingebettet", "");
-try { if (localStorage.getItem("uniwars-sidebar-eingeklappt") === "1") document.documentElement.setAttribute("data-sidebar-eingeklappt", ""); } catch (e) {}`}
+try { if (localStorage.getItem("uniwars-sidebar-eingeklappt") === "1") document.documentElement.setAttribute("data-sidebar-eingeklappt", ""); } catch (e) {}
+setTimeout(function () { if (document.documentElement.getAttribute("data-erscheinen") === "kaesten") document.documentElement.removeAttribute("data-erscheinen"); }, 900);`}
         </Script>
         {children}
         <AnalyticsBanner />
