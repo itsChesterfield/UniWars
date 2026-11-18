@@ -23,6 +23,8 @@ import type { TextStatus } from "@/lib/ki/ergebnis";
 import { kiFehlerTracken, kiGestartet } from "@/lib/ki/tracking";
 import { track } from "@/lib/analytics";
 import { OfflineHinweis } from "@/components/offline-hinweis";
+import { Icon } from "@/components/nav-icon";
+import { Umlauf } from "@/components/bewegung/umlauf";
 
 type Laufend = {
   frage: string;
@@ -373,6 +375,12 @@ export function AssistentChat({
 
   return (
     <div className="ki-chat">
+      {/* Licht nur, wenn etwas arbeitet: Spur oben, solange Studio antwortet */}
+      {laufend && !laufend.fehler && (
+        <span className="ki-spur" aria-hidden="true">
+          <i />
+        </span>
+      )}
       <KontextLeiste kontext={kontext} onMarkierungEntfernen={onMarkierungEntfernen} />
       <div className="ki-chat-verlauf" aria-live="polite">
         {verlaufLaedt && <KiLadeZustand text="Unterhaltung wird geladen …" />}
@@ -395,16 +403,18 @@ export function AssistentChat({
         {leer && (
           <div className="ki-chat-start">
             <p className="ki-chat-gruss">
-              Hi, ich bin {STUDIO_NAME}! Ich kenne deine Unterlagen und sehe, was du gerade offen hast. Ich erkläre, frage ab, erstelle Lernzettel und lege für dich
-              Deadlines, To-dos und Notizen an.
+              Frag alles zu deinen Unterlagen. {STUDIO_NAME} kennt, was du gerade siehst, belegt seine Antworten und legt auf Wunsch Deadlines, To-dos und Notizen an.
             </p>
-            <div className="ki-chips">
+            <ul className="ki-vorschlaege" aria-label="Vorschläge">
               {vorschlagChips(kontext).map((c) => (
-                <button key={c} type="button" className="ki-chip" onClick={() => void senden(c)} disabled={verbleibend === 0}>
-                  {c}
-                </button>
+                <li key={c}>
+                  <button type="button" className="ki-vorschlag" onClick={() => void senden(c)} disabled={verbleibend === 0}>
+                    <span>{c}</span>
+                    <Icon name="pfeil-rechts" groesse={16} />
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
         {nachrichten.map((n) =>
@@ -414,6 +424,10 @@ export function AssistentChat({
             </div>
           ) : (
             <div key={n.id} className="ki-blase ki-blase-ki">
+              <p className="ki-wer">
+                <Icon name="studio" groesse={14} />
+                Studio
+              </p>
               {n.inhalt && <StudioAntwort text={n.inhalt} quellen={n.studio?.quellen ?? []} />}
               {n.studio && <ErledigtListe eintraege={n.studio.erledigt} nachrichtId={n.id.startsWith("a-") ? null : n.id} />}
               {n.studio?.gemerkt?.length ? <GemerktListe eintraege={n.studio.gemerkt} /> : null}
@@ -438,10 +452,19 @@ export function AssistentChat({
         )}
         {laufend && (
           <>
-            <div className="ki-blase ki-blase-nutzer">{laufend.frage}</div>
-            <div className="ki-blase ki-blase-ki">
-              {laufend.text ? <p className="ki-chat-roh">{laufend.text}</p> : !laufend.status && !laufend.fehler && <p className="ki-chat-status">Denkt nach …</p>}
-              {laufend.status && <p className="ki-chat-status">{laufend.status}</p>}
+            <div className="ki-blase ki-blase-nutzer ki-neu">{laufend.frage}</div>
+            <div className="ki-blase ki-blase-ki ki-neu">
+              <p className="ki-wer">
+                <Icon name="studio" groesse={14} />
+                Studio
+              </p>
+              {laufend.text && <p className="ki-chat-roh">{laufend.text}</p>}
+              {!laufend.fehler && (laufend.status || !laufend.text) && (
+                <p className="ki-chat-status">
+                  <Umlauf groesse={16} />
+                  {laufend.status ?? "Denkt nach"}
+                </p>
+              )}
               <ErledigtListe key={laufend.erledigt.length} eintraege={laufend.erledigt} nachrichtId={null} />
               {laufend.gemerkt.length > 0 && <GemerktListe key={`g${laufend.gemerkt.length}`} eintraege={laufend.gemerkt} />}
               {laufend.bloecke.map((b) => (
@@ -468,11 +491,11 @@ export function AssistentChat({
       >
         <textarea
           ref={feld}
-          className="field"
+          className="ki-feld"
           rows={2}
           value={eingabe}
           maxLength={MAX_FRAGE_ZEICHEN}
-          placeholder={`Frag ${STUDIO_NAME} … (z. B. „Erklär mir das“, „Leg eine Deadline an“, „Öffne das Skript auf Seite 12“)`}
+          placeholder="Frag Studio zu dem, was du siehst"
           aria-label={`Nachricht an ${STUDIO_NAME}`}
           onChange={(e) => {
             setEingabe(e.target.value);
@@ -502,23 +525,22 @@ export function AssistentChat({
             />
             <button
               type="button"
-              className="icon-knopf"
+              className="knopf leise klein nur-symbol"
               aria-label="Einstellungen für Sprache"
               aria-expanded={optionenOffen}
-              title="Einstellungen"
+              title="Einstellungen für Sprache"
               onClick={() => setOptionenOffen((o) => !o)}
             >
-              ⚙
+              <Icon name="einstellungen" groesse={16} />
             </button>
-            <KiLimitHinweis verbleibend={verbleibend} limit={status?.limit ?? 0} einheit="Nachrichten" />
           </span>
           {laufend ? (
-            <button type="button" className="btng" onClick={() => abbruch.current?.abort()}>
-              ■ Stopp
+            <button type="button" className="knopf leise klein nur-symbol ki-senden" aria-label="Antwort stoppen" title="Antwort stoppen" onClick={() => abbruch.current?.abort()}>
+              <Icon name="stopp" groesse={16} />
             </button>
           ) : (
-            <button type="submit" className="btnp" disabled={!eingabe.trim() || verbleibend === 0}>
-              Senden
+            <button type="submit" className="knopf haupt klein nur-symbol ki-senden" aria-label="Senden" title="Senden (Enter)" disabled={!eingabe.trim() || verbleibend === 0}>
+              <Icon name="senden" groesse={16} />
             </button>
           )}
         </div>
@@ -549,7 +571,10 @@ export function AssistentChat({
           </label>
         </div>
       )}
-      <p className="faint ki-chat-fusszeile">✨ KI kann sich irren. Was sie anlegt, kannst du rückgängig machen.</p>
+      <p className="ki-chat-fusszeile">
+        <span>Studio kann sich irren. Was es anlegt, kannst du rückgängig machen.</span>
+        <KiLimitHinweis verbleibend={verbleibend} limit={status?.limit ?? 0} einheit="Nachrichten" />
+      </p>
     </div>
   );
 }

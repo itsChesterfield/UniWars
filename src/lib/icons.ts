@@ -56,6 +56,10 @@ export const ICONS = {
   nummerierung: "M10 6h10|M10 12h10|M10 18h10|M4 5h1v4|M4 9h2|M6 18H4l2-2.5a1 1 0 0 0-2-.8",
   mehr: "circle:5.5,12,1|circle:12,12,1|circle:18.5,12,1",
   kopieren: "rect:8,8,12,12,2|M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3",
+  // seit Studio (18.11.): Senden, Leiste größer und kleiner
+  senden: "M12 19V5|m6 11 6-6 6 6",
+  vergroessern: "M14 4h6v6|M10 20H4v-6|M20 4l-6.5 6.5|M4 20l6.5-6.5",
+  verkleinern: "M20 4l-6 6|M14 5v5h5|M4 20l6-6|M10 19v-5H5",
   schere: "circle:6,6,2.5|circle:6,18,2.5|M8 7.5 20 17M8 16.5 20 7",
 
   // Dinge

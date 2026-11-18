@@ -6,6 +6,8 @@ import { useSprachStatus } from "@/components/ki/sprach-status";
 import { aufnahmeFormat, zeitText } from "@/lib/transkription/transkript";
 import { track } from "@/lib/analytics";
 import { kiFehlerTracken } from "@/lib/ki/tracking";
+import { Icon } from "@/components/nav-icon";
+import { Umlauf } from "@/components/bewegung/umlauf";
 import type { KiFehlerTyp } from "@/lib/ki/fehler";
 
 const MAX_SEKUNDEN = 120;
@@ -184,7 +186,7 @@ export function DiktatKnopf({ onText, disabled = false, klasse = "" }: { onText:
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => (phase === "aufnahme" ? stoppen() : void starten())}
       >
-        {phase === "umwandeln" ? "…" : phase === "aufnahme" ? "■" : "🎤"}
+        {phase === "umwandeln" ? <Umlauf groesse={16} /> : <Icon name={phase === "aufnahme" ? "stopp" : "mikrofon"} groesse={16} />}
       </button>
       {phase === "aufnahme" && (
         <span className="ki-diktat-info" aria-live="off">

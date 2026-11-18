@@ -15,6 +15,7 @@ import type { Gemerkt } from "@/lib/ki/studio";
 import type { Rueckmeldung } from "@/lib/ki/lernraum";
 import { STUDIO_NAME } from "@/lib/ki/studio";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 /** Unter einer Antwort: was Studio über dich gelernt hat – mit Rückgängig bzw. Ja/Nein */
 export function GemerktListe({ eintraege }: { eintraege: Gemerkt[] }) {
@@ -36,7 +37,7 @@ export function GemerktListe({ eintraege }: { eintraege: Gemerkt[] }) {
             e.erledigt === "zurueck" || e.erledigt === "nein" ? "zurueck" : ""
           }
         >
-          <span aria-hidden>🧠</span>
+          <Icon name="tipp" groesse={16} />
           {e.status === "vorschlag" && e.art === "neu" && !e.erledigt ? (
             <>
               <span>
@@ -86,7 +87,7 @@ export function GemerktListe({ eintraege }: { eintraege: Gemerkt[] }) {
               {!e.erledigt && e.art !== "vergessen" && (
                 <button
                   type="button"
-                  className="studio-zurueck"
+                  className="link studio-zurueck"
                   onClick={() => {
                     setzen(e.id, "zurueck");
                     void gedaechtnisStatusSetzen(e.id, "verworfen").catch(
@@ -107,7 +108,7 @@ export function GemerktListe({ eintraege }: { eintraege: Gemerkt[] }) {
 }
 
 const RUECKMELDUNGEN: { art: Rueckmeldung; text: string; titel: string }[] = [
-  { art: "gut", text: "👍", titel: "Hilfreich" },
+  { art: "gut", text: "Hilfreich", titel: "Hilfreich" },
   {
     art: "einfacher",
     text: "Einfacher",
@@ -179,7 +180,7 @@ export function KennenlernKarte({
     return (
       <div className="studio-kennenlernen">
         <p className="studio-kennenlernen-titel">
-          🎓 Neues Semester? Stimmt das noch?
+          Neues Semester? Stimmt das noch?
         </p>
         <ul className="studio-kennenlernen-liste">
           {daten.auffrischen.map((e) => (
@@ -189,7 +190,7 @@ export function KennenlernKarte({
         <div className="studio-kennenlernen-knoepfe">
           <button
             type="button"
-            className="btnp"
+            className="knopf neben klein"
             onClick={() => {
               void kennenlernenBestaetigen().catch(() => undefined);
               track("kennenlernen_auffrischen", { antwort: "stimmt" });
@@ -200,7 +201,7 @@ export function KennenlernKarte({
           </button>
           <button
             type="button"
-            className="btng"
+            className="knopf leise klein"
             onClick={() => setModus("fragen")}
           >
             Neu beantworten
@@ -229,7 +230,7 @@ export function KennenlernKarte({
   return (
     <div className="studio-kennenlernen">
       <p className="studio-kennenlernen-titel">
-        👋 Lass uns kurz kennenlernen{" "}
+        Lass uns kurz kennenlernen{" "}
         <span className="faint">
           ({schritt + 1}/{KENNENLERN_FRAGEN.length})
         </span>
@@ -260,7 +261,8 @@ export function KennenlernKarte({
         }}
       >
         <input
-          className="field"
+          className="ki-feld-zeile"
+          aria-label="Antwort in eigenen Worten"
           value={eingabe}
           maxLength={200}
           placeholder="Oder in eigenen Worten …"
@@ -269,7 +271,7 @@ export function KennenlernKarte({
         />
         <button
           type="submit"
-          className="btnp"
+          className="knopf neben klein"
           disabled={laeuft || !eingabe.trim()}
         >
           Weiter
@@ -278,7 +280,7 @@ export function KennenlernKarte({
       <div className="studio-kennenlernen-knoepfe">
         <button
           type="button"
-          className="studio-zurueck"
+          className="link studio-zurueck"
           disabled={laeuft}
           onClick={() => weiter("")}
         >
@@ -286,7 +288,7 @@ export function KennenlernKarte({
         </button>
         <button
           type="button"
-          className="studio-zurueck"
+          className="link studio-zurueck"
           disabled={laeuft}
           onClick={() => {
             void kennenlernenUeberspringen().catch(() => undefined);
@@ -312,7 +314,7 @@ export function RueckblickKarte({
   return (
     <div className="studio-kennenlernen studio-rueckblick">
       <p className="studio-kennenlernen-titel">
-        🧠 Das habe ich diesen Monat über dich gelernt
+        Das habe ich diesen Monat über dich gelernt
       </p>
       <ul className="studio-kennenlernen-liste">
         {eintraege.map((e) => (
@@ -322,12 +324,12 @@ export function RueckblickKarte({
       <div className="studio-kennenlernen-knoepfe">
         <Link
           href="/einstellungen/gedaechtnis"
-          className="btng"
+          className="knopf leise klein"
           onClick={onSchliessen}
         >
           Ansehen und korrigieren
         </Link>
-        <button type="button" className="studio-zurueck" onClick={onSchliessen}>
+        <button type="button" className="link studio-zurueck" onClick={onSchliessen}>
           Passt so
         </button>
       </div>

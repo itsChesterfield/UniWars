@@ -8291,129 +8291,10 @@ dialog.ki-dialog-klein {
   outline-offset: 3px;
 }
 
-.ki-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 80;
-  width: 400px;
-  max-width: 100vw;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  background: var(--card);
-  border-left: 1px solid var(--border);
-  box-shadow: -8px 0 24px rgb(42 35 24 / 0.12);
-}
-
-.ki-panel-kopf {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.ki-panel-kopf h2 {
-  font-size: 17px;
-  margin: 0;
-}
-
-.ki-panel-knoepfe {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.ki-panel-knoepfe .btng {
-  padding: 5px 10px;
-  font-size: 13px;
-}
-
-.ki-chat {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ki-chat-verlauf {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 4px 2px;
-}
-
-.ki-chat-hinweis {
-  padding: 8px 2px;
-}
-
-.ki-chat-start {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: auto;
-}
-
-.ki-chat-gruss {
-  margin: 0;
-  color: var(--muted);
-}
-
 .ki-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.ki-chip {
-  border: 1px solid var(--border);
-  background: var(--card2);
-  color: var(--text);
-  font: inherit;
-  font-size: 13.5px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.ki-chip:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.ki-blase {
-  max-width: 92%;
-  padding: 9px 12px;
-  border-radius: var(--radius-m);
-  font-size: 14.5px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.ki-blase-nutzer {
-  align-self: flex-end;
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  border-bottom-right-radius: 6px;
-  white-space: pre-wrap;
-}
-
-.ki-blase-ki {
-  align-self: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--card2);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 6px;
-  min-width: 60%;
 }
 
 .ki-chat-md .ProseMirror,
@@ -8433,77 +8314,6 @@ dialog.ki-dialog-klein {
 .ki-chat-md ol {
   margin: 0 0 6px;
   padding-left: 20px;
-}
-
-.ki-chat-roh {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.ki-chat-status {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-  font-style: italic;
-}
-
-.ki-chat-eingabe {
-  display: grid;
-  gap: 6px;
-}
-
-.ki-chat-eingabe textarea {
-  resize: none;
-  font-size: 15px;
-}
-
-.ki-chat-fuss {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.ki-chat-fusszeile {
-  margin: 0;
-  font-size: 11.5px;
-  text-align: center;
-}
-
-.ki-karte {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-m);
-  background: var(--card);
-}
-
-.ki-karte-uebernommen {
-  border-color: var(--success);
-}
-
-.ki-karte-verworfen {
-  border-color: var(--border);
-  opacity: 0.65;
-}
-
-.ki-karte-kopf {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent-strong);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.ki-karte-status {
-  color: var(--success);
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .ki-karte-inhalt {
@@ -8544,12 +8354,6 @@ dialog.ki-dialog-klein {
   gap: 6px;
 }
 
-.ki-karte-knoepfe .btnp,
-.ki-karte-knoepfe .btng {
-  padding: 6px 12px;
-  font-size: 13.5px;
-}
-
 .ki-karte-fehler {
   margin: 0;
 }
@@ -8557,7 +8361,8 @@ dialog.ki-dialog-klein {
 .ki-seite {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 68px);
+  /* Seitenkopf plus Chat passen in die Arbeitsfläche, die Eingabe bleibt unten sichtbar */
+  height: calc(100dvh - 120px);
   min-height: 480px;
 }
 
@@ -8627,19 +8432,6 @@ dialog.ki-dialog-klein {
   font-size: 13px;
 }
 
-.ki-seite-chat {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 14px;
-}
-
-.ki-seite-chat .ki-chat {
-  max-width: 820px;
-  width: 100%;
-  margin: 0 auto;
-}
-
 .ki-seite-verlauf-knopf {
   display: none;
 }
@@ -8650,14 +8442,8 @@ dialog.ki-dialog-klein {
     bottom: 16px;
   }
 
-  /* KI-ALL-10: auf dem Handy Vollbild */
-  .ki-panel {
-    width: 100vw;
-    border-left: none;
-  }
-
   .ki-seite {
-    height: calc(100dvh - 110px);
+    height: calc(100dvh - 150px);
   }
 
   .ki-seite-raster {
@@ -8677,9 +8463,6 @@ dialog.ki-dialog-klein {
     display: inline-flex;
   }
 
-  .ki-blase {
-    max-width: 96%;
-  }
 }
 
 @media print {
@@ -8738,35 +8521,6 @@ dialog.ki-dialog-klein {
   font-size: 12px;
   color: var(--danger);
   max-width: 220px;
-}
-
-.ki-chat-werkzeuge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.ki-chat-optionen {
-  display: grid;
-  gap: 4px;
-  padding: 8px 10px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-m);
-  font-size: 13.5px;
-}
-
-.ki-blase-aktionen {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: -4px;
-}
-
-.ki-blase-aktionen .icon-knopf {
-  width: 28px;
-  height: 28px;
-  font-size: 14px;
 }
 
 .md-werkzeuge .md-diktat {
@@ -11494,13 +11248,7 @@ html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"])
   }
 }
 
-.studio-panel {
-  width: 420px;
-  box-shadow: -6px 0 18px rgb(42 35 24 / 0.08);
-}
-
-kbd,
-.studio-kbd {
+kbd {
   display: inline-block;
   padding: 1px 6px;
   border: 1px solid var(--border);
@@ -11540,102 +11288,6 @@ kbd,
 
 html[data-sidebar-eingeklappt] .studio-hinweis {
   display: none;
-}
-
-.studio-kontext {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  font-size: 12px;
-}
-
-.studio-kontext-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--text);
-}
-
-.studio-kontext-chip button {
-  border: none;
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0;
-  font-size: 14px;
-  line-height: 1;
-}
-
-.studio-erledigt {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-}
-
-.studio-erledigt li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border-radius: var(--radius-m);
-  background: color-mix(in srgb, #3c8a4e 10%, transparent);
-}
-
-.studio-erledigt li.zurueck {
-  background: color-mix(in srgb, var(--muted) 10%, transparent);
-  color: var(--muted);
-}
-
-.studio-erledigt a {
-  color: inherit;
-  font-weight: 600;
-}
-
-.studio-zurueck {
-  margin-left: auto;
-  border: none;
-  background: none;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.studio-block {
-  margin-top: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.studio-block-titel {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.studio-web {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-  font-size: 12px;
-}
-
-.studio-web a {
-  color: var(--accent);
 }
 
 @media print {
@@ -12381,21 +12033,6 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   border-color: var(--accent);
 }
 
-/* Lesbarere Antworten in UniVerse Studio */
-.ki-blase {
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-.ki-blase .md-inhalt {
-  font-size: 16px;
-  line-height: 1.65;
-}
-
-.studio-panel {
-  width: 460px;
-}
-
 @media (min-width: 761px) {
   html[data-studio-offen] .dashboard {
     padding-right: 460px;
@@ -12468,12 +12105,11 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
 .studio-kennenlernen {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--accent) 7%, var(--card));
-  font-size: 14px;
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  font-size: var(--text-md);
 }
 
 .studio-kennenlernen-titel {
@@ -12509,15 +12145,6 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-}
-
-.studio-privat.an {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
-.studio-privat-hinweis {
-  margin: 0;
-  font-size: 12px;
 }
 
 .einst-gedaechtnis-link {
@@ -12824,18 +12451,661 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
 }
 
 /* UniVerse Studio groß */
-.studio-panel.gross {
-  width: min(880px, 62vw);
-}
-
 @media (min-width: 761px) {
   html[data-studio-offen][data-studio-gross] .dashboard {
     padding-right: min(880px, 62vw);
   }
 }
 
-.studio-panel.gross .ki-blase {
-  max-width: 82%;
+/* UniVerse Studio, Design B (Entscheidung Didi 18.11.): Leiste als eingelassene Fläche rechts,
+   Studio schreibt als Fließtext, deine Fragen rechts getönt, Lichtspur nur solange Studio arbeitet.
+   Breiten wie bisher (460 px, groß bis 880 px), die Fläche hält 8 px Abstand zum Rand. */
+.studio-panel {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 80;
+  width: calc(460px - var(--space-2) * 2);
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-l);
+  background: var(--flaeche);
+  color: var(--text);
+  box-shadow:
+    0 0 0 1px var(--linie),
+    0 12px 32px -16px var(--schatten);
+  overflow: hidden;
+  animation: studio-ein var(--dur-short) var(--ease-out);
+}
+
+.studio-panel.gross {
+  width: calc(min(880px, 62vw) - var(--space-2) * 2);
+}
+
+@keyframes studio-ein {
+  from {
+    opacity: 0;
+    transform: translateX(var(--weg));
+  }
+}
+
+.ki-panel-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  height: 52px;
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border-bottom: 1px solid var(--linie);
+}
+
+.ki-panel-kopf h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+
+.ki-panel-kopf h2 svg {
+  color: var(--akzent);
+}
+
+.ki-panel-knoepfe {
+  display: flex;
+  gap: var(--space-half);
+  margin-left: auto;
+}
+
+.ki-panel-knoepfe .knopf.leise,
+.ki-chat-werkzeuge .knopf.leise,
+.studio-markiert .knopf.leise {
+  background: transparent;
+  color: var(--text-2);
+}
+
+.ki-panel-knoepfe .knopf.leise:hover,
+.ki-chat-werkzeuge .knopf.leise:hover,
+.studio-markiert .knopf.leise:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.ki-panel-knoepfe .knopf.leise[aria-pressed="true"] {
+  background: var(--aktiv);
+  color: var(--text);
+}
+
+.studio-privat-hinweis {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--hover);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.ki-chat {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lichtspur oben im Chat, solange Studio antwortet */
+.ki-spur {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ki-spur i {
+  display: block;
+  width: 30%;
+  height: 100%;
+  background: var(--akzent);
+  transform: translateX(-100%);
+  animation: lichtspur 1.1s var(--ease-out) infinite;
+}
+
+.studio-kontext {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--linie);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.studio-kontext svg {
+  flex: none;
+}
+
+.studio-kontext span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-kontext b {
+  font-weight: 550;
+  color: var(--text-2);
+}
+
+.studio-markiert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--hover);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+}
+
+.studio-markiert span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ki-chat-verlauf {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+}
+
+.ki-chat-hinweis {
+  padding: var(--space-5) var(--space-4);
+  color: var(--text-2);
+}
+
+.ki-chat-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ki-chat-gruss {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.ki-vorschlaege {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--linie);
+}
+
+.ki-vorschlag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--linie);
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ki-vorschlag span {
+  flex: 1;
+}
+
+.ki-vorschlag svg {
+  color: var(--text-3);
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+
+.ki-vorschlag:hover:not(:disabled) svg {
+  transform: translateX(3px);
+  color: var(--text);
+}
+
+.ki-vorschlag:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.ki-blase {
+  max-width: 100%;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.ki-blase-nutzer {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-xl) var(--radius-xl) var(--space-1) var(--radius-xl);
+  background: var(--aktiv);
+  white-space: pre-wrap;
+}
+
+.ki-blase-ki {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Frage und Antwort erscheinen beim Senden einmal mit 6 px; fertige Nachrichten stehen still */
+.ki-blase.ki-neu {
+  animation: ki-ein var(--dur-short) var(--ease-out);
+}
+
+@keyframes ki-ein {
+  from {
+    opacity: 0;
+    transform: translateY(var(--weg));
+  }
+}
+
+.ki-blase .md-inhalt {
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.ki-wer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--text-3);
+}
+
+.ki-wer svg {
+  color: var(--akzent);
+}
+
+.ki-chat-roh {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ki-chat-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.ki-blase-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: calc(var(--space-2) * -1);
+}
+
+.ki-blase-aktionen .icon-knopf {
+  width: 32px;
+  height: 32px;
+  color: var(--text-3);
+}
+
+.ki-chat-eingabe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: none;
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-radius: var(--radius-l);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+}
+
+.ki-chat-eingabe:focus-within {
+  box-shadow: inset 0 0 0 2px var(--fokus);
+}
+
+.ki-feld {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  resize: none;
+  font: inherit;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.ki-feld:focus-visible {
+  outline: none;
+}
+
+.ki-feld::placeholder {
+  color: var(--text-3);
+}
+
+.ki-chat-fuss {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ki-chat-werkzeuge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-half);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ki-chat-werkzeuge .icon-knopf {
+  width: 32px;
+  height: 32px;
+  color: var(--text-2);
+}
+
+.ki-senden {
+  margin-left: auto;
+}
+
+.ki-chat-optionen {
+  display: grid;
+  gap: var(--space-2);
+  flex: none;
+  margin: var(--space-2) var(--space-4) 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--hover);
+  font-size: var(--text-sm);
+}
+
+.ki-chat-fusszeile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  flex: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.ki-chat-fusszeile .ki-limit {
+  font-size: var(--text-xs);
+}
+
+/* Erledigt, Quellen, Blöcke und Aktionskarten in einer Antwort: ruhige Zeilen mit Ring */
+.studio-erledigt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.studio-erledigt li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-m);
+  background: var(--hover);
+}
+
+.studio-erledigt li svg {
+  flex: none;
+  color: var(--ok);
+}
+
+.studio-erledigt li.zurueck,
+.studio-erledigt li.zurueck svg {
+  color: var(--text-3);
+}
+
+.studio-erledigt a {
+  color: inherit;
+  font-weight: 550;
+}
+
+.studio-zurueck {
+  margin-left: auto;
+  font-size: var(--text-xs);
+}
+
+.studio-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+}
+
+.studio-block-titel {
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+.studio-block > .knopf,
+.lr-karten > .knopf {
+  align-self: flex-start;
+}
+
+.studio-web {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.studio-web-titel {
+  width: 100%;
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.studio-quelle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  height: 28px;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border-radius: var(--radius-m);
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--linie);
+  font-size: var(--text-xs);
+  color: var(--text-2);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-quelle svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.studio-quelle:hover {
+  color: var(--text);
+}
+
+.ki-karte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+}
+
+.ki-karte-verworfen {
+  color: var(--text-3);
+}
+
+.ki-karte-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--text-2);
+}
+
+.ki-karte-art,
+.ki-karte-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ki-karte-status {
+  color: var(--text-2);
+}
+
+.ki-karte-status svg {
+  color: var(--ok);
+}
+
+.ki-karte-weg {
+  margin-right: auto;
+}
+
+.ki-chip {
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ki-chip:hover {
+  background: var(--aktiv);
+}
+
+.ki-feld-zeile {
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.ki-feld-zeile:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--fokus);
+}
+
+/* Studio als ganze Seite (/assistent) */
+.ki-seite-chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  border-radius: var(--radius-l);
+  box-shadow: inset 0 0 0 1px var(--linie);
+}
+
+@media (max-width: 760px) {
+  /* Am Handy Vollbild über Kopfleiste und Tab-Leiste */
+  .studio-panel,
+  .studio-panel.gross {
+    inset: 0;
+    z-index: var(--z-modal);
+    width: auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ki-panel-knoepfe .studio-groesse {
+    display: none;
+  }
+
+  .ki-seite-chat {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-panel,
+  .ki-blase.ki-neu {
+    animation: none;
+  }
+
+  .ki-spur i {
+    animation: none;
+    width: 100%;
+    transform: none;
+    opacity: 0.4;
+  }
+}
+
+html[data-bewegung="reduziert"] .studio-panel,
+html[data-bewegung="reduziert"] .ki-blase.ki-neu {
+  animation: none;
+}
+
+html[data-bewegung="reduziert"] .ki-spur i {
+  animation: none;
+  width: 100%;
+  transform: none;
+  opacity: 0.4;
 }
 
 /* ==========================================================================
