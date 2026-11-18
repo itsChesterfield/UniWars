@@ -17,6 +17,7 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
+import { useFesteFolge } from "@/components/bewegung/feste-folge";
 
 type Todo = Tables<"todo">;
 type Deadline = Tables<"deadline">;
@@ -38,6 +39,7 @@ export function TodoManager({
   embedded = false,
   versteckeErstellen = false,
   userId,
+  kopf,
 }: {
   initialTodos: Todo[];
   faecher: FachOption[];
@@ -45,6 +47,8 @@ export function TodoManager({
   embedded?: boolean;
   versteckeErstellen?: boolean;
   userId?: string;
+  /** Abschnittskopf mit der Zahl offener To-Dos (rollt beim Abhaken) */
+  kopf?: (offen: number | null) => React.ReactNode;
 }) {
   const { oeffne } = useAufgabenDetail();
   const [todos, setTodos] = useState(initialTodos);
@@ -61,6 +65,9 @@ export function TodoManager({
       if (a.prioritaet !== b.prioritaet) return PRIO_ORDER[a.prioritaet] - PRIO_ORDER[b.prioritaet];
       return new Date(a.erstellt_am).getTime() - new Date(b.erstellt_am).getTime();
     });
+
+  const { folge, listeProps } = useFesteFolge(sortiert);
+  const offen = sortiert.filter((t) => !t.erledigt).length;
 
   function openCreateForm() {
     setEditId(null);
@@ -98,14 +105,15 @@ export function TodoManager({
 
   function handleToggleErledigt(t: Todo) {
     const naechsterStatus = !t.erledigt;
+    // Sofort abhaken (Bewegung: Kästchen füllt sich, Zeile tritt zurück); bei Fehler zurücknehmen
+    const setzen = (erledigt: boolean) => setTodos((prev) => prev.map((x) => (x.id === t.id ? { ...x, erledigt } : x)));
+    setzen(naechsterStatus);
     startTransition(async () => {
       try {
         await toggleTodoErledigt(t.id, naechsterStatus);
-        setTodos((prev) =>
-          prev.map((x) => (x.id === t.id ? { ...x, erledigt: naechsterStatus } : x)),
-        );
         if (naechsterStatus) posthog.capture("todo_erledigt", { todo_id: t.id });
       } catch (err) {
+        setzen(t.erledigt);
         setError(err instanceof Error ? err.message : "Unbekannter Fehler");
       }
     });
@@ -125,6 +133,7 @@ export function TodoManager({
 
   const inhalt = (
     <>
+      {kopf?.(sortiert.length ? offen : null)}
       {!versteckeErstellen && (
         <div className="liste-kopf">
           <button type="button" onClick={openCreateForm} className="knopf neben klein">
@@ -155,8 +164,8 @@ export function TodoManager({
         </Zustand>
       )}
 
-      <ul className="entry-list">
-        {sortiert.map((t) => {
+      <ul className="entry-list" {...listeProps}>
+        {folge.map((t) => {
           const fach = faecher.find((f) => f.id === t.fach_id);
           return (
             <li

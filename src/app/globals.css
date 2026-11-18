@@ -1294,8 +1294,22 @@ input[type="checkbox"]:disabled {
   border-bottom: none;
 }
 
+/* Abhaken (Bewegung): der Titel tritt in --dur-short zurück, die Zeile bleibt an ihrem Platz */
+.entry-row .entry-title {
+  transition: color var(--dur-short) var(--ease-out);
+}
+
 .entry-erledigt .entry-title {
   text-decoration: line-through;
+  color: var(--text-3);
+}
+
+/* Zahl offener Einträge im Abschnittskopf; rollt beim Abhaken */
+.abschnitt-zahl {
+  margin-left: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--text-3);
 }
 
