@@ -1,0 +1,6 @@
+/* Alle Schriften auf der Website mittig zentrieren.
+   !important, damit auch Inline-Styles (z. B. TipTap-TextAlign im Notizen-Editor)
+   überschrieben werden. */
+* {
+  text-align: center !important;
+}
