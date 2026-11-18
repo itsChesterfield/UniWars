@@ -182,12 +182,19 @@ export function WorkStation({
     timerSchreiben(einstellungenAnwenden(aktuell, { ...aktuell.einstellungen, [bereich.feld]: minuten }));
   }
 
-  function ausZeiger(x: number, y: number) {
+  /** `klick`: erster Druck auf den Kreis, dann zählt genau die angeklickte Stelle */
+  function ausZeiger(x: number, y: number, klick = false) {
     const r = kreisRef.current?.getBoundingClientRect();
     if (!r) return;
     const winkel = (Math.atan2(x - (r.left + r.width / 2), -(y - (r.top + r.height / 2))) * 180) / Math.PI;
-    const vorher = (timerLesen() ?? zustand).einstellungen[bereich.feld];
+    const vorher = klick ? null : (timerLesen() ?? zustand).einstellungen[bereich.feld];
     minutenSetzen(minutenAusWinkel(winkel, bereich, vorher));
+  }
+
+  function zugEnde() {
+    if (!ziehen.current) return;
+    ziehen.current = false;
+    speichernSpaeter();
   }
 
   /** Neue Dauer als Standard merken, kurz nachdem sie feststeht */
@@ -280,14 +287,14 @@ export function WorkStation({
               if (!stellbar) return;
               e.currentTarget.setPointerCapture(e.pointerId);
               ziehen.current = true;
-              ausZeiger(e.clientX, e.clientY);
+              // Druck auf den Griff selbst ändert nichts, erst das Ziehen
+              if (e.target !== e.currentTarget.querySelector(".ws-griff")) ausZeiger(e.clientX, e.clientY, true);
             }}
             onPointerMove={(e) => ziehen.current && ausZeiger(e.clientX, e.clientY)}
-            onPointerUp={() => {
-              if (!ziehen.current) return;
-              ziehen.current = false;
-              speichernSpaeter();
-            }}
+            onPointerUp={zugEnde}
+            // Touch abgebrochen (z. B. Systemgeste): Ziehen sauber beenden
+            onPointerCancel={zugEnde}
+            onLostPointerCapture={zugEnde}
           >
             <svg viewBox="0 0 240 240" aria-hidden>
               <circle className="ws-kreis-spur" cx="120" cy="120" r={RADIUS} />

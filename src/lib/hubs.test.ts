@@ -454,4 +454,8 @@ test("Timer am Kreis ziehen: Winkel → Minuten, ohne Sprung über 12 Uhr", () =
   assert.equal(minutenAusWinkel(355, b, 10), 5);
   assert.equal(minutenAusWinkel(-120, b, 50), 60);
   assert.equal(stellBereich("kurz").schritt, 1);
+  // Direkter Klick unten links bei kleinem Wert: die angeklickte Stelle gilt (nicht das Minimum)
+  assert.equal(minutenAusWinkel(300, b, null), 75);
+  assert.equal(minutenAusWinkel(300, b, 25), 5);
+  assert.equal(minutenAusWinkel(20, b, null), 5);
 });

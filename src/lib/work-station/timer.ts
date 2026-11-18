@@ -189,13 +189,14 @@ export function stellBereich(modus: Modus): { feld: "fokus" | "kurzePause" | "la
 
 /**
  * Punkt am Kreis ziehen: Winkel (0° oben, im Uhrzeigersinn) → Minuten. Ein voller Kreis ist das Maximum.
- * Über die 12-Uhr-Stelle springt der Wert nicht von max auf min (und umgekehrt), sondern bleibt am Rand.
+ * Beim Ziehen springt der Wert über die 12-Uhr-Stelle nicht von max auf min (und umgekehrt), sondern bleibt am Rand.
+ * `vorher = null`: direkter Klick auf den Kreis, dann gilt einfach die angeklickte Stelle.
  */
-export function minutenAusWinkel(winkel: number, b: { min: number; max: number; schritt: number }, vorher: number): number {
+export function minutenAusWinkel(winkel: number, b: { min: number; max: number; schritt: number }, vorher: number | null): number {
   const w = ((winkel % 360) + 360) % 360;
   let m = Math.round(((w / 360) * b.max) / b.schritt) * b.schritt;
   const viertel = b.max / 4;
-  if (vorher > b.max - viertel && m < viertel) m = b.max;
-  else if (vorher < b.min + viertel && m > b.max - viertel) m = b.min;
+  if (vorher !== null && vorher > b.max - viertel && m < viertel) m = b.max;
+  else if (vorher !== null && vorher < b.min + viertel && m > b.max - viertel) m = b.min;
   return Math.min(b.max, Math.max(b.min, m));
 }
