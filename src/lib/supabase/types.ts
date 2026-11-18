@@ -2208,6 +2208,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          erstellt_am: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          erstellt_am?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          erstellt_am?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       whiteboard: {
         Row: {
           daten: Json
@@ -2251,11 +2269,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aktuelle_rolle: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       aufgabe_arbeitszeit: {
         Args: { p_id: string; p_typ: string }
         Returns: { minuten: number; user_id: string; username: string | null }[]
       }
       hochschule_zur_domain: { Args: { p_domain: string }; Returns: string }
+      hat_rolle: {
+        Args: { min_rolle: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
       benachrichtigungen_fuer_faellige_deadlines: {
         Args: never
         Returns: undefined
@@ -2396,6 +2422,7 @@ export type Database = {
       user_id_von_username: { Args: { p_username: string }; Returns: string }
     }
     Enums: {
+      app_role: "user" | "moderator" | "admin"
       deadline_kategorie: "NORMAL" | "BAFOEG" | "SEMESTERBEITRAG"
       deadline_typ: "ABGABE" | "FRIST" | "SONSTIGE" | "TERMIN" | "GRUPPENARBEIT"
       einladung_status: "OFFEN" | "ANGENOMMEN" | "ABGELEHNT"
@@ -2531,6 +2558,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["user", "moderator", "admin"],
       deadline_kategorie: ["NORMAL", "BAFOEG", "SEMESTERBEITRAG"],
       deadline_typ: ["ABGABE", "FRIST", "SONSTIGE", "TERMIN", "GRUPPENARBEIT"],
       einladung_status: ["OFFEN", "ANGENOMMEN", "ABGELEHNT"],
