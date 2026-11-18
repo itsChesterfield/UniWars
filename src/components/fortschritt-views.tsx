@@ -8,6 +8,7 @@ import { track } from "@/lib/analytics";
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
 import { WOCHENTAGE_KURZ, dauerText, minutenProFach, minutenProTag, wochenbeginn } from "@/lib/fortschritt";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 type Fach = Tables<"fach">;
 type Settings = Tables<"settings">;
@@ -167,7 +168,7 @@ export function AnwesenheitUebersicht({ faecher: initialFaecher }: { faecher: Fa
           titel="Kein Fach mit Anwesenheitspflicht."
           aktion={
             <Link href="/faecher" className="knopf leise klein">
-              Fächer öffnen
+              <PfeilText>Fächer öffnen</PfeilText>
             </Link>
           }
         >

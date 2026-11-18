@@ -23,6 +23,7 @@ import type { FachOption } from "@/lib/fach-option";
 import type { Json } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 type Quelle = { id: string; autoren: string; titel: string; jahr: number; seiten: string | null };
 type Aenderung = { titel: string; inhalt: Json; klartext: string; woerter: number };
@@ -390,7 +391,7 @@ function QuellenAuswahl({ quellen, onWahl, onSchliessen }: { quellen: Quelle[]; 
           ebene={3}
           aktion={
             <Link href="/literaturverwaltung" className="knopf neben klein">
-              Zur Literaturverwaltung
+              <PfeilText>Zur Literaturverwaltung</PfeilText>
             </Link>
           }
         />

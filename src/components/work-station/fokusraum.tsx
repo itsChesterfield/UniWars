@@ -10,6 +10,7 @@ import { alsUhr, MODUS_NAME, starten, startZustand, type Modus } from "@/lib/wor
 import { timerLesen, timerSchreiben, useJetzt } from "@/lib/work-station/timer-store";
 import { useEigenerRaum } from "@/components/work-station/fokusraum-praesenz";
 import { track } from "@/lib/analytics";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 /** Wer gerade in einem Raum ist (nur zuschauen, ohne selbst sichtbar zu sein) */
 function useRaumTeilnehmer(topic: string, eigenerTopic: string | null): { liste: Teilnehmer[]; status: "laedt" | "da" | "fehler" } {
@@ -113,7 +114,7 @@ export function Fokusraum({ raeume, hochschuleBestaetigt }: { raeume: Raum[]; ho
         </div>
         <div className="rechts">
           <Link href="/work-station" className="knopf leise">
-            Zur Work Station
+            <PfeilText>Zur Work Station</PfeilText>
           </Link>
         </div>
       </header>
