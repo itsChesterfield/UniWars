@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useFokusraum } from "@/lib/fokusraum-store";
 import { arbeitszeitLaden, einstellungenSpeichern, type Arbeitszeit } from "@/app/(hubs)/work-station/actions";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
@@ -13,11 +15,19 @@ import {
   dauerText,
   einstellungenAnwenden,
   pausieren,
+  anzeigeZeit,
+  flowBeenden,
+  flowSetzen,
+  istFlow,
   restzeit,
   startZustand,
   starten,
   ueberspringen,
   zuruecksetzen,
+  klickMinuten,
+  kreisStand,
+  zugMinuten,
+  stellBereich,
   type AufgabeTyp,
   type FokusAufgabe,
   type TimerZustand,
@@ -102,7 +112,15 @@ export function WorkStation({
   const zustand: TimerZustand = gespeichert ?? startZustand(einstellungen, vorschlag?.fachId ?? null);
   const jetzt = useJetzt(zustand.laeuft);
   const rest = restzeit(zustand, jetzt);
+  const flow = istFlow(zustand);
+  /** Was die Uhr zeigt: Restzeit oder im Flow die bisherige Zeit */
+  const uhr = anzeigeZeit(zustand, jetzt);
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+  const kreisRef = useRef<HTMLDivElement>(null);
+  /** Laufender Zug am Kreis: letzter Winkel und ungerundete Minuten */
+  const zug = useRef<{ winkel: number; roh: number } | null>(null);
+  const speicherTimer = useRef<number | null>(null);
+  const raumWahl = useFokusraum();
 
   // „Fokus starten“ aus dem Aufgaben-Detail: Aufgabe übernehmen, mit den eigenen Einstellungen
   useEffect(() => {
@@ -148,6 +166,19 @@ export function WorkStation({
     track("work_station_uebersprungen", { modus: zustand.modus });
   }
 
+  /** Flow beenden: ab 5 Minuten zählt die Zeit, dann folgt die Pause */
+  function flowBeendenKlick() {
+    const { zustand: neu, sitzung } = flowBeenden(zustand, Date.now());
+    timerSchreiben(neu);
+    void sitzungMelden(sitzung, zustand.fachId, zustand.aufgabe ?? null);
+    track("work_station_flow_beendet", { minuten: sitzung?.minuten ?? 0 });
+  }
+
+  function artWaehlen(an: boolean) {
+    timerSchreiben(flowSetzen(zustand, an));
+    track("work_station_art_gewaehlt", { art: an ? "flow" : "timer" });
+  }
+
   function fachWaehlen(fachId: string) {
     timerSchreiben({ ...zustand, fachId: fachId || null });
   }
@@ -159,10 +190,70 @@ export function WorkStation({
     track("fokus_aufgabe_gewaehlt", { typ: a?.typ ?? "keine" });
   }
 
+  // Dauer direkt am Kreis einstellen (nur solange die Phase noch nicht begonnen hat)
+  const stellbar = !flow && !zustand.laeuft && zustand.restMs === zustand.dauerMs;
+  const bereich = stellBereich(zustand.modus);
+  const stellMinuten = zustand.einstellungen[bereich.feld];
+  const stand = kreisStand(stellMinuten, bereich);
+  // Flow: der Bogen zeigt die laufende Stunde, die Spur darunter die vollen Stunden
+  const flowStand = kreisStand(uhr / 60_000, { ...bereich, runde: 60 });
+  const kreisAnteil = flow ? (uhr > 0 ? flowStand.anteil : 0) : stellbar ? stand.anteil : zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
+  // Mehr als eine Runde eingestellt: die Spur darunter zeigt die vollen Runden
+  const volleRunden = flow ? flowStand.volleRunden : stellbar ? stand.volleRunden : 0;
+  const griffWinkel = kreisAnteil * 2 * Math.PI;
+  const griffX = 120 + RADIUS * Math.sin(griffWinkel);
+  const griffY = 120 - RADIUS * Math.cos(griffWinkel);
+
+  function minutenSetzen(minuten: number) {
+    const aktuell = timerLesen() ?? zustand;
+    if (aktuell.einstellungen[bereich.feld] === minuten) return;
+    timerSchreiben(einstellungenAnwenden(aktuell, { ...aktuell.einstellungen, [bereich.feld]: minuten }));
+  }
+
+  /** Winkel des Zeigers zur Kreismitte (0° oben, im Uhrzeigersinn) */
+  function winkelAus(x: number, y: number): number | null {
+    const r = kreisRef.current?.getBoundingClientRect();
+    if (!r) return null;
+    return (Math.atan2(x - (r.left + r.width / 2), -(y - (r.top + r.height / 2))) * 180) / Math.PI;
+  }
+
+  function zugStart(x: number, y: number, amGriff: boolean) {
+    const winkel = winkelAus(x, y);
+    if (winkel === null) return;
+    const vorher = (timerLesen() ?? zustand).einstellungen[bereich.feld];
+    // Druck auf den Griff ändert nichts, erst das Ziehen; ein Klick auf den Kreis setzt die Stelle
+    const roh = amGriff ? vorher : klickMinuten(winkel, bereich, vorher);
+    if (!amGriff) minutenSetzen(roh);
+    zug.current = { winkel, roh };
+  }
+
+  function zugWeiter(x: number, y: number) {
+    const winkel = winkelAus(x, y);
+    if (!zug.current || winkel === null) return;
+    const { roh, minuten } = zugMinuten(zug.current.roh, zug.current.winkel, winkel, bereich);
+    zug.current = { winkel, roh };
+    minutenSetzen(minuten);
+  }
+
+  function zugEnde() {
+    if (!zug.current) return;
+    zug.current = null;
+    speichernSpaeter();
+  }
+
+  /** Neue Dauer als Standard merken, kurz nachdem sie feststeht */
+  function speichernSpaeter() {
+    if (speicherTimer.current) window.clearTimeout(speicherTimer.current);
+    speicherTimer.current = window.setTimeout(() => {
+      const e = (timerLesen() ?? zustand).einstellungen;
+      void einstellungenSpeichern(e).catch(() => undefined);
+      track("work_station_dauer_gezogen", { feld: bereich.feld, minuten: e[bereich.feld] });
+    }, 600);
+  }
+
   const gruppen = GRUPPEN_REIHE.map((g) => ({ name: g, liste: aufgaben.filter((a) => a.gruppe === g) })).filter((g) => g.liste.length);
   const gewaehlt = zustand.aufgabe && aufgaben.some((a) => a.typ === zustand.aufgabe?.typ && a.id === zustand.aufgabe?.id) ? zustand.aufgabe : null;
 
-  const anteil = zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
   const runde = (zustand.erledigteRunden % zustand.einstellungen.runden) + (zustand.modus === "fokus" ? 1 : 0);
   const gesamtHeute = heute.reduce((s, e) => s + e.minuten, 0);
   const maxMinuten = Math.max(1, ...heute.map((e) => e.minuten));
@@ -176,6 +267,9 @@ export function WorkStation({
           <p>Konzentriert lernen. Jede Fokus-Runde zählt für deine Lernzeit.</p>
         </div>
         <div className="rechts">
+          <Link href="/work-station/raum" className="knopf neben">
+            {raumWahl ? `Fokusraum: ${raumWahl.titel}` : "Fokusraum"}
+          </Link>
           <button type="button" className="knopf leise" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
             <Icon name="einstellungen" groesse={16} />
             Einstellungen
@@ -230,25 +324,73 @@ export function WorkStation({
             </p>
           )}
 
-          <div className="ws-kreis">
+          {zustand.modus === "fokus" && (
+            <div className="segment ws-art" role="group" aria-label="Art des Fokus">
+              <button type="button" aria-pressed={!flow} disabled={!unberuehrt && flow} onClick={() => flow && artWaehlen(false)}>
+                Timer
+              </button>
+              <button type="button" aria-pressed={flow} disabled={!unberuehrt && !flow} onClick={() => !flow && artWaehlen(true)}>
+                Flow
+              </button>
+            </div>
+          )}
+
+          <div
+            ref={kreisRef}
+            className={`ws-kreis${stellbar ? " stellbar" : ""}`}
+            onPointerDown={(e) => {
+              if (!stellbar) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              zugStart(e.clientX, e.clientY, e.target === e.currentTarget.querySelector(".ws-griff"));
+            }}
+            onPointerMove={(e) => zugWeiter(e.clientX, e.clientY)}
+            onPointerUp={zugEnde}
+            // Touch abgebrochen (z. B. Systemgeste): Ziehen sauber beenden
+            onPointerCancel={zugEnde}
+            onLostPointerCapture={zugEnde}
+          >
             <svg viewBox="0 0 240 240" aria-hidden>
-              <circle className="ws-kreis-spur" cx="120" cy="120" r={RADIUS} />
+              <circle className={`ws-kreis-spur${volleRunden > 0 ? " voll" : ""}`} cx="120" cy="120" r={RADIUS} />
               <circle
                 className="ws-kreis-fortschritt"
                 cx="120"
                 cy="120"
                 r={RADIUS}
                 strokeDasharray={UMFANG}
-                strokeDashoffset={UMFANG * (1 - anteil)}
+                strokeDashoffset={UMFANG * (1 - kreisAnteil)}
               />
             </svg>
+            {stellbar && (
+              <span
+                className="ws-griff"
+                role="slider"
+                tabIndex={0}
+                aria-label={`Dauer ${MODUS_NAME[zustand.modus]}`}
+                aria-valuemin={bereich.min}
+                aria-valuemax={bereich.max}
+                aria-valuenow={stellMinuten}
+                aria-valuetext={dauerText(stellMinuten)}
+                style={{ left: `${(griffX / 240) * 100}%`, top: `${(griffY / 240) * 100}%` }}
+                onKeyDown={(e) => {
+                  const schritte: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 3, PageDown: -3 };
+                  let neu: number | null = null;
+                  if (e.key in schritte) neu = stellMinuten + schritte[e.key] * bereich.schritt;
+                  else if (e.key === "Home") neu = bereich.min;
+                  else if (e.key === "End") neu = bereich.max;
+                  if (neu === null) return;
+                  e.preventDefault();
+                  minutenSetzen(Math.min(bereich.max, Math.max(bereich.min, neu)));
+                  speichernSpaeter();
+                }}
+              />
+            )}
             <div className="ws-kreis-text">
-              <span className="ws-modus">{MODUS_NAME[zustand.modus]}</span>
+              <span className="ws-modus">{flow ? "Flow" : MODUS_NAME[zustand.modus]}</span>
               <span className="ws-zeit zahl" role="timer" aria-live="off">
-                {alsUhr(rest)}
+                {alsUhr(uhr)}
               </span>
               <span className="ws-runde">
-                {zustand.modus === "fokus" ? `Runde ${runde} von ${zustand.einstellungen.runden}` : "Durchatmen"}
+                {flow ? "Zählt hoch, bis du beendest" : zustand.modus === "fokus" ? `Runde ${runde} von ${zustand.einstellungen.runden}` : "Durchatmen"}
               </span>
             </div>
           </div>
@@ -262,12 +404,22 @@ export function WorkStation({
               <Icon name="rueckgaengig" groesse={16} />
               Zurücksetzen
             </button>
-            <button type="button" className="knopf leise" onClick={ueberspringenKlick}>
-              <Icon name="vor" groesse={16} />
-              Überspringen
-            </button>
+            {flow ? (
+              <button type="button" className="knopf leise" onClick={flowBeendenKlick} disabled={unberuehrt}>
+                <Icon name="stopp" groesse={16} />
+                Beenden
+              </button>
+            ) : (
+              <button type="button" className="knopf leise" onClick={ueberspringenKlick}>
+                <Icon name="vor" groesse={16} />
+                Überspringen
+              </button>
+            )}
           </div>
-          <p className="ws-hinweis">Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.</p>
+          <p className="ws-hinweis">
+            {flow ? "Flow: Die Zeit zählt hoch, bis du beendest. Ab 5 Minuten zählt sie für deine Lernzeit. " : ""}
+            {stellbar ? `Zieh den Punkt am Kreis, um die Dauer einzustellen. Eine Runde sind ${bereich.runde} Minuten${bereich.max > bereich.runde ? ", weiterziehen gibt mehr Zeit" : ""}. ` : ""}Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.
+          </p>
         </section>
 
         <section className="ws-heute" aria-labelledby="ws-heute-titel">

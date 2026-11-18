@@ -12,7 +12,7 @@ export type WsEinstellungen = {
 export const WS_STANDARD: WsEinstellungen = { fokus: 25, kurzePause: 5, langePause: 15, runden: 4, ton: true };
 
 export const WS_GRENZEN = {
-  fokus: [5, 90],
+  fokus: [5, 180],
   kurzePause: [1, 30],
   langePause: [5, 60],
   runden: [2, 8],
@@ -60,7 +60,16 @@ export type TimerZustand = {
   aufgabe?: FokusAufgabe | null;
   /** Nach einer Fokus-Runde: „Aufgabe abgeschlossen?“ steht noch aus */
   frage?: FokusAufgabe | null;
+  /**
+   * Flow-Modus: Fokus ohne feste Dauer, die Zeit zählt hoch bis „Beenden“.
+   * Dann ist dauerMs 0, restMs die bisherige Zeit (solange der Timer steht) und flowAb der gedachte Start (solange er läuft).
+   */
+  flow?: boolean;
+  flowAb?: number | null;
 };
+
+/** Flow-Grenze: länger wird nicht gespeichert (wie beim Speichern der Sitzung) */
+export const FLOW_MAX_MINUTEN = 600;
 
 export type Sitzung = { start: number; minuten: number; abgeschlossen: boolean };
 
@@ -73,8 +82,9 @@ function phasenDauer(modus: Modus, e: WsEinstellungen): number {
   return minuten * 60_000;
 }
 
-function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" | "einstellungen" | "aufgabe" | "frage">): TimerZustand {
-  const dauerMs = phasenDauer(modus, z.einstellungen);
+function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" | "einstellungen" | "aufgabe" | "frage" | "flow">): TimerZustand {
+  const flowFokus = Boolean(z.flow) && modus === "fokus";
+  const dauerMs = flowFokus ? 0 : phasenDauer(modus, z.einstellungen);
   return {
     modus,
     erledigteRunden: z.erledigteRunden,
@@ -87,7 +97,31 @@ function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" 
     einstellungen: z.einstellungen,
     aufgabe: z.aufgabe ?? null,
     frage: z.frage ?? null,
+    flow: Boolean(z.flow),
+    flowAb: null,
   };
+}
+
+/** Läuft gerade eine Flow-Fokusphase (zählt hoch)? */
+export function istFlow(z: Pick<TimerZustand, "flow" | "modus">): boolean {
+  return Boolean(z.flow) && z.modus === "fokus";
+}
+
+/** Bisherige Zeit einer Flow-Phase */
+export function flowZeit(z: TimerZustand, jetzt: number): number {
+  if (z.laeuft && typeof z.flowAb === "number") return Math.max(0, jetzt - z.flowAb);
+  return z.restMs;
+}
+
+/** Was die Uhr zeigt: im Flow die bisherige Zeit, sonst die Restzeit */
+export function anzeigeZeit(z: TimerZustand, jetzt: number): number {
+  return istFlow(z) ? flowZeit(z, jetzt) : restzeit(z, jetzt);
+}
+
+/** Zwischen festem Timer und Flow wechseln (nur solange die Fokusphase nicht begonnen hat) */
+export function flowSetzen(z: TimerZustand, an: boolean): TimerZustand {
+  if (z.modus !== "fokus" || z.laeuft || z.restMs !== z.dauerMs || Boolean(z.flow) === an) return z;
+  return phase("fokus", { ...z, flow: an });
 }
 
 export function startZustand(einstellungen: WsEinstellungen = WS_STANDARD, fachId: string | null = null): TimerZustand {
@@ -100,11 +134,14 @@ export function restzeit(z: TimerZustand, jetzt: number): number {
 }
 
 export function istAbgelaufen(z: TimerZustand, jetzt: number): boolean {
+  // Flow läuft bis „Beenden“
+  if (istFlow(z)) return false;
   return z.laeuft && restzeit(z, jetzt) === 0;
 }
 
 export function starten(z: TimerZustand, jetzt: number): TimerZustand {
   if (z.laeuft) return z;
+  if (istFlow(z)) return { ...z, laeuft: true, endetUm: null, flowAb: jetzt - z.restMs, fokusStart: z.fokusStart ?? jetzt };
   return {
     ...z,
     laeuft: true,
@@ -115,13 +152,14 @@ export function starten(z: TimerZustand, jetzt: number): TimerZustand {
 
 export function pausieren(z: TimerZustand, jetzt: number): TimerZustand {
   if (!z.laeuft) return z;
+  if (istFlow(z)) return { ...z, laeuft: false, endetUm: null, restMs: flowZeit(z, jetzt), flowAb: null };
   return { ...z, laeuft: false, endetUm: null, restMs: restzeit(z, jetzt) };
 }
 
 /** Bisher gelaufene Fokuszeit als Sitzung, falls sie zählt (WS-03). */
 function abbruchSitzung(z: TimerZustand, jetzt: number): Sitzung | null {
   if (z.modus !== "fokus" || z.fokusStart === null) return null;
-  const minuten = Math.floor((z.dauerMs - restzeit(z, jetzt)) / 60_000);
+  const minuten = Math.min(FLOW_MAX_MINUTEN, Math.floor((istFlow(z) ? flowZeit(z, jetzt) : z.dauerMs - restzeit(z, jetzt)) / 60_000));
   if (minuten < MIN_ABBRUCH_MINUTEN) return null;
   return { start: z.fokusStart, minuten, abgeschlossen: false };
 }
@@ -154,6 +192,19 @@ export function abschliessen(z: TimerZustand): { zustand: TimerZustand; sitzung:
   return { zustand, sitzung };
 }
 
+/**
+ * Flow beenden: ab 5 Minuten zählt die Zeit als volle Runde (mit Pause danach und Abschluss-Frage),
+ * darunter geht es zurück auf Anfang.
+ */
+export function flowBeenden(z: TimerZustand, jetzt: number): { zustand: TimerZustand; sitzung: Sitzung | null } {
+  if (!istFlow(z)) return { zustand: z, sitzung: null };
+  const kurz = abbruchSitzung(z, jetzt);
+  if (!kurz) return { zustand: phase("fokus", z), sitzung: null };
+  const zustand = folgePhase(z, true);
+  if (z.aufgabe && z.aufgabe.typ !== "pruefung") zustand.frage = z.aufgabe;
+  return { zustand, sitzung: { ...kurz, abgeschlossen: true } };
+}
+
 /** Phase vorzeitig beenden. Fokus zählt nur ab 5 Minuten (mit der tatsächlich gelaufenen Zeit). */
 export function ueberspringen(z: TimerZustand, jetzt: number): { zustand: TimerZustand; sitzung: Sitzung | null } {
   return { zustand: folgePhase(z, false), sitzung: abbruchSitzung(z, jetzt) };
@@ -168,9 +219,12 @@ export function einstellungenAnwenden(z: TimerZustand, einstellungen: WsEinstell
 
 export function alsUhr(ms: number): string {
   const sekunden = Math.ceil(ms / 1000);
-  const m = Math.floor(sekunden / 60);
+  const h = Math.floor(sekunden / 3600);
+  const m = Math.floor(sekunden / 60) % 60;
   const s = sekunden % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const uhr = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  // Ab einer Stunde mit Stunden (1:30:00), sonst wie gewohnt (25:00)
+  return h > 0 ? `${h}:${uhr}` : uhr;
 }
 
 export function dauerText(minuten: number): string {
@@ -178,4 +232,40 @@ export function dauerText(minuten: number): string {
   const m = minuten % 60;
   if (h === 0) return `${m} min`;
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+export type StellBereich = { feld: "fokus" | "kurzePause" | "langePause"; min: number; max: number; schritt: number; runde: number };
+
+/** Welche Einstellung der Kreis gerade stellt, Grenzen, Schrittweite und Minuten pro voller Kreisrunde */
+export function stellBereich(modus: Modus): StellBereich {
+  if (modus === "kurz") return { feld: "kurzePause", min: WS_GRENZEN.kurzePause[0], max: WS_GRENZEN.kurzePause[1], schritt: 1, runde: 30 };
+  if (modus === "lang") return { feld: "langePause", min: WS_GRENZEN.langePause[0], max: WS_GRENZEN.langePause[1], schritt: 5, runde: 60 };
+  // Fokus wie eine Uhr: eine Runde ist eine Stunde, weiterziehen gibt die nächste Stunde dazu
+  return { feld: "fokus", min: WS_GRENZEN.fokus[0], max: WS_GRENZEN.fokus[1], schritt: 5, runde: 60 };
+}
+
+const winkelNorm = (w: number) => ((w % 360) + 360) % 360;
+const aufSchritt = (m: number, b: StellBereich) => Math.min(b.max, Math.max(b.min, Math.round(m / b.schritt) * b.schritt));
+
+/** Wo der Punkt steht (0 bis 1 einer Kreisrunde) und wie viele volle Runden darunter liegen */
+export function kreisStand(minuten: number, b: StellBereich): { anteil: number; volleRunden: number } {
+  const volleRunden = Math.max(0, Math.ceil(minuten / b.runde) - 1);
+  return { anteil: (minuten - volleRunden * b.runde) / b.runde, volleRunden };
+}
+
+/** Direkter Klick auf den Kreis (0° oben, im Uhrzeigersinn): Stelle innerhalb der aktuellen Runde */
+export function klickMinuten(winkel: number, b: StellBereich, vorher: number): number {
+  const { volleRunden } = kreisStand(vorher, b);
+  return aufSchritt(volleRunden * b.runde + (winkelNorm(winkel) / 360) * b.runde, b);
+}
+
+/**
+ * Ziehen: Der Winkel-Unterschied zur letzten Position zählt, so geht es über 12 Uhr hinaus in die nächste Runde.
+ * `roh` ist der ungerundete Wert (am Rand begrenzt, damit Zurückziehen sofort wirkt).
+ */
+export function zugMinuten(roh: number, vonWinkel: number, nachWinkel: number, b: StellBereich): { roh: number; minuten: number } {
+  let d = winkelNorm(nachWinkel - vonWinkel);
+  if (d > 180) d -= 360;
+  const neu = Math.min(b.max, Math.max(b.min, roh + (d / 360) * b.runde));
+  return { roh: neu, minuten: aufSchritt(neu, b) };
 }

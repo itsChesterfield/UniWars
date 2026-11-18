@@ -15684,3 +15684,228 @@ html[data-bewegung="reduziert"] .lade-skelett {
     bottom: calc(var(--space-16) + var(--space-4));
   }
 }
+
+/* Fokusraum: zusammen lernen ohne Chat und Video */
+.fr-reiter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.fr-reiter button {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--linie-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fr-reiter button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.fr-reiter button.an {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  font-weight: 600;
+}
+
+.fr-hinweis {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.fr-raum {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-l);
+  background: var(--flaeche);
+  box-shadow: 0 0 0 1px var(--linie);
+}
+
+.fr-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.fr-kopf h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.fr-zahl {
+  margin-left: auto;
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.fr-leer {
+  margin: 0;
+  color: var(--text-3);
+}
+
+.fr-plaetze {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-4);
+}
+
+.fr-platz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-m);
+  text-align: center;
+}
+
+.fr-platz.ich {
+  background: var(--hover);
+}
+
+.fr-avatar {
+  display: grid;
+  place-items: center;
+  width: var(--space-12);
+  height: var(--space-12);
+  margin-bottom: var(--space-1);
+  border-radius: 50%;
+  background: var(--flaeche-3);
+  color: var(--text-2);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--linie-2);
+}
+
+.fr-platz.fokus .fr-avatar {
+  background: color-mix(in srgb, var(--akzent) 16%, var(--flaeche));
+  color: var(--akzent-text);
+  box-shadow: 0 0 0 2px var(--akzent);
+}
+
+.fr-name {
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fr-fach,
+.fr-stand {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.fr-fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--linie);
+}
+
+.fr-du {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.fr-freigabe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.fr-freigabe:last-of-type {
+  margin-right: auto;
+}
+
+@media (max-width: 760px) {
+  .fr-raum {
+    padding: var(--space-4);
+  }
+
+  .fr-plaetze {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+}
+
+/* Work Station: Dauer am Kreis ziehen */
+.ws-kreis.stellbar {
+  touch-action: none;
+  cursor: pointer;
+  /* Beim Ziehen keinen Text markieren */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Beim Einstellen folgt der Bogen dem Punkt sofort (die Ablauf-Animation würde hinterherhinken) */
+.ws-kreis.stellbar .ws-kreis-fortschritt {
+  transition: none;
+}
+
+/* Mehr als eine Runde eingestellt: die Spur zeigt die vollen Runden */
+.ws-kreis-spur.voll {
+  stroke: color-mix(in oklab, var(--akzent) 30%, var(--flaeche-3));
+}
+
+/* Timer oder Flow: die Wahl deutlich zeigen, gesperrt solange die Fokusphase läuft */
+.ws-art button[aria-pressed="true"] {
+  background: var(--flaeche);
+  color: var(--akzent-text);
+  font-weight: 600;
+}
+
+/* Timer oder Flow: gesperrt, solange die Fokusphase läuft */
+.ws-art button:disabled {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.ws-art button:disabled:hover {
+  color: var(--text-3);
+}
+
+.ws-timer-karte:is([data-modus="kurz"], [data-modus="lang"]) .ws-kreis-spur.voll {
+  stroke: color-mix(in oklab, var(--ok) 30%, var(--flaeche-3));
+}
+
+.ws-griff {
+  position: absolute;
+  width: var(--space-6);
+  height: var(--space-6);
+  margin: calc(var(--space-3) * -1) 0 0 calc(var(--space-3) * -1);
+  border-radius: 50%;
+  background: var(--akzent);
+  box-shadow:
+    0 0 0 var(--space-1) var(--flaeche),
+    0 2px 8px var(--schatten);
+  cursor: grab;
+}
+
+.ws-griff:active {
+  cursor: grabbing;
+}
+
+.ws-griff:focus-visible {
+  outline: 3px solid var(--akzent-text);
+  outline-offset: 3px;
+}
