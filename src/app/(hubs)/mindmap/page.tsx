@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { MindmapListe } from "@/components/mindmap/mindmap-liste";
 
 export const metadata = { title: "MindMap · UniVerse" };
@@ -14,12 +14,7 @@ export default async function MindmapSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="MindMap" />
-        <EinrichtungHinweis hub="MindMap" />
-      </>
-    );
+    return <Einrichtung bereich="MindMap" />;
   }
   if (error) throw new Error(error.message);
 

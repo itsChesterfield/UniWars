@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { WhiteboardListe } from "@/components/whiteboard/whiteboard-liste";
 
 export const metadata = { title: "Whiteboard · UniVerse" };
@@ -14,12 +14,7 @@ export default async function WhiteboardSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Whiteboard" />
-        <EinrichtungHinweis hub="Das Whiteboard" />
-      </>
-    );
+    return <Einrichtung bereich="Das Whiteboard" />;
   }
   if (error) throw new Error(error.message);
 

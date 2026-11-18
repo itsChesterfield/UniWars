@@ -9,7 +9,16 @@ export type MenuePunkt = { label: string; onClick: () => void; gefahr?: boolean 
  * Design B3: Symbolknopf „Mehr“ mit Menü. Das Menü ist ein modaler Dialog am Knopf:
  * Klick daneben oder Escape schließt, der Rest der Seite ist solange nicht bedienbar (auch nicht halb verdeckt).
  */
-export function DreiPunkteMenue({ punkte, label = "Weitere Aktionen" }: { punkte: MenuePunkt[]; label?: string }) {
+export function DreiPunkteMenue({
+  punkte,
+  label = "Weitere Aktionen",
+  knopfText,
+}: {
+  punkte: MenuePunkt[];
+  label?: string;
+  /** Statt des Symbols ein leiser Knopf mit Text (z. B. „Exportieren“) */
+  knopfText?: string;
+}) {
   const [offen, setOffen] = useState(false);
   const knopf = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -52,9 +61,9 @@ export function DreiPunkteMenue({ punkte, label = "Weitere Aktionen" }: { punkte
       <button
         ref={knopf}
         type="button"
-        className="knopf leise klein nur-symbol"
-        aria-label={label}
-        title={label}
+        className={`knopf leise klein${knopfText ? "" : " nur-symbol"}`}
+        aria-label={knopfText ? undefined : label}
+        title={knopfText ? undefined : label}
         aria-haspopup="menu"
         aria-expanded={offen}
         onClick={(e) => {
@@ -62,7 +71,14 @@ export function DreiPunkteMenue({ punkte, label = "Weitere Aktionen" }: { punkte
           setOffen(true);
         }}
       >
-        <Icon name="mehr" groesse={18} />
+        {knopfText ? (
+          <>
+            {knopfText}
+            <Icon name="runter" groesse={16} />
+          </>
+        ) : (
+          <Icon name="mehr" groesse={18} />
+        )}
       </button>
       {offen && (
         <dialog
