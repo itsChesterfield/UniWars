@@ -4,27 +4,31 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FachFilterChips } from "@/components/fach-filter-chips";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import type { FachOption } from "@/lib/fach-option";
+import type { IconName } from "@/lib/icons";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; geaendert_am: string; info?: string };
 
 function datum(iso: string) {
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(iso).toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
 /**
- * Übersicht für Hubs mit eigenen Editor-Seiten (Textverarbeitung, Tabellen, Präsentationen):
+ * Übersicht für Hubs mit eigenen Editor-Seiten (Textverarbeitung, Tabellen, Präsentationen, MindMap, Whiteboard):
  * Fach-Filter (ALL-04), Löschen mit Nachfrage (ALL-05), sortiert nach Änderung (ALL-06), leerer Zustand (ALL-07).
+ * Design B3: Seitenkopf, Zeilen wie die übrigen Listen, Leerzustand mit genau einer Aktion.
  */
 export function ObjektListe({
   hub,
   untertitel,
   icon,
   neuLabel,
+  leerTitel,
   leerText,
   ohneTitel,
   basisPfad,
@@ -38,8 +42,10 @@ export function ObjektListe({
 }: {
   hub: string;
   untertitel: string;
-  icon: string;
+  icon: IconName;
   neuLabel: string;
+  /** Überschrift des Leerzustands, z. B. „Noch keine Dokumente.“ */
+  leerTitel: string;
   leerText: string;
   ohneTitel: string;
   basisPfad: string;
@@ -50,7 +56,7 @@ export function ObjektListe({
   loeschen: (id: string) => Promise<void>;
   /** Vor dem Anlegen Name + Fach abfragen (z. B. MM-01). */
   nameAbfragen?: string;
-  /** Zusätzlicher Knopf neben "Neu" (z. B. KI-08 "✨ Aus Notiz oder Dokument") */
+  /** Zusätzlicher Knopf neben „Neu“ (z. B. KI-08 „Aus Notiz oder Dokument“) */
   zusatzAktion?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -94,71 +100,63 @@ export function ObjektListe({
     }
   }
 
-  const neuKnopf = (
-    <button type="button" className="btnp" onClick={neu} disabled={isPending}>
-      + {neuLabel}
+  const neuKnopf = (klasse: string, text: string) => (
+    <button type="button" className={`knopf ${klasse}`} onClick={neu} disabled={isPending} aria-busy={isPending}>
+      <Icon name="plus" groesse={16} />
+      {text}
     </button>
   );
 
   return (
     <>
-      <HubKopf
-        titel={hub}
-        untertitel={untertitel}
-        aktionen={
-          zusatzAktion ? (
-            <>
-              {zusatzAktion}
-              {neuKnopf}
-            </>
-          ) : (
-            neuKnopf
-          )
-        }
-      />
+      <header className="seitenkopf">
+        <div>
+          <h1>{hub}</h1>
+          <p>{untertitel}</p>
+        </div>
+        {eintraege.length > 0 && (
+          <div className="rechts">
+            {zusatzAktion}
+            {neuKnopf("haupt", neuLabel)}
+          </div>
+        )}
+      </header>
       <FachFilterChips faecher={faecher} />
-      {fehler && <p className="auth-error">{fehler}</p>}
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
 
       {eintraege.length === 0 ? (
-        <LeererZustand
-          icon={icon}
-          text={leerText}
-          aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={neu} disabled={isPending}>
-              + {neuLabel}
-            </button>
-          }
-        />
+        <Zustand art="leer" icon={icon} titel={leerTitel} aktion={neuKnopf("neben klein", neuLabel)}>
+          {leerText}
+        </Zustand>
       ) : sichtbar.length === 0 ? (
-        <p className="empty-state">Für dieses Fach gibt es hier noch nichts.</p>
+        <Zustand art="leer" icon={icon} titel="In diesem Fach gibt es hier noch nichts." region ebene={3} aktion={neuKnopf("neben klein", neuLabel)} />
       ) : (
-        <section className="card">
-          <ul className="pdf-liste">
-            {sichtbar.map((d) => {
-              const fach = faecher.find((f) => f.id === d.fach_id);
-              return (
-                <li key={d.id} className="txt-liste-zeile">
-                  <Link href={`${basisPfad}/${d.id}`} className="pdf-liste-zeile">
-                    <span aria-hidden>{icon}</span>
-                    <span className={`pdf-liste-name ${d.titel ? "" : "faint"}`}>{d.titel || ohneTitel}</span>
-                    <span className="muted pdf-liste-fach">
-                      {fach ? (
-                        <>
-                          <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-                        </>
-                      ) : (
-                        "Ohne Fach"
-                      )}
-                    </span>
-                    {d.info && <span className="faint mono">{d.info}</span>}
-                    <span className="faint">{datum(d.geaendert_am)}</span>
+        <ul className="entry-list objekt-liste">
+          {sichtbar.map((d) => {
+            const fach = faecher.find((f) => f.id === d.fach_id);
+            const name = d.titel || ohneTitel;
+            return (
+              <li key={d.id} className="entry-row fach-zeile">
+                <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--linie-2)" } as React.CSSProperties} aria-hidden />
+                <div className="entry-info">
+                  <Link href={`${basisPfad}/${d.id}`} className={`entry-title objekt-name${d.titel ? "" : " ohne"}`}>
+                    {name}
                   </Link>
-                  <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void entfernen(d), gefahr: true }]} />
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                  <span className="entry-meta">
+                    {[fach?.name ?? "Ohne Fach", d.info, `geändert ${datum(d.geaendert_am)}`].filter(Boolean).join(", ")}
+                  </span>
+                </div>
+                <div className="entry-actions">
+                  <DreiPunkteMenue label={`Weitere Aktionen für ${name}`} punkte={[{ label: "Löschen", onClick: () => void entfernen(d), gefahr: true }]} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {dialog && nameAbfragen && (
