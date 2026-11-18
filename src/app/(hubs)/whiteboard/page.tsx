@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { WhiteboardListe } from "@/components/whiteboard/whiteboard-liste";
 
-export const metadata = { title: "Whiteboard · UniWars" };
+export const metadata = { title: "Whiteboard · UniVerse" };
 
 export default async function WhiteboardSeite() {
   const supabase = await createClient();

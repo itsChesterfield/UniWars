@@ -19,7 +19,7 @@ const zahlen = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UniWars",
+  title: "UniVerse",
   description: "Study Platform — Main Hub",
 };
 

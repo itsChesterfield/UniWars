@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { TabellenListe } from "@/components/tabellen/tabellen-liste";
 
-export const metadata = { title: "Tabellen · UniWars" };
+export const metadata = { title: "Tabellen · UniVerse" };
 
 export default async function TabellenSeite() {
   const supabase = await createClient();

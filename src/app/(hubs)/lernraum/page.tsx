@@ -5,7 +5,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { Icon } from "@/components/nav-icon";
 import { Einrichtung, Zustand } from "@/components/zustand";
 
-export const metadata = { title: "Lernraum · UniWars" };
+export const metadata = { title: "Lernraum · UniVerse" };
 
 /** Lernraum: ein Raum pro Fach – Quellen sind die PDFs und Notizen des Fachs. */
 export default async function LernraumUebersicht() {

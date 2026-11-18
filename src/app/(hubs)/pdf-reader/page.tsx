@@ -5,7 +5,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfListe, type PdfEintrag, type PdfFach } from "@/components/pdf-reader/pdf-liste";
 
-export const metadata = { title: "PDF Reader · UniWars" };
+export const metadata = { title: "PDF Reader · UniVerse" };
 
 /** PDF-01: Liste aller PDFs aus der Dateiablage. */
 export default async function PdfReaderSeite() {

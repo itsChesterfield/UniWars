@@ -232,7 +232,7 @@ export function KontextLeiste({ kontext, onMarkierungEntfernen }: { kontext: Kon
   if (kontext.fachId) teile.push({ text: "🎓 Quellen des Fachs" });
   if (kontext.karte) teile.push({ text: "🗂️ aktuelle Karte" });
   if (kontext.markiert) teile.push({ text: `✂️ Markierung (${kontext.markiert.length} Zeichen)`, weg: onMarkierungEntfernen });
-  if (!teile.length) return <p className="studio-kontext faint">Bezieht sich auf: deine Daten in UniWars</p>;
+  if (!teile.length) return <p className="studio-kontext faint">Bezieht sich auf: deine Daten in UniVerse</p>;
   return (
     <p className="studio-kontext">
       <span className="faint">Bezieht sich auf:</span>

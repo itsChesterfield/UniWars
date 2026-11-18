@@ -25,7 +25,7 @@ export const LAYOUTS: { wert: Layout; name: string; beschreibung: string }[] = [
 export const DESIGNS: { wert: Design; name: string }[] = [
   { wert: "HELL", name: "Hell" },
   { wert: "DUNKEL", name: "Dunkel" },
-  { wert: "GOLD", name: "UniWars-Gold" },
+  { wert: "GOLD", name: "UniVerse-Gold" },
 ];
 
 export const MAX_FOLIEN = 200;

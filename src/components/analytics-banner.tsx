@@ -14,7 +14,7 @@ export function AnalyticsBanner() {
   return (
     <div className="analytics-banner" role="dialog" aria-label="Einwilligung zur Nutzungsanalyse">
       <p>
-        Dürfen wir anonymisiert erfassen, wie du UniWars nutzt? Das hilft uns, die App zu
+        Dürfen wir anonymisiert erfassen, wie du UniVerse nutzt? Das hilft uns, die App zu
         verbessern. Dafür speichern wir Daten in deinem Browser. Du kannst das jederzeit in den
         Einstellungen ändern.
       </p>

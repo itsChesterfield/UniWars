@@ -15,7 +15,7 @@ import { adminKonfiguriert } from "@/lib/supabase/admin";
 import { mailKonfiguriert } from "@/lib/mail";
 import { domainAusMail } from "@/lib/hochschulen";
 
-export const metadata = { title: "Einstellungen · UniWars" };
+export const metadata = { title: "Einstellungen · UniVerse" };
 
 export default async function EinstellungenSeite() {
   const supabase = await createClient();

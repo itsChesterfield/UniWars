@@ -266,7 +266,7 @@ export function Einstellungen({
         <Meldung ergebnis={pwErgebnis} />
       </Abschnitt>
 
-      <Abschnitt titel="Datenschutz & KI" untertitel="Was UniWars nutzen darf. Du kannst alles jederzeit ändern.">
+      <Abschnitt titel="Datenschutz & KI" untertitel="Was UniVerse nutzen darf. Du kannst alles jederzeit ändern.">
         <div className="einst-schalter">
           <AnalyticsEinstellung />
           <KiEinstellung startEingewilligt={kiEingewilligt} />

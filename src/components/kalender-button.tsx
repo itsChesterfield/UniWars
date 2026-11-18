@@ -65,7 +65,7 @@ export function KalenderButton({
   }
 
   function trennen() {
-    if (!window.confirm("Google Kalender trennen? Der UniWars-Kalender wird dabei aus deinem Google-Konto entfernt.")) return;
+    if (!window.confirm("Google Kalender trennen? Der Kalender „UniWars“ wird dabei aus deinem Google-Konto entfernt.")) return;
     startTransition(async () => {
       await kalenderTrennen();
       track("kalender_getrennt", { anbieter: "google" });
@@ -109,7 +109,7 @@ export function KalenderButton({
       {menueOffen && verbunden && (
         <div className="kalender-button-menue">
           <p className="kalender-button-text">
-            Deine UniWars-Einträge erscheinen im Kalender „UniWars“. Termine aus Google siehst du hier
+            Deine UniVerse-Einträge erscheinen im Kalender „UniWars“. Termine aus Google siehst du hier
             nur als „Belegt“.
           </p>
           <button type="button" className="knopf neben klein" disabled={isPending} aria-busy={isPending} onClick={abgleichen}>

@@ -70,7 +70,7 @@ export function NeuerChatDialog({ onWahl, onSchliessen }: { onWahl: (n: Nutzer) 
         onChange={(e) => setSuche(e.target.value)}
         aria-label="Person suchen"
       />
-      <p className="muted chat-dialog-hinweis">Du kannst nur Personen anschreiben, die ein UniWars-Konto haben. E-Mail-Adressen müssen vollständig sein.</p>
+      <p className="muted chat-dialog-hinweis">Du kannst nur Personen anschreiben, die ein UniVerse-Konto haben. E-Mail-Adressen müssen vollständig sein.</p>
       {fehler && <p className="auth-error">{fehler}</p>}
       <ul className="chat-treffer">
         {treffer.map((n) => (

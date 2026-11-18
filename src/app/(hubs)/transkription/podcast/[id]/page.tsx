@@ -4,7 +4,7 @@ import { PodcastPlayer } from "@/components/quiz/podcast-player";
 import { segmenteLesen } from "@/lib/ki/quiz";
 import { audioVerfuegbar } from "@/lib/ki/audio";
 
-export const metadata = { title: "Lern-Podcast · UniWars" };
+export const metadata = { title: "Lern-Podcast · UniVerse" };
 
 export default async function PodcastSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

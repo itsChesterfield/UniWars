@@ -5,7 +5,7 @@ import { lernraumSichern, quellenListe } from "@/lib/ki/lernraum-server";
 import { profilLesen } from "@/lib/ki/lernraum";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Lernraum · UniWars" };
+export const metadata = { title: "Lernraum · UniVerse" };
 
 export default async function LernraumSeite({ params }: { params: Promise<{ fachId: string }> }) {
   const { fachId } = await params;

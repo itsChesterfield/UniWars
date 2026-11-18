@@ -4,7 +4,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { ChatHub } from "@/components/chat/chat-hub";
 
-export const metadata = { title: "Chat · UniWars" };
+export const metadata = { title: "Chat · UniVerse" };
 
 export default async function ChatSeite() {
   const supabase = await createClient();

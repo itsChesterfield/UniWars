@@ -5,7 +5,7 @@ import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PraesentationsListe } from "@/components/praesentationen/praesentations-liste";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
-export const metadata = { title: "Präsentationen · UniWars" };
+export const metadata = { title: "Präsentationen · UniVerse" };
 
 export default async function PraesentationenSeite() {
   const supabase = await createClient();

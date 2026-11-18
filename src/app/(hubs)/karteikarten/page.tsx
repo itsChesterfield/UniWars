@@ -13,7 +13,7 @@ import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
 export const maxDuration = 300;
 
-export const metadata = { title: "Karteikarten · UniWars" };
+export const metadata = { title: "Karteikarten · UniVerse" };
 
 export default async function KarteikartenSeite() {
   const supabase = await createClient();

@@ -56,7 +56,7 @@ function ereignisseLesen(puffer: string): { ereignisse: Record<string, unknown>[
 }
 
 /**
- * KI-12: Chat mit dem UniWars-Assistenten (Seitenleiste und Seite /assistent).
+ * KI-12: Chat mit dem UniVerse-Assistenten (Seitenleiste und Seite /assistent).
  * Antwort gestreamt, Markdown nach Abschluss, Aktionskarten in der Antwort, „Stopp“ bricht ab.
  */
 export function AssistentChat({
