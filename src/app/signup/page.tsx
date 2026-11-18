@@ -1,80 +1,97 @@
 import Link from "next/link";
 import { signup } from "./actions";
 import { TrackEvent } from "@/components/track-event";
-import { AktivitaetZuruecksetzen } from "@/components/aktivitaet-zuruecksetzen";
+import { AnmeldeMeldung, AnmeldeRahmen } from "@/components/anmeldung/anmelde-rahmen";
+import { AnmeldeKnopf } from "@/components/anmeldung/anmelde-knopf";
+import { Icon } from "@/components/nav-icon";
+
+type Feld = "nutzername" | "email" | "passwort";
+
+function FeldFehler({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p id={id} className="anm-feld-fehler">
+      <Icon name="warnung" groesse={14} />
+      <span>{children}</span>
+    </p>
+  );
+}
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; "check-email"?: string }>;
+  searchParams: Promise<{ fehler?: string; error?: string; feld?: string; nutzername?: string; email?: string }>;
 }) {
-  const { error, "check-email": checkEmail } = await searchParams;
+  const p = await searchParams;
+  const fehler = p.fehler ?? p.error;
+  const feld = (["nutzername", "email", "passwort"].includes(p.feld ?? "") ? p.feld : null) as Feld | null;
+  const an = (f: Feld) => (fehler && feld === f ? { "aria-invalid": true as const, "aria-describedby": `fehler-${f}` } : {});
 
   return (
-    <main className="auth-page">
-      <AktivitaetZuruecksetzen />
-      <form className="auth-form">
-        <h1>Registrieren</h1>
+    <AnmeldeRahmen>
+      <div className="anm-form">
+        <h1>Konto erstellen</h1>
 
-        {error && <p className="auth-error">{error}</p>}
-        {error && <TrackEvent event="registrierung_fehlgeschlagen" properties={{ grund: error }} />}
-        {checkEmail && <TrackEvent event="registrierung_abgeschickt" properties={{ email_bestaetigung: true }} />}
-        {checkEmail && (
-          <p className="auth-info">
-            Fast geschafft — bitte bestätige deine E-Mail-Adresse über den Link, den wir dir
-            geschickt haben.
-          </p>
-        )}
+        {fehler && !feld && <AnmeldeMeldung art="fehler">{fehler}</AnmeldeMeldung>}
+        {fehler && <TrackEvent event="registrierung_fehlgeschlagen" properties={{ grund: fehler }} />}
 
-        <div className="auth-field">
-          <label htmlFor="username" className="sr-only">Nutzername</label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            placeholder="Nutzername (3–20 Zeichen, a–z, 0–9, _)"
-            required
-            autoComplete="nickname"
-            minLength={3}
-            maxLength={20}
-            pattern="[a-zA-Z0-9_]{3,20}"
-            title="3–20 Zeichen: Buchstaben, Zahlen und Unterstriche"
-          />
-        </div>
+        <form action={signup} className="anm-felder">
+          <div className="anm-feld">
+            <label htmlFor="username">Nutzername</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              autoComplete="nickname"
+              minLength={3}
+              maxLength={20}
+              pattern="[a-zA-Z0-9_]{3,20}"
+              defaultValue={p.nutzername}
+              {...an("nutzername")}
+            />
+            {feld === "nutzername" && fehler ? (
+              <FeldFehler id="fehler-nutzername">{fehler}</FeldFehler>
+            ) : (
+              <p className="anm-feld-hilfe">3 bis 20 Zeichen: Buchstaben, Zahlen, Unterstrich</p>
+            )}
+          </div>
 
-        <div className="auth-field">
-          <label htmlFor="email" className="sr-only">E-Mail</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="E-Mail"
-            required
-            autoComplete="email"
-          />
-        </div>
+          <div className="anm-feld">
+            <label htmlFor="email">E-Mail</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@hochschule.de"
+              required
+              autoComplete="email"
+              defaultValue={p.email}
+              {...an("email")}
+            />
+            {feld === "email" && fehler && (
+              <FeldFehler id="fehler-email">{fehler}</FeldFehler>
+            )}
+          </div>
 
-        <div className="auth-field">
-          <label htmlFor="password" className="sr-only">Passwort</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Passwort (mind. 6 Zeichen)"
-            required
-            minLength={6}
-            autoComplete="new-password"
-          />
-        </div>
+          <div className="anm-feld">
+            <label htmlFor="password">Passwort</label>
+            <input id="password" name="password" type="password" required minLength={6} autoComplete="new-password" {...an("passwort")} />
+            {feld === "passwort" && fehler ? (
+              <FeldFehler id="fehler-passwort">{fehler}</FeldFehler>
+            ) : (
+              <p className="anm-feld-hilfe">Mindestens 6 Zeichen</p>
+            )}
+          </div>
 
-        <button formAction={signup} type="submit">
-          Konto erstellen
-        </button>
+          <AnmeldeKnopf laedtText="Konto wird erstellt">
+            Konto erstellen
+          </AnmeldeKnopf>
+        </form>
 
-        <p>
-          Schon registriert? <Link href="/login">Anmelden</Link>
+        <p className="anm-wechsel">
+          Schon registriert? <Link className="link" href="/login">Anmelden</Link>
         </p>
-      </form>
-    </main>
+      </div>
+    </AnmeldeRahmen>
   );
 }

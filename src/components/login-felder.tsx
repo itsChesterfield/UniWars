@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ANGEMELDET_BLEIBEN, GEMERKTE_EMAIL } from "@/lib/inaktivitaet";
 
@@ -8,7 +9,7 @@ import { ANGEMELDET_BLEIBEN, GEMERKTE_EMAIL } from "@/lib/inaktivitaet";
  * Mit Häkchen: kein automatisches Abmelden nach 5 Minuten auf diesem Gerät, E-Mail wird vorausgefüllt.
  * Passwörter speichert der Browser bzw. Passwort-Manager (autocomplete), nie die App.
  */
-export function LoginFelder() {
+export function LoginFelder({ email: vorgabe, passwortFalsch = false }: { email?: string; passwortFalsch?: boolean }) {
   const [bleiben, setBleiben] = useState(false);
   const email = useRef<HTMLInputElement>(null);
 
@@ -48,21 +49,41 @@ export function LoginFelder() {
 
   return (
     <>
-      <div className="auth-field">
-        <label htmlFor="email" className="sr-only">
-          E-Mail
-        </label>
-        <input ref={email} id="email" name="email" type="email" placeholder="E-Mail" required autoComplete="username" />
+      <div className="anm-feld">
+        <label htmlFor="email">E-Mail</label>
+        <input
+          ref={email}
+          id="email"
+          name="email"
+          type="email"
+          placeholder="name@hochschule.de"
+          defaultValue={vorgabe}
+          required
+          autoComplete="username"
+          autoFocus={!vorgabe}
+        />
       </div>
 
-      <div className="auth-field">
-        <label htmlFor="password" className="sr-only">
-          Passwort
-        </label>
-        <input id="password" name="password" type="password" placeholder="Passwort" required autoComplete="current-password" />
+      <div className="anm-feld">
+        <span className="anm-feld-kopf">
+          <label htmlFor="password">Passwort</label>
+          <Link className="link" href="/forgot-password">
+            Passwort vergessen?
+          </Link>
+        </span>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          autoFocus={Boolean(vorgabe)}
+          aria-invalid={passwortFalsch || undefined}
+          aria-describedby={passwortFalsch ? "anm-meldung" : undefined}
+        />
       </div>
 
-      <label className="auth-bleiben">
+      <label className="anm-bleiben">
         <input type="checkbox" name="bleiben" checked={bleiben} onChange={(e) => setBleiben(e.target.checked)} />
         <span>
           Angemeldet bleiben
