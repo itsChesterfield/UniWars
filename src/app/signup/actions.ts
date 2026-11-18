@@ -3,53 +3,46 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { adresse, EMAIL_VERGEBEN, emailSchonVergeben, registrierFehler } from "@/lib/anmeldung";
 
 export async function signup(formData: FormData) {
   const supabase = await createClient();
 
-  const username = (formData.get("username") as string).trim().toLowerCase();
+  const username = ((formData.get("username") as string | null) ?? "").trim().toLowerCase();
+  const email = ((formData.get("email") as string | null) ?? "").trim();
+  // Bei einem Fehler bleiben Nutzername und E-Mail stehen (das Passwort nie in der Adresse)
+  const zurueck = (fehler: string, feld: string | null) =>
+    adresse("/signup", { fehler, feld, nutzername: username, email });
 
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    redirect(
-      `/signup?error=${encodeURIComponent("Nutzername muss 3–20 Zeichen lang sein und darf nur Buchstaben, Zahlen und Unterstriche enthalten.")}`,
-    );
+    redirect(zurueck("Nimm 3 bis 20 Zeichen: Buchstaben, Zahlen und Unterstrich.", "nutzername"));
   }
 
-  const { data: verfuegbar, error: verfuegbarError } = await supabase.rpc(
-    "ist_username_verfuegbar",
-    { p_username: username },
-  );
-  if (verfuegbarError) {
-    redirect(`/signup?error=${encodeURIComponent(verfuegbarError.message)}`);
-  }
-  if (!verfuegbar) {
-    redirect(`/signup?error=${encodeURIComponent("Dieser Nutzername ist bereits vergeben.")}`);
-  }
+  const { data: verfuegbar, error: verfuegbarError } = await supabase.rpc("ist_username_verfuegbar", {
+    p_username: username,
+  });
+  if (verfuegbarError) redirect(zurueck("Der Nutzername konnte nicht geprüft werden. Bitte versuch es gleich noch einmal.", null));
+  if (!verfuegbar) redirect(zurueck("Dieser Nutzername ist schon vergeben.", "nutzername"));
 
   const { data, error } = await supabase.auth.signUp({
-    email: formData.get("email") as string,
+    email,
     password: formData.get("password") as string,
-    options: {
-      data: {
-        username,
-      },
-    },
+    options: { data: { username } },
   });
 
   if (error) {
-    const nachricht = error.message.includes("USERNAME_TAKEN")
-      ? "Dieser Nutzername ist bereits vergeben."
-      : error.message;
-    redirect(`/signup?error=${encodeURIComponent(nachricht)}`);
+    const f = registrierFehler(error);
+    redirect(zurueck(f.text, f.feld));
   }
+
+  // Bestätigung an: Supabase meldet eine schon registrierte Adresse nicht als Fehler (Konto ohne Identitäten)
+  if (emailSchonVergeben(data.user)) redirect(zurueck(EMAIL_VERGEBEN, "email"));
 
   revalidatePath("/", "layout");
 
-  // Falls die Supabase-Projekteinstellungen eine E-Mail-Bestätigung verlangen,
-  // gibt signUp keine Session zurück - dann kann nicht direkt eingeloggt werden.
-  if (!data.session) {
-    redirect("/signup?check-email=1");
-  }
+  // Mit E-Mail-Bestätigung gibt signUp keine Session zurück: zurück ins Anmeldefenster,
+  // dort steht die kurze Meldung „Bestätige noch deine E-Mail“ (Entscheidung Didi, 18.11.)
+  if (!data.session) redirect(adresse("/login", { bestaetigen: "1", email }));
 
   redirect("/");
 }

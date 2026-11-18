@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requestPasswordReset } from "./actions";
 import { TrackEvent } from "@/components/track-event";
+import { AnmeldeMeldung, AnmeldeRahmen } from "@/components/anmeldung/anmelde-rahmen";
+import { AnmeldeKnopf } from "@/components/anmeldung/anmelde-knopf";
 
 export default async function ForgotPasswordPage({
   searchParams,
@@ -10,40 +12,36 @@ export default async function ForgotPasswordPage({
   const { error, sent } = await searchParams;
 
   return (
-    <main className="auth-page">
-      <form className="auth-form">
+    <AnmeldeRahmen>
+      <div className="anm-form">
         <h1>Passwort vergessen</h1>
+        <p className="anm-unter">Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.</p>
 
-        {error && <p className="auth-error">{error}</p>}
+        {error && <AnmeldeMeldung art="fehler">{error}</AnmeldeMeldung>}
+        {sent && (
+          <AnmeldeMeldung art="info">
+            Falls es ein Konto mit dieser E-Mail gibt, ist der Link unterwegs. Schau auch im Spam-Ordner.
+          </AnmeldeMeldung>
+        )}
         {error && <TrackEvent event="passwort_reset_fehlgeschlagen" properties={{ grund: error }} />}
         {sent && <TrackEvent event="passwort_reset_angefordert" />}
-        {sent && (
-          <p className="auth-info">
-            Falls ein Konto mit dieser E-Mail existiert, haben wir dir einen Link zum
-            Zurücksetzen geschickt.
-          </p>
-        )}
 
-        <div className="auth-field">
-          <label htmlFor="email" className="sr-only">E-Mail</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="E-Mail"
-            required
-            autoComplete="email"
-          />
-        </div>
+        <form action={requestPasswordReset} className="anm-felder">
+          <div className="anm-feld">
+            <label htmlFor="email">E-Mail</label>
+            <input id="email" name="email" type="email" placeholder="name@hochschule.de" required autoComplete="email" />
+          </div>
+          <AnmeldeKnopf laedtText="Link wird verschickt">
+            Link schicken
+          </AnmeldeKnopf>
+        </form>
 
-        <button formAction={requestPasswordReset} type="submit">
-          Link zum Zurücksetzen schicken
-        </button>
-
-        <p>
-          <Link href="/login">Zurück zur Anmeldung</Link>
+        <p className="anm-wechsel">
+          <Link className="link" href="/login">
+            Zurück zur Anmeldung
+          </Link>
         </p>
-      </form>
-    </main>
+      </div>
+    </AnmeldeRahmen>
   );
 }
