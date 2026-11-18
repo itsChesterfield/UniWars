@@ -13,7 +13,7 @@ import { uploadAbschliessen, uploadVorbereiten } from "@/app/(hubs)/dateiablage/
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Icon as Zeichen } from "@/components/nav-icon";
 import { bildUrl } from "@/components/hubs/bild-auswahl";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as wb from "@/lib/whiteboard/elemente";
 import { SVG_SCHRIFT, svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
@@ -21,6 +21,7 @@ import { dateiTyp } from "@/lib/dateiablage/dateien";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 type Werkzeug = "auswahl" | "stift" | "linie" | "pfeil" | "rechteck" | "kreis" | "text" | "radierer";
 
@@ -477,9 +478,7 @@ export function WhiteboardEditor({
       <div className="txt-kopf">
         <h1 className="zf-titel">{name}</h1>
         <div className="txt-kopf-aktionen">
-          <span className={`speicher-status ${status}`} aria-live="polite">
-            {hinweis ?? SPEICHER_TEXT[status]}
-          </span>
+          <SpeicherStatusAnzeige status={status} text={hinweis} />
           <select
             className="txt-fach"
             aria-label="Fach"

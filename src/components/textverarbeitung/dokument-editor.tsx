@@ -16,12 +16,13 @@ import type { IconName } from "@/lib/icons";
 import { BildAuswahl, bildUrl } from "@/components/hubs/bild-auswahl";
 import { OHNE_TITEL } from "@/components/textverarbeitung/dokument-liste";
 import { KiFeedbackLeiste } from "@/components/textverarbeitung/ki-feedback-leiste";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import { zitatImText } from "@/lib/literatur/apa";
 import { alsDocx, dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import type { Json } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 type Quelle = { id: string; autoren: string; titel: string; jahr: number; seiten: string | null };
 type Aenderung = { titel: string; inhalt: Json; klartext: string; woerter: number };
@@ -169,9 +170,7 @@ export function DokumentEditor({
           }}
         />
         <div className="txt-kopf-aktionen">
-          <span className={`speicher-status ${status}`} aria-live="polite">
-            {exportiert ?? SPEICHER_TEXT[status]}
-          </span>
+          <SpeicherStatusAnzeige status={status} text={exportiert} />
           <select className="txt-fach" value={fachId ?? ""} onChange={(e) => fachAendern(e.target.value)} aria-label="Fach">
             <option value="">Ohne Fach</option>
             {faecher.map((f) => (

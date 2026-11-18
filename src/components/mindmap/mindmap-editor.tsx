@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { mindmapFachSetzen, mindmapLoeschen, mindmapSpeichern } from "@/app/(hubs)/mindmap/actions";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Icon } from "@/components/nav-icon";
-import { SPEICHER_TEXT, useAutoSpeichern } from "@/lib/hubs/auto-speichern";
+import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import * as mm from "@/lib/mindmap/knoten";
 import { SVG_SCHRIFT, svgAlsPng, textBreite, useAnsicht, useImBrowser } from "@/lib/zeichnen/ansicht";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 
 const SCHRIFT = "600 15px";
 const SCHRIFT_WURZEL = "700 18px";
@@ -259,9 +260,7 @@ export function MindmapEditor({
       <div className="txt-kopf">
         <h1 className="zf-titel">{name}</h1>
         <div className="txt-kopf-aktionen">
-          <span className={`speicher-status ${status}`} aria-live="polite">
-            {SPEICHER_TEXT[status]}
-          </span>
+          <SpeicherStatusAnzeige status={status} />
           <select
             className="txt-fach"
             aria-label="Fach"

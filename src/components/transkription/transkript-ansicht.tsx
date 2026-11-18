@@ -33,6 +33,7 @@ import {
   type Absatz,
   type TeilStatus,
 } from "@/lib/transkription/transkript";
+import { Umlauf } from "@/components/bewegung/umlauf";
 
 type Transkript = { id: string; titel: string; fach_id: string | null; sprache: "de" | "en"; erstellt_am: string };
 type Speicherstand = "gespeichert" | "ungespeichert" | "speichert" | "fehler";
@@ -393,7 +394,7 @@ export function TranskriptAnsicht({
 
           {laufenderTeil || weiter ? (
             <p className="tra-fortschritt">
-              <span className="ki-spinner tra-spinner" aria-hidden />
+              <Umlauf groesse={16} />
               {stand.teile.length > 1 ? `Teil ${laufenderTeil?.nr ?? naechster?.nr ?? ""} von ${stand.teile.length} wird umgewandelt …` : "Wird umgewandelt …"}
               <span className="muted"> Das dauert etwa eine Minute pro 10 Minuten Aufnahme. Du kannst die Seite verlassen.</span>
             </p>

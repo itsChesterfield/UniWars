@@ -10,6 +10,7 @@ import type { QuellInfo } from "@/lib/ki/quiz-server";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { studioMelden } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 
 type Modus = "alle" | "schwaechen";
 type Ergebnis = { frageId: string; punkte: number; bewertung: Bewertung };
@@ -296,7 +297,7 @@ function Durchgang({
       <div className="qz-frage-knoepfe">
         {aktuell ? (
           <button type="button" className="knopf haupt" onClick={weiter} autoFocus>
-            {i + 1 < fragen.length ? "Weiter" : "Ergebnis ansehen"}
+            <PfeilText>{i + 1 < fragen.length ? "Weiter" : "Ergebnis ansehen"}</PfeilText>
           </button>
         ) : (
           <>

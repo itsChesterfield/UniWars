@@ -5,6 +5,7 @@ import { track } from "@/lib/analytics";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { benoetigteNote, notenText, schnittMit, schnittProFach, zahlLesen } from "@/lib/noten";
+import { RollText } from "@/components/bewegung/roll-text";
 
 type Note = Tables<"note">;
 type Pruefung = Tables<"pruefung">;
@@ -48,7 +49,7 @@ export function NotenKopf({
     <div className="noten-kopf">
       <p className="noten-schnitt zahl">
         <span className="vh">{fachName ? `Schnitt in ${fachName}: ` : "Notenschnitt: "}</span>
-        {schnitt != null ? notenText(schnitt) : "–"}
+        {schnitt != null ? <RollText wert={notenText(schnitt)} /> : "–"}
       </p>
       <div className="noten-kopf-text">
         <p>
