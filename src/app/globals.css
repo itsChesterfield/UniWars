@@ -9521,6 +9521,104 @@ button.pdf-pfad-teil:hover {
   color: var(--akzent-text);
 }
 
+/* Markierung der Notch (seit der Hub-Bühne): eigene Fläche unter den Links, fliegt mit vorauseilender
+   Kante zum Ziel (HauptNotch, Web Animations). Ohne JavaScript bleibt die Tönung am Link. */
+.haupt-notch {
+  position: relative;
+}
+
+.haupt-notch a {
+  position: relative;
+  z-index: 1;
+}
+
+.haupt-notch[data-marke] a.an {
+  background: transparent;
+}
+
+.haupt-notch-marke {
+  position: absolute;
+  left: 0;
+  top: 0;
+  clip-path: inset(0 round 999px);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.haupt-notch:not([data-marke]) .haupt-notch-marke {
+  display: none;
+}
+
+/* Buchstaben steigen aus einer Maske (SteigText). Stehen still, solange kein Aufbau läuft. */
+.steig-wort {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+/* Abstand hinter dem Wort, damit umbrochene Zeilen bündig beginnen */
+.steig-wort:not(:last-child) {
+  margin-right: 0.24em;
+}
+
+.steig-wort.akzent {
+  color: var(--akzent-text);
+}
+
+.steig-z {
+  display: inline-block;
+}
+
+@keyframes steig-ein {
+  from {
+    transform: translateY(calc(var(--h, 115%) * var(--r, 1)));
+  }
+}
+
+@keyframes aufbau-heben {
+  from {
+    opacity: 0;
+    transform: translateY(calc(24px * var(--r, 1)));
+  }
+}
+
+/* Wechsel über die Notch: der neue Bereich baut sich aus der Richtung auf (nur nach einem Wechsel, nie beim Laden) */
+html[data-notch-richtung="zurueck"] .bereich-ein {
+  --r: -1;
+}
+
+html[data-notch-richtung] .bereich-ein .steig-z {
+  animation: steig-ein 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+html[data-notch-richtung] .bereich-ein > :not(.seitenkopf) {
+  animation: aufbau-heben 520ms var(--ease-out) both;
+  animation-delay: 160ms;
+}
+
+html[data-notch-richtung] .bereich-ein > .seitenkopf p {
+  animation: aufbau-heben 420ms var(--ease-out) both;
+  animation-delay: 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-notch-richtung] .bereich-ein .steig-z,
+  html[data-notch-richtung] .bereich-ein > *,
+  html[data-notch-richtung] .bereich-ein > .seitenkopf p {
+    animation: none;
+  }
+}
+
+html[data-bewegung="reduziert"][data-notch-richtung] .bereich-ein .steig-z,
+html[data-bewegung="reduziert"][data-notch-richtung] .bereich-ein > *,
+html[data-bewegung="reduziert"][data-notch-richtung] .bereich-ein > .seitenkopf p {
+  animation: none;
+}
+
 .aufgaben-voll {
   display: flex;
   flex-direction: column;
@@ -17481,11 +17579,11 @@ html[data-bewegung="reduziert"] .lade-skelett {
    Fünf Szenen lösen sich beim Scrollen ab. Die Strecke ist so hoch wie alle Szenen,
    die Bühne steht (sticky) unter Kopfleiste und Notch. Nur transform und opacity.
    ========================================================================== */
-.dashboard-main:has(> .buehne-strecke.buehne) {
+.dashboard-main:has(.buehne-strecke.buehne) {
   padding-bottom: 0;
 }
 
-.dashboard-main:has(> .buehne-strecke.buehne) > .haupt-notch {
+.dashboard-main:has(.buehne-strecke.buehne) > .haupt-notch {
   position: sticky;
   top: 60px;
   z-index: 6;
@@ -17554,24 +17652,7 @@ html:has(.buehne-strecke.buehne) {
   --r: -1;
 }
 
-/* Bausteine des Aufbaus */
-.steig-wort {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: top;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
-}
-
-.steig-wort {
-  margin-right: 0.24em;
-}
-
-.steig-wort.akzent {
-  color: var(--akzent-text);
-}
-
-.steig-z,
+/* Bausteine des Aufbaus (SteigText-Grundregeln stehen weiter oben) */
 .bue-innen {
   display: inline-block;
 }

@@ -35,6 +35,7 @@ import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
 import { HubBuehne, type BuehneDaten } from "@/components/hub/hub-buehne";
 import { HauptNotch } from "@/components/haupt-notch";
+import { SteigText } from "@/components/bewegung/steig-text";
 import type { FaelligeKarten } from "@/components/hub/hub-bausteine";
 
 type Fach = Tables<"fach">;
@@ -282,7 +283,7 @@ export function DashboardContent({
       <HauptNotch aktiv={bereich} />
 
       {bereich === "uebersicht" ? (
-        <>
+        <div key="uebersicht" className="bereich-ein">
           <HubBuehne
             d={{
               name: username,
@@ -302,12 +303,14 @@ export function DashboardContent({
               dateien,
             }}
           />
-        </>
+        </div>
       ) : (
-        <div className="hubseite">
+        <div key={bereich} className="hubseite bereich-ein">
           <header className="seitenkopf">
             <div>
-              <h1>{info.name}</h1>
+              <h1>
+                <SteigText text={info.name} schritt={22} />
+              </h1>
               <p>{info.untertitel}</p>
             </div>
             <div className="rechts">
