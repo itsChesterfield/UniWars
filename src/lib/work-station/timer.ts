@@ -56,16 +56,24 @@ export type TimerZustand = {
   fokusStart: number | null;
   fachId: string | null;
   einstellungen: WsEinstellungen;
+  /** Gewählte Aufgabe (ältere gespeicherte Zustände haben das Feld nicht) */
+  aufgabe?: FokusAufgabe | null;
+  /** Nach einer Fokus-Runde: „Aufgabe abgeschlossen?“ steht noch aus */
+  frage?: FokusAufgabe | null;
 };
 
 export type Sitzung = { start: number; minuten: number; abgeschlossen: boolean };
+
+/** Aufgabe, an der in der Fokus-Runde gearbeitet wird (Abgabe, To-do, Prüfungsvorbereitung) */
+export type AufgabeTyp = "deadline" | "todo" | "pruefung";
+export type FokusAufgabe = { typ: AufgabeTyp; id: string; titel: string };
 
 function phasenDauer(modus: Modus, e: WsEinstellungen): number {
   const minuten = modus === "fokus" ? e.fokus : modus === "kurz" ? e.kurzePause : e.langePause;
   return minuten * 60_000;
 }
 
-function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" | "einstellungen">): TimerZustand {
+function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" | "einstellungen" | "aufgabe" | "frage">): TimerZustand {
   const dauerMs = phasenDauer(modus, z.einstellungen);
   return {
     modus,
@@ -77,6 +85,8 @@ function phase(modus: Modus, z: Pick<TimerZustand, "erledigteRunden" | "fachId" 
     fokusStart: null,
     fachId: z.fachId,
     einstellungen: z.einstellungen,
+    aufgabe: z.aufgabe ?? null,
+    frage: z.frage ?? null,
   };
 }
 
@@ -138,7 +148,10 @@ export function abschliessen(z: TimerZustand): { zustand: TimerZustand; sitzung:
     z.modus === "fokus"
       ? { start: z.fokusStart ?? Date.now() - z.dauerMs, minuten: Math.round(z.dauerMs / 60_000), abgeschlossen: true }
       : null;
-  return { zustand: folgePhase(z, true), sitzung };
+  const zustand = folgePhase(z, true);
+  // Nach einer Fokus-Runde mit abhakbarer Aufgabe fragen, ob sie erledigt ist (Prüfungen: nur Lernzeit)
+  if (z.modus === "fokus" && z.aufgabe && z.aufgabe.typ !== "pruefung") zustand.frage = z.aufgabe;
+  return { zustand, sitzung };
 }
 
 /** Phase vorzeitig beenden. Fokus zählt nur ab 5 Minuten (mit der tatsächlich gelaufenen Zeit). */

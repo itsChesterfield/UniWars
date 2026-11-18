@@ -15623,3 +15623,101 @@ html[data-bewegung="reduziert"] .lade-skelett {
   font-size: 12px;
   line-height: 1.35;
 }
+
+/* Work Station: bisherige Fokuszeit an der gewählten Aufgabe */
+.ws-bisher {
+  margin: calc(var(--space-2) * -1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.ws-bisher-personen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-top: var(--space-1);
+  color: var(--text-3);
+}
+
+/* Nach einer Fokus-Runde: „Aufgabe abgeschlossen?“ (auf jeder Seite) */
+.fokus-frage {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: var(--z-modal);
+  width: min(360px, calc(100% - var(--space-8)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-l);
+  background: var(--flaeche);
+  color: var(--text);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 16px 40px -16px var(--schatten);
+}
+
+.fokus-frage h2 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.fokus-frage p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.fokus-frage-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+/* Aufgaben-Detail: Fokuszeit je Person */
+.fokuszeit-gesamt {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.fokuszeit-personen {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fokuszeit-personen li {
+  display: grid;
+  grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.fokuszeit-balken {
+  display: block;
+  height: var(--space-2);
+  border-radius: 999px;
+  background: var(--hover);
+  overflow: hidden;
+}
+
+.fokuszeit-balken > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--akzent);
+}
+
+@media (max-width: 760px) {
+  .fokus-frage {
+    right: var(--space-4);
+    bottom: calc(var(--space-16) + var(--space-4));
+  }
+}

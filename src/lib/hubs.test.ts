@@ -423,3 +423,21 @@ test("Whiteboard: Rahmen, Verschieben, Größe, Einlesen, Verlauf", () => {
   assert.equal(v.zurueck.length, 50);
   assert.equal(v.vor.length, 0);
 });
+
+test("Fokus mit Aufgabe: nach der Runde wird gefragt, ob sie erledigt ist (nicht bei Prüfungen)", () => {
+  const basis = startZustand(WS_STANDARD, "fach-1");
+  const mitAbgabe = { ...starten({ ...basis, aufgabe: { typ: "deadline" as const, id: "d1", titel: "Hausarbeit" } }, 0) };
+  const { zustand, sitzung } = abschliessen(mitAbgabe);
+  assert.equal(zustand.modus, "kurz");
+  assert.deepEqual(zustand.frage, { typ: "deadline", id: "d1", titel: "Hausarbeit" });
+  assert.equal(zustand.aufgabe?.id, "d1");
+  assert.ok(sitzung);
+
+  const mitPruefung = starten({ ...basis, aufgabe: { typ: "pruefung" as const, id: "p1", titel: "Klausur" } }, 0);
+  assert.equal(abschliessen(mitPruefung).zustand.frage ?? null, null);
+
+  // Die Pause danach behält Aufgabe und offene Frage
+  const pause = abschliessen(starten(zustand, 0)).zustand;
+  assert.equal(pause.modus, "fokus");
+  assert.equal(pause.aufgabe?.id, "d1");
+});

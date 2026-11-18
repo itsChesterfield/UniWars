@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { einstellungenSpeichern } from "@/app/(hubs)/work-station/actions";
+import { arbeitszeitLaden, einstellungenSpeichern, type Arbeitszeit } from "@/app/(hubs)/work-station/actions";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import { sitzungMelden } from "@/components/work-station/timer-waechter";
@@ -18,6 +18,8 @@ import {
   starten,
   ueberspringen,
   zuruecksetzen,
+  type AufgabeTyp,
+  type FokusAufgabe,
   type TimerZustand,
   type WsEinstellungen,
 } from "@/lib/work-station/timer";
@@ -29,6 +31,47 @@ import { track } from "@/lib/analytics";
 
 export type TagesEintrag = { fachId: string | null; name: string; farbe: string | null; minuten: number };
 
+/** Offene Aufgabe zur Auswahl: Abgabe/Frist, Gruppenarbeit, To-do oder Prüfungsvorbereitung */
+export type AufgabeOption = { typ: AufgabeTyp; id: string; titel: string; fachId: string | null; gruppe: string; wann: string | null };
+
+const GRUPPEN_REIHE = ["Abgaben und Fristen", "Gruppenarbeiten", "To-dos", "Prüfungsvorbereitung"];
+
+/** Bisherige Arbeitszeit an der gewählten Aufgabe, bei Gruppenarbeit je Person */
+function BisherGearbeitet({ aufgabe }: { aufgabe: FokusAufgabe }) {
+  const [liste, setListe] = useState<{ fuer: string; zeiten: Arbeitszeit[] } | null>(null);
+  const schluessel = `${aufgabe.typ}:${aufgabe.id}`;
+  useEffect(() => {
+    let aktuell = true;
+    const laden = () =>
+      arbeitszeitLaden({ typ: aufgabe.typ, id: aufgabe.id })
+        .then((zeiten) => aktuell && setListe({ fuer: schluessel, zeiten }))
+        .catch(() => undefined);
+    void laden();
+    window.addEventListener(SITZUNG_GESPEICHERT_EVENT, laden);
+    return () => {
+      aktuell = false;
+      window.removeEventListener(SITZUNG_GESPEICHERT_EVENT, laden);
+    };
+  }, [aufgabe.typ, aufgabe.id, schluessel]);
+  const zeiten = liste?.fuer === schluessel ? liste.zeiten : [];
+  const gesamt = zeiten.reduce((n, z) => n + z.minuten, 0);
+  if (!gesamt) return <p className="ws-bisher">Noch keine Fokuszeit für diese Aufgabe.</p>;
+  return (
+    <p className="ws-bisher">
+      Bisher <b className="zahl">{dauerText(gesamt)}</b>
+      {zeiten.length > 1 && (
+        <span className="ws-bisher-personen">
+          {zeiten.map((z) => (
+            <span key={z.userId}>
+              {z.name} <span className="zahl">{dauerText(z.minuten)}</span>
+            </span>
+          ))}
+        </span>
+      )}
+    </p>
+  );
+}
+
 const RADIUS = 108;
 const UMFANG = 2 * Math.PI * RADIUS;
 
@@ -38,6 +81,7 @@ export function WorkStation({
   vorschlag,
   heute,
   heuteFehler = false,
+  aufgaben = [],
 }: {
   einstellungen: WsEinstellungen;
   faecher: FachOption[];
@@ -45,6 +89,7 @@ export function WorkStation({
   heute: TagesEintrag[];
   /** Lernzeit von heute ließ sich nicht laden; der Timer läuft trotzdem */
   heuteFehler?: boolean;
+  aufgaben?: AufgabeOption[];
 }) {
   const router = useRouter();
   const gespeichert = useTimerZustand();
@@ -75,20 +120,30 @@ export function WorkStation({
   function zuruecksetzenKlick() {
     const { zustand: neu, sitzung } = zuruecksetzen(zustand, Date.now());
     timerSchreiben(neu);
-    void sitzungMelden(sitzung, zustand.fachId);
+    void sitzungMelden(sitzung, zustand.fachId, zustand.modus === "fokus" ? (zustand.aufgabe ?? null) : null);
     track("work_station_zurueckgesetzt", { modus: zustand.modus });
   }
 
   function ueberspringenKlick() {
     const { zustand: neu, sitzung } = ueberspringen(zustand, Date.now());
     timerSchreiben(neu);
-    void sitzungMelden(sitzung, zustand.fachId);
+    void sitzungMelden(sitzung, zustand.fachId, zustand.modus === "fokus" ? (zustand.aufgabe ?? null) : null);
     track("work_station_uebersprungen", { modus: zustand.modus });
   }
 
   function fachWaehlen(fachId: string) {
     timerSchreiben({ ...zustand, fachId: fachId || null });
   }
+
+  function aufgabeWaehlen(wert: string) {
+    const a = aufgaben.find((x) => `${x.typ}:${x.id}` === wert);
+    // Fach der Aufgabe übernehmen, damit die Lernzeit beim richtigen Fach landet
+    timerSchreiben({ ...zustand, aufgabe: a ? { typ: a.typ, id: a.id, titel: a.titel } : null, fachId: a?.fachId ?? zustand.fachId });
+    track("fokus_aufgabe_gewaehlt", { typ: a?.typ ?? "keine" });
+  }
+
+  const gruppen = GRUPPEN_REIHE.map((g) => ({ name: g, liste: aufgaben.filter((a) => a.gruppe === g) })).filter((g) => g.liste.length);
+  const gewaehlt = zustand.aufgabe && aufgaben.some((a) => a.typ === zustand.aufgabe?.typ && a.id === zustand.aufgabe?.id) ? zustand.aufgabe : null;
 
   const anteil = zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
   const runde = (zustand.erledigteRunden % zustand.einstellungen.runden) + (zustand.modus === "fokus" ? 1 : 0);
@@ -125,7 +180,23 @@ export function WorkStation({
       <div className="ws-raster">
         <section className="ws-timer-karte" data-modus={zustand.modus} aria-label="Fokus-Timer">
           <label className="ws-fach">
-            <span>Woran lernst du?</span>
+            <span>Woran arbeitest du?</span>
+            <select value={gewaehlt ? `${gewaehlt.typ}:${gewaehlt.id}` : ""} onChange={(e) => aufgabeWaehlen(e.target.value)}>
+              <option value="">Keine bestimmte Aufgabe</option>
+              {gruppen.map((g) => (
+                <optgroup key={g.name} label={g.name}>
+                  {g.liste.map((a) => (
+                    <option key={`${a.typ}:${a.id}`} value={`${a.typ}:${a.id}`}>
+                      {a.wann ? `${a.titel} (${a.wann})` : a.titel}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          {gewaehlt && <BisherGearbeitet aufgabe={gewaehlt} />}
+          <label className="ws-fach">
+            <span>Fach</span>
             <select value={zustand.fachId ?? ""} onChange={(e) => fachWaehlen(e.target.value)}>
               <option value="">Allgemein</option>
               {faecher.map((f) => (
