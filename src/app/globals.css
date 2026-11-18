@@ -15884,3 +15884,31 @@ html[data-bewegung="reduziert"] .lade-skelett {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 }
+
+/* Work Station: Dauer am Kreis ziehen */
+.ws-kreis.stellbar {
+  touch-action: none;
+  cursor: pointer;
+}
+
+.ws-griff {
+  position: absolute;
+  width: var(--space-6);
+  height: var(--space-6);
+  margin: calc(var(--space-3) * -1) 0 0 calc(var(--space-3) * -1);
+  border-radius: 50%;
+  background: var(--akzent);
+  box-shadow:
+    0 0 0 var(--space-1) var(--flaeche),
+    0 2px 8px var(--schatten);
+  cursor: grab;
+}
+
+.ws-griff:active {
+  cursor: grabbing;
+}
+
+.ws-griff:focus-visible {
+  outline: 3px solid var(--akzent-text);
+  outline-offset: 3px;
+}

@@ -179,3 +179,23 @@ export function dauerText(minuten: number): string {
   if (h === 0) return `${m} min`;
   return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }
+
+/** Welche Einstellung der Kreis gerade stellt (Fokus, kurze oder lange Pause), Grenzen und Schrittweite */
+export function stellBereich(modus: Modus): { feld: "fokus" | "kurzePause" | "langePause"; min: number; max: number; schritt: number } {
+  if (modus === "kurz") return { feld: "kurzePause", min: WS_GRENZEN.kurzePause[0], max: WS_GRENZEN.kurzePause[1], schritt: 1 };
+  if (modus === "lang") return { feld: "langePause", min: WS_GRENZEN.langePause[0], max: WS_GRENZEN.langePause[1], schritt: 5 };
+  return { feld: "fokus", min: WS_GRENZEN.fokus[0], max: WS_GRENZEN.fokus[1], schritt: 5 };
+}
+
+/**
+ * Punkt am Kreis ziehen: Winkel (0° oben, im Uhrzeigersinn) → Minuten. Ein voller Kreis ist das Maximum.
+ * Über die 12-Uhr-Stelle springt der Wert nicht von max auf min (und umgekehrt), sondern bleibt am Rand.
+ */
+export function minutenAusWinkel(winkel: number, b: { min: number; max: number; schritt: number }, vorher: number): number {
+  const w = ((winkel % 360) + 360) % 360;
+  let m = Math.round(((w / 360) * b.max) / b.schritt) * b.schritt;
+  const viertel = b.max / 4;
+  if (vorher > b.max - viertel && m < viertel) m = b.max;
+  else if (vorher < b.min + viertel && m > b.max - viertel) m = b.min;
+  return Math.min(b.max, Math.max(b.min, m));
+}

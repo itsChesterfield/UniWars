@@ -8,8 +8,10 @@ import {
   einstellungenLesen,
   pausieren,
   restzeit,
+  minutenAusWinkel,
   startZustand,
   starten,
+  stellBereich,
   ueberspringen,
   zuruecksetzen,
   alsUhr,
@@ -440,4 +442,16 @@ test("Fokus mit Aufgabe: nach der Runde wird gefragt, ob sie erledigt ist (nicht
   const pause = abschliessen(starten(zustand, 0)).zustand;
   assert.equal(pause.modus, "fokus");
   assert.equal(pause.aufgabe?.id, "d1");
+});
+
+test("Timer am Kreis ziehen: Winkel → Minuten, ohne Sprung über 12 Uhr", () => {
+  const b = stellBereich("fokus");
+  assert.deepEqual([b.min, b.max, b.schritt], [5, 90, 5]);
+  assert.equal(minutenAusWinkel(240, b, 25), 60);
+  assert.equal(minutenAusWinkel(90, b, 25), 25);
+  assert.equal(minutenAusWinkel(2, b, 25), 5);
+  assert.equal(minutenAusWinkel(3, b, 85), 90);
+  assert.equal(minutenAusWinkel(355, b, 10), 5);
+  assert.equal(minutenAusWinkel(-120, b, 50), 60);
+  assert.equal(stellBereich("kurz").schritt, 1);
 });

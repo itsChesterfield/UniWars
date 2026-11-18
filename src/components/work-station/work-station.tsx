@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useFokusraum } from "@/lib/fokusraum-store";
@@ -20,12 +20,14 @@ import {
   starten,
   ueberspringen,
   zuruecksetzen,
+  minutenAusWinkel,
+  stellBereich,
   type AufgabeTyp,
   type FokusAufgabe,
   type TimerZustand,
   type WsEinstellungen,
 } from "@/lib/work-station/timer";
-import { SITZUNG_GESPEICHERT_EVENT, timerSchreiben, useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
+import { SITZUNG_GESPEICHERT_EVENT, timerLesen, timerSchreiben, useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { benachrichtigungErfragen } from "@/lib/work-station/ton";
 import type { FachVorschlag } from "@/lib/work-station/kontext";
 import type { FachOption } from "@/lib/fach-option";
@@ -100,6 +102,9 @@ export function WorkStation({
   const jetzt = useJetzt(zustand.laeuft);
   const rest = restzeit(zustand, jetzt);
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+  const kreisRef = useRef<HTMLDivElement>(null);
+  const ziehen = useRef(false);
+  const speicherTimer = useRef<number | null>(null);
   const raumWahl = useFokusraum();
 
   // Nach jeder gespeicherten Sitzung die Tagesübersicht neu laden.
@@ -145,10 +150,42 @@ export function WorkStation({
     track("fokus_aufgabe_gewaehlt", { typ: a?.typ ?? "keine" });
   }
 
+  // Dauer direkt am Kreis einstellen (nur solange die Phase noch nicht begonnen hat)
+  const stellbar = !zustand.laeuft && zustand.restMs === zustand.dauerMs;
+  const bereich = stellBereich(zustand.modus);
+  const stellMinuten = zustand.einstellungen[bereich.feld];
+  const kreisAnteil = stellbar ? stellMinuten / bereich.max : zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
+  const griffWinkel = kreisAnteil * 2 * Math.PI;
+  const griffX = 120 + RADIUS * Math.sin(griffWinkel);
+  const griffY = 120 - RADIUS * Math.cos(griffWinkel);
+
+  function minutenSetzen(minuten: number) {
+    const aktuell = timerLesen() ?? zustand;
+    if (aktuell.einstellungen[bereich.feld] === minuten) return;
+    timerSchreiben(einstellungenAnwenden(aktuell, { ...aktuell.einstellungen, [bereich.feld]: minuten }));
+  }
+
+  function ausZeiger(x: number, y: number) {
+    const r = kreisRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const winkel = (Math.atan2(x - (r.left + r.width / 2), -(y - (r.top + r.height / 2))) * 180) / Math.PI;
+    const vorher = (timerLesen() ?? zustand).einstellungen[bereich.feld];
+    minutenSetzen(minutenAusWinkel(winkel, bereich, vorher));
+  }
+
+  /** Neue Dauer als Standard merken, kurz nachdem sie feststeht */
+  function speichernSpaeter() {
+    if (speicherTimer.current) window.clearTimeout(speicherTimer.current);
+    speicherTimer.current = window.setTimeout(() => {
+      const e = (timerLesen() ?? zustand).einstellungen;
+      void einstellungenSpeichern(e).catch(() => undefined);
+      track("work_station_dauer_gezogen", { feld: bereich.feld, minuten: e[bereich.feld] });
+    }, 600);
+  }
+
   const gruppen = GRUPPEN_REIHE.map((g) => ({ name: g, liste: aufgaben.filter((a) => a.gruppe === g) })).filter((g) => g.liste.length);
   const gewaehlt = zustand.aufgabe && aufgaben.some((a) => a.typ === zustand.aufgabe?.typ && a.id === zustand.aufgabe?.id) ? zustand.aufgabe : null;
 
-  const anteil = zustand.dauerMs > 0 ? rest / zustand.dauerMs : 0;
   const runde = (zustand.erledigteRunden % zustand.einstellungen.runden) + (zustand.modus === "fokus" ? 1 : 0);
   const gesamtHeute = heute.reduce((s, e) => s + e.minuten, 0);
   const maxMinuten = Math.max(1, ...heute.map((e) => e.minuten));
@@ -219,7 +256,22 @@ export function WorkStation({
             </p>
           )}
 
-          <div className="ws-kreis">
+          <div
+            ref={kreisRef}
+            className={`ws-kreis${stellbar ? " stellbar" : ""}`}
+            onPointerDown={(e) => {
+              if (!stellbar) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              ziehen.current = true;
+              ausZeiger(e.clientX, e.clientY);
+            }}
+            onPointerMove={(e) => ziehen.current && ausZeiger(e.clientX, e.clientY)}
+            onPointerUp={() => {
+              if (!ziehen.current) return;
+              ziehen.current = false;
+              speichernSpaeter();
+            }}
+          >
             <svg viewBox="0 0 240 240" aria-hidden>
               <circle className="ws-kreis-spur" cx="120" cy="120" r={RADIUS} />
               <circle
@@ -228,9 +280,33 @@ export function WorkStation({
                 cy="120"
                 r={RADIUS}
                 strokeDasharray={UMFANG}
-                strokeDashoffset={UMFANG * (1 - anteil)}
+                strokeDashoffset={UMFANG * (1 - kreisAnteil)}
               />
             </svg>
+            {stellbar && (
+              <span
+                className="ws-griff"
+                role="slider"
+                tabIndex={0}
+                aria-label={`Dauer ${MODUS_NAME[zustand.modus]}`}
+                aria-valuemin={bereich.min}
+                aria-valuemax={bereich.max}
+                aria-valuenow={stellMinuten}
+                aria-valuetext={`${stellMinuten} Minuten`}
+                style={{ left: `${(griffX / 240) * 100}%`, top: `${(griffY / 240) * 100}%` }}
+                onKeyDown={(e) => {
+                  const schritte: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 3, PageDown: -3 };
+                  let neu: number | null = null;
+                  if (e.key in schritte) neu = stellMinuten + schritte[e.key] * bereich.schritt;
+                  else if (e.key === "Home") neu = bereich.min;
+                  else if (e.key === "End") neu = bereich.max;
+                  if (neu === null) return;
+                  e.preventDefault();
+                  minutenSetzen(Math.min(bereich.max, Math.max(bereich.min, neu)));
+                  speichernSpaeter();
+                }}
+              />
+            )}
             <div className="ws-kreis-text">
               <span className="ws-modus">{MODUS_NAME[zustand.modus]}</span>
               <span className="ws-zeit zahl" role="timer" aria-live="off">
@@ -256,7 +332,9 @@ export function WorkStation({
               Überspringen
             </button>
           </div>
-          <p className="ws-hinweis">Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.</p>
+          <p className="ws-hinweis">
+            {stellbar ? "Zieh den Punkt am Kreis, um die Dauer einzustellen. " : ""}Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.
+          </p>
         </section>
 
         <section className="ws-heute" aria-labelledby="ws-heute-titel">
