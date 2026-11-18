@@ -18,6 +18,10 @@ import {
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
 import type { IconName } from "@/lib/icons";
+import { UploadMarke } from "@/components/bewegung/upload-marke";
+import { RollText } from "@/components/bewegung/roll-text";
+import { bewegungReduziert } from "@/lib/personalisierung-store";
+import { mitteVon, punktFlug, ziehbildSetzen } from "@/lib/bewegung/punkt";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import {
   ACCEPT_ATTRIBUT,
@@ -34,7 +38,17 @@ import { fehlerMelden, track } from "@/lib/analytics";
 
 export type Ordner = { id: string | null; name: string; farbe: string | null };
 
-type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null; vonLink?: boolean };
+type Upload = {
+  schluessel: string;
+  name: string;
+  anteil: number;
+  fehler: string | null;
+  vonLink?: boolean;
+  fertig?: boolean;
+  wiederholbar?: boolean;
+  datei?: File;
+  fachId?: string | null;
+};
 type Sortierung = { spalte: "name" | "datum" | "groesse"; absteigend: boolean };
 type Vorschau = { art: "bild" | "audio"; url: string; name: string; id: string };
 
@@ -116,12 +130,15 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
       setzen({ name: ticket.name });
       await hochladenMitFortschritt(ticket.signedUrl, datei, ticket.mime, (anteil) => setzen({ anteil }));
       const neu = await uploadAbschliessen({ pfad: ticket.pfad, name: ticket.name, fachId });
+      ticketPfad = null;
       setDateien((liste) => [neu, ...liste]);
-      setUploads((liste) => liste.filter((u) => u.schluessel !== schluessel));
+      // Die Lichtspur schließt sich zum Haken, danach verschwindet der Eintrag
+      setzen({ anteil: 1, fertig: true });
+      window.setTimeout(() => setUploads((liste) => liste.filter((u) => u.schluessel !== schluessel)), 1100);
       track("datei_hochgeladen", { art: dateiTyp(datei.name)?.art ?? "unbekannt", kb: Math.round(datei.size / 1024), mit_fach: Boolean(fachId) });
     } catch (err) {
       if (ticketPfad) void uploadVerwerfen(ticketPfad).catch(() => undefined);
-      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen." });
+      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen.", wiederholbar: true });
       fehlerMelden(err, { ort: "datei_upload" });
     }
   }
@@ -139,7 +156,8 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
         continue;
       }
       reserviert += datei.size;
-      neue.push({ schluessel, name: datei.name, anteil: 0, fehler: null });
+      // Datei bleibt am Eintrag, damit ein abgebrochener Upload erneut versucht werden kann
+      neue.push({ schluessel, name: datei.name, anteil: 0, fehler: null, datei, fachId });
       starten.push([datei, schluessel]);
     }
     setUploads((u) => [...u, ...neue]);
@@ -151,6 +169,12 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
       }
     };
     void Promise.all([arbeiter(), arbeiter(), arbeiter()]);
+  }
+
+  function erneutHochladen(u: Upload) {
+    if (!u.datei || u.fachId === undefined) return;
+    setUploads((l) => l.map((x) => (x.schluessel === u.schluessel ? { ...x, anteil: 0, fehler: null, wiederholbar: false } : x)));
+    void eineHochladen(u.datei, u.fachId, u.schluessel);
   }
 
   // --- Import über einen Link (öffentliche Dateien, der Server lädt sie herunter) ---
@@ -243,11 +267,21 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
   async function verschieben(d: Datei, fachId: string | null) {
     setVerschiebenId(null);
     if ((d.fach_id ?? null) === fachId) return;
+    // Bewegung: die Zeile tritt zurück, ein goldener Punkt fliegt vom Symbol zum Ordner
+    const zeile = document.querySelector<HTMLElement>(`[data-datei="${d.id}"]`);
+    const zielEl = document.querySelector(`[data-ort="${fachId ?? "allgemein"}"]`);
+    if (zeile && zielEl) {
+      zeile.animate([{ opacity: 1 }, { opacity: 0.25 }], { duration: 120, fill: "forwards" });
+      await punktFlug(mitteVon(zeile.querySelector(".dat-typ") ?? zeile), mitteVon(zielEl));
+      zielEl.classList.add("ortswechsel-ziel");
+      window.setTimeout(() => zielEl.classList.remove("ortswechsel-ziel"), 600);
+    }
     try {
       const neu = await dateiVerschieben(d.id, fachId);
       setDateien((liste) => liste.map((x) => (x.id === d.id ? neu : x)));
       track("datei_verschoben");
     } catch (err) {
+      zeile?.getAnimations().forEach((a) => a.cancel());
       setMeldung("Verschieben hat nicht geklappt.");
       fehlerMelden(err, { ort: "datei_verschieben" });
     }
@@ -266,6 +300,11 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
       // Hinweis ist optional
     }
     if (!window.confirm(`„${d.name}“ wirklich löschen?${hinweis}`)) return;
+    // Bewegung: die Zeile tritt zurück, bevor sie verschwindet (nur Deckkraft, kein Weg)
+    const zeile = document.querySelector<HTMLElement>(`[data-datei="${d.id}"]`);
+    if (zeile && !bewegungReduziert()) {
+      await zeile.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "cubic-bezier(0.4, 0, 0.9, 0.5)", fill: "forwards" }).finished.catch(() => undefined);
+    }
     setDateien((liste) => liste.filter((x) => x.id !== d.id));
     try {
       await dateiLoeschen(d.id);
@@ -379,6 +418,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                 <button
                   type="button"
                   className={`keintrag dat-ordner-knopf${ordnerZiel === o.id ? " ziel" : ""}`}
+                  data-ort={o.id ?? "allgemein"}
                   aria-current={o.id === aktuellerOrdner.id ? "true" : undefined}
                   onClick={() => ordnerOeffnen(o.id)}
                   onDragOver={(e) => {
@@ -400,7 +440,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                 >
                   <OrdnerZeichen ordner={o} />
                   <span className="n">{o.name}</span>
-                  <span className="z">{anzahl(o.id)}</span>
+                  <RollText className="z" wert={String(anzahl(o.id))} />
                 </button>
               </li>
             ))}
@@ -449,14 +489,17 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
           {uploads.length > 0 && (
             <ul className="dat-uploads" aria-live="polite">
               {uploads.map((u) => (
-                <li key={u.schluessel} className={u.fehler ? "fehler" : ""}>
-                  <span className="dat-typ" aria-hidden>
-                    <Icon name={icon(u.name)} groesse={14} />
-                  </span>
+                <li key={u.schluessel} className={u.fertig ? "fertig" : u.fehler ? "fehler" : ""}>
+                  <UploadMarke anteil={u.anteil} fertig={Boolean(u.fertig)} fehler={Boolean(u.fehler)} icon={icon(u.name)} />
                   <span className="dat-upload-name">{u.name}</span>
                   {u.fehler ? (
                     <>
                       <span className="dat-upload-fehler">{u.fehler}</span>
+                      {u.wiederholbar && (
+                        <button type="button" className="knopf neben klein" onClick={() => erneutHochladen(u)}>
+                          Erneut versuchen
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="knopf leise klein nur-symbol"
@@ -469,12 +512,7 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                   ) : u.vonLink ? (
                     <span className="dat-upload-info">Wird aus dem Link geladen …</span>
                   ) : (
-                    <>
-                      <span className="balkenf" aria-hidden>
-                        <i style={{ width: `${Math.round(u.anteil * 100)}%` }} />
-                      </span>
-                      <span className="dat-upload-info zahl">{Math.round(u.anteil * 100)} %</span>
-                    </>
+                    <span className="dat-upload-info zahl">{u.fertig ? "Hochgeladen" : `${Math.round(u.anteil * 100)} %`}</span>
                   )}
                 </li>
               ))}
@@ -527,10 +565,12 @@ export function Dateiablage({ initialDateien, ordner, limit }: { initialDateien:
                   {imOrdner.map((d) => (
                     <tr
                       key={d.id}
+                      data-datei={d.id}
                       draggable={umbenennenId !== d.id}
                       onDragStart={(e) => {
                         e.dataTransfer.setData(DRAG_TYP, d.id);
                         e.dataTransfer.effectAllowed = "move";
+                        ziehbildSetzen(e, d.name);
                       }}
                     >
                       <td className="dat-spalte-typ" aria-hidden>

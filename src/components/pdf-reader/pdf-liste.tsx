@@ -19,6 +19,7 @@ import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-
 import { groesseText } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
 import { mitteVon, punktFlug, ziehbildSetzen } from "@/lib/bewegung/punkt";
+import { UploadMarke } from "@/components/bewegung/upload-marke";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type PdfEintrag = {
@@ -36,23 +37,6 @@ export type PdfFach = { id: string; name: string; farbe: string | null };
 type Ort = string | null;
 type Ordner = { schluessel: string; name: string; farbe: string | null; eigen: boolean; id: string };
 type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null; fertig?: boolean; wiederholbar?: boolean; datei?: File; nach?: Ort };
-
-/**
- * Lichtspur beim Hochladen (Entscheidung 15.11.): Eine Spur läuft mit dem Fortschritt um das Symbol
- * und schließt sich am Ende zum Haken. Bei einem Fehler bleibt das Symbol ohne Spur.
- */
-function UploadMarke({ anteil, fertig, fehler }: { anteil: number; fertig: boolean; fehler: boolean }) {
-  return (
-    <span className="upload-marke" aria-hidden>
-      <svg viewBox="-12 -12 24 24">
-        <circle className="upload-bahn" r="10" />
-        {!fehler && <circle className="upload-spur" r="10" pathLength={100} strokeDasharray={`${Math.round(anteil * 100)} 100`} transform="rotate(-90)" />}
-        {fertig && <path className="upload-haken" d="M-4.5 0.5 L-1.4 3.6 L4.8 -3.4" pathLength={1} />}
-      </svg>
-      {!fertig && <Icon name={fehler ? "hochladen" : "pdf"} groesse={12} />}
-    </span>
-  );
-}
 
 const PDF_DRAG_TYP = "application/x-uniwars-pdf";
 

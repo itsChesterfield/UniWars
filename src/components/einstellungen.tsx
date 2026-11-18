@@ -1,5 +1,6 @@
 "use client";
 
+import { PfeilText } from "@/components/bewegung/pfeil-text";
 import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -276,7 +277,9 @@ export function Einstellungen({
           {kiVerfuegbar && (
             <Link href="/einstellungen/gedaechtnis" className="sidebar-theme-toggle einst-gedaechtnis-link">
               <span>🧠 Was Studio über dich weiß</span>
-              <span style={{ color: "var(--accent-strong)" }}>Ansehen →</span>
+              <span style={{ color: "var(--accent-strong)" }}>
+                <PfeilText>Ansehen</PfeilText>
+              </span>
             </Link>
           )}
           {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
