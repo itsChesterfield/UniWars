@@ -255,7 +255,7 @@ export function DetailAnsicht({
             )}
           </section>
 
-          <FokusZeit typ={daten.typ} id={zielId} titel={daten.titel} fachId={daten.fachId} />
+          <FokusZeit typ={daten.typ} id={zielId} />
 
           <section className="detail-abschnitt" aria-labelledby="detail-unteraufgaben">
             <div className="detail-abschnitt-kopf">
