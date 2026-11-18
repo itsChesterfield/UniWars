@@ -356,8 +356,8 @@ export function Lernmodus({
             <div className="kk-antworten" role="group" aria-label="Wie gut wusstest du es?">
               {BEWERTUNGEN.map((b) => (
                 <button key={b.wert} type="button" className={`kk-antwort ${b.klasse}`} onClick={() => antworten(b.wert)}>
-                  <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
                   <span className="kk-antwort-name">{b.name}</span>
+                  <span className="kk-antwort-zeit">{intervallText(vorschau(karte, b.wert))}</span>
                   <kbd>{b.wert}</kbd>
                 </button>
               ))}
