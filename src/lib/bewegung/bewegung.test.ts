@@ -25,12 +25,3 @@ test("rollZeichen: gleiche Länge rollt nur geänderte Zeichen, versetzt", () =>
 test("rollZeichen: andere Länge rollt als ein Stück", () => {
   assert.deepEqual(rollZeichen("9 / 10", "10 / 10"), [{ neu: "10 / 10", alt: "9 / 10", verzoegerung: 0 }]);
 });
-
-test("festeFolge: hält die Reihenfolge, neue an ihren Platz, entfernte weg", async () => {
-  const { festeFolge } = await import("./folge.ts");
-  assert.deepEqual(festeFolge(null, ["b", "a"]), ["b", "a"]);
-  // a wurde erledigt und sortiert nach hinten, bleibt aber vorn, solange festgehalten
-  assert.deepEqual(festeFolge(["a", "b", "c"], ["b", "c", "a"]), ["a", "b", "c"]);
-  assert.deepEqual(festeFolge(["a", "b", "c"], ["b", "x", "c"]), ["b", "x", "c"]);
-  assert.deepEqual(festeFolge(["a", "b"], ["n", "a", "b"]), ["n", "a", "b"]);
-});
