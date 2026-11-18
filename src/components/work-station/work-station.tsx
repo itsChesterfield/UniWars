@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useFokusraum } from "@/lib/fokusraum-store";
 import { arbeitszeitLaden, einstellungenSpeichern, type Arbeitszeit } from "@/app/(hubs)/work-station/actions";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
@@ -98,6 +100,7 @@ export function WorkStation({
   const jetzt = useJetzt(zustand.laeuft);
   const rest = restzeit(zustand, jetzt);
   const [einstellungenOffen, setEinstellungenOffen] = useState(false);
+  const raumWahl = useFokusraum();
 
   // Nach jeder gespeicherten Sitzung die Tagesübersicht neu laden.
   useEffect(() => {
@@ -159,6 +162,9 @@ export function WorkStation({
           <p>Konzentriert lernen. Jede Fokus-Runde zählt für deine Lernzeit.</p>
         </div>
         <div className="rechts">
+          <Link href="/work-station/raum" className="knopf neben">
+            {raumWahl ? `Fokusraum: ${raumWahl.titel}` : "Fokusraum"}
+          </Link>
           <button type="button" className="knopf leise" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
             <Icon name="einstellungen" groesse={16} />
             Einstellungen

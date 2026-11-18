@@ -11,6 +11,7 @@ import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
 import { Kopfleiste } from "@/components/kopfleiste";
 import { BereichUebergang } from "@/components/bereich-uebergang";
 import { DesignRahmen } from "@/components/design-rahmen";
+import { FokusraumPraesenz } from "@/components/work-station/fokusraum-praesenz";
 import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
 import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 
@@ -71,6 +72,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
           <BereichUebergang>{children}</BereichUebergang>
         </GeteilteAnsicht>
       </div>
+      <FokusraumPraesenz name={name} faecher={faecher ?? []} />
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
     </DesignRahmen>
   );
