@@ -18,6 +18,7 @@ import { UmbenennenFeld } from "@/components/dateiablage/dateiablage";
 import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
 import { groesseText } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
+import { mitteVon, punktFlug, ziehbildSetzen } from "@/lib/bewegung/punkt";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type PdfEintrag = {
@@ -34,7 +35,24 @@ export type PdfFach = { id: string; name: string; farbe: string | null };
 /** Ordner-Schlüssel in der Adresse: "f:<fach>" oder "o:<eigener Ordner>"; ohne = oberste Ebene. */
 type Ort = string | null;
 type Ordner = { schluessel: string; name: string; farbe: string | null; eigen: boolean; id: string };
-type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null };
+type Upload = { schluessel: string; name: string; anteil: number; fehler: string | null; fertig?: boolean; wiederholbar?: boolean; datei?: File; nach?: Ort };
+
+/**
+ * Lichtspur beim Hochladen (Entscheidung 15.11.): Eine Spur läuft mit dem Fortschritt um das Symbol
+ * und schließt sich am Ende zum Haken. Bei einem Fehler bleibt das Symbol ohne Spur.
+ */
+function UploadMarke({ anteil, fertig, fehler }: { anteil: number; fertig: boolean; fehler: boolean }) {
+  return (
+    <span className="upload-marke" aria-hidden>
+      <svg viewBox="-12 -12 24 24">
+        <circle className="upload-bahn" r="10" />
+        {!fehler && <circle className="upload-spur" r="10" pathLength={100} strokeDasharray={`${Math.round(anteil * 100)} 100`} transform="rotate(-90)" />}
+        {fertig && <path className="upload-haken" d="M-4.5 0.5 L-1.4 3.6 L4.8 -3.4" pathLength={1} />}
+      </svg>
+      {!fertig && <Icon name={fehler ? "hochladen" : "pdf"} groesse={12} />}
+    </span>
+  );
+}
 
 const PDF_DRAG_TYP = "application/x-uniwars-pdf";
 
@@ -200,9 +218,20 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
   }
 
   // --- Verschieben ------------------------------------------------------------
-  function verschieben(pdfId: string, nach: Ort) {
+  async function verschieben(pdfId: string, nach: Ort) {
     const pdf = pdfs.find((p) => p.id === pdfId);
     if (!pdf || ortVon(pdf) === nach) return;
+    // Bewegung: die Zeile tritt zurück, ein goldener Punkt fliegt vom Symbol zum Ziel
+    const zeile = document.querySelector<HTMLElement>(`[data-pdf="${pdfId}"]`);
+    const zielEl = document.querySelector(`[data-ort="${nach ?? "wurzel"}"]`);
+    if (zeile) {
+      zeile.animate([{ opacity: 1 }, { opacity: 0.25 }], { duration: 120, fill: "forwards" });
+      if (zielEl) {
+        await punktFlug(mitteVon(zeile.querySelector(".dat-typ") ?? zeile), mitteVon(zielEl));
+        zielEl.classList.add("ortswechsel-ziel");
+        window.setTimeout(() => zielEl.classList.remove("ortswechsel-ziel"), 600);
+      }
+    }
     const z = zielVon(nach);
     const neu: PdfEintrag =
       z.art === "ordner"
@@ -217,6 +246,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
       .then(({ name }) => setPdfs((l) => l.map((p) => (p.id === pdfId ? { ...p, name } : p))))
       .catch((err) => {
         setPdfs((l) => l.map((p) => (p.id === pdfId ? pdf : p)));
+        zeile?.getAnimations().forEach((a) => a.cancel());
         setFehler("Verschieben hat nicht geklappt.");
         fehlerMelden(err, { ort: "pdf_verschieben" });
       });
@@ -240,11 +270,13 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         { id: neu.id, name: neu.name, groesse: Number(neu.groesse), fachId: neu.fach_id, ordnerId: z.art === "ordner" ? z.id : null, letzteSeite: null },
         ...l,
       ]);
-      setUploads((l) => l.filter((u) => u.schluessel !== schluessel));
+      // Die Lichtspur schließt sich zum Haken, danach verschwindet der Eintrag
+      setzen({ anteil: 1, fertig: true });
+      window.setTimeout(() => setUploads((l) => l.filter((u) => u.schluessel !== schluessel)), 1100);
       track("datei_hochgeladen", { art: "pdf", kb: Math.round(datei.size / 1024), mit_fach: Boolean(fachId), ort: "pdf_reader" });
     } catch (err) {
       if (ticketPfad) void uploadVerwerfen(ticketPfad).catch(() => undefined);
-      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen." });
+      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen.", wiederholbar: true });
       fehlerMelden(err, { ort: "pdf_upload" });
     }
   }
@@ -258,7 +290,8 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         neue.push({ schluessel, name: datei.name, anteil: 0, fehler: "Nur PDFs – andere Dateien bitte in der Dateiablage hochladen." });
         continue;
       }
-      neue.push({ schluessel, name: datei.name, anteil: 0, fehler: null });
+      // Datei bleibt am Eintrag, damit ein abgebrochener Upload erneut versucht werden kann
+      neue.push({ schluessel, name: datei.name, anteil: 0, fehler: null, datei, nach });
       starten.push([datei, schluessel]);
     }
     setUploads((u) => [...u, ...neue]);
@@ -269,9 +302,16 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
     void Promise.all([arbeiter(), arbeiter()]);
   }
 
+  function erneutHochladen(u: Upload) {
+    if (!u.datei || u.nach === undefined) return;
+    setUploads((l) => l.map((x) => (x.schluessel === u.schluessel ? { ...x, anteil: 0, fehler: null, wiederholbar: false } : x)));
+    void eineHochladen(u.datei, u.nach, u.schluessel);
+  }
+
   /** Ablageziel für PDFs aus der Liste (verschieben) und vom Computer (hochladen). */
   function ablage(nach: Ort, kennung: string) {
     return {
+      "data-ort": kennung,
       onDragOver: (e: React.DragEvent) => {
         const typen = e.dataTransfer.types;
         if (!typen.includes(PDF_DRAG_TYP) && !typen.includes("Files")) return;
@@ -290,7 +330,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         e.stopPropagation();
         setZiel(null);
         const id = e.dataTransfer.getData(PDF_DRAG_TYP);
-        if (id) verschieben(id, nach);
+        if (id) void verschieben(id, nach);
         else if (e.dataTransfer.files.length) hochladen(Array.from(e.dataTransfer.files), nach);
       },
     };
@@ -299,9 +339,9 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
   function menue(p: PdfEintrag): MenuePunkt[] {
     const punkte: MenuePunkt[] = [{ label: "Umbenennen", onClick: () => setUmbenennenId(p.id) }];
     for (const o of ordner) {
-      if (o.schluessel !== ortVon(p)) punkte.push({ label: `Nach „${o.name}“ verschieben`, onClick: () => verschieben(p.id, o.schluessel) });
+      if (o.schluessel !== ortVon(p)) punkte.push({ label: `Nach „${o.name}“ verschieben`, onClick: () => void verschieben(p.id, o.schluessel) });
     }
-    if (ortVon(p)) punkte.push({ label: "Aus dem Ordner nehmen", onClick: () => verschieben(p.id, null) });
+    if (ortVon(p)) punkte.push({ label: "Aus dem Ordner nehmen", onClick: () => void verschieben(p.id, null) });
     return punkte;
   }
 
@@ -354,14 +394,17 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
       {uploads.length > 0 && (
         <ul className="pdf-uploads">
           {uploads.map((u) => (
-            <li key={u.schluessel}>
-              <span className="dat-typ" aria-hidden>
-                <Icon name="hochladen" groesse={14} />
-              </span>
+            <li key={u.schluessel} className={u.fertig ? "fertig" : u.fehler ? "fehler" : undefined}>
+              <UploadMarke anteil={u.anteil} fertig={Boolean(u.fertig)} fehler={Boolean(u.fehler)} />
               <span className="pdf-upload-name">{u.name}</span>
               {u.fehler ? (
                 <>
                   <span className="dat-upload-fehler">{u.fehler}</span>
+                  {u.wiederholbar && (
+                    <button type="button" className="knopf neben klein" onClick={() => erneutHochladen(u)}>
+                      Erneut versuchen
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="knopf leise klein nur-symbol"
@@ -372,9 +415,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
                   </button>
                 </>
               ) : (
-                <span className="balkenf pdf-upload-balken" aria-hidden>
-                  <i style={{ width: `${Math.round(u.anteil * 100)}%` }} />
-                </span>
+                <span className="pdf-upload-stand zahl">{u.fertig ? "Hochgeladen" : `${Math.round(u.anteil * 100)} %`}</span>
               )}
             </li>
           ))}
@@ -442,11 +483,13 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
               <li
                 key={d.id}
                 className="pdf-liste-eintrag"
+                data-pdf={d.id}
                 draggable={umbenennenId !== d.id}
                 title="In einen Ordner ziehen zum Verschieben"
                 onDragStart={(e) => {
                   e.dataTransfer.setData(PDF_DRAG_TYP, d.id);
                   e.dataTransfer.effectAllowed = "move";
+                  ziehbildSetzen(e, d.name);
                 }}
               >
                 {umbenennenId === d.id ? (
