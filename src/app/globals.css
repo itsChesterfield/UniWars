@@ -1334,6 +1334,7 @@ input[type="checkbox"] {
 
 /* Eingabefelder des Designs B3 (Formulare und Rechner): Fläche mit innerem Ring, ohne Rand */
 .crud-form :is(input:not([type="checkbox"]), select, textarea),
+.qz-frage-karte :is(input, select, textarea),
 .rechner-feld input {
   height: 40px;
   padding: 0 var(--space-3);
@@ -1386,6 +1387,32 @@ input[type="checkbox"] {
 
 .crud-form-actions .rechts {
   margin-left: auto;
+}
+
+/* Formular als Dialog: die Fläche mit Ring trägt der Dialog, das Formular darin nicht noch einmal */
+.formular-dialog {
+  width: min(480px, calc(100% - var(--space-8)));
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-6);
+  border: 0;
+  border-radius: var(--radius-l);
+  background: var(--flaeche);
+  color: var(--text);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -20px var(--schatten);
+}
+
+.formular-dialog::backdrop {
+  background: color-mix(in srgb, var(--grund) 70%, transparent);
+}
+
+.formular-dialog .crud-form {
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .crud-form-actions button:not(.knopf) {
@@ -1474,6 +1501,10 @@ input[type="checkbox"] {
 
 .abschnitt-kopf .abschnitt-titel {
   margin: 0;
+}
+
+.abschnitt-kopf .rechts {
+  margin-left: auto;
 }
 
 .abschnitt-info {
@@ -1714,8 +1745,13 @@ input[type="checkbox"] {
 }
 
 /* Knopf nur mit Symbol: quadratisch, Name über aria-label */
-.knopf.klein.nur-symbol {
+.knopf.nur-symbol {
   flex-shrink: 0;
+  width: 40px;
+  padding: 0;
+}
+
+.knopf.klein.nur-symbol {
   width: 32px;
   padding: 0;
 }
@@ -2550,9 +2586,7 @@ dialog.card {
 }
 
 .hub-kopf-aktionen a.btng,
-.hub-kopf-aktionen a.btnp,
-.kk-kachel-knoepfe a,
-.kk-zusammenfassung a.btng {
+.hub-kopf-aktionen a.btnp {
   text-decoration: none;
 }
 
@@ -3064,171 +3098,182 @@ kbd {
   min-height: 0;
 }
 
-/* --- Karteikarten --- */
+/* --- Karteikarten (Design B3, Welle 4): Abschnitte mit Zeilen, Lernmodus mit Karte und vier Bewertungen --- */
 
-.kk-raster {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 16px;
+.kk-abschnitt {
+  margin-top: var(--space-8);
 }
 
-.kk-kachel {
-  padding: 18px;
-  gap: 10px;
+.kk-zurueck {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: var(--space-4);
+  overflow: hidden;
 }
 
-.kk-kachel-kopf {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.kk-kachel-name {
-  font-family: var(--font-display), system-ui, sans-serif;
-  font-size: 19px;
+.kk-name {
+  line-height: var(--space-6);
   color: var(--text);
-  overflow-wrap: anywhere;
+  text-decoration: none;
 }
 
-.kk-kachel-fach {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
+.kk-name:hover {
+  text-decoration: underline;
 }
 
-.kk-kachel-zahlen {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
+/* Fällige Karten und Reife als getönte Pille wie die Fehltage */
+.kk-faellig {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--farbe, var(--text)) 10%, transparent);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
-.kk-kachel-knoepfe {
-  display: flex;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 4px;
+.kk-faellig.an {
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
 }
 
-.kk-kartenliste {
-  list-style: none;
+.kk-reife-neu {
+  --farbe: var(--f3);
+}
+
+.kk-reife-lernen {
+  --farbe: var(--color-error);
+}
+
+.kk-reife-jung {
+  --farbe: var(--warnung);
+}
+
+.kk-reife-sicher {
+  --farbe: var(--ok);
+}
+
+.kk-reife-zahlen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
-.kk-karte-zeile {
+.kk-reife-zahlen li {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+/* Quadrat in der Farbe des Balkens als Legende */
+.kk-reife-zahlen span::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-2);
+  border-radius: var(--space-half);
+  background: var(--farbe);
+}
+
+.kk-reife-zahlen strong {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.kk-reife-balken {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-half);
+  height: 8px;
+  margin-top: var(--space-4);
+  overflow: hidden;
+  border-radius: var(--space-half);
+  background: var(--flaeche-3);
 }
 
-.kk-karte-zeile:last-child,
-.kk-karte-bearbeiten:last-child {
-  border-bottom: none;
-}
-
-.kk-karte-bearbeiten {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+.kk-reife-balken > span {
+  min-width: 4px;
+  background: var(--farbe);
 }
 
 .kk-karte-vorschau {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  flex: 1 1 200px;
   flex-direction: column;
-  gap: 2px;
-  text-align: left;
-  border: none;
+  min-width: 0;
+  padding: 0;
+  border: 0;
   background: none;
-  padding: 4px 6px;
-  border-radius: var(--radius-m);
-  color: var(--text);
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.kk-karte-vorschau:hover {
-  background: var(--card2);
-}
-
-.kk-karte-vorne {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.kk-karte-vorne,
-.kk-karte-hinten {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.kk-karte-hinten {
-  font-size: 12.5px;
+.kk-karte-vorschau:hover .entry-title {
+  text-decoration: underline;
 }
 
 .kk-formular {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .kk-formular-seiten {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .kk-formular-label {
   display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 .kk-lernen {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 720px;
+  gap: var(--space-4);
   width: 100%;
+  max-width: 720px;
   margin: 0 auto;
 }
 
 .kk-lernen-kopf {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
 }
 
-.kk-fortschritt-text {
-  font-size: 15px;
-  font-weight: 700;
+.kk-lernen-kopf .kk-zurueck {
+  margin: 0 auto 0 0;
+}
+
+.kk-lernen .kk-fortschritt {
+  margin-top: 0;
 }
 
 .kk-lernkarte {
+  border-radius: var(--radius-m);
   perspective: 1400px;
-  border: none;
-  background: none;
-  padding: 0;
   cursor: pointer;
-  outline-offset: 4px;
 }
 
 .kk-lernkarte-innen {
   position: relative;
   display: grid;
   min-height: 320px;
-  transition: transform 0.45s ease;
   transform-style: preserve-3d;
+  transition: transform var(--dur-long) var(--ease-out);
 }
 
 .kk-lernkarte.umgedreht .kk-lernkarte-innen {
@@ -3239,277 +3284,181 @@ kbd {
   grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  text-align: center;
-  gap: 12px;
-  padding: 36px 32px;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-8);
   border-radius: var(--radius-m);
-  border: 1px solid var(--border);
-  background: var(--card);
-  box-shadow: var(--shadow);
+  background: var(--flaeche-2);
+  box-shadow: inset 0 0 0 1px var(--linie);
+  color: var(--text);
+  text-align: center;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  color: var(--text);
 }
 
 .kk-hinten {
   transform: rotateY(180deg);
-  background: var(--card2);
+  background: var(--flaeche-3);
 }
 
 .kk-seite .md-inhalt {
-  font-size: 20px;
   min-height: 0;
+  font-size: var(--text-xl);
 }
 
 .kk-seite-label {
   position: absolute;
-  top: 14px;
-  left: 18px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--faint);
+  top: var(--space-4);
+  left: var(--space-5);
+  font-size: var(--text-xs);
+  color: var(--text-3);
 }
 
-.kk-antworten {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.kk-antwort {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 14px;
-  border-radius: var(--radius-m);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.kk-antwort.nein {
-  background: var(--danger-soft);
-  color: var(--danger);
-  border-color: var(--danger);
-}
-
-.kk-antwort.ja {
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-}
-
-.kk-antwort kbd {
-  background: rgba(255, 255, 255, 0.25);
-  color: inherit;
-  border-color: currentColor;
+.kk-aufdecken {
+  align-self: center;
 }
 
 .kk-tipp {
+  margin: 0;
   text-align: center;
-  font-size: 13px;
-  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
-.kk-lernen-leer,
-.kk-zusammenfassung {
-  align-items: center;
-  text-align: center;
-  gap: 12px;
-  max-width: 520px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.kk-lernen-leer p,
-.kk-zusammenfassung p {
-  margin: 0;
-}
-
-.kk-ergebnis {
-  font-size: 17px;
-}
-
-/* Lernstand im Stapel */
-.kk-reife-neu {
-  --farbe: var(--blue);
-}
-
-.kk-reife-lernen {
-  --farbe: var(--danger);
-}
-
-.kk-reife-jung {
-  --farbe: var(--accent);
-}
-
-.kk-reife-sicher {
-  --farbe: var(--success);
-}
-
-.kk-lernstand {
-  gap: 10px;
-}
-
-.kk-reife-zahlen {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* Vier Bewertungen (Spaced Repetition), getönt in der Farbe der Bewertung */
+.kk-antworten {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.kk-reife-zahlen li {
-  display: grid;
-  gap: 2px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.kk-reife-zahlen strong {
-  font-size: 22px;
-  color: var(--farbe);
-}
-
-.kk-reife-balken {
+.kk-antwort {
+  --farbe: var(--ok);
   display: flex;
-  gap: 2px;
-  height: 8px;
-  border-radius: 99px;
-  overflow: hidden;
-  background: var(--card2);
-}
-
-.kk-reife-balken > span {
-  background: var(--farbe);
-  min-width: 4px;
-}
-
-.kk-vorschau-zeile {
-  margin: 0;
-  font-size: 13px;
-}
-
-.kk-vorschau-zeile strong {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.tag.kk-reife-tag {
-  background: color-mix(in srgb, var(--farbe) 14%, var(--card));
-  color: color-mix(in srgb, var(--farbe) 80%, var(--text));
-  white-space: nowrap;
-}
-
-/* Vier Bewertungen (Spaced Repetition) */
-.kk-antworten-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.kk-antworten-4 .kk-antwort {
-  --farbe: var(--success);
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 6px 12px;
-  background: color-mix(in srgb, var(--farbe) 12%, var(--card));
-  color: var(--farbe);
-  border-color: color-mix(in srgb, var(--farbe) 45%, transparent);
-  transition: transform 0.08s ease, background 0.15s ease;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--farbe) 14%, transparent);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-micro) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
 }
 
-.kk-antworten-4 .kk-antwort:hover {
-  background: color-mix(in srgb, var(--farbe) 22%, var(--card));
+.kk-antwort:hover {
+  background: color-mix(in srgb, var(--farbe) 22%, transparent);
 }
 
-.kk-antworten-4 .kk-antwort:active {
-  transform: scale(0.97);
+.kk-antwort:active {
+  transform: scale(0.98);
 }
 
 .kk-antwort.nochmal,
 .kk-auswertung .nochmal {
-  --farbe: var(--danger);
+  --farbe: var(--color-error);
 }
 
 .kk-antwort.schwer,
 .kk-auswertung .schwer {
-  --farbe: var(--accent-strong);
+  --farbe: var(--warnung);
 }
 
 .kk-antwort.gut,
 .kk-auswertung .gut {
-  --farbe: var(--success);
+  --farbe: var(--ok);
 }
 
 .kk-antwort.einfach,
 .kk-auswertung .einfach {
-  --farbe: var(--blue);
+  --farbe: var(--akzent);
 }
 
 .kk-antwort-zeit {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.85;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-2);
 }
 
 .kk-antwort-name {
-  font-size: 15px;
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 
-.kk-antworten-4 .kk-antwort kbd {
-  background: transparent;
-  font-size: 10px;
-  opacity: 0.7;
+.kk-antwort kbd {
+  font-size: var(--text-xs);
 }
 
 @media (hover: none) {
-  .kk-antworten-4 .kk-antwort kbd {
+  .kk-antwort kbd {
     display: none;
   }
 }
 
+.kk-ende {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 520px;
+  padding-top: var(--space-8);
+}
+
+.kk-ende h1 {
+  font-size: var(--text-3xl);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.kk-ende p {
+  margin: 0;
+  color: var(--text-2);
+}
+
 .kk-auswertung {
-  list-style: none;
-  margin: 4px 0;
-  padding: 0;
-  width: 100%;
   display: grid;
-  gap: 8px;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .kk-auswertung li {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) 32px;
+  grid-template-columns: 72px minmax(0, 1fr) 32px;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  text-align: left;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
 }
 
-.kk-auswertung li strong {
+.kk-auswertung .balkenf {
+  --c: var(--farbe);
+  margin-top: 0;
+}
+
+.kk-auswertung .zahl {
   text-align: right;
 }
 
-.kk-auswertung-balken {
-  height: 8px;
-  border-radius: 99px;
-  background: var(--card2);
-  overflow: hidden;
+.kk-ende-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-.kk-auswertung-balken > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--farbe);
+@media (max-width: 760px) {
+  .kk-formular-seiten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kk-antworten,
+  .kk-reife-zahlen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* --- Work Station --- */
@@ -7464,35 +7413,6 @@ dialog.ki-dialog-klein {
   font-size: 13px;
 }
 
-/* KI-11 Erklär mir das */
-.kk-erklaerung {
-  display: grid;
-  gap: 6px;
-}
-
-.kk-erklaer-knopf {
-  justify-self: center;
-}
-
-.kk-erklaerung-text {
-  padding: 12px 14px;
-  border-radius: var(--radius-m);
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-  background: color-mix(in srgb, var(--accent-soft) 45%, var(--card));
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.kk-erklaerung-roh {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.kk-erklaerung-hinweis {
-  margin: 6px 0 0;
-  font-size: 11px;
-}
-
 /* ---------------------------------------------------------------------------
    Transkription (TRA-01 … TRA-05, KI-04)
    --------------------------------------------------------------------------- */
@@ -9284,41 +9204,6 @@ button.pdf-pfad-teil:hover {
     max-height: 180px;
     object-fit: contain;
   }
-}
-
-/* --- Karteikarten: Vorschläge "Jetzt lernen" --- */
-.kk-vorschlaege ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.kk-vorschlaege li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 2px;
-  border-top: 1px solid var(--border-soft);
-}
-
-.kk-vorschlaege li:first-child {
-  border-top: none;
-}
-
-.kk-vorschlag-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.kk-vorschlag-gruende {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 /* --- PDF Reader: Notizen zur PDF in der Seitenleiste --- */
@@ -11213,8 +11098,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   color: var(--accent);
 }
 
-.lr-studio-hinweis,
-.kk-studio-hinweis {
+.lr-studio-hinweis {
   font-size: 13px;
 }
 
@@ -11237,221 +11121,160 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 }
 
 /* ---------------------------------------------------------------------------
-   Quiz (Karteikarten) und Lern-Podcast (Transkription)
+   Quiz (Karteikarten) und Lern-Podcast (Transkription), Design B3
    --------------------------------------------------------------------------- */
-.qz-bereich {
+.qz-feld {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.qz-kopf {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
 }
 
-.qz-titel {
-  font-size: 19px;
+.qz-feld-titel {
+  min-width: 96px;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.qz-typen,
+.qz-knoepfe,
+.qz-frage-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.qz-hinweis {
   margin: 0;
-}
-
-.qz-untertitel {
-  margin: 4px 0 0;
-  font-size: 13px;
-  max-width: 640px;
-}
-
-.qz-kachel-zahlen {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 12px;
-}
-
-.qz-schwach {
-  color: var(--danger);
-  font-weight: 600;
-}
-
-.qz-dialog {
-  width: min(560px, calc(100vw - 32px));
-}
-
-.qz-quellen {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  font-size: var(--text-sm);
+  color: var(--text-2);
 }
 
 .qz-quellen-liste {
-  max-height: 220px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  max-height: 192px;
+  overflow-y: auto;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
 }
 
-.qz-quelle {
-  display: flex !important;
-  flex-direction: row !important;
+.crud-form .qz-quelle {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
-  border-radius: var(--radius-m);
-  font-size: 13px;
+  gap: var(--space-2);
+  min-height: 32px;
+  margin: 0;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-s);
+  color: var(--text);
   cursor: pointer;
 }
 
 .qz-quelle:hover {
-  background: var(--bg);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
-.qz-quelle-titel {
+.qz-quelle svg {
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+
+.qz-quelle span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.qz-feld {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.qz-typen {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  font-weight: 400;
-}
-
-.qz-typ {
-  display: inline-flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 5px;
-}
-
 .qz-start,
 .qz-frage-karte,
 .qz-ergebnis {
-  max-width: 760px;
-  width: 100%;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 22px;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 720px;
 }
 
-.qz-start-titel {
-  font-size: 24px;
+.qz-frage-karte,
+.qz-ergebnis {
+  margin: 0 auto;
+  padding-top: var(--space-8);
+}
+
+.qz-start p,
+.qz-ergebnis p {
   margin: 0;
-}
-
-.qz-start-knoepfe {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.qz-klein {
-  font-size: 13px;
-  margin: 0;
-}
-
-.qz-thema {
-  margin: 2px 4px 2px 0;
-}
-
-.qz-zurueck {
-  align-self: flex-start;
-}
-
-.qz-fortschritt {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.qz-fortschritt > div,
-.pc-balken > div {
-  height: 100%;
-  background: var(--accent);
-  border-radius: inherit;
-  transition: width 0.3s ease;
 }
 
 .qz-frage-kopf {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.qz-frage-karte .balkenf {
+  margin-top: 0;
 }
 
 .qz-frage {
-  font-size: 20px;
-  line-height: 1.4;
-  margin: 4px 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .qz-optionen {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  gap: var(--space-2);
 }
 
 .qz-wf {
-  flex-direction: row;
-}
-
-.qz-wf .qz-option {
-  flex: 1;
-  justify-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .qz-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1.5px solid var(--border);
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
   border-radius: var(--radius-m);
-  background: var(--card);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
   color: var(--text);
   font: inherit;
+  font-size: var(--text-lg);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: background-color var(--dur-micro) var(--ease-out);
+}
+
+.qz-wf .qz-option {
+  justify-content: center;
 }
 
 .qz-option:hover:not(:disabled) {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
 .qz-option.gewaehlt {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--akzent);
 }
 
 .qz-option.richtig {
-  border-color: var(--success);
-  background: color-mix(in srgb, var(--success) 14%, transparent);
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ok);
 }
 
 .qz-option.falsch {
-  border-color: var(--danger);
-  background: var(--danger-soft);
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--color-error);
 }
 
 .qz-option:disabled {
@@ -11459,251 +11282,212 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 }
 
 .qz-option-nr {
+  display: grid;
   flex: none;
+  place-items: center;
   width: 24px;
   height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-m);
-  background: var(--bg);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
+  border-radius: var(--radius-s);
+  background: var(--flaeche-3);
+  color: var(--text-2);
+  font-size: var(--text-xs);
 }
 
-.qz-text {
-  font-size: 16px;
-}
-
-.qz-frei {
+.qz-frage-karte textarea {
+  height: auto;
+  min-height: 112px;
+  padding: var(--space-2) var(--space-3);
   resize: vertical;
-  min-height: 110px;
-  font-family: inherit;
 }
 
 .qz-zuordnen {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .qz-paar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-m);
-  font-size: 14px;
 }
 
 .qz-paar small {
   grid-column: 2;
+  color: var(--text-2);
 }
 
 .qz-paar.richtig {
-  background: color-mix(in srgb, var(--success) 12%, transparent);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
 }
 
 .qz-paar.falsch {
-  background: var(--danger-soft);
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
 }
 
 .qz-feedback {
-  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
   border-radius: var(--radius-m);
-  border-left: 4px solid var(--muted);
-  background: var(--bg);
-  font-size: 14px;
+  background: var(--flaeche-2);
+  font-size: var(--text-lg);
+  line-height: 1.6;
+}
+
+.qz-feedback > strong {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.qz-feedback.richtig > strong svg {
+  color: var(--ok);
+}
+
+.qz-feedback.teils > strong svg {
+  color: var(--warnung);
+}
+
+.qz-feedback.falsch > strong svg {
+  color: var(--fehler-text);
 }
 
 .qz-feedback p {
-  margin: 6px 0 0;
-}
-
-.qz-feedback.richtig {
-  border-left-color: var(--success);
-}
-
-.qz-feedback.teils {
-  border-left-color: var(--accent);
-}
-
-.qz-feedback.falsch {
-  border-left-color: var(--danger);
-}
-
-.qz-frage-knoepfe {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.qz-ergebnis {
-  align-items: center;
-  text-align: center;
-}
-
-.qz-ergebnis h2 {
   margin: 0;
+}
+
+.qz-feedback .knopf {
+  align-self: flex-start;
+}
+
+.qz-erklaerung {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.qz-ergaenzend {
+  color: var(--text-2);
 }
 
 .qz-ergebnis-kreis {
+  display: grid;
+  place-items: center;
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: conic-gradient(var(--accent) var(--p), var(--border) 0);
+  background: conic-gradient(var(--akzent) var(--p), var(--flaeche-3) 0);
 }
 
 .qz-ergebnis-kreis span {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--card);
-  font-size: 26px;
-  font-weight: 800;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--flaeche);
+  font-size: var(--text-xl);
+  font-weight: 600;
 }
 
-.qz-ergebnis-titel {
-  align-self: stretch;
-  text-align: left;
-  font-size: 15px;
-  margin: 8px 0 0;
+.qz-ergebnis h1 {
+  font-size: var(--text-3xl);
+  font-weight: 650;
+  letter-spacing: -0.035em;
 }
 
-.qz-falsch-liste {
-  align-self: stretch;
-  text-align: left;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+.qz-ergebnis .abschnitt-kopf {
+  margin: var(--space-4) 0 0;
 }
 
-.qz-falsch-liste li {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  border-radius: var(--radius-m);
-  background: var(--bg);
-}
-
-.qz-ergebnis .qz-start-knoepfe {
-  justify-content: center;
+.qz-falsch-frage {
+  font-weight: 600;
 }
 
 .pc-seite {
-  max-width: 760px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  max-width: 760px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
 }
 
-.pc-kopf {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 20px;
-  position: sticky;
-  top: 8px;
-  z-index: 5;
-}
-
-.pc-zurueck {
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.pc-titel {
-  font-size: 22px;
-  margin: 0;
-}
-
-.pc-kopf p {
-  margin: 0;
-}
-
+/* Steuerung bleibt beim Lesen des Skripts oben stehen */
 .pc-steuerung {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.pc-play {
-  min-width: 130px;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  background: var(--flaeche);
 }
 
 .pc-tempo {
-  width: auto !important;
-  flex: none;
+  height: 40px;
   margin-left: auto;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
 }
 
-.qz-dialog input[type="range"] {
-  accent-color: var(--accent);
-  width: 100%;
-}
-
-.pc-balken {
-  height: 5px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
+.pc-seite > .balkenf {
+  margin: var(--space-2) 0 var(--space-6);
 }
 
 .pc-skript {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .pc-segment-knopf {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
   border-radius: var(--radius-m);
-  background: transparent;
+  background: none;
   color: var(--text);
   font: inherit;
-  font-size: 15px;
+  font-size: var(--text-lg);
   line-height: 1.55;
   text-align: left;
   cursor: pointer;
 }
 
 .pc-segment-knopf:hover {
-  background: var(--card);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 .pc-segment.aktuell .pc-segment-knopf {
-  background: var(--card);
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
 }
 
 .pc-sprecher {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--akzent-text);
 }
 
 .pc-segment.sprecher-2 .pc-sprecher {
-  color: var(--success);
+  color: var(--text-2);
 }
 
 @media (max-width: 760px) {
@@ -11713,12 +11497,6 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 
   .qz-paar small {
     grid-column: 1;
-  }
-
-  .qz-start,
-  .qz-frage-karte,
-  .qz-ergebnis {
-    padding: 16px;
   }
 }
 
@@ -12139,41 +11917,7 @@ html[data-eingebettet] .notiz-karte {
   border-color: var(--accent);
 }
 
-/* Lesbarere Antworten: Quiz-Feedback und UniVerse Studio */
-.qz-frage {
-  font-size: 22px;
-}
-
-.qz-option {
-  font-size: 16px;
-}
-
-.qz-feedback {
-  font-size: 16px;
-  line-height: 1.6;
-  padding: 14px 16px;
-}
-
-.qz-erklaerung {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.qz-erklaerung p {
-  margin: 0;
-}
-
-.qz-ergaenzend {
-  padding-left: 10px;
-  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
-}
-
-.qz-falsch-liste {
-  font-size: 15px;
-}
-
+/* Lesbarere Antworten in UniVerse Studio */
 .ki-blase {
   font-size: 16px;
   line-height: 1.6;

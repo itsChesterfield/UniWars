@@ -49,36 +49,37 @@ export function StapelDialog({
   return (
     <dialog
       ref={ref}
-      className="quick-add-modal"
+      className="formular-dialog"
+      aria-labelledby="stapel-dialog-titel"
       onCancel={(e) => {
         e.preventDefault();
         onSchliessen();
       }}
     >
-      <form onSubmit={absenden} className="hub-formular">
-        <h3>{titel}</h3>
-        <label>
-          <span>Name</span>
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus required />
-        </label>
-        <label>
-          <span>Fach (optional)</span>
-          <select className="field" value={fachId} onChange={(e) => setFachId(e.target.value)}>
-            <option value="">Ohne Fach</option>
-            {faecher.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {fehler && <p className="auth-error">{fehler}</p>}
-        <div className="hub-formular-knoepfe">
-          <button type="button" className="btng" onClick={onSchliessen}>
-            Abbrechen
+      <form onSubmit={absenden} className="crud-form">
+        <h3 id="stapel-dialog-titel">{titel}</h3>
+        <label htmlFor="stapel-name">Name</label>
+        <input id="stapel-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoFocus required />
+        <label htmlFor="stapel-fach">Fach (optional)</label>
+        <select id="stapel-fach" value={fachId} onChange={(e) => setFachId(e.target.value)}>
+          <option value="">Ohne Fach</option>
+          {faecher.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
+        {fehler && (
+          <p className="formular-fehler" role="alert">
+            {fehler}
+          </p>
+        )}
+        <div className="crud-form-actions">
+          <button type="submit" className="knopf haupt" aria-busy={laeuft} disabled={laeuft}>
+            {knopf}
           </button>
-          <button type="submit" className="btnp" disabled={laeuft}>
-            {laeuft ? "…" : knopf}
+          <button type="button" className="knopf leise" onClick={onSchliessen}>
+            Abbrechen
           </button>
         </div>
       </form>

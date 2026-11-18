@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { quizErstellen, quizLoeschen } from "@/app/(hubs)/karteikarten/quiz-actions";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
-import { EINSTELLUNGEN_STANDARD, FRAGE_TYPEN, TYP_NAME, type FrageTyp, type QuizEinstellungen, type Schwierigkeit } from "@/lib/ki/quiz";
+import { EINSTELLUNGEN_STANDARD, FRAGE_TYPEN, TYP_NAME, type FrageTyp, type QuizEinstellungen } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type QuizKachel = {
@@ -34,69 +36,72 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
     return () => window.clearTimeout(id);
   }, [kiVerfuegbar]);
 
+  const neuKnopf = kiVerfuegbar && (
+    <button type="button" className="knopf neben klein" onClick={() => setNeu(true)}>
+      <Icon name="plus" groesse={16} />
+      Neues Quiz
+    </button>
+  );
+
   return (
-    <section className="qz-bereich" aria-labelledby="qz-titel">
-      <div className="qz-kopf">
-        <div>
-          <h2 id="qz-titel" className="qz-titel">🎯 Quiz</h2>
-          <p className="muted qz-untertitel">Lass dich aus deinen Skripten und Notizen abfragen – Multiple Choice, Wahr/Falsch, Lückentext, Zuordnen und freie Antworten, die die KI bewertet.</p>
-        </div>
-        {kiVerfuegbar && (
-          <button type="button" className="btnp" onClick={() => setNeu(true)}>
-            + Neues Quiz
-          </button>
-        )}
+    <section className="kk-abschnitt" aria-labelledby="qz-titel">
+      <div className="abschnitt-kopf">
+        <h2 id="qz-titel" className="abschnitt-titel">
+          Quiz
+        </h2>
+        <span className="abschnitt-info">aus deinen Skripten und Notizen, freie Antworten bewertet Studio</span>
+        {quizze.length > 0 && <span className="rechts">{neuKnopf}</span>}
       </div>
       {quizze.length === 0 ? (
-        <p className="empty-state">Noch kein Quiz. Erstell eins aus einem Fach oder einzelnen PDFs.</p>
+        <Zustand art="leer" icon="ziel" titel="Noch kein Quiz." region ebene={3} aktion={neuKnopf}>
+          Lass dich aus einem Fach oder einzelnen PDFs abfragen: Multiple Choice, Wahr oder falsch, Lückentext, Zuordnen und freie Antworten.
+        </Zustand>
       ) : (
-        <div className="kk-raster">
+        <ul className="entry-list">
           {quizze.map((q) => {
             const fach = faecher.find((f) => f.id === q.fach_id);
+            const zahlen = [
+              fach?.name ?? "Ohne Fach",
+              `${q.anzahl} Fragen`,
+              q.bester !== null && `bestes ${q.bester} %`,
+              q.letzter !== null && `zuletzt ${q.letzter} %`,
+              q.schwaechen > 0 && `${q.schwaechen} ${q.schwaechen === 1 ? "Schwäche" : "Schwächen"}`,
+            ].filter(Boolean);
             return (
-              <article key={q.id} className="card kk-kachel qz-kachel">
-                <div className="kk-kachel-kopf">
-                  <Link href={`/karteikarten/quiz/${q.id}`} className="kk-kachel-name">
-                    🎯 {q.titel}
+              <li key={q.id} className="entry-row fach-zeile">
+                <span className="fach-farbe" style={{ "--c": fach?.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
+                <div className="entry-info">
+                  <Link href={`/karteikarten/quiz/${q.id}`} className="entry-title kk-name">
+                    {q.titel}
+                  </Link>
+                  <span className="entry-meta">{zahlen.join(", ")}</span>
+                </div>
+                <div className="entry-actions">
+                  {q.schwaechen > 0 && (
+                    <Link href={`/karteikarten/quiz/${q.id}?modus=schwaechen`} className="knopf leise klein">
+                      Schwächen üben
+                    </Link>
+                  )}
+                  <Link href={`/karteikarten/quiz/${q.id}`} className="knopf neben klein">
+                    {q.versuche ? "Nochmal" : "Starten"}
                   </Link>
                   <button
                     type="button"
-                    className="icon-knopf"
-                    aria-label="Quiz löschen"
+                    className="knopf gefahr klein nur-symbol"
+                    aria-label={`Quiz „${q.titel}“ löschen`}
                     title="Löschen"
                     onClick={() => {
                       if (!window.confirm(`Quiz „${q.titel}“ löschen?`)) return;
                       void quizLoeschen(q.id).then(() => router.refresh());
                     }}
                   >
-                    🗑
+                    <Icon name="loeschen" groesse={16} />
                   </button>
                 </div>
-                {fach && (
-                  <div className="kk-kachel-fach muted">
-                    <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} /> {fach.name}
-                  </div>
-                )}
-                <div className="qz-kachel-zahlen muted">
-                  <span>{q.anzahl} Fragen</span>
-                  {q.versuche > 0 && <span>Bestes: {q.bester}%</span>}
-                  {q.letzter !== null && <span>Zuletzt: {q.letzter}%</span>}
-                  {q.schwaechen > 0 && <span className="qz-schwach">{q.schwaechen} Schwächen</span>}
-                </div>
-                <div className="kk-kachel-knoepfe">
-                  <Link href={`/karteikarten/quiz/${q.id}`} className="btnp">
-                    {q.versuche ? "Nochmal" : "Starten"}
-                  </Link>
-                  {q.schwaechen > 0 && (
-                    <Link href={`/karteikarten/quiz/${q.id}?modus=schwaechen`} className="btng">
-                      Schwächen üben
-                    </Link>
-                  )}
-                </div>
-              </article>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
       {neu && <QuizNeuDialog faecher={faecher} optionen={optionen} onSchliessen={() => setNeu(false)} />}
     </section>
@@ -146,50 +151,87 @@ function QuizNeuDialog({ faecher, optionen, onSchliessen }: { faecher: Fach[]; o
   return (
     <dialog
       ref={ref}
-      className="quick-add-modal qz-dialog"
+      className="formular-dialog"
+      aria-labelledby="quiz-neu-titel"
       onCancel={(e) => {
         e.preventDefault();
         if (!laeuft) onSchliessen();
       }}
     >
-      <form onSubmit={erstellen} className="hub-formular">
-        <h3>Neues Quiz</h3>
+      <form onSubmit={erstellen} className="crud-form">
+        <h3 id="quiz-neu-titel">Neues Quiz</h3>
         <QuellenWahl faecher={faecher} optionen={optionen} wert={wahl} onAendern={setWahl} />
-        <label>
-          <span>Fragen: {einst.anzahl}</span>
-          <input type="range" min={5} max={30} step={1} value={einst.anzahl} onChange={(e) => setEinst({ ...einst, anzahl: Number(e.target.value) })} />
-        </label>
-        <div className="qz-feld">
-          <span>Schwierigkeit</span>
-          <span className="segwrap" role="radiogroup" aria-label="Schwierigkeit">
-            {(["leicht", "mittel", "schwer"] as Schwierigkeit[]).map((s) => (
-              <button key={s} type="button" role="radio" aria-checked={einst.schwierigkeit === s} className={`seg ${einst.schwierigkeit === s ? "on" : ""}`} onClick={() => setEinst({ ...einst, schwierigkeit: s })}>
-                {s[0].toUpperCase() + s.slice(1)}
-              </button>
-            ))}
-          </span>
+        <Auswahl
+          name="Fragen"
+          werte={ANZAHLEN.map((n) => [n, String(n)])}
+          wert={einst.anzahl}
+          onWahl={(anzahl) => setEinst({ ...einst, anzahl })}
+        />
+        <Auswahl
+          name="Schwierigkeit"
+          werte={[
+            ["leicht", "Leicht"],
+            ["mittel", "Mittel"],
+            ["schwer", "Schwer"],
+          ]}
+          wert={einst.schwierigkeit}
+          onWahl={(schwierigkeit) => setEinst({ ...einst, schwierigkeit })}
+        />
+        <span className="qz-feld-titel" id="qz-typen">
+          Fragetypen
+        </span>
+        <div className="qz-typen" role="group" aria-labelledby="qz-typen">
+          {FRAGE_TYPEN.map((t) => (
+            <button key={t} type="button" className="filter-chip" aria-pressed={einst.typen.includes(t)} onClick={() => typUmschalten(t)}>
+              {TYP_NAME[t]}
+            </button>
+          ))}
         </div>
-        <div className="qz-feld">
-          <span>Fragetypen</span>
-          <span className="qz-typen">
-            {FRAGE_TYPEN.map((t) => (
-              <label key={t} className="qz-typ">
-                <input type="checkbox" checked={einst.typen.includes(t)} onChange={() => typUmschalten(t)} /> {TYP_NAME[t]}
-              </label>
-            ))}
-          </span>
-        </div>
-        {fehler && <p className="auth-error">{fehler}</p>}
-        {laeuft && <p className="faint">UniVerse Studio liest dein Material und schreibt die Fragen – das dauert etwa eine halbe bis ganze Minute …</p>}
-        <div className="hub-formular-knoepfe">
-          <button type="button" className="btng" onClick={onSchliessen} disabled={laeuft}>
-            Abbrechen
+        {fehler && (
+          <p className="formular-fehler" role="alert">
+            {fehler}
+          </p>
+        )}
+        {laeuft && <p className="qz-hinweis">UniVerse Studio liest dein Material und schreibt die Fragen. Das dauert etwa eine halbe bis ganze Minute.</p>}
+        <div className="crud-form-actions">
+          <button type="submit" className="knopf haupt" aria-busy={laeuft} disabled={laeuft}>
+            {laeuft ? "Studio schreibt Fragen" : "Quiz erstellen"}
           </button>
-          <button type="submit" className="btnp" disabled={laeuft}>
-            {laeuft ? "Erstelle …" : "Quiz erstellen"}
+          <button type="button" className="knopf leise" onClick={onSchliessen} disabled={laeuft}>
+            Abbrechen
           </button>
         </div>
       </form>
     </dialog>
+  );
+}
+
+const ANZAHLEN = [5, 10, 15, 20, 30];
+
+/** Eine Wahl aus wenigen Werten als Segment (Fragen, Schwierigkeit, Länge) */
+export function Auswahl<T extends string | number>({
+  name,
+  werte,
+  wert,
+  onWahl,
+}: {
+  name: string;
+  werte: [T, string][];
+  wert: T;
+  onWahl: (w: T) => void;
+}) {
+  return (
+    <div className="qz-feld" role="group" aria-label={name}>
+      <span className="qz-feld-titel" aria-hidden>
+        {name}
+      </span>
+      <span className="segment">
+        {werte.map(([w, text]) => (
+          <button key={w} type="button" aria-pressed={wert === w} onClick={() => onWahl(w)}>
+            {text}
+          </button>
+        ))}
+      </span>
+    </div>
   );
 }

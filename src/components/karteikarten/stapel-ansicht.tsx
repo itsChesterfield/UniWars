@@ -12,12 +12,13 @@ import {
   type Karte,
   type Stapel,
 } from "@/app/(hubs)/karteikarten/actions";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { markdownAlsText } from "@/components/hubs/markdown-editor";
 import { KartenFormular } from "@/components/karteikarten/karten-formular";
 import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import { KiMarkierung } from "@/components/ki/ki-markierung";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { intervallText, reife, REIFE_TEXT, type Reife } from "@/lib/karteikarten/wiederholung";
@@ -82,51 +83,63 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
     }
   }
 
-  const neuKnopf = (
-    <button
-      type="button"
-      className="btnp"
-      onClick={() => {
-        setBearbeitenId(null);
-        setNeuOffen(true);
-      }}
-    >
-      + Karte
-    </button>
-  );
+  function neueKarte() {
+    setBearbeitenId(null);
+    setNeuOffen(true);
+  }
+  const anzahl = `${karten.length} ${karten.length === 1 ? "Karte" : "Karten"}`;
 
   return (
     <>
-      <Link href="/karteikarten" className="hub-zurueck-link">
-        ← Alle Stapel
+      <Link href="/karteikarten" className="knopf leise klein kk-zurueck">
+        <Icon name="zurueck" groesse={16} />
+        Alle Stapel
       </Link>
-      <HubKopf
-        titel={stapel.name}
-        untertitel={`${fach ? fach.name : "Ohne Fach"} · ${karten.length} ${karten.length === 1 ? "Karte" : "Karten"} · ${faellig} heute fällig`}
-        aktionen={
-          <>
-            {karten.length > 0 && (
-              <Link href={`/karteikarten/${stapel.id}/lernen`} className="btng">
+      <header className="seitenkopf">
+        <div>
+          <h1>{stapel.name}</h1>
+          <p>
+            {fach ? fach.name : "Ohne Fach"}, {anzahl}, {faellig} heute fällig
+          </p>
+        </div>
+        <div className="rechts">
+          {karten.length > 0 && (
+            <>
+              <Link href={`/karteikarten/${stapel.id}/lernen`} className="knopf haupt">
+                <Icon name="abspielen" groesse={16} />
                 Lernen
               </Link>
-            )}
-            {neuKnopf}
-            <DreiPunkteMenue
-              punkte={[
-                { label: "Stapel bearbeiten", onClick: () => setStapelDialog(true) },
-                { label: "Stapel löschen", onClick: () => void stapelEntfernen(), gefahr: true },
-              ]}
-            />
-          </>
-        }
-      />
+              <button type="button" className="knopf neben" onClick={neueKarte}>
+                <Icon name="plus" groesse={16} />
+                Karte
+              </button>
+            </>
+          )}
+          <DreiPunkteMenue
+            label="Weitere Aktionen für den Stapel"
+            punkte={[
+              { label: "Stapel bearbeiten", onClick: () => setStapelDialog(true) },
+              { label: "Stapel löschen", onClick: () => void stapelEntfernen(), gefahr: true },
+            ]}
+          />
+        </div>
+      </header>
 
       {karten.length > 0 && (
-        <section className="card kk-lernstand" aria-label="Lernstand">
+        <section className="kk-abschnitt" aria-labelledby="kk-lernstand">
+          <div className="abschnitt-kopf">
+            <h2 id="kk-lernstand" className="abschnitt-titel">
+              Lernstand
+            </h2>
+            <span className="abschnitt-info">
+              fällig: <span className="zahl">{faellig}</span> jetzt, <span className="zahl">{morgen}</span> morgen,{" "}
+              <span className="zahl">{woche}</span> in den nächsten 7 Tagen
+            </span>
+          </div>
           <ul className="kk-reife-zahlen">
             {(Object.keys(REIFE_TEXT) as Reife[]).map((r) => (
               <li key={r} className={`kk-reife-${r}`}>
-                <strong className="mono">{reifeZahl[r]}</strong>
+                <strong className="zahl">{reifeZahl[r]}</strong>
                 <span>{REIFE_TEXT[r]}</span>
               </li>
             ))}
@@ -136,17 +149,12 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
               reifeZahl[r] > 0 ? <span key={r} className={`kk-reife-${r}`} style={{ flexGrow: reifeZahl[r] }} /> : null,
             )}
           </div>
-          <p className="muted kk-vorschau-zeile">
-            Fällig: <strong>{faellig}</strong> jetzt · <strong>{morgen}</strong> morgen · <strong>{woche}</strong> in den nächsten 7 Tagen
-          </p>
         </section>
       )}
 
       {neuOffen && (
-        <div className="card">
-          <h2 className="ct" style={{ marginBottom: 12 }}>
-            Neue Karte
-          </h2>
+        <div className="crud-form">
+          <h3>Neue Karte</h3>
           <KartenFormular
             mitNaechste
             onAbbrechen={() => setNeuOffen(false)}
@@ -161,22 +169,32 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
       )}
 
       {karten.length === 0 && !neuOffen ? (
-        <LeererZustand
-          icon="🃏"
-          text="Dieser Stapel ist noch leer. Leg die erste Karte an."
+        <Zustand
+          art="leer"
+          icon="karteikarten"
+          titel="Dieser Stapel ist noch leer."
           aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={() => setNeuOffen(true)}>
-              + Erste Karte anlegen
+            <button type="button" className="knopf neben klein" onClick={neueKarte}>
+              <Icon name="plus" groesse={16} />
+              Erste Karte anlegen
             </button>
           }
-        />
+        >
+          Vorne steht die Frage oder der Begriff, hinten die Antwort. Neue Karten sind gleich fällig.
+        </Zustand>
       ) : (
         karten.length > 0 && (
-          <section className="card">
-            <ul className="kk-kartenliste">
+          <section className="kk-abschnitt" aria-labelledby="kk-karten">
+            <div className="abschnitt-kopf">
+              <h2 id="kk-karten" className="abschnitt-titel">
+                Karten
+              </h2>
+              <span className="abschnitt-info">{karten.length}</span>
+            </div>
+            <ul className="entry-list">
               {karten.map((k) =>
                 bearbeitenId === k.id ? (
-                  <li key={k.id} className="kk-karte-bearbeiten">
+                  <li key={k.id} className="crud-form">
                     <KartenFormular
                       startVorderseite={k.vorderseite}
                       startRueckseite={k.rueckseite}
@@ -190,7 +208,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
                     />
                   </li>
                 ) : (
-                  <li key={k.id} className="kk-karte-zeile">
+                  <li key={k.id} className="entry-row">
                     <button
                       type="button"
                       className="kk-karte-vorschau"
@@ -200,18 +218,19 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
                       }}
                       title="Bearbeiten"
                     >
-                      <span className="kk-karte-vorne">
-                        {markdownAlsText(k.vorderseite) || "—"} <KiMarkierung an={k.ki_erzeugt} />
+                      <span className="entry-title">
+                        {markdownAlsText(k.vorderseite) || "Ohne Vorderseite"} <KiMarkierung an={k.ki_erzeugt} />
                       </span>
-                      <span className="kk-karte-hinten muted">{markdownAlsText(k.rueckseite)}</span>
+                      <span className="entry-meta">{markdownAlsText(k.rueckseite)}</span>
                     </button>
                     <span
-                      className={`tag kk-reife-tag kk-reife-${reife(k)}`}
-                      title={`${REIFE_TEXT[reife(k)]} · Intervall ${k.intervall_tage} Tage · ${k.wiederholungen}× in Folge gewusst · ${k.fehler}× vergessen`}
+                      className={`kk-faellig kk-reife-${reife(k)}`}
+                      title={`${REIFE_TEXT[reife(k)]}, Intervall ${k.intervall_tage} Tage, ${k.wiederholungen}-mal in Folge gewusst, ${k.fehler}-mal vergessen`}
                     >
-                      {REIFE_TEXT[reife(k)]} · {wannWieder(k.naechste_abfrage, jetztDatum, heute0)}
+                      {REIFE_TEXT[reife(k)]}, {wannWieder(k.naechste_abfrage, jetztDatum, heute0)}
                     </span>
                     <DreiPunkteMenue
+                      label="Weitere Aktionen für die Karte"
                       punkte={[
                         { label: "Bearbeiten", onClick: () => setBearbeitenId(k.id) },
                         { label: "Löschen", onClick: () => void karteEntfernen(k), gefahr: true },
