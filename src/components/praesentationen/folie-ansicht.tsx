@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/nav-icon";
 import { bildUrl } from "@/components/hubs/bild-auswahl";
 import { punkte, type Design, type Folie } from "@/lib/praesentationen/folien";
 
@@ -105,17 +106,20 @@ export function FolieAnsicht({
                   {/* eslint-disable-next-line @next/next/no-img-element -- Bild aus der Dateiablage */}
                   <img src={bildUrl(folie.bild)} alt="" />
                   {bearbeiten && onBildWaehlen && (
-                    <button type="button" className="btng folie-bild-knopf" onClick={onBildWaehlen}>
+                    <button type="button" className="knopf neben klein folie-bild-knopf" onClick={onBildWaehlen}>
                       Bild ändern
                     </button>
                   )}
                 </div>
               ) : bearbeiten && onBildWaehlen ? (
                 <button type="button" className="folie-bild-leer" onClick={onBildWaehlen}>
-                  🖼 Bild aus der Dateiablage wählen oder hochladen
+                  <Icon name="bild" groesse={20} />
+                  Bild wählen
                 </button>
               ) : (
-                <div className="folie-bild-leer">🖼</div>
+                <div className="folie-bild-leer">
+                  <Icon name="bild" groesse={20} />
+                </div>
               ))}
           </div>
         </>

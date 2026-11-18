@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { Literaturverwaltung } from "@/components/literatur/literaturverwaltung";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 
@@ -16,12 +16,7 @@ export default async function LiteraturSeite() {
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Literaturverwaltung" />
-        <EinrichtungHinweis hub="Die Literaturverwaltung" />
-      </>
-    );
+    return <Einrichtung bereich="Die Literaturverwaltung" />;
   }
   if (error) throw new Error(error.message);
 

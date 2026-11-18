@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { designLesen, folienLesen } from "@/lib/praesentationen/folien";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { PraesentationsEditor } from "@/components/praesentationen/praesentations-editor";
 
 export default async function PraesentationSeite({
@@ -20,12 +20,7 @@ export default async function PraesentationSeite({
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="Präsentationen" />
-        <EinrichtungHinweis hub="Präsentationen" />
-      </>
-    );
+    return <Einrichtung bereich="Präsentationen" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);
