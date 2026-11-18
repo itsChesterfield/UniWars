@@ -14,9 +14,10 @@ export function DokumentListe({ dokumente, faecher }: { dokumente: Eintrag[]; fa
     <ObjektListe
       hub="Textverarbeitung"
       untertitel="Hausarbeiten, Protokolle und andere lange Texte – mit Export als PDF oder Word."
-      icon="📄"
+      icon="text"
       neuLabel="Neues Dokument"
-      leerText="Noch keine Dokumente. Starte deine Hausarbeit oder dein nächstes Protokoll."
+      leerTitel="Noch keine Dokumente."
+      leerText="Starte deine Hausarbeit oder dein nächstes Protokoll."
       ohneTitel={OHNE_TITEL}
       basisPfad="/textverarbeitung"
       eventName="dokument"

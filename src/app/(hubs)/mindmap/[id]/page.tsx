@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { datenLesen } from "@/lib/mindmap/knoten";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Einrichtung } from "@/components/zustand";
 import { MindmapEditor } from "@/components/mindmap/mindmap-editor";
 
 export default async function MindmapEditorSeite({ params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +14,7 @@ export default async function MindmapEditorSeite({ params }: { params: Promise<{
   ]);
 
   if (tabelleFehlt(error)) {
-    return (
-      <>
-        <HubKopf titel="MindMap" />
-        <EinrichtungHinweis hub="MindMap" />
-      </>
-    );
+    return <Einrichtung bereich="MindMap" />;
   }
   if (error?.code === "22P02") notFound();
   if (error) throw new Error(error.message);
