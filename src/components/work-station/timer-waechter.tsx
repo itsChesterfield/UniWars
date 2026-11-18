@@ -33,7 +33,7 @@ export function TimerWaechter() {
       timerSchreiben(zustand);
       if (z.einstellungen.ton) signalton();
       benachrichtigen(
-        z.modus === "fokus" ? "Fokus-Runde geschafft 🎉" : "Pause vorbei",
+        z.modus === "fokus" ? "Fokus-Runde geschafft" : "Pause vorbei",
         z.modus === "fokus" ? `Zeit für: ${MODUS_NAME[zustand.modus]}` : "Weiter geht's mit der nächsten Fokus-Runde.",
       );
       track("work_station_phase_beendet", { modus: z.modus });

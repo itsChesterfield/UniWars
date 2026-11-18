@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { einstellungenSpeichern } from "@/app/(hubs)/work-station/actions";
-import { HubKopf } from "@/components/hubs/hub-bausteine";
+import { Icon } from "@/components/nav-icon";
+import { Zustand } from "@/components/zustand";
 import { sitzungMelden } from "@/components/work-station/timer-waechter";
 import {
   MODUS_NAME,
@@ -36,11 +37,14 @@ export function WorkStation({
   faecher,
   vorschlag,
   heute,
+  heuteFehler = false,
 }: {
   einstellungen: WsEinstellungen;
   faecher: FachOption[];
   vorschlag: FachVorschlag | null;
   heute: TagesEintrag[];
+  /** Lernzeit von heute ließ sich nicht laden; der Timer läuft trotzdem */
+  heuteFehler?: boolean;
 }) {
   const router = useRouter();
   const gespeichert = useTimerZustand();
@@ -94,19 +98,23 @@ export function WorkStation({
 
   return (
     <>
-      <HubKopf
-        titel="Work Station"
-        untertitel="Konzentriert lernen – jede Fokus-Runde zählt für deine Lernzeit."
-        aktionen={
-          <button type="button" className="btng" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
-            ⚙ Einstellungen
+      <header className="seitenkopf">
+        <div>
+          <h1>Work Station</h1>
+          <p>Konzentriert lernen. Jede Fokus-Runde zählt für deine Lernzeit.</p>
+        </div>
+        <div className="rechts">
+          <button type="button" className="knopf leise" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
+            <Icon name="einstellungen" groesse={16} />
+            Einstellungen
           </button>
-        }
-      />
+        </div>
+      </header>
 
       {einstellungenOffen && (
         <EinstellungenFormular
           einstellungen={zustand.einstellungen}
+          onAbbrechen={() => setEinstellungenOffen(false)}
           onGespeichert={(e) => {
             timerSchreiben(einstellungenAnwenden(zustand, e));
             setEinstellungenOffen(false);
@@ -115,10 +123,10 @@ export function WorkStation({
       )}
 
       <div className="ws-raster">
-        <section className="card ws-timer-karte" data-modus={zustand.modus}>
+        <section className="ws-timer-karte" data-modus={zustand.modus} aria-label="Fokus-Timer">
           <label className="ws-fach">
             <span>Woran lernst du?</span>
-            <select className="field" value={zustand.fachId ?? ""} onChange={(e) => fachWaehlen(e.target.value)}>
+            <select value={zustand.fachId ?? ""} onChange={(e) => fachWaehlen(e.target.value)}>
               <option value="">Allgemein</option>
               {faecher.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -127,7 +135,12 @@ export function WorkStation({
               ))}
             </select>
           </label>
-          {vorschlag && !gespeichert && <p className="ws-vorschlag muted">💡 {vorschlag.grund}</p>}
+          {vorschlag && !gespeichert && (
+            <p className="ws-vorschlag">
+              <Icon name="tipp" groesse={16} />
+              {vorschlag.grund}
+            </p>
+          )}
 
           <div className="ws-kreis">
             <svg viewBox="0 0 240 240" aria-hidden>
@@ -143,51 +156,74 @@ export function WorkStation({
             </svg>
             <div className="ws-kreis-text">
               <span className="ws-modus">{MODUS_NAME[zustand.modus]}</span>
-              <span className="ws-zeit mono" role="timer" aria-live="off">
+              <span className="ws-zeit zahl" role="timer" aria-live="off">
                 {alsUhr(rest)}
               </span>
-              <span className="ws-runde muted">
+              <span className="ws-runde">
                 {zustand.modus === "fokus" ? `Runde ${runde} von ${zustand.einstellungen.runden}` : "Durchatmen"}
               </span>
             </div>
           </div>
 
           <div className="ws-knoepfe">
-            <button type="button" className="btnp ws-haupt" onClick={startPause}>
+            <button type="button" className="knopf haupt ws-haupt" onClick={startPause}>
+              <Icon name={zustand.laeuft ? "pause" : "abspielen"} groesse={16} />
               {zustand.laeuft ? "Pause" : unberuehrt ? "Start" : "Weiter"}
             </button>
-            <button type="button" className="btng" onClick={zuruecksetzenKlick} disabled={unberuehrt}>
+            <button type="button" className="knopf leise" onClick={zuruecksetzenKlick} disabled={unberuehrt}>
+              <Icon name="rueckgaengig" groesse={16} />
               Zurücksetzen
             </button>
-            <button type="button" className="btng" onClick={ueberspringenKlick}>
+            <button type="button" className="knopf leise" onClick={ueberspringenKlick}>
+              <Icon name="vor" groesse={16} />
               Überspringen
             </button>
           </div>
-          <p className="faint ws-hinweis">Der Timer läuft weiter, wenn du in einen anderen Hub wechselst.</p>
+          <p className="ws-hinweis">Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.</p>
         </section>
 
-        <section className="card ws-heute">
-          <h2 className="ct">
-            Heute: <span className="mono">{dauerText(gesamtHeute)}</span>
-          </h2>
-          {heute.length === 0 ? (
-            <p className="empty-state">Noch keine Lernzeit heute. Starte deine erste Fokus-Runde!</p>
+        <section className="ws-heute" aria-labelledby="ws-heute-titel">
+          <div className="abschnitt-kopf">
+            <h2 id="ws-heute-titel" className="abschnitt-titel">
+              Heute gelernt
+            </h2>
+            {!heuteFehler && <span className="abschnitt-info zahl">{dauerText(gesamtHeute)}</span>}
+          </div>
+          {heuteFehler ? (
+            <Zustand
+              art="fehler"
+              titel="Deine Lernzeit lässt sich gerade nicht laden."
+              region
+              ebene={3}
+              aktion={
+                <button type="button" className="knopf leise klein" onClick={() => router.refresh()}>
+                  Erneut versuchen
+                </button>
+              }
+            >
+              Der Timer läuft trotzdem. Jede Fokus-Runde wird gespeichert.
+            </Zustand>
+          ) : heute.length === 0 ? (
+            <Zustand art="leer" icon="fokus" titel="Noch keine Lernzeit heute." region ebene={3}>
+              Starte eine Fokus-Runde. Sie zählt hier für das gewählte Fach.
+            </Zustand>
           ) : (
-            <ul className="ws-balken">
-              {heute.map((e) => (
-                <li key={e.fachId ?? "allgemein"}>
-                  <div className="rowb">
-                    <span className="row" style={{ gap: 8 }}>
-                      <span className="dot" style={{ background: e.farbe ?? "#94a3b8" }} />
-                      {e.name}
-                    </span>
-                    <span className="mono muted">{dauerText(e.minuten)}</span>
-                  </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${(e.minuten / maxMinuten) * 100}%`, background: e.farbe ?? undefined }} />
-                  </div>
-                </li>
-              ))}
+            <ul className="entry-list">
+              {heute.map((e) => {
+                const farbe = { "--c": e.farbe ?? "var(--text-3)" } as CSSProperties;
+                return (
+                  <li key={e.fachId ?? "allgemein"} className="entry-row fach-zeile">
+                    <span className="fach-farbe" style={farbe} aria-hidden />
+                    <div className="entry-info">
+                      <span className="entry-title">{e.name}</span>
+                      <span className="balkenf" style={farbe} aria-hidden>
+                        <i style={{ width: `${(e.minuten / maxMinuten) * 100}%` }} />
+                      </span>
+                    </div>
+                    <span className="fortschritt-wert zahl">{dauerText(e.minuten)}</span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -197,9 +233,9 @@ export function WorkStation({
 }
 
 const FELDER: { schluessel: keyof typeof WS_GRENZEN; label: string; einheit: string }[] = [
-  { schluessel: "fokus", label: "Fokusdauer", einheit: "Min" },
-  { schluessel: "kurzePause", label: "Kurze Pause", einheit: "Min" },
-  { schluessel: "langePause", label: "Lange Pause", einheit: "Min" },
+  { schluessel: "fokus", label: "Fokus", einheit: "Minuten" },
+  { schluessel: "kurzePause", label: "Kurze Pause", einheit: "Minuten" },
+  { schluessel: "langePause", label: "Lange Pause", einheit: "Minuten" },
   { schluessel: "runden", label: "Runden bis zur langen Pause", einheit: "" },
 ];
 
@@ -207,9 +243,11 @@ const FELDER: { schluessel: keyof typeof WS_GRENZEN; label: string; einheit: str
 function EinstellungenFormular({
   einstellungen,
   onGespeichert,
+  onAbbrechen,
 }: {
   einstellungen: WsEinstellungen;
   onGespeichert: (e: WsEinstellungen) => void;
+  onAbbrechen: () => void;
 }) {
   const [werte, setWerte] = useState(einstellungen);
   const [laeuft, setLaeuft] = useState(false);
@@ -231,40 +269,46 @@ function EinstellungenFormular({
   }
 
   return (
-    <form className="card ws-einstellungen" onSubmit={speichern}>
-      <div className="ws-einstellungen-felder">
+    <form className="crud-form" onSubmit={speichern} aria-labelledby="ws-einst-titel">
+      <h3 id="ws-einst-titel">Einstellungen</h3>
+      <div className="crud-form-reihe">
         {FELDER.map((f) => {
           const [min, max] = WS_GRENZEN[f.schluessel];
           return (
-            <label key={f.schluessel}>
-              <span>{f.label}</span>
-              <span className="row" style={{ gap: 6 }}>
-                <input
-                  type="number"
-                  className="field"
-                  min={min}
-                  max={max}
-                  required
-                  value={werte[f.schluessel]}
-                  onChange={(e) => setWerte({ ...werte, [f.schluessel]: Number(e.target.value) })}
-                />
-                {f.einheit && <span className="muted">{f.einheit}</span>}
+            <div key={f.schluessel}>
+              <label htmlFor={`ws-${f.schluessel}`}>{f.label}</label>
+              <input
+                id={`ws-${f.schluessel}`}
+                type="number"
+                min={min}
+                max={max}
+                required
+                aria-describedby={`ws-${f.schluessel}-grenze`}
+                value={werte[f.schluessel]}
+                onChange={(e) => setWerte({ ...werte, [f.schluessel]: Number(e.target.value) })}
+              />
+              <span id={`ws-${f.schluessel}-grenze`} className="qz-hinweis">
+                {min} bis {max} {f.einheit}
               </span>
-              <span className="faint ws-grenze">
-                {min}–{max}
-              </span>
-            </label>
+            </div>
           );
         })}
-        <label className="ws-ton">
-          <input type="checkbox" checked={werte.ton} onChange={(e) => setWerte({ ...werte, ton: e.target.checked })} />
-          <span>Ton am Ende</span>
-        </label>
       </div>
-      {fehler && <p className="auth-error">{fehler}</p>}
-      <div className="hub-formular-knoepfe">
-        <button type="submit" className="btnp" disabled={laeuft}>
-          {laeuft ? "…" : "Speichern"}
+      <label className="ws-ton">
+        <input type="checkbox" checked={werte.ton} onChange={(e) => setWerte({ ...werte, ton: e.target.checked })} />
+        Ton am Ende
+      </label>
+      {fehler && (
+        <p className="formular-fehler" role="alert">
+          {fehler}
+        </p>
+      )}
+      <div className="crud-form-actions">
+        <button type="submit" className="knopf haupt" aria-busy={laeuft} disabled={laeuft}>
+          Speichern
+        </button>
+        <button type="button" className="knopf leise" onClick={onAbbrechen}>
+          Abbrechen
         </button>
       </div>
     </form>
