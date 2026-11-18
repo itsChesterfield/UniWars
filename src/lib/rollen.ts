@@ -9,16 +9,15 @@ export type { Rolle };
 
 /**
  * Rolle des angemeldeten Nutzers (Paket 1, Plan Abschnitt 1.3).
- * Ohne angemeldeten Nutzer null. React cache() gilt nur für die Dauer eines Requests.
+ * Ohne vorherigen getUser()-Aufruf: Die Datenbank prüft das JWT selbst, auth.uid() ist
+ * ohne Anmeldung null und die Funktion liefert dann 'user'. Bei einem Fehler ebenfalls 'user'.
+ * React cache() gilt nur für die Dauer eines Requests.
  */
-export const aktuelleRolle = cache(async (): Promise<Rolle | null> => {
+export const aktuelleRolle = cache(async (): Promise<Rolle> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.rpc("aktuelle_rolle");
-  return (data as Rolle) ?? "user";
+  const { data, error } = await supabase.rpc("aktuelle_rolle");
+  if (error || !data) return "user";
+  return data as Rolle;
 });
 
 /** Rollen vieler Nutzer mit einer einzigen Abfrage; fehlende IDs bekommen 'user'. */
@@ -32,12 +31,21 @@ export async function rollenVon(
   return rollenAusZeilen((data ?? []) as { user_id: string; role: Rolle }[], userIds);
 }
 
-/** Guard für Admin-Seiten: leitet um statt zu werfen. */
-export async function requireAdmin(): Promise<{ userId: string }> {
+/**
+ * Angemeldeter Nutzer, geprüft über getUser() (nie getSession()).
+ * cache(): Layout und Seite unter /admin teilen sich innerhalb eines Requests einen Aufruf.
+ */
+const angemeldeterNutzer = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return user;
+});
+
+/** Guard für Admin-Seiten: leitet um statt zu werfen. */
+export async function requireAdmin(): Promise<{ userId: string }> {
+  const user = await angemeldeterNutzer();
   if (!user) redirect("/login");
   const rolle = await aktuelleRolle();
   if (rolle !== "admin") redirect("/");
@@ -46,10 +54,7 @@ export async function requireAdmin(): Promise<{ userId: string }> {
 
 /** Guard für Server Actions und Route Handler: wirft, leitet nicht um. */
 export async function requireAdminAction(): Promise<{ userId: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await angemeldeterNutzer();
   const rolle = user ? await aktuelleRolle() : null;
   return adminErfordern(rolle, user?.id ?? null);
 }

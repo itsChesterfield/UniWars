@@ -25,7 +25,7 @@ export default async function EinstellungenSeite() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   // Rolle für das Schild im Profil (Plan Paket 1.5)
-  const rolle = (await aktuelleRolle()) ?? "user";
+  const rolle = await aktuelleRolle();
   const domain = user.email ? domainAusMail(user.email) : null;
   const [{ data: settings }, { data: verif }, { data: anmeldeHs }] =
     await Promise.all([

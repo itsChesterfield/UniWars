@@ -34,6 +34,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
     { data: pruefungen },
     { data: benachrichtigungen },
     { data: einladungen },
+    rolle,
   ] = await Promise.all([
     supabase.from("settings").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
@@ -42,6 +43,8 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
     // Glocke in der Kopfleiste (Design B3): in allen Bereichen, nicht nur im Zentralen Hub
     supabase.from("benachrichtigung").select("*").order("erstellt_am", { ascending: false }).limit(20),
     supabase.from("einladung").select("*").eq("an_user_id", user.id).eq("status", "OFFEN").order("erstellt_am", { ascending: false }),
+    // Rolle einmal pro Request, parallel zu den übrigen Abfragen; nur Admins bekommen den Admin-Bereich
+    aktuelleRolle(),
   ]);
   // Streak und Profilbild-Link gleichzeitig statt nacheinander
   const [settings, avatarUrl] = await Promise.all([
@@ -50,8 +53,6 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   ]);
 
   const name = anzeigeName(settings, user);
-  // Rolle einmal pro Request; nur Admins bekommen den Admin-Bereich in der Symbolleiste
-  const rolle = (await aktuelleRolle()) ?? "user";
   const kiVerfuegbar = kiKonfiguriert();
   const theme = settings?.theme ?? "HELL";
   const darstellung = darstellungLesen(settings?.darstellung);
