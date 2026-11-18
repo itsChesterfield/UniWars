@@ -18,9 +18,12 @@ export type Anwesenheit = {
   m: string;
   /** läuft gerade */
   l: boolean;
-  /** Ende der Phase (ms) während der Timer läuft, sonst Restzeit */
+  /** Ende der Phase (ms) während der Timer läuft, im Flow der gedachte Start */
   e: number | null;
+  /** Restzeit, im Flow die bisherige Zeit (solange der Timer steht) */
   r: number;
+  /** Flow: Zeit zählt hoch (ältere Clients senden das Feld nicht) */
+  w?: boolean;
 };
 
 export type Teilnehmer = Anwesenheit & { key: string; ich: boolean };
@@ -34,7 +37,7 @@ function pruefen(roh: unknown): Anwesenheit | null {
   if (!roh || typeof roh !== "object") return null;
   const a = roh as Record<string, unknown>;
   if (typeof a.m !== "string" || !MODI.includes(a.m)) return null;
-  return { n: text(a.n, 40), f: text(a.f, 60), m: a.m, l: a.l === true, e: zahl(a.e), r: Math.min(Math.max(0, zahl(a.r) ?? 0), 24 * 3600_000) };
+  return { n: text(a.n, 40), f: text(a.f, 60), m: a.m, l: a.l === true, e: zahl(a.e), r: Math.min(Math.max(0, zahl(a.r) ?? 0), 24 * 3600_000), w: a.w === true };
 }
 
 /** Presence-Zustand → Liste: wer gerade Fokus hat zuerst, dann Pausen; eigener Platz vorn */
@@ -52,7 +55,8 @@ export function initiale(name: string | null): string {
   return t ? t[0].toLocaleUpperCase("de-DE") : "?";
 }
 
-/** Restzeit in ms für die Anzeige */
-export function restMs(t: Pick<Anwesenheit, "l" | "e" | "r">, jetzt: number): number {
+/** Zeit in ms für die Anzeige: Restzeit, im Flow die bisherige Zeit */
+export function restMs(t: Pick<Anwesenheit, "l" | "e" | "r" | "w">, jetzt: number): number {
+  if (t.w) return t.l && t.e ? Math.max(0, jetzt - t.e) : t.r;
   return t.l && t.e ? Math.max(0, t.e - jetzt) : t.r;
 }

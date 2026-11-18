@@ -60,7 +60,7 @@ function Platz({ t, jetzt }: { t: Teilnehmer; jetzt: number }) {
       <span className="fr-name">{t.ich ? "Du" : (t.n ?? "Anonym")}</span>
       {t.f && <span className="fr-fach">{t.f}</span>}
       <span className="fr-stand">
-        {t.l ? MODUS_NAME[(t.m as Modus) ?? "fokus"] : "pausiert"} <span className="zahl">{alsUhr(restMs(t, jetzt))}</span>
+        {t.l ? (t.w ? "Flow" : MODUS_NAME[(t.m as Modus) ?? "fokus"]) : "pausiert"} <span className="zahl">{alsUhr(restMs(t, jetzt))}</span>
       </span>
     </li>
   );
