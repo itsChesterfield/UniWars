@@ -8,6 +8,8 @@ import { datumText, PRIORITAETEN, type Aktionskarte } from "@/lib/ki/assistent";
 import type { KiErgebnis } from "@/lib/ki/ergebnis";
 import { kiVorschauUebernommen, type KiFunktionsId } from "@/lib/ki/tracking";
 import { berlinDatum, berlinUhrzeit } from "@/lib/zeit";
+import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 import { track } from "@/lib/analytics";
 
 type Fach = { id: string; name: string };
@@ -21,12 +23,21 @@ export type KartenAktionen = {
 };
 
 const KOPF: Record<Aktionskarte["typ"], string> = {
-  deadline: "📅 Deadline",
-  todo: "✅ To-do",
-  notiz: "📝 Notiz",
-  karteikarten: "🗂 Karteikarten",
-  lernsession: "⏱ Fokus-Session",
-  stapel_lernen: "🧠 Karten lernen",
+  deadline: "Deadline",
+  todo: "To-do",
+  notiz: "Notiz",
+  karteikarten: "Karteikarten",
+  lernsession: "Fokus-Session",
+  stapel_lernen: "Karten lernen",
+};
+
+const KOPF_ICON: Record<Aktionskarte["typ"], IconName> = {
+  deadline: "termine",
+  todo: "aufgaben",
+  notiz: "notizen",
+  karteikarten: "karteikarten",
+  lernsession: "fokus",
+  stapel_lernen: "karteikarten",
 };
 
 const PRIO_TEXT: Record<string, string> = { HOCH: "hoch", MITTEL: "mittel", NIEDRIG: "niedrig" };
@@ -126,8 +137,16 @@ export function AktionskarteAnzeige({
   return (
     <div className={`ki-karte ki-karte-${karte.status}`} role="group" aria-label={`Vorschlag: ${KOPF[karte.typ]}`}>
       <div className="ki-karte-kopf">
-        <span>{KOPF[karte.typ]}</span>
-        {karte.status === "uebernommen" && <span className="ki-karte-status">✓ Übernommen</span>}
+        <span className="ki-karte-art">
+          <Icon name={KOPF_ICON[karte.typ]} groesse={16} />
+          {KOPF[karte.typ]}
+        </span>
+        {karte.status === "uebernommen" && (
+          <span className="ki-karte-status">
+            <Icon name="haken" groesse={14} />
+            Übernommen
+          </span>
+        )}
         {karte.status === "verworfen" && <span className="ki-karte-status muted">{aktionen ? "Ausgeblendet" : "Verworfen"}</span>}
       </div>
 
@@ -234,11 +253,11 @@ export function AktionskarteAnzeige({
                 />
                 <button
                   type="button"
-                  className="icon-knopf"
+                  className="knopf leise klein nur-symbol"
                   aria-label={`Karte ${i + 1} entfernen`}
                   onClick={() => setEntwurf({ ...entwurf, karten: entwurf.karten?.filter((_, j) => j !== i) })}
                 >
-                  🗑
+                  <Icon name="loeschen" groesse={16} />
                 </button>
               </div>
             ))}
@@ -254,25 +273,25 @@ export function AktionskarteAnzeige({
         <div className="ki-karte-knoepfe">
           {bearbeiten ? (
             <>
-              <button type="button" className="btng" disabled={laeuft} onClick={() => setBearbeiten(false)}>
+              <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => setBearbeiten(false)}>
                 Abbrechen
               </button>
-              <button type="button" className="btnp" disabled={laeuft || !bereit} onClick={() => void uebernehmen(entwurf)}>
-                {laeuft ? "Speichert …" : "Speichern"}
+              <button type="button" className="knopf neben klein" aria-busy={laeuft || undefined} disabled={laeuft || !bereit} onClick={() => void uebernehmen(entwurf)}>
+                {laeuft ? "Speichert" : "Speichern"}
               </button>
             </>
           ) : (
             <>
-              <button type="button" className="link-knopf" disabled={laeuft || !bereit} onClick={() => void verwerfen()}>
+              <button type="button" className="link ki-karte-weg" disabled={laeuft || !bereit} onClick={() => void verwerfen()}>
                 {aktionen?.verwerfenText ?? "Verwerfen"}
               </button>
               {!navigation && (
-                <button type="button" className="btng" disabled={laeuft || !bereit} onClick={bearbeitenStarten}>
+                <button type="button" className="knopf leise klein" disabled={laeuft || !bereit} onClick={bearbeitenStarten}>
                   Bearbeiten
                 </button>
               )}
-              <button type="button" className="btnp" aria-busy={laeuft} disabled={laeuft || !bereit} onClick={() => void uebernehmen(null)}>
-                {laeuft ? "…" : navigation ? (karte.typ === "lernsession" ? "Starten" : "Jetzt lernen") : "Übernehmen"}
+              <button type="button" className="knopf neben klein" aria-busy={laeuft || undefined} disabled={laeuft || !bereit} onClick={() => void uebernehmen(null)}>
+                {laeuft ? "Wird übernommen" : navigation ? (karte.typ === "lernsession" ? "Starten" : "Jetzt lernen") : "Übernehmen"}
               </button>
             </>
           )}
@@ -281,7 +300,7 @@ export function AktionskarteAnzeige({
         karte.status === "uebernommen" &&
         (link ?? standardLink(karte)) && (
           <div className="ki-karte-knoepfe">
-            <Link href={(link ?? standardLink(karte)) as string} className="link-knopf">
+            <Link href={(link ?? standardLink(karte)) as string} className="link">
               Öffnen
             </Link>
           </div>

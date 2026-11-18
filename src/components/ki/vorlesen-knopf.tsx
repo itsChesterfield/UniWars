@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import { useSprachStatus } from "@/components/ki/sprach-status";
 import { sprechStuecke, sprechtext } from "@/lib/ki/sprechtext";
+import { Icon } from "@/components/nav-icon";
+import { Umlauf } from "@/components/bewegung/umlauf";
 import { track } from "@/lib/analytics";
 
 /** Fertig geladene Stücke pro Text – erneutes Abspielen bucht nicht erneut (Sitzungs-Cache). */
@@ -151,7 +153,7 @@ export function VorlesenKnopf({
         aria-pressed={phase !== "bereit"}
         onClick={() => (phase === "bereit" ? void abspielen() : stoppen())}
       >
-        {phase === "laedt" ? "…" : phase === "spielt" ? "■" : "🔊"}
+        {phase === "laedt" ? <Umlauf groesse={16} /> : <Icon name={phase === "spielt" ? "stopp" : "lautsprecher"} groesse={16} />}
       </button>
       {fehler && (
         <span className="ki-diktat-fehler" role="alert">

@@ -9,6 +9,7 @@ import { aufteilungLesen, istEingebettet } from "@/lib/geteilte-ansicht";
 import { markierterText, STUDIO_NEU, STUDIO_OEFFNEN, studioZustand } from "@/lib/ki/studio-kontext";
 import { STUDIO_NAME } from "@/lib/ki/studio";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 const AUFTEILUNG_SCHLUESSEL = "uniwars-geteilte-ansicht-v1";
 const NACHRICHT = "uniwars-studio-umschalten";
@@ -121,11 +122,14 @@ export function AssistentStarter() {
   return createPortal(
     <aside className={`ki-panel studio-panel ${gross ? "gross" : ""}`} aria-label={STUDIO_NAME}>
       <div className="ki-panel-kopf">
-        <h2>✨ {STUDIO_NAME}</h2>
+        <h2>
+          <Icon name="studio" />
+          {STUDIO_NAME}
+        </h2>
         <span className="ki-panel-knoepfe">
           <button
             type="button"
-            className="icon-knopf"
+            className="knopf leise klein nur-symbol"
             title="Neuer Chat (Studio behält, was es über dich weiß)"
             aria-label="Neuer Chat"
             onClick={() => {
@@ -133,11 +137,21 @@ export function AssistentStarter() {
               track("studio_neuer_chat");
             }}
           >
-            ＋
+            <Icon name="plus" />
           </button>
           <button
             type="button"
-            className="icon-knopf"
+            className="knopf leise klein nur-symbol"
+            aria-pressed={privat}
+            aria-label="Privater Chat"
+            title={privat ? "Privater Chat: Studio lernt nichts aus diesem Gespräch. Klicken zum Beenden." : "Privater Chat: Studio lernt nichts aus diesem Gespräch"}
+            onClick={() => setPrivat((p) => !p)}
+          >
+            <Icon name="privat" />
+          </button>
+          <button
+            type="button"
+            className="knopf leise klein nur-symbol studio-groesse"
             title={gross ? "Kleiner" : "Größer"}
             aria-label={gross ? "Studio verkleinern" : "Studio vergrößern"}
             aria-pressed={gross}
@@ -152,26 +166,19 @@ export function AssistentStarter() {
               track("studio_groesse", { gross: neu });
             }}
           >
-            {gross ? "⤡" : "⤢"}
+            <Icon name={gross ? "verkleinern" : "vergroessern"} />
           </button>
-          <button
-            type="button"
-            className={`icon-knopf studio-privat ${privat ? "an" : ""}`}
-            aria-pressed={privat}
-            title={privat ? "Privater Chat: Studio lernt nichts aus diesem Gespräch. Klicken zum Beenden." : "Privater Chat – Studio lernt nichts aus diesem Gespräch"}
-            onClick={() => setPrivat((p) => !p)}
-          >
-            {privat ? "🕶️" : "👁️"}
-          </button>
-          <kbd className="studio-kbd" title="Mit Strg+J öffnen und schließen">
-            Strg J
-          </kbd>
-          <button type="button" className="icon-knopf" aria-label="Schließen" onClick={() => setOffen(false)}>
-            ✕
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Studio schließen" title="Schließen (Strg+J)" onClick={() => setOffen(false)}>
+            <Icon name="schliessen" />
           </button>
         </span>
       </div>
-      {privat && <p className="studio-privat-hinweis faint">🕶️ Privater Chat – Studio nutzt, was es weiß, lernt aber nichts Neues.</p>}
+      {privat && (
+        <p className="studio-privat-hinweis">
+          <Icon name="privat" groesse={16} />
+          Privater Chat. Studio nutzt, was es weiß, lernt aber nichts Neues.
+        </p>
+      )}
       <AssistentChat
         unterhaltungId={null}
         kontext={kontext}

@@ -9,6 +9,7 @@ import type { Block, Erledigt, QuellInfo } from "@/lib/ki/studio";
 import type { KontextEingabe } from "@/lib/ki/assistent";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 /** Beleg [Q1 S. 12] öffnen: PDF auf der Seite bzw. Notiz – daneben */
 export function belegOeffnen(quellen: QuellInfo[], nr: number, seite: number | null) {
@@ -37,19 +38,19 @@ export function ErledigtListe({ eintraege, nachrichtId }: { eintraege: Erledigt[
     <ul className="studio-erledigt">
       {liste.map((e) => (
         <li key={e.id} className={e.status === "rueckgaengig" ? "zurueck" : ""}>
-          <span aria-hidden>{e.status === "rueckgaengig" ? "↩" : "✓"}</span>
+          <Icon name={e.status === "rueckgaengig" ? "rueckgaengig" : "haken"} groesse={16} />
           {e.link && e.status === "ok" ? (
             <Link href={e.link}>{e.text}</Link>
           ) : (
             <span>
               {e.text}
-              {e.status === "rueckgaengig" && " – rückgängig gemacht"}
+              {e.status === "rueckgaengig" && ", rückgängig gemacht"}
             </span>
           )}
           {e.status === "ok" && nachrichtId && (e.ziel || e.art === "notiz_ergaenzt") && e.art !== "notiz_ergaenzt" && (
             <button
               type="button"
-              className="studio-zurueck"
+              className="link studio-zurueck"
               onClick={() => {
                 setFehler(null);
                 erledigtRueckgaengig(nachrichtId, e.id)
@@ -77,10 +78,11 @@ export function BlockAnzeige({ block, quellen, nachrichtId }: { block: Block; qu
   if (block.typ === "web") {
     return (
       <div className="studio-web">
-        <span className="faint">Im Web recherchiert:</span>
+        <span className="studio-web-titel">Im Web recherchiert</span>
         {block.quellen.map((w) => (
-          <a key={w.url} href={w.url} target="_blank" rel="noopener noreferrer">
-            🌐 {w.titel}
+          <a key={w.url} className="studio-quelle" href={w.url} target="_blank" rel="noopener noreferrer">
+            <Icon name="globus" groesse={14} />
+            {w.titel}
           </a>
         ))}
       </div>
@@ -103,13 +105,15 @@ function MarkdownBlock({ titel, markdown, quellen }: { titel: string; markdown: 
     <>
       <StudioAntwort text={markdown} quellen={quellen} />
       {notiz ? (
-        <Link href={`/notizen?id=${notiz}`} className="btng">
-          📝 Notiz öffnen
+        <Link href={`/notizen?id=${notiz}`} className="knopf leise klein">
+          <Icon name="notizen" groesse={16} />
+          Notiz öffnen
         </Link>
       ) : (
         <button
           type="button"
-          className="btng"
+          className="knopf leise klein"
+          aria-busy={laeuft || undefined}
           disabled={laeuft}
           onClick={() => {
             setLaeuft(true);
@@ -124,7 +128,8 @@ function MarkdownBlock({ titel, markdown, quellen }: { titel: string; markdown: 
               .finally(() => setLaeuft(false));
           }}
         >
-          📝 Als Notiz speichern
+          <Icon name="notizen" groesse={16} />
+          Als Notiz speichern
         </button>
       )}
     </>
@@ -143,14 +148,15 @@ function KartenBlock({ block, nachrichtId }: { block: Extract<Block, { typ: "kar
         </details>
       ))}
       {stapelId ? (
-        <Link href={`/karteikarten/${stapelId}/lernen`} className="btnp">
-          Gespeichert – jetzt lernen
+        <Link href={`/karteikarten/${stapelId}/lernen`} className="knopf neben klein">
+          Gespeichert, jetzt lernen
         </Link>
       ) : (
         nachrichtId && (
           <button
             type="button"
-            className="btnp"
+            className="knopf neben klein"
+            aria-busy={laeuft || undefined}
             disabled={laeuft}
             onClick={() => {
               setLaeuft(true);
@@ -165,7 +171,8 @@ function KartenBlock({ block, nachrichtId }: { block: Extract<Block, { typ: "kar
                 .finally(() => setLaeuft(false));
             }}
           >
-            🗂️ Als Karteikarten-Stapel speichern
+            <Icon name="karteikarten" groesse={16} />
+            Als Stapel speichern
           </button>
         )
       )}
@@ -200,7 +207,7 @@ export function Quiz({ fragen, quellen }: { fragen: QuizFrage[]; quellen: QuellI
             ))}
             {gewaehlt !== undefined && (
               <p className="lr-klein">
-                {gewaehlt === f.richtig ? "✅ Richtig! " : "❌ Leider falsch. "}
+                <strong>{gewaehlt === f.richtig ? "Richtig. " : "Leider falsch. "}</strong>
                 {f.erklaerung}{" "}
                 {beleg && (
                   <button type="button" className="lr-beleg-knopf" onClick={() => belegOeffnen(quellen, Number(beleg[1]), beleg[2] ? Number(beleg[2]) : null)}>
@@ -214,38 +221,41 @@ export function Quiz({ fragen, quellen }: { fragen: QuizFrage[]; quellen: QuellI
       })}
       {fertig && (
         <p className="lr-quiz-ergebnis">
-          {richtig} von {fragen.length} richtig {richtig === fragen.length ? "🎉" : richtig >= fragen.length / 2 ? "👍" : "– dranbleiben!"}
+          <span className="zahl">{richtig}</span> von <span className="zahl">{fragen.length}</span> richtig
+          {richtig === fragen.length ? ". Alles richtig." : richtig >= fragen.length / 2 ? ". Gut so." : ". Dranbleiben."}
         </p>
       )}
     </div>
   );
 }
 
-const OBJEKT_ICON: Record<string, string> = { pdf: "📕", notiz: "📝", stapel: "🗂️", dokument: "📄", transkript: "🎙️", praesentation: "🖥️", tabelle: "📊", mindmap: "🧠" };
 const OBJEKT_NAME: Record<string, string> = { pdf: "PDF", notiz: "Notiz", stapel: "Stapel", dokument: "Dokument", transkript: "Transkript", praesentation: "Präsentation", tabelle: "Tabelle", mindmap: "MindMap" };
 
-/** Zeigt, worauf sich das Studio gerade bezieht */
+/** Zeigt, worauf sich Studio gerade bezieht („Sieht gerade …“), und eine mitgenommene Markierung */
 export function KontextLeiste({ kontext, onMarkierungEntfernen }: { kontext: KontextEingabe; onMarkierungEntfernen?: () => void }) {
-  const teile: { text: string; weg?: () => void }[] = [];
-  if (kontext.objekt) teile.push({ text: `${OBJEKT_ICON[kontext.objekt.art] ?? "•"} ${OBJEKT_NAME[kontext.objekt.art] ?? "Objekt"}${kontext.seite ? ` · S. ${kontext.seite}` : ""}` });
-  if (kontext.zweite) teile.push({ text: `⫽ daneben: ${OBJEKT_NAME[kontext.zweite.art] ?? "Objekt"}` });
-  if (kontext.fachId) teile.push({ text: "🎓 Quellen des Fachs" });
-  if (kontext.karte) teile.push({ text: "🗂️ aktuelle Karte" });
-  if (kontext.markiert) teile.push({ text: `✂️ Markierung (${kontext.markiert.length} Zeichen)`, weg: onMarkierungEntfernen });
-  if (!teile.length) return <p className="studio-kontext faint">Bezieht sich auf: deine Daten in UniVerse</p>;
+  const teile: string[] = [];
+  if (kontext.objekt) teile.push(`${OBJEKT_NAME[kontext.objekt.art] ?? "Objekt"}${kontext.seite ? `, Seite ${kontext.seite}` : ""}`);
+  if (kontext.zweite) teile.push(`daneben ${OBJEKT_NAME[kontext.zweite.art] ?? "Objekt"}`);
+  if (kontext.fachId) teile.push("Quellen des Fachs");
+  if (kontext.karte) teile.push("aktuelle Karte");
   return (
-    <p className="studio-kontext">
-      <span className="faint">Bezieht sich auf:</span>
-      {teile.map((t) => (
-        <span key={t.text} className="studio-kontext-chip">
-          {t.text}
-          {t.weg && (
-            <button type="button" aria-label="Entfernen" onClick={t.weg}>
-              ×
+    <>
+      <p className="studio-kontext">
+        <Icon name="auge" groesse={14} />
+        <span>
+          Sieht gerade <b>{teile.length ? teile.join(", ") : "deine Daten in UniVerse"}</b>
+        </span>
+      </p>
+      {kontext.markiert && (
+        <p className="studio-markiert">
+          <span>Markiert: „{kontext.markiert}“</span>
+          {onMarkierungEntfernen && (
+            <button type="button" className="knopf leise klein nur-symbol" aria-label="Markierung nicht mitnehmen" onClick={onMarkierungEntfernen}>
+              <Icon name="schliessen" groesse={16} />
             </button>
           )}
-        </span>
-      ))}
-    </p>
+        </p>
+      )}
+    </>
   );
 }

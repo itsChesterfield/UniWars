@@ -16,7 +16,8 @@ export function MarkdownLesen({ wert, onBeleg }: { wert: string; onBeleg?: (quel
       contentType: "markdown",
       editable: false,
       immediatelyRender: false,
-      editorProps: { attributes: { class: "md-inhalt md-notiz md-lesen" } },
+      // Nur lesen: Tiptap setzt trotzdem role="textbox", deshalb ein Name (axe: aria-input-field-name)
+      editorProps: { attributes: { class: "md-inhalt md-notiz md-lesen", "aria-label": "Antwort von Studio" } },
     },
     [wert],
   );
