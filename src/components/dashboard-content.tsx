@@ -35,7 +35,8 @@ import type { Tables } from "@/lib/supabase/types";
 import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
 import { HubBuehne, type BuehneDaten } from "@/components/hub/hub-buehne";
 import { HauptNotch } from "@/components/haupt-notch";
-import { SteigText } from "@/components/bewegung/steig-text";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kopfAufgaben, kopfFortschritt, kopfNoten, kopfTermine, minutenDieseWoche } from "@/lib/bereichskopf";
 import type { FaelligeKarten } from "@/components/hub/hub-daten";
 
 type Fach = Tables<"fach">;
@@ -277,6 +278,18 @@ export function DashboardContent({
   const pfad = usePathname();
   const bereich: Bereich = BEREICHE.find((b) => b.href === pfad)?.bereich ?? bereichStart;
   const info = BEREICHE.find((b) => b.bereich === bereich) ?? BEREICHE[0];
+  // Kopf wie im Hub: eine Zahl und ein Satz, was in diesem Bereich gerade zählt
+  const kopfJetzt = new Date(serverJetzt);
+  const kopf =
+    bereich === "termine"
+      ? kopfTermine({ stundenplan: stundenplanEintraege, deadlines, pruefungen, fachName: (id) => faecher.find((f) => f.id === id)?.name ?? null }, kopfJetzt)
+      : bereich === "aufgaben"
+        ? kopfAufgaben({ deadlines, todos, pruefungen }, kopfJetzt)
+        : bereich === "noten"
+          ? kopfNoten(notenschnitt ?? gewichteterSchnitt(notes), notes.length)
+          : bereich === "fortschritt"
+            ? kopfFortschritt(settings.streak_count, minutenDieseWoche(lernSessions, kopfJetzt))
+            : { zahl: faecher.length || null, einheit: "aktiv", lage: null };
 
   return (
     <>
@@ -308,17 +321,7 @@ export function DashboardContent({
         </div>
       ) : (
         <div key={bereich} className="hubseite bereich-ein">
-          <header className="seitenkopf">
-            <div>
-              <h1>
-                <SteigText text={info.name} schritt={22} />
-              </h1>
-              <p>{info.untertitel}</p>
-            </div>
-            <div className="rechts">
-              <SchnellErfassenKnopf />
-            </div>
-          </header>
+          <Bereichskopf titel={info.name} untertitel={info.untertitel} {...kopf} aktionen={<SchnellErfassenKnopf />} />
 
           {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
 

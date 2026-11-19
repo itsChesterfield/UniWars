@@ -14,6 +14,8 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-actions";
 import type { MaterialArt } from "@/lib/dateiablage/material";
 import { MaterialFaecherDialog } from "@/components/dateiablage/material-faecher";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kopfListe } from "@/lib/bereichskopf";
 
 export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; fach_ids?: string[]; geaendert_am: string; info?: string };
 
@@ -29,6 +31,7 @@ function datum(iso: string) {
 export function ObjektListe({
   hub,
   untertitel,
+  einheit,
   icon,
   neuLabel,
   leerTitel,
@@ -45,6 +48,8 @@ export function ObjektListe({
 }: {
   hub: string;
   untertitel: string;
+  /** Einzahl und Mehrzahl für die Zahl im Kopf, z. B. ["Dokument", "Dokumente"] */
+  einheit: [string, string];
   icon: IconName;
   neuLabel: string;
   /** Überschrift des Leerzustands, z. B. „Noch keine Dokumente.“ */
@@ -119,18 +124,19 @@ export function ObjektListe({
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>{hub}</h1>
-          <p>{untertitel}</p>
-        </div>
-        {eintraege.length > 0 && (
-          <div className="rechts">
-            {zusatzAktion}
-            {neuKnopf("haupt", neuLabel)}
-          </div>
-        )}
-      </header>
+      <Bereichskopf
+        titel={hub}
+        untertitel={untertitel}
+        {...(eintraege.length ? kopfListe(eintraege.map((e) => ({ titel: e.titel, geaendert: e.geaendert_am })), ohneTitel, einheit) : {})}
+        aktionen={
+          eintraege.length > 0 ? (
+            <>
+              {zusatzAktion}
+              {neuKnopf("haupt", neuLabel)}
+            </>
+          ) : undefined
+        }
+      />
       <FachFilterChips faecher={faecher} />
       {eintraege.length === 0 ? (
         <Zustand art="leer" icon={icon} titel={leerTitel} aktion={neuKnopf("neben klein", neuLabel)}>

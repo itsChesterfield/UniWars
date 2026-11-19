@@ -30,6 +30,8 @@ import { NotizEditorFlaeche } from "@/components/notizen/notiz-editor-flaeche";
 import type { LinkZiel } from "@/components/notizen/werkzeugleiste";
 import type { LinkAufloesung } from "@/components/notizen/editor-erweiterungen";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kopfListe } from "@/lib/bereichskopf";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
 export type PdfOption = { id: string; name: string };
@@ -264,13 +266,12 @@ export function NotizenHub({
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Notizen</h1>
-          <p>Mitschriften mit Formatierungen wie in Word und Verlinkungen zwischen Notizen und PDFs.</p>
-        </div>
-        {notizen.length > 0 && (
-          <div className="rechts">
+      <Bereichskopf
+        titel="Notizen"
+        untertitel="Mitschriften mit Formatierungen wie in Word und Verlinkungen zwischen Notizen und PDFs."
+        {...(notizen.length ? kopfListe(notizen.map((n) => ({ titel: n.titel, geaendert: n.geaendert_am })), "Unbenannte Notiz", ["Notiz", "Notizen"]) : {})}
+        aktionen={notizen.length > 0 && (
+          <>
             <button type="button" className="knopf leise" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (alles andere: Strg+O)">
               <Icon name="suchen" groesse={16} />
               Öffnen
@@ -279,9 +280,9 @@ export function NotizenHub({
               Aus Vorlage
             </button>
             {neuKnopf("haupt", "Neue Notiz")}
-          </div>
+          </>
         )}
-      </header>
+      />
       <FachFilterChips faecher={faecher} />
       {fehler && (
         <p className="formular-fehler" role="alert">

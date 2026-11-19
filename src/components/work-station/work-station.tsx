@@ -38,6 +38,7 @@ import { benachrichtigungErfragen } from "@/lib/work-station/ton";
 import type { FachVorschlag } from "@/lib/work-station/kontext";
 import type { FachOption } from "@/lib/fach-option";
 import { track } from "@/lib/analytics";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
 
 export type TagesEintrag = { fachId: string | null; name: string; farbe: string | null; minuten: number };
 
@@ -270,21 +271,23 @@ export function WorkStation({
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Work Station</h1>
-          <p>Konzentriert lernen. Jede Fokus-Runde zählt für deine Lernzeit.</p>
-        </div>
-        <div className="rechts">
-          <Link href="/work-station/raum" className="knopf neben">
-            {raumWahl ? `Fokusraum: ${raumWahl.titel}` : "Fokusraum"}
-          </Link>
-          <button type="button" className="knopf leise" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
-            <Icon name="einstellungen" groesse={16} />
-            Einstellungen
-          </button>
-        </div>
-      </header>
+      <Bereichskopf
+        titel="Work Station"
+        zahl={gesamtHeute}
+        einheit={gesamtHeute === 1 ? "Minute heute gelernt" : "Minuten heute gelernt"}
+        untertitel="Konzentriert lernen. Jede Fokus-Runde zählt für deine Lernzeit."
+        aktionen={
+          <>
+            <Link href="/work-station/raum" className="knopf neben">
+              {raumWahl ? `Fokusraum: ${raumWahl.titel}` : "Fokusraum"}
+            </Link>
+            <button type="button" className="knopf leise" onClick={() => setEinstellungenOffen((o) => !o)} aria-expanded={einstellungenOffen}>
+              <Icon name="einstellungen" groesse={16} />
+              Einstellungen
+            </button>
+          </>
+        }
+      />
 
       {einstellungenOffen && (
         <EinstellungenFormular

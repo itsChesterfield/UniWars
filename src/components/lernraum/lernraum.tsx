@@ -15,6 +15,7 @@ import { ampel } from "@/lib/ki/gedaechtnis";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
 
 export type QuelleUi = {
   art: "pdf" | "notiz";
@@ -174,24 +175,20 @@ export function Lernraum({
         <Icon name="pfeil-links" groesse={16} />
         Lernraum
       </Link>
-      <header className="seitenkopf">
-        <div>
-          <h1>{fach.name}</h1>
-          <p>
-            {kiVerfuegbar
-              ? `${aktive.length} von ${quellen.length} Quellen aktiv. Studio antwortet nur aus diesen Quellen und belegt jede Aussage.`
-              : "Die KI ist gerade nicht eingerichtet."}
-          </p>
-        </div>
-        {kiVerfuegbar && (
-          <div className="rechts">
+      <Bereichskopf
+        titel={fach.name}
+        zahl={aktive.length}
+        einheit={`von ${quellen.length} ${quellen.length === 1 ? "Quelle" : "Quellen"} aktiv`}
+        untertitel={kiVerfuegbar ? "Studio antwortet nur aus diesen Quellen und belegt jede Aussage." : "Die KI ist gerade nicht eingerichtet."}
+        aktionen={
+          kiVerfuegbar && (
             <button type="button" className="knopf haupt" onClick={() => studioOeffnen()}>
               <Icon name="studio" groesse={16} />
               In Studio fragen
             </button>
-          </div>
-        )}
-      </header>
+          )
+        }
+      />
 
       <div className="lr">
         <section className="lr-quellen" aria-labelledby="lr-quellen-titel">

@@ -16,6 +16,7 @@ export function TabellenListe({
   return (
     <ObjektListe
       hub="Tabellen"
+      einheit={["Tabelle", "Tabellen"]}
       untertitel="Kleine Rechnungen und Übersichten, mit Formeln wie =SUMME(A1:A10)."
       icon="tabelle"
       neuLabel="Neue Tabelle"

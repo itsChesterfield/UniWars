@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 import { zerlegen } from "@/lib/bewegung/steigen";
 
 /**
@@ -10,14 +10,18 @@ export function SteigText({ text, start = 0, schritt = 15, akzent }: { text: str
   return (
     <span className="steig">
       <span className="sr-only">{text}</span>
-      {zerlegen(text, start, schritt).map((w, i) => (
-        <span key={i} className={`steig-wort${akzent?.includes(w.text) ? " akzent" : ""}`} aria-hidden="true">
-          {w.buchstaben.map((b, j) => (
-            <span key={j} className="steig-z" style={{ "--d": `${b.verzoegerung}ms`, "--h": `${b.hoehe}%` } as CSSProperties}>
-              {b.zeichen}
-            </span>
-          ))}
-        </span>
+      {zerlegen(text, start, schritt).map((w, i, alle) => (
+        <Fragment key={i}>
+          <span className={`steig-wort${akzent?.includes(w.text) ? " akzent" : ""}`} aria-hidden="true">
+            {w.buchstaben.map((b, j) => (
+              <span key={j} className="steig-z" style={{ "--d": `${b.verzoegerung}ms`, "--h": `${b.hoehe}%` } as CSSProperties}>
+                {b.zeichen}
+              </span>
+            ))}
+          </span>
+          {/* Echtes Leerzeichen: Kopieren und Übersetzen sehen Wörter statt „ProfilundKonto“ */}
+          {i < alle.length - 1 && " "}
+        </Fragment>
       ))}
     </span>
   );

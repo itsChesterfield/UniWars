@@ -9577,9 +9577,6 @@ button.pdf-pfad-teil:hover {
 }
 
 /* Abstand hinter dem Wort, damit umbrochene Zeilen bündig beginnen */
-.steig-wort:not(:last-child) {
-  margin-right: 0.24em;
-}
 
 .steig-wort.akzent {
   color: var(--akzent-text);
@@ -9719,7 +9716,7 @@ html[data-notch-richtung] .bereich-ein .steig-z {
   animation-delay: var(--d, 0ms);
 }
 
-html[data-notch-richtung] .bereich-ein > :not(.seitenkopf) {
+html[data-notch-richtung] .bereich-ein > :not(.seitenkopf, .bk) {
   animation: aufbau-heben 520ms var(--ease-out) both;
   animation-delay: 160ms;
 }
@@ -10867,11 +10864,16 @@ html[data-bewegung="reduziert"][data-notch-richtung] .bereich-ein > .seitenkopf 
 }
 
 /* offene Notiz: der Text bekommt den Platz */
-.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .seitenkopf p {
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .seitenkopf p,
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .bk :is(.bk-text, .bk-zahl, .bk-name > span) {
   display: none;
 }
 
-html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .seitenkopf {
+.dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > .bk {
+  padding: var(--space-4) 0 var(--space-3);
+}
+
+html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > :is(.seitenkopf, .bk) {
   display: none;
 }
 
@@ -10920,7 +10922,7 @@ html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"])
   }
 
   /* offene Notiz am Handy: Kopf und Fach-Filter weg, „Alle Notizen“ führt zurück */
-  .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > :is(.seitenkopf, .fach-filter-chips) {
+  .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"]) > :is(.seitenkopf, .bk, .fach-filter-chips) {
     display: none;
   }
 
@@ -17828,6 +17830,220 @@ html:has(.buehne-strecke.buehne) {
   100% {
     opacity: 0;
     transform: translateY(16px);
+  }
+}
+
+/* ==========================================================================
+   Bereichskopf (Didi, 20.11.): alle Bereiche in der Sprache des Hubs.
+   Große Zahl mit Beschriftung, daneben ein Satz, was gerade zählt.
+   ========================================================================== */
+.bk {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--space-6);
+  row-gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-8) 0 var(--space-6);
+}
+
+.bk h1 {
+  margin: 0;
+}
+
+.bk-zahl-block {
+  grid-column: 1 / span 4;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.bk-zahl {
+  flex: none;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-kapitel);
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+}
+
+.bk-name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  min-width: 0;
+  padding-bottom: var(--space-1);
+}
+
+.bk-name h1 {
+  font-size: var(--text-md);
+  font-weight: 650;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+}
+
+.bk-name > span {
+  font-size: var(--text-sm);
+  color: var(--text-3);
+}
+
+.bk-titel {
+  grid-column: 1 / span 4;
+  font-size: var(--text-3xl);
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.bk-text {
+  grid-column: 5 / span 6;
+  min-width: 0;
+  padding-bottom: var(--space-1);
+}
+
+.bk-lage {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  overflow-wrap: break-word;
+}
+
+.bk-unter {
+  max-width: 520px;
+  margin: var(--space-2) 0 0;
+  color: var(--text-2);
+}
+
+.bk-lage + .bk-unter {
+  margin-top: var(--space-3);
+}
+
+.bk-aktionen {
+  grid-column: 11 / span 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* Ohne Satz und ohne Zahl: Titel und Unterzeile stehen untereinander wie bisher */
+.bk:not(.bk-mit-zahl):not(:has(.bk-lage)) .bk-text {
+  grid-column: 1 / span 9;
+  grid-row: 2;
+}
+
+.bk:not(.bk-mit-zahl):not(:has(.bk-lage)) .bk-aktionen {
+  grid-row: 1 / span 2;
+  align-self: end;
+}
+
+.bk .steig-z {
+  animation: steig-ein 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.bk-name > span,
+.bk-unter {
+  animation: aufbau-heben 520ms var(--ease-out) both;
+  animation-delay: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk .steig-z,
+  .bk-name > span,
+  .bk-unter {
+    animation: none;
+  }
+}
+
+html[data-bewegung="reduziert"] .bk .steig-z,
+html[data-bewegung="reduziert"] .bk-name > span,
+html[data-bewegung="reduziert"] .bk-unter {
+  animation: none;
+}
+
+@media (max-width: 1100px) {
+  .bk-zahl-block,
+  .bk-titel {
+    grid-column: 1 / span 5;
+  }
+
+  .bk-text {
+    grid-column: 6 / span 7;
+  }
+
+  .bk-aktionen {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .bk {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+    padding: var(--space-6) 0 var(--space-4);
+  }
+
+  .bk-titel {
+    font-size: var(--text-2xl);
+  }
+
+  .bk-lage {
+    font-size: var(--text-xl);
+  }
+
+  .bk-aktionen {
+    justify-content: flex-start;
+  }
+}
+
+/* Leere Bereiche wie „Gerade steht nichts an.“ im Hub: groß, ruhig, unter dem Lage-Satz ausgerichtet */
+.zustand.z-leer:not(.z-region) {
+  max-width: none;
+  margin: var(--space-6) 0 var(--space-12) calc((100% - 11 * var(--space-6)) / 12 * 4 + 4 * var(--space-6));
+  padding: var(--space-6) 0 0;
+  border-top: 1px solid var(--linie);
+}
+
+.zustand.z-leer:not(.z-region) svg {
+  display: none;
+}
+
+.zustand.z-leer:not(.z-region) :is(h1, h2) {
+  max-width: 18ch;
+  font-size: var(--text-buehne);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.zustand.z-leer:not(.z-region) p {
+  max-width: 46ch;
+  font-size: var(--text-md);
+}
+
+@media (max-width: 1100px) {
+  .zustand.z-leer:not(.z-region) {
+    margin-left: calc((100% - 11 * var(--space-6)) / 12 * 5 + 5 * var(--space-6));
+  }
+}
+
+@media (max-width: 760px) {
+  .zustand.z-leer:not(.z-region) {
+    margin-left: 0;
+  }
+
+  .zustand.z-leer:not(.z-region) :is(h1, h2) {
+    font-size: var(--text-2xl);
   }
 }
 

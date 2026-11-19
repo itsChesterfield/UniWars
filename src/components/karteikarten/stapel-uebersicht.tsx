@@ -11,6 +11,8 @@ import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kartenLage } from "@/lib/bereichskopf";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
 
@@ -60,17 +62,18 @@ export function StapelUebersicht({
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Karteikarten</h1>
-          <p>
-            {faellig > 0
-              ? `${karten(faellig)} ${faellig === 1 ? "ist" : "sind"} heute fällig, aus ${mitFaelligen} ${mitFaelligen === 1 ? "Stapel" : "Stapeln"}.`
-              : "Lernen mit Wiederholung: Fällige Karten kommen automatisch wieder."}
-          </p>
-        </div>
-        {stapel.length > 0 && <div className="rechts">{neu("haupt", "Neuer Stapel")}</div>}
-      </header>
+      <Bereichskopf
+        titel="Karteikarten"
+        zahl={stapel.length ? faellig : undefined}
+        einheit={faellig === 1 ? "Karte fällig heute" : "Karten fällig heute"}
+        lage={stapel.length ? kartenLage(stapel) : null}
+        untertitel={
+          faellig > 0
+            ? `Aus ${mitFaelligen} ${mitFaelligen === 1 ? "Stapel" : "Stapeln"}. Fällige Karten kommen automatisch wieder.`
+            : "Lernen mit Wiederholung: Fällige Karten kommen automatisch wieder."
+        }
+        aktionen={stapel.length > 0 ? neu("haupt", "Neuer Stapel") : undefined}
+      />
       <FachFilterChips faecher={faecher} />
 
       {vorschlaege.length > 0 && !fachFilter && (

@@ -50,6 +50,8 @@ import { fachZuordnungen, MATERIAL_ARTEN, materialPfad, type HubMaterial, type M
 import { linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { ablageDateiname, istWebLink, webLinkUrl } from "@/lib/dateiablage/weblink";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kopfListe } from "@/lib/bereichskopf";
 
 export type Ordner = { id: string | null; name: string; farbe: string | null };
 
@@ -555,12 +557,11 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Dateiablage</h1>
-        </div>
-        <div className="rechts">{hochladenKnopf}</div>
-      </header>
+      <Bereichskopf
+        titel="Dateiablage"
+        {...(serverDateien.length ? kopfListe(serverDateien.map((d) => ({ titel: d.name, geaendert: d.geaendert_am })), "Datei", ["Datei", "Dateien"]) : {})}
+        aktionen={hochladenKnopf}
+      />
       {linkOffen && (
         <form
           className="crud-form dat-link-form"

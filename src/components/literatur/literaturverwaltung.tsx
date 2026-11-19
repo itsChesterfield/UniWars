@@ -22,6 +22,8 @@ import type { QuellenErkennung } from "@/lib/ki/quelle";
 import { kiVorschauUebernommen } from "@/lib/ki/tracking";
 import { berlinDatum } from "@/lib/zeit";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { kopfListe } from "@/lib/bereichskopf";
 
 const TYP_NAME: Record<QuellenTyp, string> = { BUCH: "Buch", ARTIKEL: "Artikel", WEBSEITE: "Webseite" };
 type Spalte = "autor" | "jahr" | "titel" | "typ" | "fach";
@@ -149,13 +151,12 @@ export function Literaturverwaltung({
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Literatur</h1>
-          <p>Quellen sammeln und nach APA zitieren.</p>
-        </div>
-        {quellen.length > 0 && <div className="rechts">{neuKnopf("haupt", "Quelle")}</div>}
-      </header>
+      <Bereichskopf
+        titel="Literatur"
+        untertitel="Quellen sammeln und nach APA zitieren."
+        {...(quellen.length ? { ...kopfListe(quellen.map((q) => ({ titel: q.titel, geaendert: q.erstellt_am })), "Quelle ohne Titel", ["Quelle", "Quellen"]), lage: null } : {})}
+        aktionen={quellen.length > 0 ? neuKnopf("haupt", "Quelle") : undefined}
+      />
       {quelleId ? <Link href="/literaturverwaltung" className="knopf leise klein">Alle Quellen</Link> : <FachFilterChips faecher={faecher} />}
 
       {formular && (

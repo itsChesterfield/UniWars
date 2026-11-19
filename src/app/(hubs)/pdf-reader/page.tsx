@@ -5,6 +5,8 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
 import { PdfListe, type PdfEintrag, type PdfFach } from "@/components/pdf-reader/pdf-liste";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { pdfLage } from "@/lib/bereichskopf";
 
 export const metadata = { title: "PDF Reader · UniVerse" };
 
@@ -53,17 +55,18 @@ export default async function PdfReaderSeite() {
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>PDF Reader</h1>
-          <p>Skripte und Folien lesen und in Ordnern sortieren. PDFs einfach vom Computer hierher ziehen.</p>
-        </div>
-        <div className="rechts">
+      <Bereichskopf
+        titel="PDF Reader"
+        zahl={eintraege.length || undefined}
+        einheit={eintraege.length === 1 ? "PDF" : "PDFs"}
+        lage={pdfLage(eintraege[0])}
+        untertitel="Skripte und Folien lesen und in Ordnern sortieren. PDFs einfach vom Computer hierher ziehen."
+        aktionen={
           <Link href="/dateiablage" className="knopf leise">
             <PfeilText>Zur Dateiablage</PfeilText>
           </Link>
-        </div>
-      </header>
+        }
+      />
       <Suspense fallback={null}>
         <PdfListe startPdfs={eintraege} startOrdner={ordner ?? []} faecher={fachOrdner} />
       </Suspense>
