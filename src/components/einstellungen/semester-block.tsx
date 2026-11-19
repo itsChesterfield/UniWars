@@ -64,12 +64,12 @@ export function SemesterBlock({
   return (
     <div className="hs-verif">
       <h3>
-        {semesterName(termine.semester, land)} <span className="faint">· {standText}</span>
+        {semesterName(termine.semester, land)}<span className="faint">, {standText}</span>
       </h3>
       <p className="muted">
         {gepflegt
           ? `Von Studierenden deiner Hochschule eingetragen${geaendertAm ? ` (zuletzt ${new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(geaendertAm))})` : ""}. Stimmt etwas nicht? Korrigiere es für alle.`
-          : "Das sind Richtwerte für deine Hochschulart. Trag die echten Termine ein – sie gelten dann für alle an deiner Hochschule."}
+          : "Das sind Richtwerte für deine Hochschulart. Trag die echten Termine ein, sie gelten dann für alle an deiner Hochschule."}
       </p>
 
       {!bearbeiten ? (

@@ -4,10 +4,12 @@ import { useState } from "react";
 import { lernprofilSetzen } from "@/app/(hubs)/lernraum/actions";
 import { PERSOENLICHKEITEN, type Lernprofil, type Persoenlichkeit } from "@/lib/ki/lernraum";
 import { STUDIO_NAME } from "@/lib/ki/studio";
+import type { IconName } from "@/lib/icons";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 const REIHENFOLGE: Persoenlichkeit[] = ["kumpel", "coach", "sachlich"];
-const ICON: Record<Persoenlichkeit, string> = { kumpel: "😄", coach: "🎯", sachlich: "📐" };
+const ICON: Record<Persoenlichkeit, IconName> = { kumpel: "chat", coach: "ziel", sachlich: "info" };
 
 /** Einstellungen: Wie soll UniVerse Studio auftreten? */
 export function PersoenlichkeitWahl({ startProfil }: { startProfil: Lernprofil }) {
@@ -48,7 +50,7 @@ export function PersoenlichkeitWahl({ startProfil }: { startProfil: Lernprofil }
             disabled={laeuft}
             onClick={() => waehlen(p)}
           >
-            {ICON[p]} {PERSOENLICHKEITEN[p].name}
+            <Icon name={ICON[p]} groesse={16} /> {PERSOENLICHKEITEN[p].name}
           </button>
         ))}
       </span>

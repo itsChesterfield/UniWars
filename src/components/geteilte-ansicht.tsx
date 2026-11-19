@@ -21,6 +21,7 @@ import {
 import { hubNameAusPfad } from "@/lib/hubs/navigation";
 import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 // Die Aufteilung liegt im Browser, damit sie Seitenwechsel und Neuladen übersteht.
 const SCHLUESSEL = "uniwars-geteilte-ansicht-v1";
@@ -269,7 +270,7 @@ export function GeteilteAnsicht({ children, mainKlasse: grundKlasse }: { childre
                   ⤢
                 </button>
                 <button type="button" className="icon-knopf" title="Zweite Ansicht schließen" aria-label="Zweite Ansicht schließen" onClick={schliessen}>
-                  ✕
+                  <Icon name="schliessen" groesse={16} />
                 </button>
               </span>
             </div>

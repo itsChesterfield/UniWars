@@ -8,6 +8,7 @@ import { MaterialPakete } from "@/components/dateiablage/material-teilen";
 import { AnhangDialog, type AnhangWahl, type Nutzer } from "@/components/chat/chat-dialoge";
 import type { Json, Tables } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 type Nachricht = Tables<"chat_nachricht">;
 type Anhang = { typ: "datei" | "deadline" | "todo"; id: string; titel: string; mime?: string; faellig_am?: string | null };
@@ -177,7 +178,7 @@ export function ChatVerlauf({
           ←
         </button>
         <span className="chat-avatar" aria-hidden>
-          {chat.typ === "GRUPPE" ? "👥" : (chat.name ?? "?").slice(0, 1).toUpperCase()}
+          {chat.typ === "GRUPPE" ? <Icon name="gruppe" groesse={18} /> : (chat.name ?? "?").slice(0, 1).toUpperCase()}
         </span>
         <div className="chat-kopf-text">
           <strong>{chat.typ === "DIREKT" ? `@${chat.name}` : chat.name}</strong>
@@ -257,16 +258,16 @@ export function ChatVerlauf({
             {anhang && (
               <div className="chat-anhang-vorschau">
                 <span>
-                  {anhang.typ === "datei" ? "📎" : anhang.typ === "deadline" ? "⏰" : "☑"} {anhang.titel}
+                  <Icon name={anhang.typ === "datei" ? "anhang" : anhang.typ === "deadline" ? "uhr" : "aufgaben"} groesse={16} /> {anhang.titel}
                 </span>
                 <button type="button" className="icon-knopf" aria-label="Anhang entfernen" onClick={() => setAnhang(null)}>
-                  ✕
+                  <Icon name="schliessen" groesse={16} />
                 </button>
               </div>
             )}
             <div className="chat-eingabe-zeile">
               <button type="button" className="icon-knopf chat-buroklammer" aria-label="Anhängen" title="Datei, Deadline oder To-do anhängen" onClick={() => setAnhangDialog(true)}>
-                📎
+                <Icon name="anhang" groesse={16} />
               </button>
               <textarea
                 className="field chat-textfeld"
@@ -315,7 +316,7 @@ function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anh
     return (
       <div>
       <a className="chat-karte" href={`/chat/anhang/${nachrichtId}`} target="_blank" rel="noopener noreferrer">
-        <span aria-hidden>{anhang.mime?.startsWith("image/") ? "🖼️" : anhang.mime === "application/pdf" ? "📕" : "📎"}</span>
+        <Icon name={anhang.mime?.startsWith("image/") ? "bild" : anhang.mime === "application/pdf" ? "pdf" : "anhang"} groesse={18} />
         <span>
           <strong>{anhang.titel}</strong>
           <span className="muted">Datei öffnen</span>
@@ -328,12 +329,12 @@ function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anh
   }
   return (
     <div className="chat-karte">
-      <span aria-hidden>{anhang.typ === "deadline" ? "⏰" : "☑"}</span>
+      <Icon name={anhang.typ === "deadline" ? "uhr" : "aufgaben"} groesse={18} />
       <span>
         <strong>{anhang.titel}</strong>
         <span className="muted">
           {anhang.typ === "deadline" ? "Deadline" : "To-do"}
-          {anhang.faellig_am ? ` · fällig ${new Date(anhang.faellig_am).toLocaleDateString("de-DE")}` : ""}
+          {anhang.faellig_am ? `, fällig ${new Date(anhang.faellig_am).toLocaleDateString("de-DE")}` : ""}
         </span>
       </span>
     </div>

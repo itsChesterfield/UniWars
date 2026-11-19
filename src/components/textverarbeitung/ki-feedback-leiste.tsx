@@ -22,6 +22,7 @@ import {
 } from "@/lib/ki/feedback";
 import { kiFehlerTracken, kiGestartet, kiVorschauAngezeigt, kiVorschauUebernommen } from "@/lib/ki/tracking";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 /** Text des Editors mit Zuordnung Zeichen → Editor-Position (Absätze durch \n getrennt). */
 function editorKarte(editor: Editor) {
@@ -161,7 +162,7 @@ export function KiFeedbackLeiste({ editor, dokumentId, onSchliessen }: { editor:
     return (
       <aside className="txt-ki-leiste eingeklappt" aria-label="KI-Feedback">
         <button type="button" className="btnp" onClick={() => setEingeklappt(false)}>
-          ✨ Zurück zum Feedback
+          <Icon name="studio" groesse={16} /> Zurück zum Feedback
         </button>
       </aside>
     );
@@ -170,9 +171,9 @@ export function KiFeedbackLeiste({ editor, dokumentId, onSchliessen }: { editor:
   return (
     <aside className="txt-ki-leiste" aria-label="KI-Feedback">
       <div className="rowb">
-        <h3>✨ Feedback</h3>
+        <h3>Feedback</h3>
         <button type="button" className="icon-knopf" aria-label="Feedback schließen" onClick={onSchliessen}>
-          ✕
+          <Icon name="schliessen" groesse={16} />
         </button>
       </div>
 
@@ -180,9 +181,9 @@ export function KiFeedbackLeiste({ editor, dokumentId, onSchliessen }: { editor:
         <KiVorstufe ki={ki} ort="textverarbeitung" onSchliessen={onSchliessen} />
       ) : (
         <>
-          <p className="muted txt-ki-grundsatz">Die KI gibt Hinweise zu deinem Text – sie schreibt ihn nicht für dich.</p>
+          <p className="muted txt-ki-grundsatz">Die KI gibt Hinweise zu deinem Text, sie schreibt ihn nicht für dich.</p>
           <p className="txt-ki-umfang">
-            <strong>{istAuswahl ? "Markierter Text" : "Ganzes Dokument"}</strong> · {umfang.woerter.toLocaleString("de-DE")} Wörter
+            <strong>{istAuswahl ? "Markierter Text" : "Ganzes Dokument"}</strong>, {umfang.woerter.toLocaleString("de-DE")} Wörter
             {!istAuswahl && <span className="muted"> (markiere Text, um nur einen Abschnitt zu prüfen)</span>}
           </p>
           {zuLang && <p className="ki-hinweis">Das sind mehr als 20.000 Zeichen. Markiere einen Abschnitt, z. B. ein Kapitel.</p>}
@@ -274,12 +275,12 @@ export function KiFeedbackLeiste({ editor, dokumentId, onSchliessen }: { editor:
                       {k.zitat && <q className="txt-ki-zitat">{k.zitat}</q>}
                       {!ergebnis.gefunden[i] && <span className="txt-ki-nicht-gefunden">Stelle nicht gefunden</span>}
                       <span className="txt-ki-problem">{k.problem}</span>
-                      <span className="txt-ki-hinweis">💡 {k.hinweis}</span>
+                      <span className="txt-ki-hinweis"><Icon name="tipp" groesse={14} /> {k.hinweis}</span>
                     </button>
                   </li>
                 ))}
               </ul>
-              <p className="faint txt-ki-fuss">✨ Von der KI – kann sich irren. Wird nicht gespeichert.</p>
+              <p className="faint txt-ki-fuss"><Icon name="studio" groesse={14} /> Von der KI, kann sich irren. Wird nicht gespeichert.</p>
             </section>
           )}
         </>

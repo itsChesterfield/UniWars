@@ -150,8 +150,8 @@ export function StundenplanFotoDialog({
       ) : schritt === "start" ? (
         <>
           <p>
-            Mach ein Foto oder einen Screenshot von deinem Stundenplan (z. B. aus dem Uni-Portal). Die KI liest Fächer, Tage, Uhrzeiten und Räume ab –
-            du prüfst alles, bevor es eingetragen wird.
+            Mach ein Foto oder einen Screenshot von deinem Stundenplan (z. B. aus dem Uni-Portal). Die KI liest Fächer, Tage, Uhrzeiten und Räume ab.
+            Du prüfst alles, bevor es eingetragen wird.
           </p>
           <input
             ref={eingabe}

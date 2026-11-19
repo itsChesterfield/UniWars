@@ -13,6 +13,7 @@ import {
 import type { Ergebnis } from "@/app/settings/actions";
 import { hochschuleSuchen, type HochschuleKurz } from "@/lib/hochschulen";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 const FLAGGE: Record<string, string> = { DE: "🇩🇪", AT: "🇦🇹", CH: "🇨🇭" };
 
@@ -102,7 +103,7 @@ export function Suche({
         aria-label="Hochschule suchen"
         placeholder={
           alle
-            ? "Name, Kürzel oder Ort – z. B. RWTH, LMU, Bochum"
+            ? "Name, Kürzel oder Ort, z. B. RWTH, LMU, Bochum"
             : "Liste wird geladen …"
         }
         value={eingabe}
@@ -146,7 +147,7 @@ export function Suche({
               <span className="hs-name">{h.name}</span>
               <span className="hs-meta">
                 {FLAGGE[h.land]}{" "}
-                {[h.ort, h.domains[0]].filter(Boolean).join(" · ")}
+                {[h.ort, h.domains[0]].filter(Boolean).join(", ")}
               </span>
             </li>
           ))}
@@ -244,7 +245,7 @@ export function HochschuleWahl({
         ) : (
           <div className="hs-gewaehlt">
             <span className="hs-name">{hochschule ?? frei}</span>
-            {bestaetigt && <span className="hs-abzeichen">✓ Bestätigt</span>}
+            {bestaetigt && <span className="hs-abzeichen"><Icon name="haken" groesse={14} /> Bestätigt</span>}
             <button
               type="button"
               className="knopf leise klein"
@@ -261,8 +262,8 @@ export function HochschuleWahl({
       <div className="hs-verif">
         <h3>Uni-Mail bestätigen</h3>
         <p className="muted">
-          Damit ist klar, dass du wirklich an deiner Hochschule studierst – z.
-          B. für Kommilitonen und Studentenpreise. Die Bestätigung gilt ein
+          Damit ist klar, dass du wirklich an deiner Hochschule studierst, zum
+          Beispiel für Kommilitonen und Studentenpreise. Die Bestätigung gilt ein
           Jahr.
         </p>
 
@@ -271,9 +272,9 @@ export function HochschuleWahl({
             <span>
               <b>{verifizierung?.email}</b>
               {verifizierung?.hochschule
-                ? ` · ${verifizierung.hochschule}`
+                ? `, ${verifizierung.hochschule}`
                 : ""}
-              {gueltigBis ? ` · gültig bis ${gueltigBis}` : ""}
+              {gueltigBis ? `, gültig bis ${gueltigBis}` : ""}
             </span>
             <button
               type="button"
@@ -301,7 +302,7 @@ export function HochschuleWahl({
               <div className="hs-vorschlag">
                 <span>
                   Deine Anmelde-Adresse ist eine Uni-Mail der <b>{vorschlag}</b>{" "}
-                  und schon bestätigt – ein Klick genügt.
+                  und schon bestätigt, ein Klick genügt.
                 </span>
                 <button
                   type="button"

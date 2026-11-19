@@ -203,7 +203,7 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
     }
     const s = start.current;
     const fach = faecher.find((f) => f.id === fachRef.current);
-    const titel = [fach?.name, `Aufnahme ${s ? datumUhrzeit(s.datum) : ""}`.trim()].filter(Boolean).join(" – ");
+    const titel = [fach?.name, `Aufnahme ${s ? datumUhrzeit(s.datum) : ""}`.trim()].filter(Boolean).join(", ");
     const a = await transkriptAnlegen({
       titel,
       fachId: fachRef.current,
@@ -233,7 +233,7 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
 
   return (
     <section className="card tra-aufnahme" aria-label="Aufnahme">
-      <h2 className="ct">🎙️ Aufnehmen</h2>
+      <h2 className="ct">Aufnehmen</h2>
       {phase === "bereit" && (
         <div className="tra-einstellungen">
           <label className="ki-feld">
@@ -269,7 +269,7 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
               <span className={`tra-punkt ${phase === "laeuft" ? "an" : ""}`} aria-hidden />
               <strong className="mono">{zeitText(sekunden)}</strong>
               <span className="muted">/ {zeitText(MAX_AUFNAHME_SEKUNDEN)}</span>
-              {teilNr > 1 && <span className="muted">· Teil {teilNr}</span>}
+              {teilNr > 1 && <span className="muted">, Teil {teilNr}</span>}
             </div>
             <div className="tra-pegel" role="meter" aria-label="Lautstärke" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pegel * 100)}>
               <span style={{ width: `${Math.round(pegel * 100)}%` }} />
@@ -299,7 +299,7 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
       )}
       <p className="faint tra-hinweis">
         Die Aufnahme landet in der Dateiablage{fachId ? " im gewählten Fach" : ""}. Höchstens 2 Stunden.
-        {!verfuegbar && " Umwandeln in Text ist gerade nicht verfügbar – aufnehmen geht trotzdem."}
+        {!verfuegbar && " Umwandeln in Text ist gerade nicht verfügbar, aufnehmen geht trotzdem."}
       </p>
     </section>
   );

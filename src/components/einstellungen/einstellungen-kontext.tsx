@@ -63,7 +63,7 @@ export function EinstellungenKontext({ mobil = false, kiVerfuegbar = true }: { m
       <details className="kontext-mobil einst-kontext-mobil" key={pfad}>
         <summary>
           <span>
-            Einstellungen<span className="km-ort"> · {aktiv.name}</span>
+            Einstellungen<span className="km-ort">, {aktiv.name}</span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="m6 9 6 6 6-6" />

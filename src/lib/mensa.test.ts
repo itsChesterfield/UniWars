@@ -11,8 +11,8 @@ test("Mensa: Gerichte aufbereiten (Preis, vegan, vegetarisch)", () => {
     { name: " | Gnocchi | Speck | | Sauce", category: "Pasta" },
   ]);
   assert.equal(g.length, 4);
-  assert.equal(g[3].name, "Gnocchi · Speck · Sauce");
-  assert.equal(g[0].name, "Graupen- Steckrübeneintopf · Mettwurst");
+  assert.equal(g[3].name, "Gnocchi, Speck, Sauce");
+  assert.equal(g[0].name, "Graupen- Steckrübeneintopf, Mettwurst");
   assert.deepEqual([g[0].vegan, g[0].vegetarisch], [false, false]);
   assert.deepEqual([g[1].vegan, g[1].vegetarisch], [true, true]);
   assert.deepEqual([g[2].vegetarisch, g[2].preis], [true, null]);

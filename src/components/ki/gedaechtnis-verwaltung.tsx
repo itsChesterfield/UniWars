@@ -21,6 +21,7 @@ import {
 } from "@/lib/ki/gedaechtnis";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 type Thema = {
   id: string;
@@ -147,8 +148,8 @@ export function GedaechtnisVerwaltung({
             }
           >
             {kennenlernen === "neu"
-              ? "👋 Kennenlernen starten"
-              : "👋 Kennenlernen wiederholen"}
+              ? "Kennenlernen starten"
+              : "Kennenlernen wiederholen"}
           </button>
           <button type="button" className="btng" onClick={exportieren}>
             ⬇ Exportieren
@@ -183,11 +184,11 @@ export function GedaechtnisVerwaltung({
 
       {neuGelernt.length > 0 && (
         <section className="card gd-abschnitt gd-rueckblick">
-          <h2 className="gd-titel">🧠 In den letzten 30 Tagen gelernt</h2>
+          <h2 className="gd-titel">In den letzten 30 Tagen gelernt</h2>
           <ul className="gd-liste-kurz">
             {neuGelernt.map((e) => (
               <li key={e.id}>
-                {BEREICH_INFO[e.bereich].icon} {e.inhalt}
+                <Icon name={BEREICH_INFO[e.bereich].icon} groesse={14} /> {e.inhalt}
               </li>
             ))}
           </ul>
@@ -201,7 +202,7 @@ export function GedaechtnisVerwaltung({
             {vorschlaege.map((e) => (
               <li key={e.id} className="gd-eintrag">
                 <span className="gd-inhalt">
-                  {BEREICH_INFO[e.bereich].icon} {e.inhalt}
+                  <Icon name={BEREICH_INFO[e.bereich].icon} groesse={14} /> {e.inhalt}
                 </span>
                 <span className="gd-aktionen">
                   <button
@@ -253,7 +254,7 @@ export function GedaechtnisVerwaltung({
           return (
             <div key={b} className="gd-bereich">
               <h3>
-                {BEREICH_INFO[b].icon} {BEREICH_INFO[b].name}
+                <Icon name={BEREICH_INFO[b].icon} groesse={14} /> {BEREICH_INFO[b].name}
               </h3>
               <ul className="gd-liste">
                 {liste.map((e) => (
@@ -307,8 +308,8 @@ export function GedaechtnisVerwaltung({
                         <span className="gd-inhalt">
                           {e.inhalt}
                           <small className="faint">
-                            {QUELLE_NAME[e.quelle]} · {datum(e.erstellt_am)}
-                            {e.fest ? " · dauerhaft" : ""}
+                            {QUELLE_NAME[e.quelle]}, {datum(e.erstellt_am)}
+                            {e.fest ? ", dauerhaft" : ""}
                           </small>
                         </span>
                         <span className="gd-aktionen">
@@ -321,7 +322,7 @@ export function GedaechtnisVerwaltung({
                               setBearbeiten({ id: e.id, text: e.inhalt })
                             }
                           >
-                            ✏️
+                            <Icon name="stift" groesse={16} />
                           </button>
                           <button
                             type="button"
@@ -338,7 +339,7 @@ export function GedaechtnisVerwaltung({
                               });
                             }}
                           >
-                            🗑
+                            <Icon name="loeschen" groesse={16} />
                           </button>
                         </span>
                       </>
@@ -406,11 +407,11 @@ export function GedaechtnisVerwaltung({
       </section>
 
       <section className="card gd-abschnitt">
-        <h2 className="gd-titel">📚 Wissensstand</h2>
-        {rhythmus && <p className="faint">⏱️ Rhythmus: {rhythmus}</p>}
+        <h2 className="gd-titel">Wissensstand</h2>
+        {rhythmus && <p className="faint">Rhythmus: {rhythmus}</p>}
         {nachFach.length === 0 ? (
           <p className="faint">
-            Entsteht aus Quiz und Karteikarten – je mehr du übst, desto genauer.
+            Entsteht aus Quiz und Karteikarten, je mehr du übst, desto genauer.
           </p>
         ) : (
           nachFach.map(([fach, liste]) => (
@@ -428,7 +429,7 @@ export function GedaechtnisVerwaltung({
                       <span className="gd-ampel" aria-hidden />
                       <span className="gd-thema-name">{t.thema}</span>
                       <span className="faint gd-thema-info">
-                        {AMPEL_TEXT[a]} · {Math.round(t.beherrschung * 100)} %
+                        {AMPEL_TEXT[a]}, {Math.round(t.beherrschung * 100)} %
                       </span>
                     </li>
                   );

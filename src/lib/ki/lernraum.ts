@@ -204,19 +204,19 @@ export type Persoenlichkeit = "kumpel" | "coach" | "sachlich";
 export const PERSOENLICHKEITEN: Record<Persoenlichkeit, { name: string; beschreibung: string; anweisung: string }> = {
   kumpel: {
     name: "Lernbuddy",
-    beschreibung: "Locker, herzlich, mit einer Prise Humor – wie ein Kommilitone, der den Stoff draufhat.",
+    beschreibung: "Locker, herzlich, mit einer Prise Humor, wie ein Kommilitone, der den Stoff draufhat.",
     anweisung:
       "Du bist ein lockerer, herzlicher Lernbuddy: Du redest wie ein guter Kommilitone, der den Stoff draufhat – natürlich, mit einer Prise trockenem Humor und gern mal einem passenden Vergleich aus dem Alltag. Emojis sparsam (höchstens eins pro Antwort). Du freust dich ehrlich über Fortschritte, nimmst Stress ernst und machst Mut, ohne zu übertreiben.",
   },
   coach: {
     name: "Coach",
-    beschreibung: "Motivierend und strukturiert – hält dich auf Kurs und gibt dir klare nächste Schritte.",
+    beschreibung: "Motivierend und strukturiert, hält dich auf Kurs und gibt dir klare nächste Schritte.",
     anweisung:
       "Du bist ein motivierender Lerncoach: klar, strukturiert und zugewandt. Du gibst konkrete nächste Schritte, erinnerst an Ziele und Fristen, lobst echte Fortschritte und forderst freundlich, aber bestimmt. Beende längere Antworten gern mit einem konkreten Vorschlag, was als Nächstes dran ist.",
   },
   sachlich: {
     name: "Sachlich",
-    beschreibung: "Knapp, präzise und ohne Smalltalk – nur das Wesentliche.",
+    beschreibung: "Knapp, präzise und ohne Smalltalk, nur das Wesentliche.",
     anweisung:
       "Du bist sachlich und präzise: kein Smalltalk, keine Emojis, keine Floskeln. Du kommst direkt zum Punkt, strukturierst klar und bleibst dabei freundlich.",
   },
@@ -354,7 +354,7 @@ export function belegeVerlinken(antwort: string, titelVon: (nr: number) => strin
           const titel = titelVon(b.quelle);
           if (!titel) return "";
           const kurz = titel.replace(/\.pdf$/i, "").slice(0, 28);
-          return `[${kurz}${b.label ? ` · ${b.label}` : ""}](#beleg-${b.quelle}-${b.seite ?? 0})`;
+          return `[${kurz}${b.label ? `, ${b.label}` : ""}](#beleg-${b.quelle}-${b.seite ?? 0})`;
         })
         .filter(Boolean)
         .join(" ");
@@ -390,12 +390,12 @@ export function ueberblickLesen(antwort: string): Ueberblick | null {
 }
 
 export const STUDIO = {
-  lernzettel: { name: "Lernzettel", icon: "📄", json: false },
-  faq: { name: "FAQ", icon: "❓", json: false },
-  briefing: { name: "Briefing", icon: "🧭", json: false },
-  zeitleiste: { name: "Zeitleiste", icon: "🕒", json: false },
-  quiz: { name: "Quiz", icon: "🎯", json: true },
-  karteikarten: { name: "Karteikarten", icon: "🗂️", json: true },
+  lernzettel: { name: "Lernzettel", icon: "text", json: false },
+  faq: { name: "FAQ", icon: "frage", json: false },
+  briefing: { name: "Briefing", icon: "globus", json: false },
+  zeitleiste: { name: "Zeitleiste", icon: "uhr", json: false },
+  quiz: { name: "Quiz", icon: "frage", json: true },
+  karteikarten: { name: "Karteikarten", icon: "karteikarten", json: true },
 } as const;
 export type StudioArt = keyof typeof STUDIO;
 

@@ -9,7 +9,7 @@ export function MindmapListe({ eintraege, faecher }: { eintraege: ObjektEintrag[
     <ObjektListe
       hub="MindMap"
       einheit={["MindMap", "MindMaps"]}
-      untertitel="Themen visuell strukturieren – Tab für einen Unterpunkt, Enter für einen weiteren Punkt."
+      untertitel="Themen visuell strukturieren, Tab für einen Unterpunkt, Enter für einen weiteren Punkt."
       icon="mindmap"
       neuLabel="Neue MindMap"
       leerTitel="Noch keine MindMaps."

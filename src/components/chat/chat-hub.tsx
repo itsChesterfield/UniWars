@@ -10,6 +10,7 @@ import { CHAT_GELESEN_EVENT } from "@/components/chat/chat-punkt";
 import type { Database } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { OfflineHinweis } from "@/components/offline-hinweis";
+import { Icon } from "@/components/nav-icon";
 
 type Uebersicht = Database["public"]["Functions"]["chat_uebersicht"]["Returns"][number];
 
@@ -121,12 +122,12 @@ export function ChatHub({
 
   return (
     <>
-      <HubKopf titel="Chat" untertitel="Absprachen mit Kommilitonen – vor allem für Gruppenarbeiten." aktionen={knoepfe} />
+      <HubKopf titel="Chat" untertitel="Absprachen mit Kommilitonen, vor allem für Gruppenarbeiten." aktionen={knoepfe} />
       <OfflineHinweis text="Offline. Neue Nachrichten senden und empfangen geht wieder, sobald du online bist." />
 
       {chats.length === 0 ? (
         <LeererZustand
-          icon="💬"
+          icon="chat"
           text="Noch keine Chats. Schreib jemandem aus deinem Kurs oder lege eine Gruppe für eure Gruppenarbeit an."
           aktion={
             <button type="button" className="btnp hub-leer-knopf" onClick={() => setDialog("chat")}>
@@ -143,7 +144,7 @@ export function ChatHub({
                 <li key={c.chat_id}>
                   <button type="button" className={`chat-listeneintrag ${c.chat_id === aktivId ? "aktiv" : ""}`} onClick={() => oeffnen(c.chat_id)}>
                     <span className="chat-avatar" aria-hidden>
-                      {c.typ === "GRUPPE" ? "👥" : (c.name ?? "?").slice(0, 1).toUpperCase()}
+                      {c.typ === "GRUPPE" ? <Icon name="gruppe" groesse={18} /> : (c.name ?? "?").slice(0, 1).toUpperCase()}
                     </span>
                     <span className="chat-listeneintrag-text">
                       <span className="rowb">

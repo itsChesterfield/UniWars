@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 
 /** Seitenkopf der Bereiche, siehe `Bereichskopf` (Zahl, Lage-Satz, Aktionen wie im Hub). */
 export function HubKopf(props: Parameters<typeof Bereichskopf>[0]) {
@@ -7,11 +9,11 @@ export function HubKopf(props: Parameters<typeof Bereichskopf>[0]) {
 }
 
 /** ALL-07: Hinweistext + großer Button für den ersten Eintrag. */
-export function LeererZustand({ icon, text, aktion }: { icon: string; text: string; aktion?: ReactNode }) {
+export function LeererZustand({ icon, text, aktion }: { icon: IconName; text: string; aktion?: ReactNode }) {
   return (
     <div className="hub-leer">
       <div className="hub-leer-icon" aria-hidden>
-        {icon}
+        <Icon name={icon} groesse={28} />
       </div>
       <p>{text}</p>
       {aktion}

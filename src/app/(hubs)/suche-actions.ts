@@ -61,26 +61,26 @@ export async function allesSuchen(eingabe: string, eigeneUnterlagen = false): Pr
     ]);
 
   const t: SuchTreffer[] = [];
-  for (const x of pdfs.data ?? []) t.push({ art: "pdf", id: x.id, titel: x.name, href: `/pdf-reader/${x.id}`, icon: "📕", info: "PDF" });
-  for (const x of notizen.data ?? []) t.push({ art: "notiz", id: x.id, titel: x.titel || "Unbenannte Notiz", href: `/notizen?id=${x.id}`, icon: "📝", info: "Notiz" });
-  for (const x of stapel.data ?? []) t.push({ art: "stapel", id: x.id, titel: x.name, href: `/karteikarten/${x.id}`, icon: "🗂️", info: "Karteikarten" });
-  for (const x of quizze.data ?? []) t.push({ art: "quiz", id: x.id, titel: x.titel, href: `/karteikarten/quiz/${x.id}`, icon: "🎯", info: "Quiz" });
+  for (const x of pdfs.data ?? []) t.push({ art: "pdf", id: x.id, titel: x.name, href: `/pdf-reader/${x.id}`, icon: "pdf", info: "PDF" });
+  for (const x of notizen.data ?? []) t.push({ art: "notiz", id: x.id, titel: x.titel || "Unbenannte Notiz", href: `/notizen?id=${x.id}`, icon: "notizen", info: "Notiz" });
+  for (const x of stapel.data ?? []) t.push({ art: "stapel", id: x.id, titel: x.name, href: `/karteikarten/${x.id}`, icon: "karteikarten", info: "Karteikarten" });
+  for (const x of quizze.data ?? []) t.push({ art: "quiz", id: x.id, titel: x.titel, href: `/karteikarten/quiz/${x.id}`, icon: "frage", info: "Quiz" });
   for (const x of deadlines.data ?? [])
-    t.push({ art: "deadline", id: x.id, titel: x.titel, href: `/?detail=deadline:${x.id}`, icon: x.erledigt ? "✅" : "⏰", info: `Deadline · ${datumKurz(x.faellig_am)}` });
-  for (const x of pruefungen.data ?? []) t.push({ art: "pruefung", id: x.id, titel: x.titel, href: `/?detail=pruefung:${x.id}`, icon: "🎓", info: `Prüfung · ${datumKurz(x.datum)}` });
-  for (const x of todos.data ?? []) t.push({ art: "todo", id: x.id, titel: x.titel, href: `/?detail=todo:${x.id}`, icon: x.erledigt ? "☑️" : "◻️", info: "To-do" });
-  for (const x of faecher.data ?? []) t.push({ art: "fach", id: x.id, titel: x.name, href: `/lernraum/${x.id}`, icon: "📚", info: "Fach · Lernraum" });
-  for (const x of dokumente.data ?? []) t.push({ art: "dokument", id: x.id, titel: x.titel, href: `/textverarbeitung/${x.id}`, icon: "📄", info: "Dokument" });
-  for (const x of tabellen.data ?? []) t.push({ art: "tabelle", id: x.id, titel: x.titel, href: `/tabellen/${x.id}`, icon: "📊", info: "Tabelle" });
-  for (const x of praesentationen.data ?? []) t.push({ art: "praesentation", id: x.id, titel: x.titel, href: `/praesentationen/${x.id}`, icon: "🖥️", info: "Präsentation" });
-  for (const x of mindmaps.data ?? []) t.push({ art: "mindmap", id: x.id, titel: x.name, href: `/mindmap/${x.id}`, icon: "🧠", info: "MindMap" });
-  for (const x of whiteboards.data ?? []) t.push({ art: "whiteboard", id: x.id, titel: x.name, href: `/whiteboard/${x.id}`, icon: "🖍️", info: "Whiteboard" });
-  for (const x of transkripte.data ?? []) t.push({ art: "transkript", id: x.id, titel: x.titel, href: `/transkription/${x.id}`, icon: "🎙️", info: "Transkript" });
-  for (const x of podcasts.data ?? []) t.push({ art: "podcast", id: x.id, titel: x.titel, href: `/transkription/podcast/${x.id}`, icon: "🎧", info: "Podcast" });
-  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung?id=${x.id}`, icon: "📚", info: "Literatur" });
-  for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "🃏", info: "Karteikarte" });
-  for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "💯", info: "Note" });
-  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: ablageDateiname(x), href: `/dateiablage/oeffnen/${x.id}`, icon: "📎", info: istWebLink(x) ? "Weblink" : "Datei" });
+    t.push({ art: "deadline", id: x.id, titel: x.titel, href: `/?detail=deadline:${x.id}`, icon: x.erledigt ? "haken" : "uhr", info: `Deadline, ${datumKurz(x.faellig_am)}` });
+  for (const x of pruefungen.data ?? []) t.push({ art: "pruefung", id: x.id, titel: x.titel, href: `/?detail=pruefung:${x.id}`, icon: "ziel", info: `Prüfung, ${datumKurz(x.datum)}` });
+  for (const x of todos.data ?? []) t.push({ art: "todo", id: x.id, titel: x.titel, href: `/?detail=todo:${x.id}`, icon: "aufgaben", info: "To-do" });
+  for (const x of faecher.data ?? []) t.push({ art: "fach", id: x.id, titel: x.name, href: `/lernraum/${x.id}`, icon: "faecher", info: "Fach, Lernraum" });
+  for (const x of dokumente.data ?? []) t.push({ art: "dokument", id: x.id, titel: x.titel, href: `/textverarbeitung/${x.id}`, icon: "text", info: "Dokument" });
+  for (const x of tabellen.data ?? []) t.push({ art: "tabelle", id: x.id, titel: x.titel, href: `/tabellen/${x.id}`, icon: "tabelle", info: "Tabelle" });
+  for (const x of praesentationen.data ?? []) t.push({ art: "praesentation", id: x.id, titel: x.titel, href: `/praesentationen/${x.id}`, icon: "praesentation", info: "Präsentation" });
+  for (const x of mindmaps.data ?? []) t.push({ art: "mindmap", id: x.id, titel: x.name, href: `/mindmap/${x.id}`, icon: "mindmap", info: "MindMap" });
+  for (const x of whiteboards.data ?? []) t.push({ art: "whiteboard", id: x.id, titel: x.name, href: `/whiteboard/${x.id}`, icon: "whiteboard", info: "Whiteboard" });
+  for (const x of transkripte.data ?? []) t.push({ art: "transkript", id: x.id, titel: x.titel, href: `/transkription/${x.id}`, icon: "mikrofon", info: "Transkript" });
+  for (const x of podcasts.data ?? []) t.push({ art: "podcast", id: x.id, titel: x.titel, href: `/transkription/podcast/${x.id}`, icon: "kopfhoerer", info: "Podcast" });
+  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung?id=${x.id}`, icon: "faecher", info: "Literatur" });
+  for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "karteikarten", info: "Karteikarte" });
+  for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "noten", info: "Note" });
+  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: ablageDateiname(x), href: `/dateiablage/oeffnen/${x.id}`, icon: "anhang", info: istWebLink(x) ? "Weblink" : "Datei" });
 
   const eigeneTitel = await Promise.all((titelTreffer.data ?? []).map((x) => {
     const ref = materialRef({ art: x.art, id: x.material_id });
@@ -92,7 +92,7 @@ export async function allesSuchen(eingabe: string, eigeneUnterlagen = false): Pr
     const bekannt = t.find((x) => x.id === eintrag.id && x.art === art);
     if (bekannt) bekannt.titel = eintrag.titel;
     else t.push({
-      art, id: eintrag.id, titel: eintrag.titel, href: eintrag.href, icon: "",
+      art, id: eintrag.id, titel: eintrag.titel, href: eintrag.href, icon: null,
       info: eintrag.istPdf ? "PDF" : eintrag.art === "datei" ? "Datei" : MATERIAL_ARTEN[eintrag.art].name,
     });
   }
@@ -126,9 +126,9 @@ export async function allesSuchen(eingabe: string, eigeneUnterlagen = false): Pr
       t.push({
         art: "fundstelle",
         id: `${s.datei_id}-${s.seite}`,
-        titel: `${titelMap.get(datei.id) ?? datei.name} · S. ${s.seite}`,
+        titel: `${titelMap.get(datei.id) ?? datei.name}, S. ${s.seite}`,
         href: pdfPfad(s.datei_id, s.seite),
-        icon: "🔎",
+        icon: "suchen",
         info: fachZuordnungen(datei.fach_id, (extras ?? []).filter((e) => e.material_id === datei.id).map((e) => ({ ...e, art: "datei" })))
           .map((id) => fachMap.get(id) ?? (id === datei.fach_id ? datei.fach?.name : null)).filter(Boolean).join(", ") || "Ohne Fach",
         ausschnitt,
@@ -156,19 +156,19 @@ export async function zuletztSichtbareTreffer(roh: unknown): Promise<SuchTreffer
       if (!q) return null;
       const pdfSeite = q.istPdf && Number.isSafeInteger(seite) && seite! > 0 && seite! <= 100000 ? seite : undefined;
       return { art, id: pdfSeite ? `${id}-${pdfSeite}` : id, titel: q.titel, href: pdfSeite ? pdfPfad(id, pdfSeite) : q.href,
-        icon: "", info: pdfSeite ? `Seite ${pdfSeite}` : q.istPdf ? "PDF" : ref.art === "datei" ? "Datei" : MATERIAL_ARTEN[ref.art].name };
+        icon: null, info: pdfSeite ? `Seite ${pdfSeite}` : q.istPdf ? "PDF" : ref.art === "datei" ? "Datei" : MATERIAL_ARTEN[ref.art].name };
     }
     if (art === "fach") {
       const { data } = await supabase.from("fach").select("name").eq("id", id).maybeSingle();
-      return data ? { art, id, titel: data.name, href: `/lernraum/${id}`, icon: "", info: "Fach" } : null;
+      return data ? { art, id, titel: data.name, href: `/lernraum/${id}`, icon: null, info: "Fach" } : null;
     }
     if (art === "karte") {
       const { data } = await supabase.from("kk_karte").select("stapel_id, vorderseite").eq("id", id).maybeSingle();
-      return data ? { art, id, titel: data.vorderseite.slice(0, 120), href: `/karteikarten/${data.stapel_id}`, icon: "", info: "Karteikarte" } : null;
+      return data ? { art, id, titel: data.vorderseite.slice(0, 120), href: `/karteikarten/${data.stapel_id}`, icon: null, info: "Karteikarte" } : null;
     }
     if (art === "note" || art === "todo" || art === "deadline" || art === "pruefung") {
       const { data } = await supabase.from(art).select("titel").eq("id", id).maybeSingle();
-      return data ? { art, id, titel: data.titel, href: art === "note" ? "/noten" : `/?detail=${art}:${id}`, icon: "",
+      return data ? { art, id, titel: data.titel, href: art === "note" ? "/noten" : `/?detail=${art}:${id}`, icon: null,
         info: art === "note" ? "Note" : art === "pruefung" ? "Prüfung" : "Aufgabe" } : null;
     }
     return null;

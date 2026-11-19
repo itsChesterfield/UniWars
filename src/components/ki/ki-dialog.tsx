@@ -7,6 +7,7 @@ import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
 import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import type { TextStatus } from "@/lib/ki/ergebnis";
 import { track } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 /** Rahmen aller KI-Dialoge (KI-ALL-10: mobil bildschirmfüllend über CSS). */
 export function KiDialog({
@@ -38,10 +39,10 @@ export function KiDialog({
       }}
     >
       <div className="rowb ki-dialog-kopf">
-        <h3 className="ct">✨ {titel}</h3>
+        <h3 className="ct">{titel}</h3>
         {schliessbar && (
           <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
-            ✕
+            <Icon name="schliessen" groesse={16} />
           </button>
         )}
       </div>

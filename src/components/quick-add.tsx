@@ -19,6 +19,7 @@ import { erfassenErkennen } from "@/app/(hubs)/erfassen-actions";
 import { ART_NAMEN, type ErfassenArt, type ErfassenErkannt } from "@/lib/ki/erfassen";
 import type { FachOption } from "@/lib/fach-option";
 import type { Tables } from "@/lib/supabase/types";
+import { Icon } from "@/components/nav-icon";
 
 type TodoOption = Pick<Tables<"todo">, "id" | "titel" | "erledigt" | "parent_id">;
 type PruefungOption = Pick<Tables<"pruefung">, "id" | "titel">;
@@ -548,7 +549,7 @@ export function QuickAdd({
                 ) : ki?.fuer === titel ? (
                   <>
                     <span className="erfassen-ki" aria-hidden>
-                      ✦
+                      <Icon name="studio" groesse={14} />
                     </span>
                     Erkannt: <b>{ART_NAMEN[ki.erkannt.art]}</b>
                     {modus !== KI_ZU_MODUS[ki.erkannt.art] && (
@@ -563,10 +564,10 @@ export function QuickAdd({
                         übernehmen
                       </button>
                     )}
-                    {ki.erkannt.fach && <> · {ki.erkannt.fach}</>}
-                    {ki.erkannt.wann && <> · {new Date(ki.erkannt.wann.includes("T") ? ki.erkannt.wann : `${ki.erkannt.wann}T12:00`).toLocaleString("de-DE", ki.erkannt.wann.includes("T") ? { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "numeric", month: "short" })}</>}
-                    {ki.erkannt.raum && <> · {ki.erkannt.raum}</>}
-                    {ki.erkannt.titel && ki.erkannt.titel !== titel.trim() && <span className="faint"> – wird gespeichert als „{ki.erkannt.titel}“</span>}
+                    {ki.erkannt.fach && <>, {ki.erkannt.fach}</>}
+                    {ki.erkannt.wann && <>, {new Date(ki.erkannt.wann.includes("T") ? ki.erkannt.wann : `${ki.erkannt.wann}T12:00`).toLocaleString("de-DE", ki.erkannt.wann.includes("T") ? { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" } : { weekday: "short", day: "numeric", month: "short" })}</>}
+                    {ki.erkannt.raum && <>, {ki.erkannt.raum}</>}
+                    {ki.erkannt.titel && ki.erkannt.titel !== titel.trim() && <span className="faint">, wird gespeichert als „{ki.erkannt.titel}“</span>}
                   </>
                 ) : null}
               </p>
@@ -694,7 +695,7 @@ export function QuickAdd({
                         <span key={m.user_id} className="erfassen-anhang">
                           @{m.username}
                           <button type="button" aria-label={`${m.username} entfernen`} onClick={() => setMitglieder((l) => l.filter((x) => x.user_id !== m.user_id))}>
-                            ✕
+                            <Icon name="schliessen" groesse={16} />
                           </button>
                         </span>
                       ))}
@@ -725,7 +726,7 @@ export function QuickAdd({
                     ))}
                   </datalist>
                   {teilenMitUnbekannt && <small className="auth-error">Diesen Nutzernamen gibt es nicht.</small>}
-                  {teilenMitGueltig && <small className="faint">✓ {teilenMit.trim()} gefunden – mit Enter hinzufügen</small>}
+                  {teilenMitGueltig && <small className="faint">{teilenMit.trim()} gefunden. Mit Enter hinzufügen.</small>}
                 </label>
               )}
 
@@ -733,7 +734,7 @@ export function QuickAdd({
                 <label className="erfassen-breit">
                   <span>Gehört zu</span>
                   <select className="field" value={unterAuswahl} onChange={(e) => setUnterAuswahl(e.target.value)}>
-                    <option value="">Nichts – eigenständig</option>
+                    <option value="">Nichts, eigenständig</option>
                     {todos.filter((t) => !t.erledigt).length > 0 && (
                       <optgroup label="To-do">
                         {todos
@@ -785,7 +786,7 @@ export function QuickAdd({
                         <span key={a.url} className="erfassen-anhang">
                           {a.titel}
                           <button type="button" aria-label={`Anhang ${a.titel} entfernen`} onClick={() => entferneAnhang(a.url)}>
-                            ✕
+                            <Icon name="schliessen" groesse={16} />
                           </button>
                         </span>
                       ))}
@@ -850,10 +851,10 @@ export function QuickAdd({
                           value={u.wann}
                           onChange={(e) => setUnter((l) => l.map((x) => (x.id === u.id ? { ...x, wann: e.target.value } : x)))}
                           aria-label={`Termin für Unteraufgabe ${i + 1} (optional)`}
-                          title="Optional – ohne Datum gilt der Termin der Hauptaufgabe"
+                          title="Optional, ohne Datum gilt der Termin der Hauptaufgabe"
                         />
                         <button type="button" className="erfassen-unter-weg" aria-label={`Unteraufgabe ${i + 1} entfernen`} onClick={() => setUnter((l) => l.filter((x) => x.id !== u.id))}>
-                          ✕
+                          <Icon name="schliessen" groesse={16} />
                         </button>
                       </div>
                     ))}
