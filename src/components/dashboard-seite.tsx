@@ -13,6 +13,7 @@ import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
 import { EINRICHTUNG_COOKIE, einrichtungZeigen, standLesen } from "@/lib/einrichtung";
+import { nochmalBei401 } from "@/lib/nochmal-laden";
 
 
 /**
@@ -35,6 +36,30 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     redirect("/login");
   }
 
+  const laden = (signal: AbortSignal) =>
+    Promise.all([
+      supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }).abortSignal(signal),
+      supabase.from("deadline").select("*").order("faellig_am", { ascending: true }).abortSignal(signal),
+      supabase.from("todo").select("*").order("erstellt_am", { ascending: true }).abortSignal(signal),
+      supabase.from("note").select("*").order("datum", { ascending: false }).abortSignal(signal),
+      supabase.from("pruefung").select("*").order("datum", { ascending: true }).abortSignal(signal),
+      supabase.from("stundenplan_eintrag").select("*").abortSignal(signal),
+      supabase.rpc("notenschnitt").abortSignal(signal),
+      supabase.from("lern_session").select("*").abortSignal(signal),
+      supabase.from("settings").select("*").eq("user_id", user.id).abortSignal(signal).single(),
+      supabase
+        .from("kalender_verbindung")
+        .select("zuletzt_abgeglichen")
+        .eq("user_id", user.id)
+        .abortSignal(signal)
+        .maybeSingle(),
+      // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
+      supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000).abortSignal(signal),
+      // Szene „Zuletzt geöffnet“ der Hub-Bühne
+      supabase.from("datei").select("id, name, mime_typ, geaendert_am, fach_id").order("geaendert_am", { ascending: false }).limit(6).abortSignal(signal),
+    ]);
+  // Direkt nach dem Erneuern der Anmeldung lehnt Supabase einzelne Abfragen mit 401 ab.
+  // Ein zweiter Versuch klappt; ohne ihn fiel der ganze Hub mit einer Fehlerseite aus.
   const [
     { data: faecher, error: faecherError },
     { data: deadlines, error: deadlinesError },
@@ -48,26 +73,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: kalenderVerbindung },
     { data: faelligeKarten },
     { data: zuletztDateien },
-  ] = await Promise.all([
-    supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
-    supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
-    supabase.from("todo").select("*").order("erstellt_am", { ascending: true }),
-    supabase.from("note").select("*").order("datum", { ascending: false }),
-    supabase.from("pruefung").select("*").order("datum", { ascending: true }),
-    supabase.from("stundenplan_eintrag").select("*"),
-    supabase.rpc("notenschnitt"),
-    supabase.from("lern_session").select("*"),
-    supabase.from("settings").select("*").eq("user_id", user.id).single(),
-    supabase
-      .from("kalender_verbindung")
-      .select("zuletzt_abgeglichen")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
-    supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000),
-    // Szene „Zuletzt geöffnet“ der Hub-Bühne
-    supabase.from("datei").select("id, name, mime_typ, geaendert_am, fach_id").order("geaendert_am", { ascending: false }).limit(6),
-  ]);
+  ] = await nochmalBei401(laden);
 
   const error =
     faecherError ||
