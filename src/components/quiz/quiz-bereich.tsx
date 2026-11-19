@@ -24,6 +24,7 @@ export type QuizKachel = {
 /** Karteikarten-Hub: Quiz wie Quizgecko – mehrere Fragetypen, KI-Bewertung, Schwächen üben */
 export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizze: QuizKachel[]; faecher: Fach[]; optionen: QuellOption[]; kiVerfuegbar: boolean }) {
   const [neu, setNeu] = useState(false);
+  const [loeschfehler, setLoeschfehler] = useState("");
   const router = useRouter();
 
   // Aus der Befehlspalette (Strg+O): „…?neu=quiz“ öffnet gleich den Dialog
@@ -52,6 +53,7 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
         <span className="abschnitt-info">aus deinen Skripten und Notizen, freie Antworten bewertet Studio</span>
         {quizze.length > 0 && <span className="rechts">{neuKnopf}</span>}
       </div>
+      {loeschfehler && <p className="formular-fehler" role="alert">{loeschfehler}</p>}
       {quizze.length === 0 ? (
         <Zustand art="leer" icon="ziel" titel="Noch kein Quiz." region ebene={3} aktion={neuKnopf}>
           Lass dich aus einem Fach oder einzelnen PDFs abfragen: Multiple Choice, Wahr oder falsch, Lückentext, Zuordnen und freie Antworten.
@@ -92,7 +94,12 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
                     title="Löschen"
                     onClick={() => {
                       if (!window.confirm(`Quiz „${q.titel}“ löschen?`)) return;
-                      void quizLoeschen(q.id).then(() => router.refresh());
+                      setLoeschfehler("");
+                      const fehler = `„${q.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
+                      void quizLoeschen(q.id).then((ergebnis) => {
+                        if (ergebnis.ok) router.refresh();
+                        else setLoeschfehler(fehler);
+                      }).catch(() => setLoeschfehler(fehler));
                     }}
                   >
                     <Icon name="loeschen" groesse={16} />

@@ -26,7 +26,7 @@ export function MaterialAuswahl({ modus, waehlen, gesperrt }: {
     if (wort.length < 2) return;
     let aktiv = true;
     const timer = window.setTimeout(() => {
-      void allesSuchen(wort).then((antwort) => {
+      void allesSuchen(wort, modus === "unterlagen").then((antwort) => {
         if (aktiv) setErgebnis({ fuer: wort, treffer: antwort.filter((t) => modus === "unterlagen" ? suchMaterial(t) : suchZiel(t)) });
       }).catch(() => { if (aktiv) setErgebnis({ fuer: wort, treffer: [], fehler: true }); });
     }, 220);

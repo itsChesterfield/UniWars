@@ -16,6 +16,7 @@ export type PodcastKachel = { id: string; titel: string; fach_id: string | null;
 /** Transkription: Lern-Podcasts – das Material als Gespräch zweier Stimmen zum Anhören */
 export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { podcasts: PodcastKachel[]; faecher: Fach[]; optionen: QuellOption[]; kiVerfuegbar: boolean }) {
   const [neu, setNeu] = useState(false);
+  const [loeschfehler, setLoeschfehler] = useState("");
   const router = useRouter();
 
   // Aus der Befehlspalette (Strg+O): „…?neu=podcast“ öffnet gleich den Dialog
@@ -43,6 +44,7 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
         <span className="abschnitt-info">dein Material als Gespräch zweier Stimmen</span>
         {podcasts.length > 0 && <span className="rechts">{neuKnopf}</span>}
       </div>
+      {loeschfehler && <p className="formular-fehler" role="alert">{loeschfehler}</p>}
       {podcasts.length === 0 ? (
         <Zustand art="leer" icon="kopfhoerer" titel="Noch kein Podcast." region ebene={3} aktion={neuKnopf}>
           Dein Skript als Gespräch zum Anhören, für unterwegs, beim Sport oder vor dem Einschlafen.
@@ -74,7 +76,12 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
                     title="Löschen"
                     onClick={() => {
                       if (!window.confirm(`Podcast „${p.titel}“ löschen?`)) return;
-                      void podcastLoeschen(p.id).then(() => router.refresh());
+                      setLoeschfehler("");
+                      const fehler = `„${p.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
+                      void podcastLoeschen(p.id).then((ergebnis) => {
+                        if (ergebnis.ok) router.refresh();
+                        else setLoeschfehler(fehler);
+                      }).catch(() => setLoeschfehler(fehler));
                     }}
                   >
                     <Icon name="loeschen" groesse={16} />

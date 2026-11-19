@@ -1,11 +1,12 @@
 "use server";
 
 import { fachZuordnungenSpeichern } from "./zuordnung-actions";
-import { istMaterialId } from "@/lib/dateiablage/material";
+import { fachZuordnungen, istMaterialId } from "@/lib/dateiablage/material";
 import { after } from "next/server";
 import { pdfIndexieren } from "@/lib/pdf-reader/index-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import {
   freierName,
   speicherName,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/dateiablage/dateien";
 import { dateiBestimmen, LinkFehler, linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { linkHerunterladen } from "@/lib/dateiablage/link-laden";
+import { webLinkUrl } from "@/lib/dateiablage/weblink";
 import type { Tables, TablesInsert } from "@/lib/supabase/types";
 
 export type Datei = Tables<"datei">;
@@ -202,6 +204,30 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
   }
 }
 
+export async function webLinkSpeichern(eingabe: { link: string; fachId: string | null }): Promise<LinkImport> {
+  try {
+    const { supabase, userId } = await nutzer();
+    const url = webLinkUrl(eingabe?.link);
+    if (!url) return { ok: false, fehler: "Füge einen gültigen HTTPS- oder HTTP-Link ein." };
+    await fachPruefen(supabase, userId, eingabe.fachId);
+    const datei = new Blob([url.href], { type: "text/plain" });
+    const vorschlag = `${url.hostname.slice(0, 180)}.txt`;
+    const [belegt, namen] = await Promise.all([
+      belegterSpeicher(supabase, userId),
+      namenImOrdner(supabase, userId, eingabe.fachId),
+    ]);
+    const pruefung = uploadPruefen(vorschlag, datei.size, belegt);
+    if (!pruefung.ok) return { ok: false, fehler: pruefung.fehler };
+    const name = freierName(vorschlag, namen);
+    const pfad = `${userId}/weblinks/${crypto.randomUUID()}.txt`;
+    const { error } = await supabase.storage.from(BUCKET).upload(pfad, datei, { contentType: "text/plain", upsert: false });
+    if (error) throw new Error("Der Link konnte nicht gespeichert werden.");
+    return { ok: true, datei: await dateiEintragen(supabase, userId, { pfad, name, fachId: eingabe.fachId, groesse: datei.size, mime: pruefung.mime }) };
+  } catch {
+    return { ok: false, fehler: "Der Link konnte nicht gespeichert werden. Bitte versuch es noch einmal." };
+  }
+}
+
 /** Upload abgebrochen: Objekt wieder entfernen. */
 export async function uploadVerwerfen(pfad: string) {
   const { supabase, userId } = await nutzer();
@@ -284,22 +310,38 @@ export async function speicherStand(): Promise<{ belegt: number; limit: number }
   return { belegt: await belegterSpeicher(supabase, userId), limit: SPEICHER_LIMIT_BYTES };
 }
 
-export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null): Promise<{ id: string }> {
+export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null, kopie = false): Promise<
+  | { status: "abgelegt" | "bereits_abgelegt"; id: string; fachId: string | null }
+  | { status: "update_noetig" }
+> {
   const { supabase, userId } = await nutzer();
-  if (!istMaterialId(nachrichtId) || (fachId !== null && !istMaterialId(fachId))) throw new Error("Ungültige Auswahl.");
-  const [nachricht, fach] = await Promise.all([
+  if (!istMaterialId(nachrichtId) || (fachId !== null && !istMaterialId(fachId)) ||
+      typeof kopie !== "boolean" || (kopie && fachId !== null)) throw new Error("Ungültige Auswahl.");
+  const [nachricht] = await Promise.all([
     supabase.from("chat_nachricht").select("anhang, geloescht").eq("id", nachrichtId).maybeSingle(),
-    fachId ? supabase.from("fach").select("id").eq("id", fachId).eq("user_id", userId).maybeSingle() : Promise.resolve({ data: null }),
+    fachPruefen(supabase, userId, fachId),
   ]);
   const anhang = nachricht.data?.anhang as { typ?: string; id?: string; titel?: string; pfad?: string } | null;
-  if (nachricht.data?.geloescht || anhang?.typ !== "datei" || typeof anhang.pfad !== "string" || typeof anhang.titel !== "string" ||
-      (fachId && !fach.data)) throw new Error("Der Anhang ist nicht verfügbar.");
-  const eigenerEintrag = istMaterialId(anhang.id)
-    ? (await supabase.from("datei").select("id").eq("id", anhang.id).eq("user_id", userId).maybeSingle()).data
+  if (nachricht.error || nachricht.data?.geloescht || anhang?.typ !== "datei" ||
+      typeof anhang.pfad !== "string" || typeof anhang.titel !== "string") throw new Error("Der Anhang ist nicht verfügbar.");
+
+  const original = istMaterialId(anhang.id)
+    ? await supabase.from("datei").select("id, fach_id").eq("id", anhang.id)
+        .eq("speicher_pfad", anhang.pfad).eq("user_id", userId).maybeSingle()
     : null;
-  if (eigenerEintrag) {
-    if (fachId) await fachZuordnungenSpeichern([{ art: "datei", material_id: eigenerEintrag.id, fach_id: fachId, ausgeblendet: false }]);
-    return eigenerEintrag;
+  if (original?.error) throw new Error("Der Anhang konnte nicht geprüft werden.");
+  if (original?.data && !kopie) {
+    const datei = original.data;
+    const extra = await supabase.from("material_ablage_fach").select("art, material_id, fach_id, ausgeblendet")
+      .eq("art", "datei").eq("material_id", datei.id).eq("user_id", userId);
+    if (extra.error && !tabelleFehlt(extra.error)) throw new Error("Der Ablageort konnte nicht geprüft werden.");
+    const faecher = fachZuordnungen(datei.fach_id, extra.data ?? []);
+    if (fachId === null || faecher.includes(fachId)) {
+      return { status: "bereits_abgelegt", id: datei.id, fachId: fachId ?? faecher[0] ?? null };
+    }
+    if (extra.error) return { status: "update_noetig" };
+    await fachZuordnungenSpeichern([{ art: "datei", material_id: datei.id, fach_id: fachId, ausgeblendet: false }]);
+    return { status: "abgelegt", id: datei.id, fachId };
   }
   const { data, error } = await supabase.storage.from(BUCKET).download(anhang.pfad);
   if (error || !data) throw new Error("Der Anhang konnte nicht geladen werden.");
@@ -309,7 +351,8 @@ export async function chatDateiUebernehmen(nachrichtId: string, fachId: string |
   const pfad = `${userId}/chat/${crypto.randomUUID()}-${speicherName(name)}`;
   const { error: uploadFehler } = await supabase.storage.from(BUCKET).upload(pfad, data, { contentType: pruefung.mime });
   if (uploadFehler) throw new Error("Der Anhang konnte nicht abgelegt werden.");
-  return dateiEintragen(supabase, userId, { pfad, name, fachId, groesse: data.size, mime: pruefung.mime });
+  const datei = await dateiEintragen(supabase, userId, { pfad, name, fachId, groesse: data.size, mime: pruefung.mime });
+  return { status: "abgelegt", id: datei.id, fachId };
 }
 
 export async function ablageFaecherLaden() {

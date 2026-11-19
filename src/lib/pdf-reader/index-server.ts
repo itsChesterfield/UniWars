@@ -32,6 +32,22 @@ async function seitenText(pdf: PDFDocumentProxy, seite: number) {
   }
 }
 
+/** Kurzer Auszug für Titel und Themen, solange die PDF noch keinen Suchindex hat. */
+export async function pdfTextAnfang(supabase: Supabase, pfad: string, limit: number) {
+  const laden = await pdfLaden(supabase, pfad);
+  try {
+    const pdf = await laden.promise;
+    const zeilen = [];
+    for (let seite = 1; seite <= Math.min(5, pdf.numPages) && zeilen.length < limit; seite++) {
+      const zeile = await seitenText(pdf, seite);
+      if (zeile.text) zeilen.push(zeile);
+    }
+    return zeilen;
+  } finally {
+    await laden.destroy();
+  }
+}
+
 /** Leseprobe für Studio, wenn noch kein Suchindex vorhanden ist. Zugriff und Storage bleiben an RLS gebunden. */
 export async function pdfTextFuerStudio(supabase: Supabase, id: string, aktuelleSeite?: number) {
   const { data } = await supabase.from("datei").select("speicher_pfad").eq("id", id)
