@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
+import { SteigText } from "@/components/bewegung/steig-text";
 
 export function HubKopf({ titel, untertitel, aktionen }: { titel: string; untertitel?: string; aktionen?: ReactNode }) {
   return (
     <header className="hub-kopf">
       <div>
-        <h1>{titel}</h1>
+        <h1>
+          <SteigText text={titel} schritt={22} />
+        </h1>
         {untertitel && <p className="muted">{untertitel}</p>}
       </div>
       {aktionen && <div className="hub-kopf-aktionen">{aktionen}</div>}

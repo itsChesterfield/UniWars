@@ -1258,7 +1258,6 @@ input[type="checkbox"]:disabled {
 }
 
 .entry-erledigt .entry-title {
-  text-decoration: line-through;
   color: var(--text-3);
 }
 
@@ -9599,6 +9598,113 @@ button.pdf-pfad-teil:hover {
   from {
     transform: translateY(calc(var(--h, 115%) * var(--r, 1)));
   }
+}
+
+/* ==========================================================================
+   Bewegung in der ganzen App (Didi, 19.11.): dieselbe Sprache wie im Hub.
+   Seitentitel steigen aus der Maske, Listen bauen sich Zeile für Zeile auf,
+   Erledigtes wird mit einer gezogenen Linie durchgestrichen. Nur transform und opacity.
+   ========================================================================== */
+.hub-kopf h1 .steig-z {
+  animation: steig-ein 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.hub-kopf p {
+  animation: aufbau-heben 520ms var(--ease-out) both;
+  animation-delay: 240ms;
+}
+
+.entry-list > li,
+.notiz-liste > *,
+.dashboard-grid > * {
+  animation: aufbau-heben 520ms var(--ease-out) both;
+}
+
+.entry-list > li:nth-child(2),
+.notiz-liste > :nth-child(2),
+.dashboard-grid > :nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.entry-list > li:nth-child(3),
+.notiz-liste > :nth-child(3),
+.dashboard-grid > :nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.entry-list > li:nth-child(4),
+.notiz-liste > :nth-child(4),
+.dashboard-grid > :nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.entry-list > li:nth-child(5),
+.notiz-liste > :nth-child(5),
+.dashboard-grid > :nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.entry-list > li:nth-child(6),
+.notiz-liste > :nth-child(6),
+.dashboard-grid > :nth-child(6) {
+  animation-delay: 200ms;
+}
+
+.entry-list > li:nth-child(n + 7),
+.notiz-liste > :nth-child(n + 7),
+.dashboard-grid > :nth-child(n + 7) {
+  animation-delay: 240ms;
+}
+
+/* Erledigt: die Linie zieht sich von links durch den Titel */
+.entry-title {
+  position: relative;
+  width: fit-content;
+}
+
+.entry-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 55%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-long) var(--ease-out);
+  pointer-events: none;
+}
+
+.entry-erledigt .entry-title::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-kopf h1 .steig-z,
+  .hub-kopf p,
+  .entry-list > li,
+  .notiz-liste > *,
+  .dashboard-grid > * {
+    animation: none;
+  }
+
+  .entry-title::after {
+    transition: none;
+  }
+}
+
+html[data-bewegung="reduziert"] .hub-kopf h1 .steig-z,
+html[data-bewegung="reduziert"] .hub-kopf p,
+html[data-bewegung="reduziert"] .entry-list > li,
+html[data-bewegung="reduziert"] .notiz-liste > *,
+html[data-bewegung="reduziert"] .dashboard-grid > * {
+  animation: none;
+}
+
+html[data-bewegung="reduziert"] .entry-title::after {
+  transition: none;
 }
 
 @keyframes aufbau-heben {
