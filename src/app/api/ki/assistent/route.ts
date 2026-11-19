@@ -21,6 +21,7 @@ import { lesewerkzeuge } from "@/lib/ki/werkzeuge/lesen";
 import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
 import { handlungswerkzeuge, type Sammlung } from "@/lib/ki/werkzeuge/handeln";
 import { crashkursFach, crashkursMaterial, materialFuerStudio } from "@/lib/dateiablage/studio-material";
+import { fragtNachLetztemStoff } from "@/lib/dateiablage/aktueller-stoff";
 import { studioQuellen } from "@/lib/ki/lernraum-server";
 import { absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_GANZ, PERSOENLICHKEITEN, profilLesen, profilText } from "@/lib/ki/lernraum";
 import { chatNochAktuell, STUDIO_SYSTEM, type Gemerkt } from "@/lib/ki/studio";
@@ -187,8 +188,8 @@ export async function POST(request: Request) {
 
     /** Alles laden, was das Modell braucht – läuft schon im Stream, damit sofort etwas zu sehen ist */
     const vorbereiten = async () => {
-      const istCrashkurs = !!kontext.crashkursFachId || (/crashkurs/i.test(frage) && /(?:zuletzt|letzte|verpasst)/i.test(frage));
-      const fachKurs = istCrashkurs ? await crashkursFach(supabase, frage, kontext.crashkursFachId ?? kontext.fachId) : null;
+      const istCrashkurs = !!kontext.crashkursFachId || fragtNachLetztemStoff(frage);
+      const fachKurs = istCrashkurs ? await crashkursFach(supabase, frage, kontext.crashkursFachId, kontext.fachId) : null;
       const kurs = fachKurs ? await crashkursMaterial(supabase, fachKurs.id, jetzt) : null;
       const auswahl = kurs?.material ?? kontext.material ?? [];
       const materialLaden = istCrashkurs || auswahl.length
@@ -225,7 +226,7 @@ export async function POST(request: Request) {
         istCrashkurs ? (
           !fachKurs ? "Für den Crashkurs ist das Fach offen. Frage nach dem Fach, bevor du Inhalte auswählst."
             : !quellenInfo.length ? "Für diesen Crashkurs liegen keine lesbaren Unterlagen vor. Sage das klar und frage nach Material."
-            : `Erstelle zum Fach ${einbetten(fachKurs.name, "quelle")} einen kurzen Crashkurs mit Überblick, einem Beispiel und Übungsfragen. Grundlage sind ${kurs?.basis === "vorlesungen" ? "die letzten verknüpften Vorlesungen" : "die zuletzt hinzugefügten Unterlagen"}. Nenne diese Grundlage und setze Quellenbelege.`
+            : `Erkläre den zuletzt behandelten Stoff im Fach ${einbetten(fachKurs.name, "quelle")}. Richte die Form nach der Frage aus und ergänze bei einem gewünschten Crashkurs ein Beispiel und Übungsfragen. Grundlage sind ${kurs?.basis === "vorlesungen" ? "die letzten verknüpften Vorlesungen" : "die zuletzt hinzugefügten Unterlagen"}. Nenne diese Grundlage und setze Quellenbelege. Mach keine Aussagen über Inhalte, die sich aus den Quellen nicht ableiten lassen.`
         ) : "",
         !istCrashkurs && auswahl.length ? "Die ausgewählten Unterlagen bilden den gewünschten Kontext. Belege Aussagen aus diesen Unterlagen mit Q-Quellen." : "",
         kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
@@ -254,7 +255,7 @@ export async function POST(request: Request) {
 
       const karten: Aktionskarte[] = [];
       const sammlung: Sammlung = { erledigt: [], bloecke: [], aktionen: [], karten };
-      const werkzeuge = [
+      const werkzeuge = istCrashkurs ? [] : [
         ...lesewerkzeuge(supabase, jetzt),
         ...handlungswerkzeuge({ supabase, userId, ...umfeld, jetzt, offeneNotiz, fachId: fachDesKontexts, quellen: material.quellen, profil }, sammlung),
       ];
@@ -272,7 +273,12 @@ export async function POST(request: Request) {
         absicht.modus === "plaudern" ||
         (!material.quellen.length && !kontext.markiert && frage.length < 140 && /^(bitte\s+)?(leg|erstell|trag|öffne|oeffne|zeig|hak|verschieb|erinner|merk|vergiss|notier|füg|fueg)/i.test(frage.trim()));
       const pdfKontext = kontext.objekt?.art === "pdf" || kontext.zweite?.art === "pdf" || material.quellen.some((q) => q.art === "pdf");
-      return { profil, quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens, gross, einfach, pdfKontext, zeichen: stoff.zeichen };
+      const direkteAntwort = istCrashkurs && !fachKurs
+        ? "Für welches Fach soll ich dir den zuletzt behandelten Stoff erklären?"
+        : istCrashkurs && fachKurs && !quellenInfo.length
+          ? `Für ${fachKurs.name} habe ich noch keine lesbaren Vorlesungsunterlagen oder Mitschriften gefunden. Füge dem Fach eine Unterlage hinzu oder verknüpfe sie mit einem Termin.`
+          : null;
+      return { profil, quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens, gross, einfach, pdfKontext, direkteAntwort, istCrashkurs, zeichen: stoff.zeichen };
     };
 
     // Nach der Antwort (der Nutzer wartet nicht mehr): ältere Nachrichten zusammenfassen, Gedächtnis aufräumen
@@ -324,26 +330,37 @@ export async function POST(request: Request) {
           while (gesendet.aktionen < sammlung.aktionen.length) senden({ typ: "aktion", aktion: sammlung.aktionen[gesendet.aktionen++] });
         };
         try {
-          for await (const e of agentLauf({
-            rufen: (o) => kiAnfrageStream(o, v.einfach ? "schnell" : v.gross ? "stark" : "chat"),
-            optionen: { maxTokens, temperatur: 0.5, signal: abbruch.signal, timeoutMs: v.zeichen > 150_000 ? 90_000 : 45_000 },
-            nachrichten,
-            werkzeuge,
-            letzteRundeOhneWerkzeuge: v.pdfKontext,
-          })) {
-            if (e.typ === "status") senden({ typ: "status", text: e.text });
-            else if (e.typ === "text") {
-              text += e.text;
-              senden({ typ: "text", text: e.text });
-            } else if (e.typ === "werkzeug") {
-              aufrufe.push({ name: e.name, ...(e.fehler ? { fehler: e.fehler } : {}) });
-              nachreichen();
-            } else if (e.typ === "fehler") {
-              fehlerText = e.fehler.nutzerMeldung;
+          if (v.direkteAntwort) {
+            text = v.direkteAntwort;
+            erfolgreich = true;
+            senden({ typ: "text", text });
+          } else {
+            for await (const e of agentLauf({
+              rufen: (o) => kiAnfrageStream(o, v.einfach ? "schnell" : v.gross ? "stark" : "chat"),
+              optionen: { maxTokens, temperatur: 0.5, signal: abbruch.signal, timeoutMs: v.zeichen > 150_000 ? 90_000 : 45_000 },
+              nachrichten,
+              werkzeuge,
+              letzteRundeOhneWerkzeuge: v.pdfKontext || v.istCrashkurs,
+            })) {
+              if (e.typ === "status") senden({ typ: "status", text: e.text });
+              else if (e.typ === "text") {
+                text += e.text;
+                senden({ typ: "text", text: e.text });
+              } else if (e.typ === "werkzeug") {
+                aufrufe.push({ name: e.name, ...(e.fehler ? { fehler: e.fehler } : {}) });
+                nachreichen();
+              } else if (e.typ === "fehler") {
+                fehlerText = e.fehler.nutzerMeldung;
+                senden({ typ: "fehler", fehler: fehlerText });
+              } else if (e.typ === "ende") {
+                tokens = { tokensEin: e.tokensEin, tokensAus: e.tokensAus };
+                erfolgreich = !fehlerText;
+              }
+            }
+            if (v.istCrashkurs && !text.trim() && !fehlerText) {
+              erfolgreich = false;
+              fehlerText = "Studio hat keine Antwort auf die Unterlagen erhalten. Bitte versuch es erneut.";
               senden({ typ: "fehler", fehler: fehlerText });
-            } else if (e.typ === "ende") {
-              tokens = { tokensEin: e.tokensEin, tokensAus: e.tokensAus };
-              erfolgreich = !fehlerText;
             }
           }
         } catch (err) {

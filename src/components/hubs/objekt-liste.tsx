@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FachFilterChips } from "@/components/fach-filter-chips";
@@ -11,8 +11,11 @@ import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import type { FachOption } from "@/lib/fach-option";
 import type { IconName } from "@/lib/icons";
 import { fehlerMelden, track } from "@/lib/analytics";
+import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-actions";
+import type { MaterialArt } from "@/lib/dateiablage/material";
+import { MaterialFaecherDialog } from "@/components/dateiablage/material-faecher";
 
-export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; geaendert_am: string; info?: string };
+export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; fach_ids?: string[]; geaendert_am: string; info?: string };
 
 function datum(iso: string) {
   return new Date(iso).toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "numeric" });
@@ -49,7 +52,7 @@ export function ObjektListe({
   leerText: string;
   ohneTitel: string;
   basisPfad: string;
-  eventName: string;
+  eventName: MaterialArt;
   eintraege: ObjektEintrag[];
   faecher: FachOption[];
   anlegen: (fachId: string | null, name?: string) => Promise<string>;
@@ -61,31 +64,38 @@ export function ObjektListe({
 }) {
   const router = useRouter();
   const fachFilter = useSearchParams().get("fachId");
-  const [isPending, startTransition] = useTransition();
-  const [fehler, setFehler] = useState<string | null>(null);
   const [dialog, setDialog] = useState(false);
-  const sichtbar = eintraege.filter((d) => !fachFilter || d.fach_id === fachFilter);
+  const [faecherFuer, setFaecherFuer] = useState<string | null>(null);
+  const angelegt = useRef<{ id: string; fachId: string | null } | null>(null);
+  const faecherVon = (d: ObjektEintrag) => d.fach_ids ?? (d.fach_id ? [d.fach_id] : []);
+  const sichtbar = eintraege.filter((d) => !fachFilter || faecherVon(d).includes(fachFilter));
 
-  function neu() {
-    if (nameAbfragen) {
-      setDialog(true);
-      return;
-    }
-    neuAnlegen(fachFilter);
+  function editorOeffnen(id: string) {
+    angelegt.current = null;
+    setDialog(false);
+    router.push(`${basisPfad}/${id}?neu=1`);
   }
 
-  function neuAnlegen(fachId: string | null, name?: string) {
-    setFehler(null);
-    startTransition(async () => {
-      try {
-        const id = await anlegen(fachId, name);
-        track(`${eventName}_angelegt`, { mit_fach: Boolean(fachId) });
-        router.push(`${basisPfad}/${id}?neu=1`);
-      } catch (err) {
-        setFehler("Anlegen hat nicht geklappt.");
-        fehlerMelden(err, { ort: `${eventName}_anlegen` });
+  async function neuAnlegen(name: string, fachId: string | null, weitere: string[] = []) {
+    try {
+      if (!angelegt.current) {
+        angelegt.current = { id: await anlegen(fachId, name || undefined), fachId };
       }
-    });
+      const objekt = angelegt.current;
+      const gewuenscht = fachId ? [fachId, ...weitere] : weitere;
+      const zuordnungen = gewuenscht.filter((f) => f !== objekt.fachId).map((f) => ({
+        art: eventName, material_id: objekt.id, fach_id: f, ausgeblendet: false,
+      }));
+      if (objekt.fachId && !gewuenscht.includes(objekt.fachId)) {
+        zuordnungen.push({ art: eventName, material_id: objekt.id, fach_id: objekt.fachId, ausgeblendet: true });
+      }
+      if (zuordnungen.length) await fachZuordnungenSpeichern(zuordnungen);
+      track(`${eventName}_angelegt`, { mit_fach: Boolean(fachId) });
+      editorOeffnen(objekt.id);
+    } catch (err) {
+      fehlerMelden(err, { ort: `${eventName}_anlegen` });
+      throw err;
+    }
   }
 
   async function entfernen(e: ObjektEintrag) {
@@ -101,7 +111,7 @@ export function ObjektListe({
   }
 
   const neuKnopf = (klasse: string, text: string) => (
-    <button type="button" className={`knopf ${klasse}`} onClick={neu} disabled={isPending} aria-busy={isPending}>
+    <button type="button" className={`knopf ${klasse}`} onClick={() => setDialog(true)}>
       <Icon name="plus" groesse={16} />
       {text}
     </button>
@@ -122,12 +132,6 @@ export function ObjektListe({
         )}
       </header>
       <FachFilterChips faecher={faecher} />
-      {fehler && (
-        <p className="formular-fehler" role="alert">
-          {fehler}
-        </p>
-      )}
-
       {eintraege.length === 0 ? (
         <Zustand art="leer" icon={icon} titel={leerTitel} aktion={neuKnopf("neben klein", neuLabel)}>
           {leerText}
@@ -137,7 +141,8 @@ export function ObjektListe({
       ) : (
         <ul className="entry-list objekt-liste">
           {sichtbar.map((d) => {
-            const fach = faecher.find((f) => f.id === d.fach_id);
+            const zugeordnet = faecher.filter((f) => faecherVon(d).includes(f.id));
+            const fach = zugeordnet.find((f) => f.id === fachFilter) ?? zugeordnet[0];
             const name = d.titel || ohneTitel;
             return (
               <li key={d.id} className="entry-row fach-zeile">
@@ -147,11 +152,14 @@ export function ObjektListe({
                     {name}
                   </Link>
                   <span className="entry-meta">
-                    {[fach?.name ?? "Ohne Fach", d.info, `geändert ${datum(d.geaendert_am)}`].filter(Boolean).join(", ")}
+                    {[zugeordnet.map((f) => f.name).join(", ") || "Ohne Fach", d.info, `geändert ${datum(d.geaendert_am)}`].filter(Boolean).join(", ")}
                   </span>
                 </div>
                 <div className="entry-actions">
-                  <DreiPunkteMenue label={`Weitere Aktionen für ${name}`} punkte={[{ label: "Löschen", onClick: () => void entfernen(d), gefahr: true }]} />
+                  <DreiPunkteMenue label={`Weitere Aktionen für ${name}`} punkte={[
+                    { label: "Fächer zuordnen", icon: "faecher", onClick: () => setFaecherFuer(d.id) },
+                    { label: "Löschen", onClick: () => void entfernen(d), gefahr: true },
+                  ]} />
                 </div>
               </li>
             );
@@ -159,19 +167,19 @@ export function ObjektListe({
         </ul>
       )}
 
-      {dialog && nameAbfragen && (
+      {dialog && (
         <StapelDialog
-          titel={nameAbfragen}
+          titel={nameAbfragen ?? neuLabel}
           knopf="Anlegen"
           faecher={faecher}
-          startFachId={fachFilter}
-          onSchliessen={() => setDialog(false)}
-          onSpeichern={async (name, fachId) => {
-            setDialog(false);
-            neuAnlegen(fachId, name);
-          }}
+          startFachId={faecher.some((f) => f.id === fachFilter) ? fachFilter : null}
+          mehrfach
+          namePflicht={Boolean(nameAbfragen)}
+          onSchliessen={() => angelegt.current ? editorOeffnen(angelegt.current.id) : setDialog(false)}
+          onSpeichern={neuAnlegen}
         />
       )}
+      {faecherFuer && <MaterialFaecherDialog key={faecherFuer} material={{ art: eventName, id: faecherFuer }} schliessen={() => setFaecherFuer(null)} />}
     </>
   );
 }

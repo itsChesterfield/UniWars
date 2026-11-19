@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { aktuelleMaterialfolge } from "./aktueller-stoff.ts";
+import { aktuelleMaterialfolge, fachAusStofffrage, fragtNachLetztemStoff } from "./aktueller-stoff.ts";
 import { materialRefs, materialZiel } from "./material.ts";
 
 test("Vorlesungstermine bestimmen den Crashkurs auch bei aktuellen Uploads alter Materialien", () => {
@@ -30,4 +30,14 @@ test("Materialauswahl prüft Typ und ID und dedupliziert Quellen", () => {
   assert.deepEqual(materialRefs([ref, { art: "constructor", id }], 2), []);
   assert.deepEqual(materialRefs([ref, ref], 1), []);
   assert.equal(materialZiel({ art: "vorlesung", id, datum: "2026-02-31" }), null);
+});
+
+test("Die Frage aus Studio lädt den zuletzt behandelten Stoff auch ohne das Wort Crashkurs", () => {
+  assert.equal(fragtNachLetztemStoff("erkläre mir was wir zuletzt in Datenbanken gemacht haben"), true);
+  assert.equal(fragtNachLetztemStoff("Was haben wir in der letzten Vorlesung behandelt?"), true);
+  assert.equal(fragtNachLetztemStoff("Welche Aufgaben habe ich zuletzt erledigt?"), false);
+  assert.equal(fragtNachLetztemStoff("Erklär mir SQL-Joins"), false);
+  const faecher = [{ name: "Datenbanken" }, { name: "Datenbanken II" }];
+  assert.deepEqual(fachAusStofffrage("Was haben wir zuletzt in Datenbanken II gemacht?", faecher), faecher[1]);
+  assert.equal(fachAusStofffrage("Was haben wir zuletzt in Datenbankensysteme gemacht?", faecher), undefined);
 });

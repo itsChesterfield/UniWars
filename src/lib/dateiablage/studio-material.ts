@@ -5,7 +5,7 @@ import type { LernQuelle } from "@/lib/ki/lernraum";
 import { berlinDatum } from "@/lib/zeit";
 import { fachZuordnungen, materialRef, type MaterialRef } from "./material";
 import { hubMaterialLaden, materialQuelle } from "./material-server";
-import { aktuelleMaterialfolge } from "./aktueller-stoff";
+import { aktuelleMaterialfolge, fachAusStofffrage } from "./aktueller-stoff";
 import { pdfTextFuerStudio } from "@/lib/pdf-reader/index-server";
 
 const key = (r: MaterialRef) => `${r.art}:${r.id}`;
@@ -28,13 +28,13 @@ export async function materialFuerStudio(supabase: Supabase, refs: MaterialRef[]
   return { quellen, fehlend, bevorzugt: quellen.map((q) => ({ quelle: q.nr, seiten: [q.abschnitte[0].seite] })) };
 }
 
-export async function crashkursFach(supabase: Supabase, frage: string, fachId?: string | null) {
+export async function crashkursFach(supabase: Supabase, frage: string, ausgewaehlt?: string | null, offenesFach?: string | null) {
   const { data } = await supabase.from("fach").select("id, name");
-  if (fachId) return (data ?? []).find((f) => f.id === fachId) ?? null;
-  const norm = (s: string) => s.normalize("NFKC").toLocaleLowerCase("de-DE");
-  const woerter = new Set(norm(frage).split(/[^\p{L}\p{N}]+/u));
-  return (data ?? []).sort((a, b) => b.name.length - a.name.length)
-    .find((f) => norm(f.name).split(/[^\p{L}\p{N}]+/u).filter(Boolean).every((w) => woerter.has(w))) ?? null;
+  const faecher = data ?? [];
+  return faecher.find((f) => f.id === ausgewaehlt)
+    ?? fachAusStofffrage(frage, faecher)
+    ?? faecher.find((f) => f.id === offenesFach)
+    ?? null;
 }
 
 export async function crashkursMaterial(supabase: Supabase, fachId: string, jetzt: Date) {

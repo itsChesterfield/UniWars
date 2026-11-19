@@ -37,6 +37,19 @@ export function fachZuordnungen(fachId: string | null, aenderungen: MaterialFach
 }
 
 
+export function hubFachzuordnungen<T extends { id: string; fach_id: string | null }>(
+  eintraege: T[],
+  zuordnungen: MaterialFachZuordnung[],
+): (T & { fach_ids: string[] })[] {
+  const nachMaterial = new Map<string, MaterialFachZuordnung[]>();
+  for (const zuordnung of zuordnungen) {
+    const liste = nachMaterial.get(zuordnung.material_id) ?? [];
+    liste.push(zuordnung);
+    nachMaterial.set(zuordnung.material_id, liste);
+  }
+  return eintraege.map((e) => ({ ...e, fach_ids: fachZuordnungen(e.fach_id, nachMaterial.get(e.id) ?? []) }));
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function materialVomPfad(pfad: string, suche: URLSearchParams): string | null {
