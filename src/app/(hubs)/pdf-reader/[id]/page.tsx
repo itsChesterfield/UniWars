@@ -54,16 +54,13 @@ export default async function PdfAnsehenSeite({
   if (error) throw new Error(error.message);
   if (!datei || datei.mime_typ !== "application/pdf") notFound();
 
-  const { data: link, error: linkFehler } = await supabase.storage.from("dateiablage").createSignedUrl(datei.speicher_pfad, 3600);
-  if (linkFehler) throw new Error(linkFehler.message);
-
   return (
     <>
       <PdfNotch userId={user.id} aktuell={datei} verfuegbar={pdfs ?? []} />
       <PdfReader
         key={`${datei.id}:${zielSeite ?? "letzte"}`}
         datei={{ id: datei.id, name: datei.name }}
-        url={link.signedUrl}
+        url={`/dateiablage/inhalt/${datei.id}`}
         startSeite={zielSeite ?? stand?.letzte_seite ?? 1}
         startLesezeichen={stand?.lesezeichen ?? []}
         eingelesen={eingelesen ?? 0}

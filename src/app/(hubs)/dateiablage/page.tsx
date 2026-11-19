@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { fachZuordnungen } from "@/lib/dateiablage/material";
+import { kiKonfiguriert } from "@/lib/ki/anbieter";
 import { hubMaterialLaden } from "@/lib/dateiablage/material-server";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
@@ -15,11 +16,15 @@ export default async function DateiablageSeite() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: dateien, error }, { data: faecher, error: fachFehler }, material, zuordnung] = await Promise.all([
+  const [{ data: dateien, error }, { data: faecher, error: fachFehler }, material, zuordnung, themen, info, freigabeTabellen, pdfStand] = await Promise.all([
     supabase.from("datei").select("*").order("erstellt_am", { ascending: false }),
     supabase.from("fach").select("id, name, farbe, aktiv").order("erstellt_am", { ascending: true }),
     hubMaterialLaden(supabase),
-    supabase.from("material_ablage_fach").select("art, material_id, fach_id, ausgeblendet"),
+    supabase.from("material_ablage_fach").select("art, material_id, fach_id, ausgeblendet, thema_id"),
+    supabase.from("material_thema").select("id, fach_id, name").order("position").order("name"),
+    supabase.from("material_ablage_info").select("art, material_id, anzeigetitel, papierkorb_am, papierkorb_titel"),
+    supabase.from("material_paket").select("id").limit(1),
+    supabase.from("pdf_stand").select("datei_id, letzte_seite").eq("user_id", user.id),
   ]);
 
   if (tabelleFehlt(error)) {
@@ -48,7 +53,7 @@ export default async function DateiablageSeite() {
 
   return (
     <Suspense fallback={null}>
-      <Dateiablage userId={user.id} initialDateien={liste} material={material} zuordnungen={zuordnungen} mehrfachVerfuegbar={!zuordnung.error} ordner={ordner} limit={SPEICHER_LIMIT_BYTES} />
+      <Dateiablage userId={user.id} initialDateien={liste} material={material} themen={themen.data ?? []} info={info.data ?? []} workflow={!themen.error && !info.error} freigaben={!freigabeTabellen.error} ki={kiKonfiguriert()} pdfStand={pdfStand.data ?? []} zuordnungen={zuordnungen} mehrfachVerfuegbar={!zuordnung.error} ordner={ordner} limit={SPEICHER_LIMIT_BYTES} />
     </Suspense>
   );
 }

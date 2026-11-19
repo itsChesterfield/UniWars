@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { datenLesen, type TabellenDaten } from "@/lib/tabellen/formeln";
@@ -49,8 +51,6 @@ export async function tabelleFachSetzen(id: string, fachId: string | null) {
 }
 
 export async function tabelleLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { error } = await supabase.from("tabelle").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await materialPapierkorb({ art: "tabelle", id }, true);
   revalidatePath("/tabellen");
 }

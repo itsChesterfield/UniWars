@@ -1,5 +1,7 @@
 "use client";
 
+import type { MaterialRef } from "@/lib/dateiablage/material";
+
 /**
  * UniVerse Studio: Was ist gerade offen? Seiten melden hier ihren Zustand (z. B. die
  * aktuelle PDF-Seite oder die gezeigte Karteikarte); das Studio liest ihn beim Senden.
@@ -29,8 +31,8 @@ export const NOTIZ_EINFUEGEN = "uniwars-notiz-einfuegen";
 export const STUDIO_NEU = "uniwars-studio-neu";
 
 /** UniVerse Studio öffnen – optional gleich mit einer Frage */
-export function studioOeffnen(frage?: string) {
-  window.dispatchEvent(new CustomEvent(STUDIO_OEFFNEN, { detail: { frage: frage ?? null } }));
+export function studioOeffnen(frage?: string, kontext?: { material?: MaterialRef[]; crashkursFachId?: string }) {
+  window.dispatchEvent(new CustomEvent(STUDIO_OEFFNEN, { detail: { frage: frage ?? null, kontext } }));
 }
 
 /** Gerade markierter Text (für "Erklär mir das") – höchstens 4.000 Zeichen */

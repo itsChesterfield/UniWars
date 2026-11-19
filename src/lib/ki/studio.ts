@@ -6,7 +6,7 @@ import type { QuizFrage, Karte } from "./lernraum.ts";
 
 export const STUDIO_NAME = "UniVerse Studio";
 
-export type QuellInfo = { nr: number; art: "pdf" | "notiz"; id: string; titel: string };
+export type QuellInfo = { nr: number; art: "pdf" | "notiz"; id: string; titel: string; href?: string; materialArt?: string };
 
 /** Etwas, das die KI ausgeführt hat (mit Rückgängig) */
 export type Erledigt = {

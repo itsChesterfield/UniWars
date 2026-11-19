@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { KiEingabe } from "@/lib/ki/fehler";
 import { istErlaubteAnzahl, kartenParsen, kartenPromptBauen, type Vorschlag } from "@/lib/ki/karten";
@@ -218,10 +220,7 @@ export async function transkriptAbschliessen(id: string): Promise<Ergebnis<{ vol
 /** Transkript löschen – die Audiodateien bleiben in der Dateiablage. */
 export async function transkriptLoeschen(id: string): Promise<Ergebnis<null>> {
   try {
-    const { supabase } = await kiNutzer();
-    const { error } = await supabase.from("transkript").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-    revalidatePath("/transkription");
+    await materialPapierkorb({ art: "transkript", id }, true);
     return { ok: true, daten: null };
   } catch (err) {
     return alsFehler(err);

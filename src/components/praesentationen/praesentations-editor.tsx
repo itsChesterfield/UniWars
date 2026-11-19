@@ -1,5 +1,7 @@
 "use client";
 
+import { positionLesen, positionMerken } from "@/lib/dateiablage/fortsetzen";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,6 +30,7 @@ type Aenderung = { titel: string; design: Design; folien: Folie[] };
 
 export function PraesentationsEditor({
   id,
+  userId,
   startTitel,
   startFachId,
   startDesign,
@@ -36,6 +39,7 @@ export function PraesentationsEditor({
   istNeu,
 }: {
   id: string;
+  userId: string;
   startTitel: string;
   startFachId: string | null;
   startDesign: Design;
@@ -48,7 +52,19 @@ export function PraesentationsEditor({
   const [fachId, setFachId] = useState(startFachId);
   const [design, setDesign] = useState(startDesign);
   const [folien, setFolien] = useState<Folie[]>(startFolien.length ? startFolien : [neueFolie("TITEL", startTitel)]);
-  const [aktivId, setAktivId] = useState(folien[0].id);
+  const [ausgewaehlt, setAktivId] = useState<string | null>(null);
+  const [gemerkt, setGemerkt] = useState<string | null>(null);
+  useEffect(() => {
+    const position = positionLesen(userId, id);
+    if (position?.art === "praesentation") {
+      const timer = window.setTimeout(() => setGemerkt(position.folieId), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [userId, id]);
+  const aktivId = ausgewaehlt ?? gemerkt ?? folien[0].id;
+  useEffect(() => {
+    if (ausgewaehlt) positionMerken(userId, id, { art: "praesentation", folieId: ausgewaehlt });
+  }, [ausgewaehlt, userId, id]);
   const [kontext, setKontext] = useState<{ index: number; x: number; y: number } | null>(null);
   const [ziehen, setZiehen] = useState<number | null>(null);
   const [ziel, setZiel] = useState<number | null>(null);

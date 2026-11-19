@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { alsFehler, kiNutzer, type KiErgebnis } from "@/lib/ki/server";
 import { materialLaden, mitBuchung, podcastErzeugen, type QuellAuswahl } from "@/lib/ki/quiz-server";
@@ -45,8 +47,8 @@ export async function podcastErstellen(eingabe: {
 }
 
 export async function podcastLoeschen(id: string): Promise<{ ok: boolean }> {
-  const { supabase } = await kiNutzer();
-  const { error } = await supabase.from("podcast").delete().eq("id", id);
-  revalidatePath("/transkription");
-  return { ok: !error };
+  try {
+    await materialPapierkorb({ art: "podcast", id }, true);
+    return { ok: true };
+  } catch { return { ok: false }; }
 }

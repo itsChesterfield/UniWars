@@ -21,6 +21,7 @@ export function SegmentedCard({
   className,
   banner,
   aktion,
+  startSegment,
 }: {
   title: string;
   titelVerstecken?: boolean;
@@ -29,8 +30,9 @@ export function SegmentedCard({
   className?: string;
   banner?: ReactNode;
   aktion?: ReactNode;
+  startSegment?: string;
 }) {
-  const [active, setActive] = useState(segments[0]?.key);
+  const [active, setActive] = useState(startSegment ?? segments[0]?.key);
   const aktiv = segments.find((s) => s.key === active) ?? segments[0];
 
   return (

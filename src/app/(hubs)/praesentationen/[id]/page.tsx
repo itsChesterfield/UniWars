@@ -14,6 +14,8 @@ export default async function PraesentationSeite({
 }) {
   const [{ id }, { neu }] = await Promise.all([params, searchParams]);
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) notFound();
   const [{ data: p, error }, { data: faecher }] = await Promise.all([
     supabase.from("praesentation").select("*").eq("id", id).maybeSingle(),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
@@ -28,6 +30,7 @@ export default async function PraesentationSeite({
 
   return (
     <PraesentationsEditor
+      userId={user.id}
       key={p.id}
       id={p.id}
       startTitel={p.titel}

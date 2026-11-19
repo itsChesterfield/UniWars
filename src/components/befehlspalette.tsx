@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { allesSuchen } from "@/app/(hubs)/suche-actions";
+import { materialGeoeffnet } from "@/lib/dateiablage/material-aktivitaet";
+import { allesSuchen, zuletztSichtbareTreffer } from "@/app/(hubs)/suche-actions";
 import { notizAnlegen } from "@/app/(hubs)/notizen/actions";
 import { stapelAnlegen } from "@/app/(hubs)/karteikarten/actions";
 import { whiteboardAnlegen } from "@/app/(hubs)/whiteboard/actions";
@@ -13,7 +14,7 @@ import { tabelleAnlegen } from "@/app/(hubs)/tabellen/actions";
 import { praesentationAnlegen } from "@/app/(hubs)/praesentationen/actions";
 import { createTodo } from "@/app/todo/actions";
 import { SCHNELL_ERFASSEN, type QuickAddModus } from "@/components/quick-add";
-import { absichtErkennen, bewertung, ERSTELLEN, zuletztAktualisieren, type ErstellArt, type SuchTreffer } from "@/lib/befehle";
+import { absichtErkennen, bewertung, ERSTELLEN, type ErstellArt, type SuchTreffer } from "@/lib/befehle";
 import { BEREICHE } from "@/lib/dashboard-bereiche";
 import { WEITERE_HUBS } from "@/lib/hubs/navigation";
 import { inZweiterAnsichtOeffnen, istEingebettet } from "@/lib/geteilte-ansicht";
@@ -26,7 +27,7 @@ import { designWaehlen, usePersoenlich } from "@/lib/personalisierung-store";
 /** Ereignis: Befehlspalette öffnen (z. B. Knopf in der Seitenleiste) */
 export const BEFEHLE_OEFFNEN = "uniwars-befehle-oeffnen";
 const NACHRICHT = "uniwars-befehle-umschalten";
-const ZULETZT_SCHLUESSEL = "uniwars-befehle-zuletzt-v1";
+const ZULETZT_SCHLUESSEL = "uniwars-befehle-zuletzt-v1-v2";
 
 export function befehleOeffnen() {
   window.dispatchEvent(new CustomEvent(BEFEHLE_OEFFNEN));
@@ -81,7 +82,7 @@ const SCHNELL: ErstellArt[] = ["abgabe", "pruefung", "todo", "notiz", "stapel", 
  * Strg/⌘+O: eine Suchleiste für alles – Bereiche öffnen, PDFs/Notizen/Stapel … finden (auch im Text der PDFs),
  * Deadlines, Prüfungen, To-dos, Notizen, Whiteboards … erstellen. Strg+J bleibt die KI.
  */
-export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar: boolean; theme?: Theme }) {
+export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userId: string; kiVerfuegbar: boolean; theme?: Theme }) {
   const router = useRouter();
   const pfad = usePathname();
   const design = usePersoenlich("theme", theme);
@@ -107,7 +108,8 @@ export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar:
   const oeffnen = useCallback(() => {
     try {
       const roh = window.localStorage.getItem(ZULETZT_SCHLUESSEL);
-      setZuletzt(roh ? (JSON.parse(roh) as SuchTreffer[]).slice(0, 6) : []);
+      setZuletzt([]);
+      if (roh) void zuletztSichtbareTreffer(JSON.parse(roh)).then(setZuletzt).catch(() => setZuletzt([]));
     } catch {
       setZuletzt([]);
     }
@@ -166,14 +168,21 @@ export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar:
   );
 
   const merken = useCallback((t: SuchTreffer) => {
+    if (t.art === "datei") materialGeoeffnet(userId, `datei:${t.id}`);
     try {
       const roh = window.localStorage.getItem(ZULETZT_SCHLUESSEL);
-      const alt = roh ? (JSON.parse(roh) as SuchTreffer[]) : [];
-      window.localStorage.setItem(ZULETZT_SCHLUESSEL, JSON.stringify(zuletztAktualisieren(alt, t)));
+      const alt = roh ? JSON.parse(roh) as { art: string; id: string; seite?: number }[] : [];
+      const [pfad, query] = t.href.split("?");
+      const neu = t.art === "fundstelle"
+        ? { art: t.art, id: pfad.split("/").at(-1), seite: Number(new URLSearchParams(query).get("seite")) }
+        : { art: t.art, id: t.id };
+      window.localStorage.setItem(ZULETZT_SCHLUESSEL, JSON.stringify([
+        neu, ...alt.filter((x) => x.art !== neu.art || x.id !== neu.id || x.seite !== neu.seite),
+      ].slice(0, 6)));
     } catch {
       // ohne Speicher keine „Zuletzt“-Liste
     }
-  }, []);
+  }, [userId]);
 
   /** Etwas erstellen – direkt anlegen und öffnen oder „Schnell erfassen“ vorbefüllt öffnen */
   const erstellen = useCallback(

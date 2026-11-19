@@ -1,5 +1,8 @@
 "use server";
 
+import { fachZuordnungenSpeichern } from "./zuordnung-actions";
+import { materialPapierkorb } from "./workflow-actions";
+import { istMaterialId } from "@/lib/dateiablage/material";
 import { after } from "next/server";
 import { pdfIndexieren } from "@/lib/pdf-reader/index-server";
 import { revalidatePath } from "next/cache";
@@ -30,8 +33,8 @@ async function nutzer() {
 
 type Supabase = Awaited<ReturnType<typeof nutzer>>["supabase"];
 
-async function belegterSpeicher(supabase: Supabase): Promise<number> {
-  const { data, error } = await supabase.from("datei").select("groesse");
+async function belegterSpeicher(supabase: Supabase, userId: string): Promise<number> {
+  const { data, error } = await supabase.from("datei").select("groesse").eq("user_id", userId);
   if (error) throw new Error(error.message);
   return (data ?? []).reduce((summe, d) => summe + Number(d.groesse), 0);
 }
@@ -48,7 +51,7 @@ export type UploadTicket = { pfad: string; signedUrl: string; name: string; mime
 /** DAT-02 Schritt 1: prüfen und eine signierte Upload-Adresse holen (Upload läuft direkt zum Storage). */
 export async function uploadVorbereiten(eingabe: { name: string; groesse: number; fachId: string | null }): Promise<UploadTicket> {
   const { supabase, userId } = await nutzer();
-  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase));
+  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase, userId));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
 
   const name = freierName(eingabe.name.trim(), await namenImOrdner(supabase, eingabe.fachId));
@@ -104,6 +107,7 @@ async function dateiEintragen(
         name,
         groesse: eingabe.groesse,
         mime_typ: eingabe.mime,
+        pdf_index_status: eingabe.mime === "application/pdf" ? "wartet" : null,
         speicher_pfad: eingabe.pfad,
       })
       .select()
@@ -111,11 +115,14 @@ async function dateiEintragen(
     if (!error) {
       if (data.mime_typ === "application/pdf") {
         after(async () => {
-          try {
-            await pdfIndexieren(supabase, data);
-          } catch {
+          let status = "fertig";
+          try { await pdfIndexieren(supabase, data); }
+          catch {
+            status = "fehler";
             console.error("[dateiablage] PDF-Text konnte nicht erfasst werden");
           }
+          await supabase.from("datei").update({ pdf_index_status: status }).eq("id", data.id);
+          revalidatePath("/dateiablage");
         });
       }
       revalidatePath("/dateiablage");
@@ -147,7 +154,7 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
 
     const geladen = await linkHerunterladen(url);
     const { name: vorschlag, mime } = dateiBestimmen(geladen);
-    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase));
+    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase, userId));
     if (!pruefung.ok) return { ok: false, fehler: pruefung.fehler };
 
     const name = freierName(vorschlag, await namenImOrdner(supabase, eingabe.fachId));
@@ -217,29 +224,61 @@ export async function dateiVerwendung(id: string): Promise<{ anhaenge: number; q
 
 /** DAT-08: aus Storage und Datenbank entfernen. */
 export async function dateiLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { data: datei, error: ladeFehler } = await supabase.from("datei").select("speicher_pfad").eq("id", id).single();
-  if (ladeFehler) throw new Error(ladeFehler.message);
-  const { error } = await supabase.from("datei").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await supabase.storage.from(BUCKET).remove([datei.speicher_pfad]);
-  revalidatePath("/dateiablage");
-  revalidatePath("/");
+  await materialPapierkorb({ art: "datei", id }, true);
 }
 
-/** DAT-04 / DAT-07: kurzlebiger Link zum Ansehen oder Herunterladen. */
 export async function dateiLink(id: string, herunterladen = false): Promise<string> {
   const { supabase } = await nutzer();
-  const { data: datei, error: ladeFehler } = await supabase.from("datei").select("name, speicher_pfad").eq("id", id).single();
-  if (ladeFehler) throw new Error(ladeFehler.message);
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(datei.speicher_pfad, 600, herunterladen ? { download: datei.name } : undefined);
-  if (error) throw new Error(error.message);
-  return data.signedUrl;
+  if (!istMaterialId(id)) throw new Error("Datei nicht gefunden.");
+  const { data, error } = await supabase.from("datei").select("id").eq("id", id).maybeSingle();
+  if (error || !data) throw new Error("Datei nicht gefunden.");
+  return `/dateiablage/inhalt/${id}${herunterladen ? "?download=1" : ""}`;
 }
 
 export async function speicherStand(): Promise<{ belegt: number; limit: number }> {
+  const { supabase, userId } = await nutzer();
+  return { belegt: await belegterSpeicher(supabase, userId), limit: SPEICHER_LIMIT_BYTES };
+}
+
+export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null): Promise<{ id: string }> {
+  const { supabase, userId } = await nutzer();
+  if (!istMaterialId(nachrichtId) || (fachId !== null && !istMaterialId(fachId))) throw new Error("Ungültige Auswahl.");
+  const [nachricht, fach] = await Promise.all([
+    supabase.from("chat_nachricht").select("anhang, geloescht").eq("id", nachrichtId).maybeSingle(),
+    fachId ? supabase.from("fach").select("id").eq("id", fachId).eq("user_id", userId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const anhang = nachricht.data?.anhang as { typ?: string; id?: string; titel?: string; pfad?: string } | null;
+  if (nachricht.data?.geloescht || anhang?.typ !== "datei" || typeof anhang.pfad !== "string" || typeof anhang.titel !== "string" ||
+      (fachId && !fach.data)) throw new Error("Der Anhang ist nicht verfügbar.");
+  const eigenerEintrag = istMaterialId(anhang.id)
+    ? (await supabase.from("datei").select("id").eq("id", anhang.id).eq("user_id", userId).maybeSingle()).data
+    : null;
+  if (eigenerEintrag) {
+    if (fachId) await fachZuordnungenSpeichern([{ art: "datei", material_id: eigenerEintrag.id, fach_id: fachId, ausgeblendet: false }]);
+    return eigenerEintrag;
+  }
+  const { data, error } = await supabase.storage.from(BUCKET).download(anhang.pfad);
+  if (error || !data) throw new Error("Der Anhang konnte nicht geladen werden.");
+  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase, userId));
+  if (!pruefung.ok) throw new Error(pruefung.fehler);
+  const name = freierName(anhang.titel, await namenImOrdner(supabase, fachId));
+  const pfad = `${userId}/chat/${crypto.randomUUID()}-${speicherName(name)}`;
+  const { error: uploadFehler } = await supabase.storage.from(BUCKET).upload(pfad, data, { contentType: pruefung.mime });
+  if (uploadFehler) throw new Error("Der Anhang konnte nicht abgelegt werden.");
+  return dateiEintragen(supabase, userId, { pfad, name, fachId, groesse: data.size, mime: pruefung.mime });
+}
+
+export async function ablageFaecherLaden() {
+  const { supabase, userId } = await nutzer();
+  const { data, error } = await supabase.from("fach").select("id, name").eq("user_id", userId).order("name");
+  if (error) throw new Error("Die Fächer konnten nicht geladen werden.");
+  return data ?? [];
+}
+
+export async function pdfIndexStatusLaden(ids: string[]) {
   const { supabase } = await nutzer();
-  return { belegt: await belegterSpeicher(supabase), limit: SPEICHER_LIMIT_BYTES };
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > 80 || !ids.every(istMaterialId)) return [];
+  const { data, error } = await supabase.from("datei").select("id, pdf_index_status").in("id", ids);
+  if (error) throw new Error("Suchstatus konnte nicht geladen werden.");
+  return data ?? [];
 }

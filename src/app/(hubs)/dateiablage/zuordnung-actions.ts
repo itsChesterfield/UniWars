@@ -16,10 +16,11 @@ export async function fachZuordnungenSpeichern(zuordnungen: MaterialFachZuordnun
   const werte = zuordnungen.map((z) => {
     if (!z || !(z.art === "datei" || Object.hasOwn(MATERIAL_ARTEN, z.art)) ||
       typeof z.fach_id !== "string" || !UUID.test(z.fach_id) ||
-      typeof z.material_id !== "string" || !UUID.test(z.material_id) || typeof z.ausgeblendet !== "boolean") {
+      typeof z.material_id !== "string" || !UUID.test(z.material_id) || typeof z.ausgeblendet !== "boolean" ||
+      (z.thema_id != null && (typeof z.thema_id !== "string" || !UUID.test(z.thema_id)))) {
       throw new Error("Ungültige Fachzuordnung.");
     }
-    return { user_id: user.id, art: z.art, material_id: z.material_id, fach_id: z.fach_id, ausgeblendet: z.ausgeblendet };
+    return { user_id: user.id, art: z.art, material_id: z.material_id, fach_id: z.fach_id, ausgeblendet: z.ausgeblendet, ...(z.thema_id !== undefined ? { thema_id: z.thema_id } : {}) };
   });
   const { error } = await supabase.from("material_ablage_fach").upsert(werte, { onConflict: "user_id,art,material_id,fach_id" });
   if (error) throw new Error("Die Zuordnungen konnten nicht gespeichert werden.");

@@ -3,6 +3,7 @@
  * System-Prompt, Kontext-Block, Verlaufskürzung, Datumsauflösung und Aktionskarten.
  */
 import * as chrono from "chrono-node";
+import { materialRefs, type MaterialRef } from "../dateiablage/material.ts";
 import type { Nachricht } from "./anfrage.ts";
 import { KiEingabe } from "./fehler.ts";
 import { berlinDatum, berlinMitternacht, berlinUhrzeit, berlinWochentag, type Wochentag } from "../zeit.ts";
@@ -25,6 +26,8 @@ export type KontextEingabe = {
   karte?: { vorderseite: string; rueckseite: string } | null;
   /** Fach (z. B. im Lernraum) */
   fachId?: string | null;
+  material?: MaterialRef[];
+  crashkursFachId?: string | null;
 };
 
 export const HUB_NAMEN: Record<string, string> = {
@@ -109,6 +112,8 @@ export function kontextPruefen(roh: unknown): KontextEingabe {
     markiert: typeof o.markiert === "string" && o.markiert.trim() ? o.markiert.trim().slice(0, 4000) : null,
     karte,
     fachId: typeof o.fachId === "string" && UUID.test(o.fachId) ? o.fachId : null,
+    ...(Array.isArray(o.material) ? { material: materialRefs(o.material, 20) } : {}),
+    ...(typeof o.crashkursFachId === "string" && UUID.test(o.crashkursFachId) ? { crashkursFachId: o.crashkursFachId } : {}),
   };
 }
 

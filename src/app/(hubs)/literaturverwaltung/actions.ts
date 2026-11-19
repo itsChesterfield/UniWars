@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { QuellenTyp } from "@/lib/literatur/apa";
@@ -90,8 +92,5 @@ export async function quelleSpeichern(id: string | null, eingabe: QuelleEingabe)
 }
 
 export async function quelleLoeschen(id: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("literatur_quelle").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/literaturverwaltung");
+  await materialPapierkorb({ art: "literatur", id }, true);
 }

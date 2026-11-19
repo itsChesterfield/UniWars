@@ -47,6 +47,7 @@ export function AssistentStarter() {
   const suche = useSearchParams();
   const [offen, setOffen] = useState(false);
   const [markiert, setMarkiert] = useState<string | null>(null);
+  const [ablageKontext, setAblageKontext] = useState<Pick<KontextEingabe, "material" | "crashkursFachId">>({});
   const [startFrage, setStartFrage] = useState<{ text: string; nr: number } | null>(null);
   /** Privater Chat: Studio lernt nichts aus diesem Gespräch (gilt bis zum Neuladen) */
   const [privat, setPrivat] = useState(false);
@@ -88,10 +89,13 @@ export function AssistentStarter() {
         else umschalten("tastatur");
       } else if (e.key === "Escape" && offen) {
         setOffen(false);
+        setAblageKontext({});
       }
     };
     const oeffnen = (e: Event) => {
-      const frage = (e as CustomEvent<{ frage?: string | null }>).detail?.frage;
+      const detail = (e as CustomEvent<{ frage?: string | null; kontext?: typeof ablageKontext }>).detail;
+      setAblageKontext(detail?.kontext ?? {});
+      const frage = detail?.frage;
       if (frage) setStartFrage({ text: frage, nr: Date.now() });
       if (!offen) umschalten("hinweis");
     };
@@ -116,7 +120,7 @@ export function AssistentStarter() {
 
   if (eingebettet || pfad.startsWith("/assistent") || !offen) return null;
 
-  const kontext = aktuellerKontext(pfad, suche.toString(), markiert);
+  const kontext = { ...aktuellerKontext(pfad, suche.toString(), markiert), ...ablageKontext };
 
   // Direkt an <body>, damit keine Seitenebene (Seitenleiste, Dashboard) darüber liegt
   return createPortal(
@@ -168,7 +172,7 @@ export function AssistentStarter() {
           >
             <Icon name={gross ? "verkleinern" : "vergroessern"} />
           </button>
-          <button type="button" className="knopf leise klein nur-symbol" aria-label="Studio schließen" title="Schließen (Strg+J)" onClick={() => setOffen(false)}>
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Studio schließen" title="Schließen (Strg+J)" onClick={() => { setOffen(false); setAblageKontext({}); }}>
             <Icon name="schliessen" />
           </button>
         </span>
@@ -182,7 +186,7 @@ export function AssistentStarter() {
       <AssistentChat
         unterhaltungId={null}
         kontext={kontext}
-        kontextHolen={() => aktuellerKontext(window.location.pathname, window.location.search.slice(1), markiert)}
+        kontextHolen={() => ({ ...aktuellerKontext(window.location.pathname, window.location.search.slice(1), markiert), ...ablageKontext })}
         onMarkierungEntfernen={() => setMarkiert(null)}
         startFrage={startFrage}
         privat={privat}

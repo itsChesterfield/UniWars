@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   dateiLink,
+  pdfIndexStatusLaden,
   dateiLoeschen,
   dateiUmbenennen,
   dateiVerschieben,
@@ -16,6 +17,10 @@ import {
   type Datei,
 } from "@/app/(hubs)/dateiablage/actions";
 import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-actions";
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+import { MaterialPakete, MaterialTeilen } from "./material-teilen";
+import { PapierkorbDialog, ThemenDialog, TitelDialog } from "./material-ordnen";
+import { MaterialRueckverweise } from "./material-verknuepfungen";
 import { MaterialVorschauFenster, useGedruecktHalten } from "./material-vorschau";
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
@@ -35,10 +40,11 @@ import {
   type DateiArt,
 } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
+import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { useMaterialAktivitaet } from "@/lib/dateiablage/material-aktivitaet";
 import { pdfPfad } from "@/lib/pdf-reader/fundstelle";
-import { fachZuordnungen, MATERIAL_ARTEN, materialPfad, type HubMaterial, type MaterialFachZuordnung } from "@/lib/dateiablage/material";
+import { fachZuordnungen, MATERIAL_ARTEN, materialPfad, type HubMaterial, type MaterialFachZuordnung, type MaterialRef } from "@/lib/dateiablage/material";
 import { linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -79,9 +85,13 @@ function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
 
 const DRAG_TYP = "application/x-uniwars-datei";
 
-export function Dateiablage({ userId, initialDateien, material, ordner, limit, zuordnungen, mehrfachVerfuegbar }: {
+export function Dateiablage({ userId, initialDateien, material, ordner, limit, zuordnungen, mehrfachVerfuegbar, themen, info, workflow, freigaben, ki, pdfStand }: {
   userId: string; initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; limit: number;
-  zuordnungen: MaterialFachZuordnung[]; mehrfachVerfuegbar: boolean }) {
+  zuordnungen: MaterialFachZuordnung[]; mehrfachVerfuegbar: boolean;
+  themen: { id: string; fach_id: string; name: string }[];
+  info: { art: string; material_id: string; anzeigetitel: string | null; papierkorb_am: string | null; papierkorb_titel: string | null }[];
+  workflow: boolean; freigaben: boolean; ki: boolean; pdfStand: { datei_id: string; letzte_seite: number }[];
+}) {
   const router = useRouter();
   const pfad = usePathname();
   const searchParams = useSearchParams();
@@ -89,11 +99,21 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
   const aktuellerOrdner = ordner.find((o) => o.id === ordnerParam) ?? ordner[0];
 
   const aktivitaet = useMaterialAktivitaet(userId);
+  const [sonderansicht, setSonderansicht] = useState<"pakete" | "papierkorb" | null>(null);
+  const [aktion, setAktion] = useState<{ art: "titel" | "verknuepfen" | "teilen" | "papierkorb"; id: string } | null>(null);
+  const [paketOffen, setPaketOffen] = useState(false);
+  const [themenOffen, setThemenOffen] = useState(false);
   const [leselisteOffen, setLeselisteOffen] = useState(false);
   const [auswahl, setAuswahl] = useState<string[]>([]);
   const [fachWahl, setFachWahl] = useState("");
+  const [zielThema, setZielThema] = useState("");
   const [sortiert, setSortiert] = useState(false);
+  const [serverDateien, setServerDateien] = useState(initialDateien);
   const [dateien, setDateien] = useState(initialDateien);
+  if (serverDateien !== initialDateien) {
+    setServerDateien(initialDateien);
+    setDateien(initialDateien);
+  }
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [sortierung, setSortierung] = useState<Sortierung>({ spalte: "datum", absteigend: true });
   const [umbenennenId, setUmbenennenId] = useState<string | null>(null);
@@ -109,14 +129,33 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
   const eingabe = useRef<HTMLInputElement>(null);
   const einfuegenRef = useRef<(e: ClipboardEvent) => void>(() => undefined);
 
-  const belegt = dateien.reduce((s, d) => s + Number(d.groesse), 0);
+  const pdfOffen = dateien.filter((d) => d.pdf_index_status === "wartet").slice(0, 80).map((d) => d.id).join(",");
+  useEffect(() => {
+    if (!pdfOffen) return;
+    let aktiv = true;
+    const timer = window.setInterval(() => {
+      void pdfIndexStatusLaden(pdfOffen.split(",")).then((status) => {
+        if (!aktiv) return;
+        const nachId = new Map(status.map((s) => [s.id, s.pdf_index_status]));
+        setDateien((liste) => liste.map((d) => nachId.has(d.id) ? { ...d, pdf_index_status: nachId.get(d.id) ?? null } : d));
+      }).catch(() => undefined);
+    }, 2500);
+    return () => { aktiv = false; window.clearInterval(timer); };
+  }, [pdfOffen]);
+  const belegt = dateien.reduce((s, d) => s + (d.user_id === userId ? Number(d.groesse) : 0), 0);
   const voll = belegt >= limit;
 
+  const infoNachId = new Map(info.map((i) => [`${i.art}:${i.material_id}`, i]));
   const alle = [
-    ...dateien.map((datei) => ({ id: `datei:${datei.id}`, titel: datei.name, fachId: datei.fach_id, datei, hub: null })),
-    ...material.map((hub) => ({ id: `${hub.art}:${hub.id}`, titel: hub.titel, fachId: hub.fachId, datei: null, hub })),
-  ];
+    ...dateien.map((datei) => ({ id: `datei:${datei.id}`, titel: infoNachId.get(`datei:${datei.id}`)?.anzeigetitel ?? datei.name, fachId: datei.fach_id, datei, hub: null })),
+    ...material.map((hub) => ({ id: `${hub.art}:${hub.id}`, titel: infoNachId.get(`${hub.art}:${hub.id}`)?.anzeigetitel ?? hub.titel, fachId: hub.fachId, datei: null, hub })),
+  ].filter((e) => !infoNachId.get(e.id)?.papierkorb_am);
   type Eintrag = (typeof alle)[number];
+  function ref(e: Eintrag): MaterialRef {
+    return e.hub ? { art: e.hub.art, id: e.hub.id } : { art: "datei", id: e.datei!.id };
+  }
+  const eigenes = (e: Eintrag) => (e.datei?.user_id ?? e.hub?.userId) === userId;
+  const fachThemen = themen.filter((t) => t.fach_id === aktuellerOrdner.id);
   const nachId = new Map(alle.map((e) => [e.id, e]));
   const zuordnungenNachId = new Map<string, MaterialFachZuordnung[]>();
   for (const z of zuordnungen) {
@@ -129,13 +168,15 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
     const faecher = fachZuordnungen(eintrag.fachId, zuordnungenNachId.get(eintrag.id) ?? []);
     return fachId ? faecher.includes(fachId) : faecher.length === 0;
   }
+  const aktionsEintrag = aktion ? nachId.get(aktion.id) : null;
+  const themaVon = (e: Eintrag) => zuordnungenNachId.get(e.id)?.find((z) => z.fach_id === aktuellerOrdner.id)?.thema_id ?? null;
   const vorschauEintrag = materialVorschau ? nachId.get(materialVorschau) : null;
   const zuletzt = aktivitaet.zuletzt.flatMap((id) => {
     const eintrag = nachId.get(id);
     return eintrag ? [eintrag] : [];
   }).slice(0, 4);
   const istPin = (id: string) => aktivitaet.pins.includes(`${aktuellerOrdner.id ?? "lose"}:${id}`);
-  const eintraege = alle.filter((e) => leselisteOffen ? Object.hasOwn(aktivitaet.lesen, e.id) : liegtIn(e, aktuellerOrdner.id));
+  const eintraege = alle.filter((e) => sonderansicht === "pakete" ? !eigenes(e) : leselisteOffen ? Object.hasOwn(aktivitaet.lesen, e.id) : liegtIn(e, aktuellerOrdner.id));
   const faktor = sortierung.absteigend ? -1 : 1;
   eintraege.sort((a, b) => {
     if (!leselisteOffen && istPin(a.id) !== istPin(b.id)) return istPin(a.id) ? -1 : 1;
@@ -146,6 +187,11 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
     return (b.datei?.erstellt_am ?? "").localeCompare(a.datei?.erstellt_am ?? "");
   });
   const ausgewaehlt = eintraege.filter((e) => auswahl.includes(e.id));
+  const mitGruppen = !leselisteOffen && !sonderansicht && fachThemen.length > 0;
+  const tabellenzeilen = mitGruppen
+    ? [...eintraege.filter((e) => istPin(e.id) || !themaVon(e)),
+        ...fachThemen.flatMap((t) => [t, ...eintraege.filter((e) => !istPin(e.id) && themaVon(e) === t.id)])]
+    : eintraege;
 
   function eintragOeffnen(eintrag: Eintrag) {
     if (eintrag.datei) void oeffnen(eintrag.datei);
@@ -164,7 +210,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
     return null;
   }
 
-  async function zuordnen(eintraege: Eintrag[], fachId: string, entfernen = false) {
+  async function zuordnen(eintraege: Eintrag[], fachId: string, entfernen = false, themaId?: string) {
     setSortiert(true);
     try {
       await fachZuordnungenSpeichern(eintraege.map((e) => ({
@@ -172,9 +218,11 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
         material_id: e.hub?.id ?? e.datei?.id ?? "",
         fach_id: fachId,
         ausgeblendet: entfernen,
+        ...(themaId ? { thema_id: themaId } : {}),
       })));
       setAuswahl([]);
       setFachWahl("");
+      setZielThema("");
     } catch {
       setMeldung("Die Fachzuordnung konnte nicht gespeichert werden.");
     } finally {
@@ -197,6 +245,12 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
     const aufListe = Object.hasOwn(aktivitaet.lesen, eintrag.id);
     return [
       { label: "Vorschau", onClick: () => setMaterialVorschau(eintrag.id) },
+      ...(workflow && eigenes(eintrag) ? [
+        { label: "Anzeigetitel bearbeiten", onClick: () => setAktion({ art: "titel", id: eintrag.id }) },
+        { label: "Mit Aufgabe oder Prüfung verknüpfen", onClick: () => setAktion({ art: "verknuepfen", id: eintrag.id }) },
+        ...(freigaben ? [{ label: "Freigeben", onClick: () => setAktion({ art: "teilen", id: eintrag.id }) }] : []),
+        { label: "In den Papierkorb verschieben", onClick: () => setAktion({ art: "papierkorb", id: eintrag.id }), gefahr: true },
+      ] : []),
       ...(mehrfachVerfuegbar && aktuellerOrdner.id && !leselisteOffen ? [{
         label: "Aus diesem Fach entfernen",
         onClick: () => { if (aktuellerOrdner.id) void zuordnen([eintrag], aktuellerOrdner.id, true); },
@@ -213,6 +267,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
   function ordnerOeffnen(id: string | null) {
     setAuswahl([]);
     setLeselisteOffen(false);
+    setSonderansicht(null);
     const params = new URLSearchParams(searchParams.toString());
     if (id) params.set("ordner", id);
     else params.delete("ordner");
@@ -236,7 +291,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
       await hochladenMitFortschritt(ticket.signedUrl, datei, ticket.mime, (anteil) => setzen({ anteil }));
       const neu = await uploadAbschliessen({ pfad: ticket.pfad, name: ticket.name, fachId });
       ticketPfad = null;
-      setDateien((liste) => [neu, ...liste]);
+      setDateien((liste) => [neu, ...liste.filter((d) => d.id !== neu.id)]);
       // Die Lichtspur schließt sich zum Haken, danach verschwindet der Eintrag
       setzen({ anteil: 1, fertig: true });
       window.setTimeout(() => setUploads((liste) => liste.filter((u) => u.schluessel !== schluessel)), 1100);
@@ -552,11 +607,16 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
             type="button"
             className="knopf leise klein"
             aria-pressed={leselisteOffen}
-            onClick={() => { setLeselisteOffen(!leselisteOffen); setAuswahl([]); }}
+            onClick={() => { setSonderansicht(null); setLeselisteOffen(!leselisteOffen); setAuswahl([]); }}
           >
             <Icon name="lesezeichen" groesse={14} />
             Leseliste
           </button>
+
+          {freigaben && <button type="button" className="knopf leise klein" aria-pressed={sonderansicht === "pakete"}
+            onClick={() => { setSonderansicht("pakete"); setLeselisteOffen(false); setAuswahl([]); }}>Mit mir geteilt</button>}
+          {workflow && <button type="button" className="knopf leise klein" aria-pressed={sonderansicht === "papierkorb"}
+            onClick={() => { setSonderansicht("papierkorb"); setLeselisteOffen(false); setAuswahl([]); }}>Papierkorb</button>}
 
           {/* DAT-09 */}
           <div className="dat-speicher">
@@ -596,26 +656,64 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
             if (!voll) hochladen(e.dataTransfer.files);
           }}
         >
-          {zuletzt.length > 0 && !leselisteOffen && (
+          {zuletzt.length > 0 && !leselisteOffen && !sonderansicht && (
             <div className="dat-zuletzt">
               <h2>Zuletzt geöffnet</h2>
               <ul>
                 {zuletzt.map((eintrag) => (
                   <li key={eintrag.id}>
                     <button type="button" className="dat-name-knopf" onClick={() => eintragOeffnen(eintrag)}>{eintrag.titel}</button>
+                    {eintrag.datei && pdfStand.some((p) => p.datei_id === eintrag.datei?.id) && (
+                      <Link prefetch={false} className="dat-fortsetzen" href={pdfPfad(eintrag.datei.id)}>
+                        Weiter auf Seite {pdfStand.find((p) => p.datei_id === eintrag.datei?.id)?.letzte_seite}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          <h2 className="abschnitt-titel dat-titel">{leselisteOffen ? "Leseliste" : aktuellerOrdner.name}</h2>
-          {mehrfachVerfuegbar && !leselisteOffen && ausgewaehlt.length > 0 && (
+          <h2 className="abschnitt-titel dat-titel">{sonderansicht === "papierkorb" ? "Papierkorb" : sonderansicht === "pakete" ? "Mit mir geteilt" : leselisteOffen ? "Leseliste" : aktuellerOrdner.name}</h2>
+          {sonderansicht === "pakete" && <MaterialPakete />}
+          {sonderansicht === "papierkorb" && (
+            <ul className="dat-workflow-liste">{info.filter((i) => i.papierkorb_am).map((i) => <li key={`${i.art}:${i.material_id}`}>
+              <span>{i.papierkorb_titel ?? "Unterlage"}</span>
+              <button type="button" className="knopf leise klein" onClick={() => {
+                void materialPapierkorb({ art: i.art as MaterialRef["art"], id: i.material_id }, false)
+                  .catch(() => setMeldung("Die Unterlage konnte nicht wiederhergestellt werden."));
+              }}>Wiederherstellen</button>
+            </li>)}</ul>
+          )}
+          <div className="dat-auswahl-form dat-arbeitsaktionen">
+          {workflow && aktuellerOrdner.id && !leselisteOffen && !sonderansicht && (
+            <button type="button" className="knopf neben klein dat-auswahl-aktion" onClick={() => setThemenOffen(true)}>Themen ordnen</button>
+          )}
+          {ki && aktuellerOrdner.id && !sonderansicht && !leselisteOffen && (
+            <button type="button" className="knopf neben klein dat-auswahl-aktion" onClick={() => {
+              const id = aktuellerOrdner.id;
+              if (id) studioOeffnen(`Gib mir einen Crashkurs zu dem, was wir zuletzt in ${aktuellerOrdner.name} gemacht haben.`, { crashkursFachId: id });
+            }}>Crashkurs mit Studio</button>
+          )}
+          {ki && ausgewaehlt.length > 0 && ausgewaehlt.length <= 20 && sonderansicht !== "papierkorb" && (
+            <button type="button" className="knopf neben klein dat-auswahl-aktion dat-aktion-einzeilig" onClick={() => studioOeffnen(undefined, { material: ausgewaehlt.map(ref) })}>Auswahl mit Studio besprechen</button>
+          )}
+          {freigaben && sonderansicht !== "papierkorb" && ausgewaehlt.length > 0 && ausgewaehlt.every(eigenes) && (
+            <button type="button" className="knopf neben klein dat-auswahl-aktion" onClick={() => setPaketOffen(true)}>Als Materialpaket teilen</button>
+          )}
+          {mehrfachVerfuegbar && !leselisteOffen && sonderansicht !== "papierkorb" && ausgewaehlt.length > 0 && (
             <div className="dat-auswahl-form">
-              <select className="field" value={fachWahl} onChange={(e) => setFachWahl(e.target.value)} aria-label="Zielfach">
+              <select className="field" value={fachWahl} onChange={(e) => { setFachWahl(e.target.value); setZielThema(""); }} aria-label="Zielfach">
                 <option value="">Fach auswählen</option>
                 {ordner.filter((o) => o.id && o.id !== aktuellerOrdner.id).map((o) => <option key={o.id} value={o.id ?? ""}>{o.name}</option>)}
               </select>
-              <button type="button" className="knopf neben klein" disabled={!fachWahl || sortiert} onClick={() => void zuordnen(ausgewaehlt, fachWahl)}>
+              {fachWahl && themen.some((t) => t.fach_id === fachWahl) && (
+                <select className="field" value={zielThema} onChange={(e) => setZielThema(e.target.value)} aria-label="Zielthema">
+                  <option value="">Ohne Thema</option>
+                  {themen.filter((t) => t.fach_id === fachWahl).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              )}
+              <button type="button" className="knopf neben klein" disabled={!fachWahl || sortiert}
+                onClick={() => void zuordnen(ausgewaehlt, fachWahl, false, zielThema || undefined)}>
                 Dem Fach zuordnen
               </button>
             </div>
@@ -625,6 +723,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
               Nebeneinander öffnen
             </button>
           )}
+          </div>
 
           {uploads.length > 0 && (
             <ul className="dat-uploads" aria-live="polite">
@@ -659,7 +758,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
             </ul>
           )}
 
-          {eintraege.length === 0 ? (
+          {sonderansicht !== "papierkorb" && (tabellenzeilen.length === 0 ? (sonderansicht === "pakete" ? null : (
             <Zustand
               art="leer"
               region
@@ -674,7 +773,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
               )}
             >{leselisteOffen ? "Wähle bei einer Unterlage „Später lesen“." : aktuellerOrdner.id ? "Lade eine Datei hoch oder ordne vorhandenes Lernmaterial diesem Fach zu." : "Hier erscheinen Unterlagen ohne Fach."}
             </Zustand>
-          ) : (
+          )) : (
             <div className="dat-tabelle-wrap">
               <table className="dat-tabelle">
                 <thead>
@@ -696,7 +795,10 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                   </tr>
                 </thead>
                 <tbody>
-                  {eintraege.map((eintrag) => {
+                  {tabellenzeilen.map((eintrag) => {
+                    if (!("datei" in eintrag)) return <tr className="dat-thema-zeile" key={eintrag.id}><td colSpan={6}>
+                      <span className="dat-thema-linie">{eintrag.name}</span>
+                    </td></tr>;
                     const { id, datei: d, hub } = eintrag;
                     const auswahlZelle = (
                       <td className="dat-spalte-auswahl">
@@ -710,7 +812,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                         <span className="dat-typ"><Icon name={MATERIAL_ARTEN[hub.art].icon} groesse={14} /></span>
                       </td>
                       <td className="dat-spalte-name">
-                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{hub.titel}</Link>
+                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{eintrag.titel}</Link>
                       </td>
                       <td className="dat-spalte-groesse" />
                       <td className="dat-spalte-material">{MATERIAL_ARTEN[hub.art].name}</td>
@@ -744,9 +846,11 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                           />
                         ) : (
                           <button type="button" className="dat-name-knopf" {...druck(id)} onClick={() => void oeffnen(d)}>
-                            {d.name}
+                            {eintrag.titel}
                           </button>
                         )}
+                        {d.pdf_index_status === "wartet" && <span className="dat-index-hinweis">Inhalt wird für die Suche vorbereitet</span>}
+                        {d.pdf_index_status === "fehler" && <span className="dat-index-hinweis">PDF-Text konnte nicht erfasst werden</span>}
                       </td>
                       <td className="dat-spalte-groesse mono">{groesseText(Number(d.groesse))}</td>
                       <td className="dat-spalte-material">{endung(d.name).toUpperCase() || "Datei"}</td>
@@ -758,7 +862,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                             { label: "Umbenennen", onClick: () => setUmbenennenId(d.id) },
                             { label: "Verschieben nach …", onClick: () => setVerschiebenId(d.id) },
                             { label: "Herunterladen", onClick: () => void herunterladen(d) },
-                            { label: "Löschen", onClick: () => void loeschen(d), gefahr: true },
+                            ...(!workflow ? [{ label: "Löschen", onClick: () => void loeschen(d), gefahr: true }] : []),
                           ]}
                         />
                         {verschiebenId === d.id && (
@@ -783,11 +887,26 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                 </tbody>
               </table>
             </div>
-          )}
+          ))}
           {ziehenUeber && <div className="dat-ablegen-hinweis">Hier ablegen</div>}
         </section>
       </div>
 
+      {themenOffen && aktuellerOrdner.id && <ThemenDialog
+        fachId={aktuellerOrdner.id} themen={fachThemen}
+        auswahl={ausgewaehlt.map((e) => ({ ...ref(e), titel: e.titel }))}
+        offen={eintraege.filter((e) => !themaVon(e)).map((e) => ({ ...ref(e), titel: e.titel }))}
+        titelFuer={(r) => nachId.get(`${r.art}:${r.id}`)?.titel} ki={ki} schliessen={() => setThemenOffen(false)}
+      />}
+      {paketOffen && <MaterialTeilen refs={ausgewaehlt.map(ref)} titel="" paket schliessen={() => setPaketOffen(false)} />}
+      {aktionsEintrag && aktion && <Fragment key={aktion.id}>
+        {aktion.art === "titel" && <TitelDialog material={ref(aktionsEintrag)} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} ki={ki} />}
+        {aktion.art === "teilen" && <MaterialTeilen refs={[ref(aktionsEintrag)]} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} />}
+        {aktion.art === "verknuepfen" && <MaterialRueckverweise material={ref(aktionsEintrag)} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} />}
+        {aktion.art === "papierkorb" && <PapierkorbDialog material={ref(aktionsEintrag)} titel={aktionsEintrag.titel}
+          faecher={ordner.filter((o) => o.id && liegtIn(aktionsEintrag, o.id)).map((o) => o.name)}
+          schliessen={() => setAktion(null)} abgelegt={() => setAktion(null)} />}
+      </Fragment>}
       {vorschauEintrag && (
         <MaterialVorschauFenster
           key={vorschauEintrag.id}

@@ -54,7 +54,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
 
   return (
     <DesignRahmen theme={theme} darstellung={darstellung}>
-      <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
+      <Sidebar userId={user.id} name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
       <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
       <SegmentMarke />
       <Suspense fallback={null}><MaterialBesuch userId={user.id} /></Suspense>

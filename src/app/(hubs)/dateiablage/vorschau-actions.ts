@@ -1,5 +1,6 @@
 "use server";
 
+import { unzipSync, strFromU8 } from "fflate";
 import { createClient } from "@/lib/supabase/server";
 import { markdownAlsText } from "@/lib/markdown-text";
 import { designLesen, folienLesen, type Design, type Folie } from "@/lib/praesentationen/folien";
@@ -21,9 +22,23 @@ export async function vorschauLaden(art: string, id: string): Promise<MaterialVo
       if (!data) return null;
       const mime = data.mime_typ;
       const typ = mime === "application/pdf" ? "pdf" : mime.startsWith("image/") ? "bild" : mime.startsWith("audio/") ? "audio" : null;
-      if (!typ) return null;
-      const { data: signiert } = await supabase.storage.from("dateiablage").createSignedUrl(data.speicher_pfad, 120);
-      return signiert ? { art: typ, url: signiert.signedUrl } : null;
+      if (typ) return { art: typ, url: `/dateiablage/inhalt/${id}` };
+      if (mime === "application/vnd.openxmlformats-officedocument.presentationml.presentation") {
+        const { data: blob } = await supabase.storage.from("dateiablage").download(data.speicher_pfad);
+        if (!blob || blob.size > 25 * 1024 * 1024) return null;
+        try {
+          const dateien = unzipSync(new Uint8Array(await blob.arrayBuffer()), {
+            filter: (datei) => datei.name === "ppt/slides/slide1.xml" && datei.originalSize < 200_000,
+          });
+          const erste = dateien["ppt/slides/slide1.xml"];
+          if (!erste) return null;
+          const zeilen = [...strFromU8(erste).matchAll(/<a:t>([^<]{0,3000})<\/a:t>/g)]
+            .slice(0, 16).map((treffer) => treffer[1].replace(/&(amp|lt|gt|apos|quot);/g, (_, zeichen: string) =>
+              ({ amp: "&", lt: "<", gt: ">", apos: "'", quot: '"' })[zeichen] ?? ""));
+          return { art: "text", zeilen };
+        } catch { return null; }
+      }
+      return null;
     }
     case "praesentation": {
       const { data } = await supabase.from("praesentation").select("folien, design").eq("id", id).maybeSingle();

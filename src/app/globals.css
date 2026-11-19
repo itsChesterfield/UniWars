@@ -17657,3 +17657,73 @@ dialog.dat-material-vorschau:has(.dat-material-pdf:not([hidden])) {
   outline: 2px solid var(--fokus);
   outline-offset: calc(-1 * var(--space-half));
 }
+
+dialog.dat-workflow-dialog {
+  width: min(92vw, 36rem);
+  max-height: 84dvh;
+}
+
+.dat-workflow-feld,
+.dat-workflow-liste {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.dat-workflow-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dat-workflow-liste > li,
+.dat-workflow-mitglied {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dat-workflow-pakete h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.dat-thema-linie {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-thema-linie::before,
+.dat-thema-linie::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--linie);
+}
+
+.dat-tabelle .dat-thema-zeile td {
+  border: 0;
+}
+
+.dat-fortsetzen {
+  display: inline-block;
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-index-hinweis {
+  display: block;
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-arbeitsaktionen:empty {
+  display: none;
+}
+
+
+.dat-aktion-einzeilig {
+  white-space: nowrap;
+}

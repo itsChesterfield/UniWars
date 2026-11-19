@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
+import { AnhangAblage } from "./anhang-ablage";
+import { MaterialPakete } from "@/components/dateiablage/material-teilen";
 import { AnhangDialog, type AnhangWahl, type Nutzer } from "@/components/chat/chat-dialoge";
 import type { Json, Tables } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
@@ -185,6 +187,7 @@ export function ChatVerlauf({
         </div>
         <DreiPunkteMenue punkte={kopfMenue} label="Chat-Optionen" />
       </header>
+      {chat.typ === "GRUPPE" && <MaterialPakete chatId={chat.chat_id} key={chat.chat_id} />}
 
       <div
         className="chat-nachrichten"
@@ -307,8 +310,10 @@ export function ChatVerlauf({
 }
 
 function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anhang }) {
+  const [ablage, setAblage] = useState(false);
   if (anhang.typ === "datei") {
     return (
+      <div>
       <a className="chat-karte" href={`/chat/anhang/${nachrichtId}`} target="_blank" rel="noopener noreferrer">
         <span aria-hidden>{anhang.mime?.startsWith("image/") ? "🖼️" : anhang.mime === "application/pdf" ? "📕" : "📎"}</span>
         <span>
@@ -316,6 +321,9 @@ function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anh
           <span className="muted">Datei öffnen</span>
         </span>
       </a>
+      <button type="button" className="knopf leise klein dat-aktion-einzeilig" onClick={() => setAblage(true)}>In Dateiablage übernehmen</button>
+      {ablage && <AnhangAblage nachrichtId={nachrichtId} schliessen={() => setAblage(false)} />}
+      </div>
     );
   }
   return (
