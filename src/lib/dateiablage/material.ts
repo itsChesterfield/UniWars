@@ -42,6 +42,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function materialVomPfad(pfad: string, suche: URLSearchParams): string | null {
   const pdfId = pfad.startsWith("/pdf-reader/") ? pfad.slice("/pdf-reader/".length) : "";
   if (UUID.test(pdfId)) return `datei:${pdfId}`;
+  const webLinkId = pfad.startsWith("/dateiablage/weblink/") ? pfad.slice("/dateiablage/weblink/".length) : "";
+  if (UUID.test(webLinkId)) return `datei:${webLinkId}`;
   for (const [art, { pfad: route }] of Object.entries(MATERIAL_ARTEN)) {
     const query = route.endsWith("?id=");
     const id = query

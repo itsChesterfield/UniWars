@@ -70,6 +70,14 @@ function Inhalt({ daten, titel }: { daten: MaterialVorschau; titel: string }) {
         </svg>
       );
     }
+    case "tabelle":
+      return daten.zeilen.some((zeile) => zeile.some(Boolean))
+        ? <div className="dat-tabellen-vorschau">
+            <table className="dat-tabelle" aria-label={titel}>
+              <tbody>{daten.zeilen.map((zeile, i) => <tr key={i}>{zeile.map((zelle, j) => <td key={j}>{zelle}</td>)}</tr>)}</tbody>
+            </table>
+          </div>
+        : <p>Die Tabelle ist leer.</p>;
     case "text":
       return daten.zeilen.some(Boolean) ? <ul>{daten.zeilen.filter(Boolean).map((text, i) => <li key={i}>{text}</li>)}</ul> : <p>Hier steht noch nichts.</p>;
   }

@@ -204,6 +204,23 @@ test("Agent: nach 5 Runden mit Werkzeugwünschen → KiZuKomplex", async () => {
   assert.equal((ereignisse.at(-1) as Extract<AgentEreignis, { typ: "ende" }>).runden, 5);
 });
 
+test("Agent: Bei einer PDF-Frage liefert die letzte Runde eine Antwort ohne weitere Werkzeugaufrufe", async () => {
+  const angebot: number[] = [];
+  const rufen: ModellAufruf = async function* (o) {
+    angebot.push(o.werkzeuge?.length ?? 0);
+    if (o.werkzeuge?.length) yield ruft("faecher_auflisten");
+    else yield { typ: "text", text: "Die PDF erklärt Normalisierung. [Q1 S. 2]" };
+    yield ende();
+  };
+  const ereignisse = await sammeln(agentLauf({
+    rufen, optionen: { maxTokens: 100, temperatur: 0 },
+    nachrichten: [{ role: "user", content: "Was steht in der PDF?" }],
+    werkzeuge: [FAECHER], maxRunden: 2, letzteRundeOhneWerkzeuge: true,
+  }));
+  assert.deepEqual(angebot, [1, 0]);
+  assert.deepEqual(ereignisse.map((e) => e.typ), ["status", "werkzeug", "text", "ende"]);
+});
+
 test("Agent: unbekanntes Werkzeug, kaputtes JSON und Werkzeugfehler gehen als Fehler ans Modell zurück", async () => {
   const kaputt: Werkzeug = { ...FAECHER, name: "kaputt", ausfuehren: async () => { throw new Error("DB weg"); } };
   const { rufen, gesehen } = modell([

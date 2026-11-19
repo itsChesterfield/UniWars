@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { istMaterialId, materialRef, materialRefs, materialZiel, type MaterialRef, type MaterialZiel } from "@/lib/dateiablage/material";
 import { materialQuelle } from "@/lib/dateiablage/material-server";
 import { alsFehler, textAnfrageAusfuehren, textVoraussetzungen } from "@/lib/ki/server";
@@ -33,8 +34,11 @@ export async function materialTitelVorschlagen(eingabe: MaterialRef): Promise<Ki
   try {
     const { supabase, userId } = await angemeldet();
     await textVoraussetzungen(supabase, userId);
-    const original = await materialQuelle(supabase, eingabe, 2);
+    const original = await materialQuelle(supabase, eingabe, 2, true);
     if (!original) throw new KiEingabe("Unterlage nicht gefunden.");
+    if (original.istPdf && !original.abschnitte.some((a) => a.text.trim())) {
+      throw new KiEingabe("Aus dieser PDF konnte kein Text gelesen werden. Du kannst den Titel direkt eingeben.");
+    }
     const { ergebnis } = await textAnfrageAusfuehren({
       supabase, funktion: "material_titel", zweck: "schnell",
       optionen: {
@@ -58,7 +62,7 @@ export async function materialPapierkorb(eingabe: MaterialRef, ablegen: boolean)
   const { supabase, userId } = await angemeldet();
   const ref = materialRef(eingabe);
   if (!ref || typeof ablegen !== "boolean") throw new Error("Ungültige Unterlage.");
-  const original = ablegen ? await materialQuelle(supabase, ref, 1) : null;
+  const original = ablegen ? await materialQuelle(supabase, ref, 0) : null;
   if (ablegen && !original) throw new Error("Unterlage nicht gefunden.");
   const { error } = await supabase.from("material_ablage_info").upsert({
     user_id: userId, art: ref.art, material_id: ref.id,
@@ -109,18 +113,25 @@ export async function materialThemenVorschlagen(fachId: string, eingabe: Materia
     await textVoraussetzungen(supabase, userId);
     const refs = materialRefs(eingabe, 40);
     if (!istMaterialId(fachId) || refs.length < 2) throw new KiEingabe("Wähle mindestens zwei Unterlagen aus.");
-    const [{ data: fach }, { data: zugeordnet }, ...quellen] = await Promise.all([
+    const [{ data: fach }, { data: zugeordnet, error }] = await Promise.all([
       supabase.from("fach").select("name").eq("id", fachId).eq("user_id", userId).maybeSingle(),
       supabase.from("material_ablage_fach").select("art, material_id, thema_id, ausgeblendet").eq("fach_id", fachId),
-      ...refs.map((ref) => materialQuelle(supabase, ref, 2)),
     ]);
     if (!fach) throw new KiEingabe("Fach nicht gefunden.");
+    if (error) throw new KiEingabe("Die Themenzuordnungen konnten nicht geladen werden.");
     const nachId = new Map((zugeordnet ?? []).map((z) => [`${z.art}:${z.material_id}`, z]));
-    const offen = quellen.filter((quelle) => {
-      if (!quelle) return false;
-      const z = nachId.get(`${quelle.art}:${quelle.id}`);
-      return !z?.thema_id && (z ? !z.ausgeblendet : quelle.fachId === fachId);
-    }).flatMap((q) => q ? [q] : []);
+    const kandidaten = refs.filter((ref) => {
+      const z = nachId.get(`${ref.art}:${ref.id}`);
+      return !z?.thema_id && !z?.ausgeblendet;
+    });
+    const offen: NonNullable<Awaited<ReturnType<typeof materialQuelle>>>[] = [];
+    for (let i = 0; i < kandidaten.length; i += 4) {
+      const quellen = await Promise.all(kandidaten.slice(i, i + 4).map((ref) => materialQuelle(supabase, ref, 2, true)));
+      for (const quelle of quellen) {
+        if (!quelle) continue;
+        if (nachId.has(`${quelle.art}:${quelle.id}`) || quelle.fachId === fachId) offen.push(quelle);
+      }
+    }
     if (offen.length < 2) throw new KiEingabe("Wähle mindestens zwei Unterlagen ohne Thema in diesem Fach.");
     const { ergebnis } = await textAnfrageAusfuehren({
       supabase, funktion: "material_themen", zweck: "schnell",
@@ -157,7 +168,7 @@ export async function materialVerknuepfen(eingabe: MaterialRef, zielEingabe: Mat
   const ref = materialRef(eingabe);
   const ziel = materialZiel(zielEingabe);
   if (!ref || !ziel || (seite != null && (!Number.isSafeInteger(seite) || seite < 1 || seite > 100000))) throw new Error("Ungültige Verknüpfung.");
-  if (seite != null && !(await materialQuelle(supabase, ref, 1))?.istPdf) throw new Error("Eine Seitenzahl ist nur bei PDFs möglich.");
+  if (seite != null && !(await materialQuelle(supabase, ref, 0))?.istPdf) throw new Error("Eine Seitenzahl ist nur bei PDFs möglich.");
   const { error } = await supabase.from("material_verknuepfung").upsert({
     user_id: userId, art: ref.art, material_id: ref.id, ziel_art: ziel.art, ziel_id: ziel.id,
     termin_datum: ziel.art === "vorlesung" ? ziel.datum : null, seite: seite ?? null,
@@ -177,7 +188,7 @@ export async function materialVerknuepfungLoesen(id: string) {
 export async function materialAmZielLaden(eingabe: MaterialZiel) {
   const { supabase } = await angemeldet();
   const ziel = materialZiel(eingabe);
-  if (!ziel) return [];
+  if (!ziel) return { verknuepfbar: false, unterlagen: [] };
   let q = supabase.from("material_verknuepfung").select("id, art, material_id, seite").eq("ziel_art", ziel.art).eq("ziel_id", ziel.id);
   if (ziel.art === "vorlesung") q = q.eq("termin_datum", ziel.datum);
   const [verknuepft, mitschriften] = await Promise.all([
@@ -186,15 +197,18 @@ export async function materialAmZielLaden(eingabe: MaterialZiel) {
       ? supabase.from("notiz").select("id, titel").eq("stundenplan_eintrag_id", ziel.id).eq("vorlesung_datum", ziel.datum)
       : Promise.resolve({ data: [] as { id: string; titel: string }[] }),
   ]);
-  if (verknuepft.error) throw new Error("Unterlagen konnten nicht geladen werden.");
+  if ((verknuepft.error && !tabelleFehlt(verknuepft.error)) || ("error" in mitschriften && mitschriften.error)) {
+    throw new Error("Unterlagen konnten nicht geladen werden.");
+  }
   const quellen = await Promise.all((verknuepft.data ?? []).map(async (z) => {
     const ref = materialRef({ art: z.art, id: z.material_id });
     const q = ref ? await materialQuelle(supabase, ref, 0) : null;
     return q ? { id: z.id, zielId: q.id, art: q.art, titel: q.titel, href: z.seite && q.istPdf ? `${q.href}?seite=${z.seite}` : q.href, seite: z.seite } : null;
   }));
   const verknuepfungen = quellen.flatMap((q) => q ? [q] : []);
-  return [...verknuepfungen, ...(mitschriften.data ?? []).filter((n) => !verknuepfungen.some((q) => q.art === "notiz" && q.zielId === n.id))
+  const unterlagen = [...verknuepfungen, ...(mitschriften.data ?? []).filter((n) => !verknuepfungen.some((q) => q.art === "notiz" && q.zielId === n.id))
     .map((n) => ({ id: null, zielId: n.id, art: "notiz" as const, titel: n.titel, href: `/notizen?id=${n.id}`, seite: null }))];
+  return { verknuepfbar: !verknuepft.error, unterlagen };
 }
 
 export async function materialVerwendungenLaden(eingabe: MaterialRef) {
@@ -206,7 +220,9 @@ export async function materialVerwendungenLaden(eingabe: MaterialRef) {
     supabase.from("material_paket_element").select("paket_id").eq("art", ref.art).eq("material_id", ref.id),
     supabase.from("material_freigabe").select("chat_id", { count: "exact", head: true }).eq("art", ref.art).eq("material_id", ref.id),
   ]);
-  if (links.error || pakete.error || rechte.error) throw new Error("Verwendungen konnten nicht geladen werden.");
+  if (links.error || [pakete.error, rechte.error].some((e) => e && !tabelleFehlt(e))) {
+    throw new Error("Verwendungen konnten nicht geladen werden.");
+  }
   const paketIds = (pakete.data ?? []).map((p) => p.paket_id);
   const [paketNamen, verknuepfungen] = await Promise.all([
     paketIds.length ? supabase.from("material_paket").select("id, titel").in("id", paketIds).order("titel") : Promise.resolve({ data: [], error: null }),

@@ -2,6 +2,7 @@
 import "server-only";
 import type { Supabase } from "@/lib/ki/server";
 import { notizAbschnitte, type LernQuelle } from "@/lib/ki/lernraum";
+import { pdfTextFuerStudio } from "@/lib/pdf-reader/index-server";
 
 export type QuellenEintrag = {
   art: "pdf" | "notiz";
@@ -113,12 +114,12 @@ export async function studioQuellen(
 ): Promise<{ quellen: LernQuelle[]; bevorzugt: { quelle: number; seiten: number[] }[]; fehlend: string[] }> {
   const eintraege: QuellenEintrag[] = [];
   const seitenWunsch = new Map<string, number>();
+  const offenePdfs = new Set([kontext.objekt, kontext.zweite].flatMap((ref) => ref?.art === "pdf" ? [ref.id] : []));
   const pdfDazu = async (id: string, seite?: number | null) => {
     if (eintraege.some((e) => e.id === id)) return;
     const { data } = await supabase.from("datei").select("id, name, geaendert_am, mime_typ").eq("id", id).maybeSingle();
     if (!data || data.mime_typ !== "application/pdf") return;
-    const { count } = await supabase.from("quelle_seite").select("seite", { count: "exact", head: true }).eq("datei_id", id);
-    eintraege.push({ art: "pdf", id, titel: data.name, herkunft: "extra", aktiv: true, seiten: count ?? 0, geaendertAm: data.geaendert_am });
+    eintraege.push({ art: "pdf", id, titel: data.name, herkunft: "extra", aktiv: true, seiten: 0, geaendertAm: data.geaendert_am });
     if (seite) seitenWunsch.set(id, seite);
   };
   const notizDazu = async (id: string) => {
@@ -141,12 +142,22 @@ export async function studioQuellen(
     const { data: raum } = await supabase.from("lernraum").select("id").eq("fach_id", kontext.fachId).maybeSingle();
     if (raum) for (const q of await quellenListe(supabase, raum.id, kontext.fachId)) if (q.aktiv && !eintraege.some((e) => e.id === q.id)) eintraege.push(q);
   }
-  const quellen = await quellenTexte(supabase, eintraege);
+  const gelesen = await quellenTexte(supabase, eintraege);
+  const fehlend: string[] = [];
+  const quellen: LernQuelle[] = [];
+  for (const quelle of gelesen) {
+    let abschnitte = quelle.abschnitte.filter((a) => a.text.trim());
+    if (!abschnitte.length && quelle.art === "pdf" && offenePdfs.has(quelle.id)) {
+      abschnitte = await pdfTextFuerStudio(supabase, quelle.id, seitenWunsch.get(quelle.id)).catch(() => []);
+    }
+    if (abschnitte.length) quellen.push({ ...quelle, abschnitte, nr: quellen.length + 1 });
+    else if (quelle.art === "pdf") fehlend.push(quelle.titel);
+  }
   const bevorzugt = quellen
     .filter((q) => seitenWunsch.has(q.id))
     .map((q) => {
       const s = seitenWunsch.get(q.id)!;
       return { quelle: q.nr, seiten: [s, s - 1, s + 1].filter((x) => x >= 1) };
     });
-  return { quellen, bevorzugt, fehlend: eintraege.filter((e) => e.art === "pdf" && e.seiten === 0).map((e) => e.titel) };
+  return { quellen, bevorzugt, fehlend };
 }

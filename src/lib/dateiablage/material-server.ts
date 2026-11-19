@@ -6,6 +6,9 @@ import { materialPfad, materialRef, type HubMaterial, type MaterialArt, type Mat
 import { pdfPfad } from "@/lib/pdf-reader/fundstelle";
 import { markdownAlsText } from "@/lib/markdown-text";
 import { folienLesen } from "@/lib/praesentationen/folien";
+import { pdfTextAnfang } from "@/lib/pdf-reader/index-server";
+import { powerpointText, POWERPOINT_MIME } from "./office-inhalt";
+import { ablageDateiname } from "./weblink";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 type Zeile = { id: string; fach_id: string | null; user_id: string; erstellt_am: string } & ({ titel: string } | { name: string });
@@ -48,7 +51,7 @@ export type MaterialQuelle = MaterialRef & {
 };
 
 export async function materialQuelle(
-  supabase: Supabase, referenz: MaterialRef, seitenLimit = 80,
+  supabase: Supabase, referenz: MaterialRef, seitenLimit = 80, pdfLeseprobe = false,
 ): Promise<MaterialQuelle | null> {
   const geprueft = materialRef(referenz);
   if (!geprueft) return null;
@@ -71,13 +74,21 @@ export async function materialQuelle(
   const id = ref.id;
   switch (ref.art) {
     case "datei": {
-      const { data } = await supabase.from("datei").select("name, fach_id, erstellt_am, mime_typ").eq("id", id).maybeSingle();
+      const { data } = await supabase.from("datei").select("name, fach_id, erstellt_am, mime_typ, speicher_pfad").eq("id", id).maybeSingle();
       if (!data) return null;
       const pdf = data.mime_typ === "application/pdf";
-      const { data: seiten } = pdf
-        ? await supabase.from("quelle_seite").select("seite, text").eq("datei_id", id).order("seite").limit(seitenLimit)
-        : { data: [] };
-      return quelle(data, data.name, [], pdf, seiten ?? []);
+      if (seitenLimit === 0) return quelle(data, ablageDateiname(data), [], pdf);
+      if (data.mime_typ === POWERPOINT_MIME) {
+        const { data: blob } = await supabase.storage.from("dateiablage").download(data.speicher_pfad);
+        return quelle(data, ablageDateiname(data), [], false, blob ? await powerpointText(blob, seitenLimit) : []);
+      }
+      if (!pdf) return quelle(data, ablageDateiname(data));
+      const { data: seiten } = await supabase.from("quelle_seite").select("seite, text")
+        .eq("datei_id", id).order("seite").limit(seitenLimit);
+      const auszug = !seiten?.some((s) => s.text.trim()) && pdfLeseprobe
+        ? await pdfTextAnfang(supabase, data.speicher_pfad, seitenLimit).catch(() => [])
+        : seiten ?? [];
+      return quelle(data, ablageDateiname(data), [], true, auszug);
     }
     case "notiz": {
       const { data } = await supabase.from("notiz").select("titel, fach_id, erstellt_am, inhalt").eq("id", id).maybeSingle();

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { fachZuordnungen } from "@/lib/dateiablage/material";
+import { fachZuordnungen, type MaterialFachZuordnung } from "@/lib/dateiablage/material";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
 import { hubMaterialLaden } from "@/lib/dateiablage/material-server";
 import { createClient } from "@/lib/supabase/server";
@@ -39,8 +39,11 @@ export default async function DateiablageSeite() {
   if (error || fachFehler) throw new Error("Die Dateiablage konnte nicht geladen werden.");
 
   const liste = dateien ?? [];
-  if (zuordnung.error && !tabelleFehlt(zuordnung.error)) throw new Error("Fachzuordnungen konnten nicht geladen werden.");
-  const zuordnungen = zuordnung.data ?? [];
+  const basisZuordnung = zuordnung.error?.message.includes("thema_id") && tabelleFehlt(zuordnung.error)
+    ? await supabase.from("material_ablage_fach").select("art, material_id, fach_id, ausgeblendet")
+    : zuordnung;
+  if (basisZuordnung.error && !tabelleFehlt(basisZuordnung.error)) throw new Error("Fachzuordnungen konnten nicht geladen werden.");
+  const zuordnungen: MaterialFachZuordnung[] = basisZuordnung.data ?? [];
   const belegteFaecher = new Set([
     ...liste.flatMap((d) => fachZuordnungen(d.fach_id, zuordnungen.filter((z) => z.art === "datei" && z.material_id === d.id))),
     ...material.flatMap((m) => fachZuordnungen(m.fachId, zuordnungen.filter((z) => z.art === m.art && z.material_id === m.id))),
@@ -54,7 +57,7 @@ export default async function DateiablageSeite() {
 
   return (
     <Suspense fallback={null}>
-      <Dateiablage userId={user.id} initialDateien={liste} material={material} themen={themen.data ?? []} info={info.data ?? []} workflow={!themen.error && !info.error} freigaben={!freigabeTabellen.error} ki={kiKonfiguriert()} pdfStand={pdfStand.data ?? []} zuordnungen={zuordnungen} mehrfachVerfuegbar={!zuordnung.error} ordner={ordner} speicherBelegt={belegung.data} limit={SPEICHER_LIMIT_BYTES} />
+      <Dateiablage userId={user.id} initialDateien={liste} material={material} themen={themen.data ?? []} info={info.data ?? []} workflow={!themen.error && !info.error} freigaben={!freigabeTabellen.error} ki={kiKonfiguriert()} pdfStand={pdfStand.data ?? []} zuordnungen={zuordnungen} mehrfachVerfuegbar={!basisZuordnung.error} ordner={ordner} speicherBelegt={belegung.data} limit={SPEICHER_LIMIT_BYTES} />
     </Suspense>
   );
 }

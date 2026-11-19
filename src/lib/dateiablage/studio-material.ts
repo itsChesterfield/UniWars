@@ -6,6 +6,7 @@ import { berlinDatum } from "@/lib/zeit";
 import { fachZuordnungen, materialRef, type MaterialRef } from "./material";
 import { hubMaterialLaden, materialQuelle } from "./material-server";
 import { aktuelleMaterialfolge } from "./aktueller-stoff";
+import { pdfTextFuerStudio } from "@/lib/pdf-reader/index-server";
 
 const key = (r: MaterialRef) => `${r.art}:${r.id}`;
 
@@ -13,9 +14,14 @@ export async function materialFuerStudio(supabase: Supabase, refs: MaterialRef[]
   const gelesen = await Promise.all(refs.map((ref) => materialQuelle(supabase, ref, Math.min(100, Math.ceil(240 / refs.length)))));
   const quellen: LernQuelle[] = [];
   const fehlend: string[] = [];
+  let pdfLeseproben = 0;
   for (const q of gelesen) {
     if (!q) continue;
-    const abschnitte = q.abschnitte.filter((teil) => teil.text.trim());
+    let abschnitte = q.abschnitte.filter((teil) => teil.text.trim());
+    if (!abschnitte.length && q.istPdf && pdfLeseproben < 2) {
+      pdfLeseproben++;
+      abschnitte = await pdfTextFuerStudio(supabase, q.id).catch(() => []);
+    }
     if (!abschnitte.length) { fehlend.push(q.titel); continue; }
     quellen.push({ nr: quellen.length + 1, art: q.istPdf ? "pdf" : "notiz", id: q.id, titel: q.titel, href: q.href, materialArt: q.art, abschnitte });
   }

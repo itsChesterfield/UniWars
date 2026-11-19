@@ -9,6 +9,7 @@ import { ZITAT_DRAG_TYP, quellenAngabe, zitatLesen, type Zitat } from "@/lib/get
 import { istPdfName, zielText } from "@/lib/notizen/wikilinks";
 import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
 import { track } from "@/lib/analytics";
+import { pdfLinkLesen, pdfPfad } from "@/lib/pdf-reader/fundstelle";
 
 /** Gezogene PDF-Markierung: kursives Zitat + Verlinkung auf die PDF-Seite (bzw. Quelle als Text). */
 function zitatInhalt(z: Zitat) {
@@ -116,6 +117,16 @@ export function NotizEditorFlaeche({
           }
           return false;
         },
+      },
+      handlePaste: (_view, event) => {
+        const roh = event.clipboardData?.getData("text/plain").trim();
+        const e = editorRef.current;
+        if (!roh?.startsWith("[") || !e) return false;
+        const fundstelle = pdfLinkLesen(roh, window.location.origin);
+        if (!fundstelle) return false;
+        const titel = roh.slice(1, roh.lastIndexOf("](")).replace(/\\([\[\]])/g, "$1");
+        const href = pdfPfad(fundstelle.id, fundstelle.seite);
+        return e.commands.insertContent({ type: "text", text: titel, marks: [{ type: "link", attrs: { href } }] });
       },
       // Markierung aus dem PDF Reader hier ablegen → Zitat mit Link auf die Seite
       handleDrop: (view, event) => {

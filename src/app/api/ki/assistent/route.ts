@@ -231,7 +231,12 @@ export async function POST(request: Request) {
         kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
         kontext.objekt?.art === "pdf" && kontext.seite ? `- Der Nutzer ist in der PDF gerade auf Seite ${kontext.seite}.` : "",
         zweitesObjekt ? `- Daneben (geteilte Ansicht) offen: ${zweitesObjekt.titel} (${zweitesObjekt.art})` : "",
-        material.fehlend.length ? `- Noch nicht eingelesen (Text fehlt): ${material.fehlend.join(", ")}` : "",
+        material.fehlend.length
+          ? `Für diese Unterlagen liegt kein lesbarer Text vor. Sag das offen, wenn danach gefragt wird. Rufe für dieselbe Unterlage nicht wiederholt ein Lese-Werkzeug auf. Unterlagen: ${einbetten(material.fehlend.join("\n"), "quelle")}`
+          : "",
+        material.quellen.some((q) => q.art === "pdf")
+          ? "Beantworte Fragen zur geöffneten PDF direkt aus den bereitgestellten Auszügen. Falls nur ein Teil der PDF vorliegt, nenne die Grundlage deiner Antwort."
+          : "",
         kontext.karte ? `Gerade gezeigte Karteikarte:\n${einbetten(`Vorderseite: ${kontext.karte.vorderseite}\nRückseite: ${kontext.karte.rueckseite}`, "quelle")}` : "",
         kontext.markiert ? `Vom Nutzer markierter Text (darauf bezieht sich die Frage vermutlich):\n${einbetten(kontext.markiert, "quelle")}` : "",
         `Persönlichkeit: ${PERSOENLICHKEITEN[profil.persoenlichkeit].anweisung}`,
@@ -266,7 +271,8 @@ export async function POST(request: Request) {
       const einfach =
         absicht.modus === "plaudern" ||
         (!material.quellen.length && !kontext.markiert && frage.length < 140 && /^(bitte\s+)?(leg|erstell|trag|öffne|oeffne|zeig|hak|verschieb|erinner|merk|vergiss|notier|füg|fueg)/i.test(frage.trim()));
-      return { profil, quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens, gross, einfach, zeichen: stoff.zeichen };
+      const pdfKontext = kontext.objekt?.art === "pdf" || kontext.zweite?.art === "pdf" || material.quellen.some((q) => q.art === "pdf");
+      return { profil, quellenInfo, karten, sammlung, werkzeuge, nachrichten, maxTokens, gross, einfach, pdfKontext, zeichen: stoff.zeichen };
     };
 
     // Nach der Antwort (der Nutzer wartet nicht mehr): ältere Nachrichten zusammenfassen, Gedächtnis aufräumen
@@ -323,6 +329,7 @@ export async function POST(request: Request) {
             optionen: { maxTokens, temperatur: 0.5, signal: abbruch.signal, timeoutMs: v.zeichen > 150_000 ? 90_000 : 45_000 },
             nachrichten,
             werkzeuge,
+            letzteRundeOhneWerkzeuge: v.pdfKontext,
           })) {
             if (e.typ === "status") senden({ typ: "status", text: e.text });
             else if (e.typ === "text") {

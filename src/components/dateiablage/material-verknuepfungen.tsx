@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { materialAmZielLaden, materialVerknuepfen, materialVerknuepfungLoesen, materialVerwendungenLaden } from "@/app/(hubs)/dateiablage/workflow-actions";
 import type { MaterialRef, MaterialZiel } from "@/lib/dateiablage/material";
+import { pdfLinkLesen } from "@/lib/pdf-reader/fundstelle";
 import { MaterialAuswahl, suchMaterial, suchZiel } from "./material-auswahl";
 import { MaterialDialog } from "./material-dialog";
 
 export function MaterialAmZiel({ ziel }: { ziel: MaterialZiel }) {
   const [offen, setOffen] = useState(false);
-  const [daten, setDaten] = useState<Awaited<ReturnType<typeof materialAmZielLaden>>>([]);
+  const [daten, setDaten] = useState<Awaited<ReturnType<typeof materialAmZielLaden>> | null>(null);
+  const [pdfLink, setPdfLink] = useState("");
   const [fehler, setFehler] = useState("");
   const [wartet, starten] = useTransition();
   const { art, id } = ziel;
@@ -28,6 +30,7 @@ export function MaterialAmZiel({ ziel }: { ziel: MaterialZiel }) {
       try {
         await aktion();
         setDaten(await materialAmZielLaden(ziel));
+        setPdfLink("");
       } catch {
         setFehler("Die Verknüpfung konnte nicht gespeichert werden.");
       }
@@ -37,10 +40,11 @@ export function MaterialAmZiel({ ziel }: { ziel: MaterialZiel }) {
     <section className="detail-abschnitt" aria-label="Unterlagen">
       <div className="detail-abschnitt-kopf">
         <h3 className="aufgaben-untertitel">Unterlagen</h3>
-        <button className="knopf leise klein" type="button" onClick={() => setOffen(true)}>Unterlage hinzufügen</button>
+        {daten?.verknuepfbar && <button className="knopf leise klein" type="button" onClick={() => setOffen(true)}>Unterlage hinzufügen</button>}
       </div>
-      {fehler && <p role="alert">{fehler}</p>}
-      <ul className="dat-workflow-liste">{daten.map((d) => (
+      {fehler && !offen && <p role="alert">{fehler}</p>}
+      {daten && !daten.verknuepfbar && <p className="muted">Weitere Unterlagen können nach dem Datenbankupdate verknüpft werden.</p>}
+      <ul className="dat-workflow-liste">{daten?.unterlagen.map((d) => (
         <li key={d.id ?? d.zielId}>
           <Link href={d.href}>{d.titel}{d.seite ? ` · Seite ${d.seite}` : ""}</Link>
           {d.id && <button type="button" className="knopf leise klein" disabled={wartet} onClick={() => aktualisieren(() => materialVerknuepfungLoesen(d.id!))}>Verknüpfung lösen</button>}
@@ -48,6 +52,20 @@ export function MaterialAmZiel({ ziel }: { ziel: MaterialZiel }) {
       ))}</ul>
       {offen && <MaterialDialog titel="Unterlage hinzufügen" schliessen={() => setOffen(false)}>
         {fehler && <p role="alert">{fehler}</p>}
+        <form className="dat-workflow-feld" onSubmit={(e) => {
+          e.preventDefault();
+          const fundstelle = pdfLinkLesen(pdfLink, window.location.origin);
+          if (!fundstelle) {
+            setFehler("Füge einen UniVerse-Link zu einer PDF-Seite ein.");
+            return;
+          }
+          aktualisieren(() => materialVerknuepfen({ art: "datei", id: fundstelle.id }, ziel, fundstelle.seite));
+        }}>
+          <label className="dat-workflow-feld">PDF-Seitenlink
+            <input className="field" value={pdfLink} onChange={(e) => setPdfLink(e.target.value)} maxLength={2000} />
+          </label>
+          <button className="knopf leise klein" disabled={wartet || !pdfLink.trim()}>Link hinzufügen</button>
+        </form>
         <MaterialAuswahl modus="unterlagen" gesperrt={wartet} waehlen={(t) => {
           const material = suchMaterial(t);
           if (material) aktualisieren(() => materialVerknuepfen(material.ref, ziel, material.seite));

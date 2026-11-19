@@ -21,3 +21,20 @@ export function pdfMarkdownLink(titel: string, id: string, seite: number, urspru
   const label = titel.replaceAll("[", "\\[").replaceAll("]", "\\]").replace(/[\r\n]+/g, " ");
   return `[${label}, S. ${seite}](${ursprung}${pdfPfad(id, seite)})`;
 }
+
+
+export function pdfLinkLesen(eingabe: string, ursprung: string): { id: string; seite: number } | null {
+  if (eingabe.length > 4096) return null;
+  const text = eingabe.trim();
+  const markdown = /^\[.+\]\(([^\s()]+)\)$/.exec(text);
+  const link = markdown?.[1] ?? text;
+  try {
+    const url = new URL(link, ursprung);
+    if (url.origin !== ursprung || url.username || url.password) return null;
+    const treffer = /^\/pdf-reader\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i.exec(url.pathname);
+    const seite = Number(url.searchParams.get("seite"));
+    return treffer && Number.isSafeInteger(seite) && seite > 0 && seite <= 100000 ? { id: treffer[1], seite } : null;
+  } catch {
+    return null;
+  }
+}

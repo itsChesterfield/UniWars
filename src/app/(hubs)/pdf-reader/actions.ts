@@ -20,7 +20,10 @@ export async function pdfStandSpeichern(dateiId: string, stand: { letzteSeite?: 
   if (stand.lesezeichen !== undefined) {
     zeile.lesezeichen = [...new Set(stand.lesezeichen.map((s) => Math.floor(s)).filter((s) => s >= 1))].sort((a, b) => a - b).slice(0, 500);
   }
-  const { error } = await supabase.from("pdf_stand").upsert(zeile, { onConflict: "datei_id,user_id" });
+  let { error } = await supabase.from("pdf_stand").upsert(zeile, { onConflict: "datei_id,user_id" });
+  if (error?.code === "42P10") {
+    ({ error } = await supabase.from("pdf_stand").upsert(zeile, { onConflict: "datei_id" }));
+  }
   if (error) throw new Error(error.message);
 }
 

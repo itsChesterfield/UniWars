@@ -55,6 +55,7 @@ export async function* agentLauf({
   nachrichten,
   werkzeuge,
   maxRunden = MAX_RUNDEN,
+  letzteRundeOhneWerkzeuge = false,
 }: {
   rufen: ModellAufruf;
   /** Modell-Optionen ohne Nachrichten/Werkzeuge (System-Prompt gehört in `nachrichten`) */
@@ -62,6 +63,7 @@ export async function* agentLauf({
   nachrichten: Nachricht[];
   werkzeuge: Werkzeug[];
   maxRunden?: number;
+  letzteRundeOhneWerkzeuge?: boolean;
 }): AsyncGenerator<AgentEreignis> {
   const verlauf = [...nachrichten];
   const neue: Nachricht[] = [];
@@ -81,13 +83,14 @@ export async function* agentLauf({
     let aufrufe: WerkzeugAufruf[] = [];
     let abgebrochen = false;
     try {
-      for await (const e of rufen({ ...optionen, nachrichten: verlauf, werkzeuge: definitionen })) {
+      const angebot = letzteRundeOhneWerkzeuge && runde === maxRunden ? [] : definitionen;
+      for await (const e of rufen({ ...optionen, nachrichten: verlauf, werkzeuge: angebot })) {
         if (e.typ === "text") {
           text += e.text;
           irgendwasGezeigt = true;
           yield e;
         } else if (e.typ === "werkzeuge") {
-          aufrufe = e.aufrufe;
+          if (angebot.length || !letzteRundeOhneWerkzeuge) aufrufe = e.aufrufe;
         } else if (e.typ === "fehler") {
           abgebrochen = true;
           yield e;

@@ -1,9 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { MATERIAL_ARTEN, istMaterialId, materialRef } from "@/lib/dateiablage/material";
+import { fachZuordnungen, MATERIAL_ARTEN, istMaterialId, materialRef } from "@/lib/dateiablage/material";
 import { materialQuelle } from "@/lib/dateiablage/material-server";
 import { pdfAusschnitt, pdfPfad } from "@/lib/pdf-reader/fundstelle";
+import { ablageDateiname, istWebLink } from "@/lib/dateiablage/weblink";
 import type { SuchTreffer } from "@/lib/befehle";
 
 /** Für ilike: % und _ wörtlich nehmen */
@@ -18,7 +19,7 @@ function datumKurz(iso: string | null | undefined): string {
 }
 
 /** Strg+O: alles durchsuchen (nur eigene bzw. geteilte Daten – RLS), je Art höchstens 6 Treffer */
-export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
+export async function allesSuchen(eingabe: string, eigeneUnterlagen = false): Promise<SuchTreffer[]> {
   const q = String(eingabe ?? "").trim().slice(0, 100);
   if (q.length < 2) return [];
   const supabase = await createClient();
@@ -30,31 +31,33 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   // PostgREST-or()-Filter verträgt keine Kommas/Klammern im Suchbegriff
   const sicher = muster(q.replace(/[,()]/g, " "));
   const n = 6;
+  const eigene = <T extends { eq: (spalte: "user_id", id: string) => T }>(abfrage: T): T =>
+    eigeneUnterlagen ? abfrage.eq("user_id", user.id) : abfrage;
 
   const [pdfs, dateien, notizen, stapel, quizze, podcasts, deadlines, pruefungen, todos, faecher, dokumente, tabellen, praesentationen, mindmaps, whiteboards, transkripte, literatur, seiten, karten, noten, titelTreffer] =
     await Promise.all([
-      supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf").ilike("name", m).limit(n),
-      supabase.from("datei").select("id, name, mime_typ").neq("mime_typ", "application/pdf").ilike("name", m).limit(n),
-      supabase.from("notiz").select("id, titel").or(`titel.ilike.${sicher},inhalt.ilike.${sicher}`).order("geaendert_am", { ascending: false }).limit(n),
-      supabase.from("kk_stapel").select("id, name").ilike("name", m).limit(n),
-      supabase.from("quiz").select("id, titel").ilike("titel", m).limit(n),
-      supabase.from("podcast").select("id, titel").ilike("titel", m).limit(n),
+      eigene(supabase.from("datei").select("id, name")).eq("mime_typ", "application/pdf").ilike("name", m).limit(n),
+      eigene(supabase.from("datei").select("id, name, mime_typ, speicher_pfad")).neq("mime_typ", "application/pdf").ilike("name", m).limit(n),
+      eigene(supabase.from("notiz").select("id, titel")).or(`titel.ilike.${sicher},inhalt.ilike.${sicher}`).order("geaendert_am", { ascending: false }).limit(n),
+      eigene(supabase.from("kk_stapel").select("id, name")).ilike("name", m).limit(n),
+      eigene(supabase.from("quiz").select("id, titel")).ilike("titel", m).limit(n),
+      eigene(supabase.from("podcast").select("id, titel")).ilike("titel", m).limit(n),
       supabase.from("deadline").select("id, titel, faellig_am, erledigt").ilike("titel", m).order("faellig_am", { ascending: false }).limit(n),
       supabase.from("pruefung").select("id, titel, datum").ilike("titel", m).order("datum", { ascending: false }).limit(n),
       supabase.from("todo").select("id, titel, erledigt").ilike("titel", m).limit(n),
       supabase.from("fach").select("id, name").ilike("name", m).limit(n),
-      supabase.from("dokument").select("id, titel").ilike("titel", m).limit(n),
-      supabase.from("tabelle").select("id, titel").ilike("titel", m).limit(n),
-      supabase.from("praesentation").select("id, titel").ilike("titel", m).limit(n),
-      supabase.from("mindmap").select("id, name").ilike("name", m).limit(n),
-      supabase.from("whiteboard").select("id, name").ilike("name", m).limit(n),
-      supabase.from("transkript").select("id, titel").ilike("titel", m).limit(n),
-      supabase.from("literatur_quelle").select("id, titel").ilike("titel", m).limit(n),
+      eigene(supabase.from("dokument").select("id, titel")).ilike("titel", m).limit(n),
+      eigene(supabase.from("tabelle").select("id, titel")).ilike("titel", m).limit(n),
+      eigene(supabase.from("praesentation").select("id, titel")).ilike("titel", m).limit(n),
+      eigene(supabase.from("mindmap").select("id, name")).ilike("name", m).limit(n),
+      eigene(supabase.from("whiteboard").select("id, name")).ilike("name", m).limit(n),
+      eigene(supabase.from("transkript").select("id, titel")).ilike("titel", m).limit(n),
+      eigene(supabase.from("literatur_quelle").select("id, titel")).ilike("titel", m).limit(n),
       // Volltext in eingelesenen PDF-Seiten
-      q.length >= 3 ? supabase.from("quelle_seite").select("datei_id, seite, text").ilike("text", m).limit(8) : Promise.resolve({ data: [] as { datei_id: string; seite: number; text: string }[] }),
+      q.length >= 3 ? eigene(supabase.from("quelle_seite").select("datei_id, seite, text")).ilike("text", m).limit(8) : Promise.resolve({ data: [] as { datei_id: string; seite: number; text: string }[] }),
       supabase.from("kk_karte").select("id, stapel_id, vorderseite").or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`).limit(4),
       supabase.from("note").select("id, titel").ilike("titel", m).limit(4),
-      supabase.from("material_ablage_info").select("art, material_id").is("papierkorb_am", null).ilike("anzeigetitel", m).limit(12),
+      eigene(supabase.from("material_ablage_info").select("art, material_id")).is("papierkorb_am", null).ilike("anzeigetitel", m).limit(12),
     ]);
 
   const t: SuchTreffer[] = [];
@@ -77,7 +80,7 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung?id=${x.id}`, icon: "📚", info: "Literatur" });
   for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "🃏", info: "Karteikarte" });
   for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "💯", info: "Note" });
-  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: x.name, href: `/dateiablage/oeffnen/${x.id}`, icon: "📎", info: "Datei" });
+  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: ablageDateiname(x), href: `/dateiablage/oeffnen/${x.id}`, icon: "📎", info: istWebLink(x) ? "Weblink" : "Datei" });
 
   const eigeneTitel = await Promise.all((titelTreffer.data ?? []).map((x) => {
     const ref = materialRef({ art: x.art, id: x.material_id });
@@ -93,6 +96,15 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
       info: eintrag.istPdf ? "PDF" : eintrag.art === "datei" ? "Datei" : MATERIAL_ARTEN[eintrag.art].name,
     });
   }
+
+  const materialTreffer = t.flatMap((treffer) => {
+    const ref = materialRef({ art: treffer.art === "pdf" ? "datei" : treffer.art, id: treffer.id });
+    return ref ? [{ ref, treffer }] : [];
+  });
+  const materialIds = [...new Set(materialTreffer.map(({ ref }) => ref.id))];
+  const anzeigetitelLaden = materialIds.length
+    ? supabase.from("material_ablage_info").select("art, material_id, anzeigetitel").in("material_id", materialIds).then(({ data }) => data ?? [])
+    : Promise.resolve([]);
 
   // Fundstellen im Text der PDFs (Titel nachladen)
   const seitenTreffer = seiten.data ?? [];
@@ -117,11 +129,15 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
         titel: `${titelMap.get(datei.id) ?? datei.name} · S. ${s.seite}`,
         href: pdfPfad(s.datei_id, s.seite),
         icon: "🔎",
-        info: (extras ?? []).filter((e) => e.material_id === datei.id && !e.ausgeblendet).map((e) => fachMap.get(e.fach_id)).filter(Boolean).join(", ")
-          || ((extras ?? []).some((e) => e.material_id === datei.id && e.fach_id === datei.fach_id && e.ausgeblendet) ? null : datei.fach?.name) || "Ohne Fach",
+        info: fachZuordnungen(datei.fach_id, (extras ?? []).filter((e) => e.material_id === datei.id).map((e) => ({ ...e, art: "datei" })))
+          .map((id) => fachMap.get(id) ?? (id === datei.fach_id ? datei.fach?.name : null)).filter(Boolean).join(", ") || "Ohne Fach",
         ausschnitt,
       });
     }
+  }
+  const anzeigetitel = new Map((await anzeigetitelLaden).map((zeile) => [`${zeile.art}:${zeile.material_id}`, zeile.anzeigetitel]));
+  for (const { ref, treffer } of materialTreffer) {
+    treffer.titel = anzeigetitel.get(`${ref.art}:${ref.id}`) ?? treffer.titel;
   }
   return t;
 }
