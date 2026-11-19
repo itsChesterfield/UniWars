@@ -8,6 +8,7 @@ export function WhiteboardListe({ eintraege, faecher }: { eintraege: ObjektEintr
   return (
     <ObjektListe
       hub="Whiteboard"
+      einheit={["Whiteboard", "Whiteboards"]}
       untertitel="Frei skizzieren – Rechenwege, Diagramme, Ideen."
       icon="whiteboard"
       neuLabel="Neues Whiteboard"

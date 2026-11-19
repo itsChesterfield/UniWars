@@ -1,18 +1,9 @@
 import type { ReactNode } from "react";
-import { SteigText } from "@/components/bewegung/steig-text";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
 
-export function HubKopf({ titel, untertitel, aktionen }: { titel: string; untertitel?: string; aktionen?: ReactNode }) {
-  return (
-    <header className="hub-kopf">
-      <div>
-        <h1>
-          <SteigText text={titel} schritt={22} />
-        </h1>
-        {untertitel && <p className="muted">{untertitel}</p>}
-      </div>
-      {aktionen && <div className="hub-kopf-aktionen">{aktionen}</div>}
-    </header>
-  );
+/** Seitenkopf der Bereiche, siehe `Bereichskopf` (Zahl, Lage-Satz, Aktionen wie im Hub). */
+export function HubKopf(props: Parameters<typeof Bereichskopf>[0]) {
+  return <Bereichskopf {...props} />;
 }
 
 /** ALL-07: Hinweistext + großer Button für den ersten Eintrag. */

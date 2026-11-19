@@ -19,6 +19,7 @@ export function PraesentationsListe({
     <>
       <ObjektListe
         hub="Präsentationen"
+        einheit={["Präsentation", "Präsentationen"]}
         untertitel="Einfache Referatsfolien – präsentieren im Vollbild oder als PDF exportieren."
         icon="praesentation"
         neuLabel="Neue Präsentation"

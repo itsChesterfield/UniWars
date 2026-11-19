@@ -5,6 +5,7 @@ import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { Icon } from "@/components/nav-icon";
 import { Einrichtung, Zustand } from "@/components/zustand";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
 
 export const metadata = { title: "Lernraum · UniVerse" };
 
@@ -24,12 +25,12 @@ export default async function LernraumUebersicht() {
 
   return (
     <>
-      <header className="seitenkopf">
-        <div>
-          <h1>Lernraum</h1>
-          <p>Pro Fach ein Raum: Studio antwortet aus deinen Skripten und Notizen, belegt jede Aussage und baut dir Lernzettel, Quiz und Karteikarten.</p>
-        </div>
-      </header>
+      <Bereichskopf
+        titel="Lernraum"
+        zahl={(faecher ?? []).length || undefined}
+        einheit={(faecher ?? []).length === 1 ? "Raum, einer pro Fach" : "Räume, einer pro Fach"}
+        untertitel="Studio antwortet aus deinen Skripten und Notizen, belegt jede Aussage und baut dir Lernzettel, Quiz und Karteikarten."
+      />
       {(faecher ?? []).length === 0 ? (
         <Zustand
           art="leer"
