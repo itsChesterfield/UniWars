@@ -66,12 +66,11 @@ export async function quelleSetzen(lernraumId: string, art: "pdf" | "notiz", id:
 }
 
 /** PDF-Text speichern (der Browser liest die Seiten mit pdf.js und schickt sie in Blöcken) */
-export async function quelleSeitenSpeichern(dateiId: string, seiten: { seite: number; text: string }[], ersterBlock: boolean) {
+export async function quelleSeitenSpeichern(dateiId: string, seiten: { seite: number; text: string }[]) {
   const { supabase, userId } = await nutzer();
   if (!Array.isArray(seiten) || seiten.length > 80) throw new Error("Zu viele Seiten auf einmal.");
   const { data: datei } = await supabase.from("datei").select("id, mime_typ").eq("id", dateiId).maybeSingle();
   if (!datei || datei.mime_typ !== "application/pdf") throw new Error("PDF nicht gefunden.");
-  if (ersterBlock) await supabase.from("quelle_seite").delete().eq("datei_id", dateiId);
   const zeilen = seiten
     .filter((s) => Number.isInteger(s.seite) && s.seite >= 1 && typeof s.text === "string")
     .map((s) => ({ datei_id: dateiId, user_id: userId, seite: s.seite, text: s.text.replace(/\s+/g, " ").trim().slice(0, 30000) }));

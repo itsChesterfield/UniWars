@@ -16,6 +16,8 @@ export type LernQuelle = {
   art: "pdf" | "notiz";
   id: string;
   titel: string;
+  href?: string;
+  materialArt?: string;
   /** PDF: Text je Seite; Notiz: Abschnitte als "Seiten" ohne Seitenzahl */
   abschnitte: { seite: number; text: string }[];
 };

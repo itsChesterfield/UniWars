@@ -1,5 +1,10 @@
 "use server";
 
+import { fachZuordnungenSpeichern } from "./zuordnung-actions";
+import { materialPapierkorb } from "./workflow-actions";
+import { istMaterialId } from "@/lib/dateiablage/material";
+import { after } from "next/server";
+import { pdfIndexieren } from "@/lib/pdf-reader/index-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -29,16 +34,28 @@ async function nutzer() {
 type Supabase = Awaited<ReturnType<typeof nutzer>>["supabase"];
 
 async function belegterSpeicher(supabase: Supabase): Promise<number> {
-  const { data, error } = await supabase.from("datei").select("groesse");
-  if (error) throw new Error(error.message);
-  return (data ?? []).reduce((summe, d) => summe + Number(d.groesse), 0);
+  const { data, error } = await supabase.rpc("material_speicherbelegung");
+  if (error) throw new Error("Der Speicherstand konnte nicht geladen werden.");
+  return Number(data ?? 0);
 }
 
 async function namenImOrdner(supabase: Supabase, fachId: string | null, ohneId?: string): Promise<string[]> {
-  let abfrage = supabase.from("datei").select("id, name");
-  abfrage = fachId ? abfrage.eq("fach_id", fachId) : abfrage.is("fach_id", null);
-  const { data } = await abfrage;
-  return (data ?? []).filter((d) => d.id !== ohneId).map((d) => d.name);
+  const { data, error } = await supabase.rpc("material_dateinamen", { p_fach: fachId, p_ohne: ohneId ?? null });
+  if (error) throw new Error("Die Dateinamen konnten nicht geladen werden.");
+  return data ?? [];
+}
+
+async function fachPruefen(supabase: Supabase, userId: string, fachId: string | null) {
+  if (fachId === null) return;
+  if (!istMaterialId(fachId)) throw new Error("Ungültiges Fach.");
+  const { data } = await supabase.from("fach").select("id").eq("id", fachId).eq("user_id", userId).maybeSingle();
+  if (!data) throw new Error("Ungültiges Fach.");
+}
+
+async function dateiAmSpeicherpfad(supabase: Supabase, userId: string, pfad: string) {
+  const { data, error } = await supabase.from("datei").select("*").eq("user_id", userId).eq("speicher_pfad", pfad).maybeSingle();
+  if (error) throw new Error("Die Datei konnte nicht geprüft werden.");
+  return data;
 }
 
 export type UploadTicket = { pfad: string; signedUrl: string; name: string; mime: string };
@@ -46,6 +63,8 @@ export type UploadTicket = { pfad: string; signedUrl: string; name: string; mime
 /** DAT-02 Schritt 1: prüfen und eine signierte Upload-Adresse holen (Upload läuft direkt zum Storage). */
 export async function uploadVorbereiten(eingabe: { name: string; groesse: number; fachId: string | null }): Promise<UploadTicket> {
   const { supabase, userId } = await nutzer();
+  if (!eingabe || typeof eingabe.name !== "string" || !Number.isSafeInteger(eingabe.groesse)) throw new Error("Ungültige Datei.");
+  await fachPruefen(supabase, userId, eingabe.fachId);
   const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
 
@@ -73,7 +92,12 @@ async function hochgeladeneGroesse(supabase: Supabase, pfad: string): Promise<nu
 /** DAT-02 Schritt 2: hochgeladene Datei eintragen. */
 export async function uploadAbschliessen(eingabe: { pfad: string; name: string; fachId: string | null }): Promise<Datei> {
   const { supabase, userId } = await nutzer();
-  if (!eingabe.pfad.startsWith(`${userId}/`)) throw new Error("Ungültiger Pfad");
+  if (!eingabe || typeof eingabe.pfad !== "string" || !eingabe.pfad.startsWith(`${userId}/`) || typeof eingabe.name !== "string") {
+    throw new Error("Ungültiger Upload.");
+  }
+  const vorhanden = await dateiAmSpeicherpfad(supabase, userId, eingabe.pfad);
+  if (vorhanden) return vorhanden;
+  await fachPruefen(supabase, userId, eingabe.fachId);
 
   const groesse = await hochgeladeneGroesse(supabase, eingabe.pfad);
   if (groesse === null) throw new Error("Upload nicht gefunden – bitte erneut versuchen.");
@@ -102,15 +126,30 @@ async function dateiEintragen(
         name,
         groesse: eingabe.groesse,
         mime_typ: eingabe.mime,
+        pdf_index_status: eingabe.mime === "application/pdf" ? "wartet" : null,
         speicher_pfad: eingabe.pfad,
       })
       .select()
       .single();
     if (!error) {
+      if (data.mime_typ === "application/pdf") {
+        after(async () => {
+          let status = "fertig";
+          try { await pdfIndexieren(supabase, data); }
+          catch {
+            status = "fehler";
+            console.error("[dateiablage] PDF-Text konnte nicht erfasst werden");
+          }
+          await supabase.from("datei").update({ pdf_index_status: status }).eq("id", data.id);
+          revalidatePath("/dateiablage");
+        });
+      }
       revalidatePath("/dateiablage");
       return data;
     }
     if (error.code === "23505") {
+      const vorhanden = await dateiAmSpeicherpfad(supabase, userId, eingabe.pfad);
+      if (vorhanden) return vorhanden;
       name = freierName(name, await namenImOrdner(supabase, eingabe.fachId));
       continue;
     }
@@ -133,6 +172,7 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
     const { supabase, userId } = await nutzer();
     const url = linkNormalisieren(eingabe.link);
     if (!url) return { ok: false, fehler: "Das ist kein gültiger Link. Kopiere die Adresse aus der Adresszeile deines Browsers (beginnt mit https://)." };
+    await fachPruefen(supabase, userId, eingabe.fachId);
 
     const geladen = await linkHerunterladen(url);
     const { name: vorschlag, mime } = dateiBestimmen(geladen);
@@ -156,7 +196,7 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
 /** Upload abgebrochen: Objekt wieder entfernen. */
 export async function uploadVerwerfen(pfad: string) {
   const { supabase, userId } = await nutzer();
-  if (!pfad.startsWith(`${userId}/`)) return;
+  if (typeof pfad !== "string" || !pfad.startsWith(`${userId}/`) || await dateiAmSpeicherpfad(supabase, userId, pfad)) return;
   await supabase.storage.from(BUCKET).remove([pfad]);
 }
 
@@ -179,7 +219,8 @@ export async function dateiUmbenennen(id: string, eingabe: string): Promise<Date
 
 /** DAT-06: Name wird bei Bedarf automatisch eindeutig gemacht. */
 export async function dateiVerschieben(id: string, fachId: string | null): Promise<Datei> {
-  const { supabase } = await nutzer();
+  const { supabase, userId } = await nutzer();
+  await fachPruefen(supabase, userId, fachId);
   const { data: datei, error: ladeFehler } = await supabase.from("datei").select("*").eq("id", id).single();
   if (ladeFehler) throw new Error(ladeFehler.message);
   const name = freierName(datei.name, await namenImOrdner(supabase, fachId, id));
@@ -206,29 +247,61 @@ export async function dateiVerwendung(id: string): Promise<{ anhaenge: number; q
 
 /** DAT-08: aus Storage und Datenbank entfernen. */
 export async function dateiLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { data: datei, error: ladeFehler } = await supabase.from("datei").select("speicher_pfad").eq("id", id).single();
-  if (ladeFehler) throw new Error(ladeFehler.message);
-  const { error } = await supabase.from("datei").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await supabase.storage.from(BUCKET).remove([datei.speicher_pfad]);
-  revalidatePath("/dateiablage");
-  revalidatePath("/");
+  await materialPapierkorb({ art: "datei", id }, true);
 }
 
-/** DAT-04 / DAT-07: kurzlebiger Link zum Ansehen oder Herunterladen. */
 export async function dateiLink(id: string, herunterladen = false): Promise<string> {
   const { supabase } = await nutzer();
-  const { data: datei, error: ladeFehler } = await supabase.from("datei").select("name, speicher_pfad").eq("id", id).single();
-  if (ladeFehler) throw new Error(ladeFehler.message);
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(datei.speicher_pfad, 600, herunterladen ? { download: datei.name } : undefined);
-  if (error) throw new Error(error.message);
-  return data.signedUrl;
+  if (!istMaterialId(id)) throw new Error("Datei nicht gefunden.");
+  const { data, error } = await supabase.from("datei").select("id").eq("id", id).maybeSingle();
+  if (error || !data) throw new Error("Datei nicht gefunden.");
+  return `/dateiablage/inhalt/${id}${herunterladen ? "?download=1" : ""}`;
 }
 
 export async function speicherStand(): Promise<{ belegt: number; limit: number }> {
   const { supabase } = await nutzer();
   return { belegt: await belegterSpeicher(supabase), limit: SPEICHER_LIMIT_BYTES };
+}
+
+export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null): Promise<{ id: string }> {
+  const { supabase, userId } = await nutzer();
+  if (!istMaterialId(nachrichtId) || (fachId !== null && !istMaterialId(fachId))) throw new Error("Ungültige Auswahl.");
+  const [nachricht, fach] = await Promise.all([
+    supabase.from("chat_nachricht").select("anhang, geloescht").eq("id", nachrichtId).maybeSingle(),
+    fachId ? supabase.from("fach").select("id").eq("id", fachId).eq("user_id", userId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const anhang = nachricht.data?.anhang as { typ?: string; id?: string; titel?: string; pfad?: string } | null;
+  if (nachricht.data?.geloescht || anhang?.typ !== "datei" || typeof anhang.pfad !== "string" || typeof anhang.titel !== "string" ||
+      (fachId && !fach.data)) throw new Error("Der Anhang ist nicht verfügbar.");
+  const eigenerEintrag = istMaterialId(anhang.id)
+    ? (await supabase.from("datei").select("id").eq("id", anhang.id).eq("user_id", userId).maybeSingle()).data
+    : null;
+  if (eigenerEintrag) {
+    if (fachId) await fachZuordnungenSpeichern([{ art: "datei", material_id: eigenerEintrag.id, fach_id: fachId, ausgeblendet: false }]);
+    return eigenerEintrag;
+  }
+  const { data, error } = await supabase.storage.from(BUCKET).download(anhang.pfad);
+  if (error || !data) throw new Error("Der Anhang konnte nicht geladen werden.");
+  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase));
+  if (!pruefung.ok) throw new Error(pruefung.fehler);
+  const name = freierName(anhang.titel, await namenImOrdner(supabase, fachId));
+  const pfad = `${userId}/chat/${crypto.randomUUID()}-${speicherName(name)}`;
+  const { error: uploadFehler } = await supabase.storage.from(BUCKET).upload(pfad, data, { contentType: pruefung.mime });
+  if (uploadFehler) throw new Error("Der Anhang konnte nicht abgelegt werden.");
+  return dateiEintragen(supabase, userId, { pfad, name, fachId, groesse: data.size, mime: pruefung.mime });
+}
+
+export async function ablageFaecherLaden() {
+  const { supabase, userId } = await nutzer();
+  const { data, error } = await supabase.from("fach").select("id, name").eq("user_id", userId).order("name");
+  if (error) throw new Error("Die Fächer konnten nicht geladen werden.");
+  return data ?? [];
+}
+
+export async function pdfIndexStatusLaden(ids: string[]) {
+  const { supabase } = await nutzer();
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > 80 || !ids.every(istMaterialId)) return [];
+  const { data, error } = await supabase.from("datei").select("id, pdf_index_status").in("id", ids);
+  if (error) throw new Error("Suchstatus konnte nicht geladen werden.");
+  return data ?? [];
 }

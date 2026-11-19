@@ -153,6 +153,8 @@ export function DashboardContent({
           banner={
             <NaechsterTermin deadlines={deadlines} pruefungen={pruefungen} faecher={faecher} />
           }
+          key={searchParams.get("vorlesung") ? "direkte-vorlesung" : "termine"}
+          startSegment={searchParams.get("vorlesung") ? "plan" : undefined}
           segments={[
             {
               key: "heute",

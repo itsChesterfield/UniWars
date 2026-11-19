@@ -1,5 +1,7 @@
 "use client";
 
+import { MaterialAmZiel } from "@/components/dateiablage/material-verknuepfungen";
+
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -310,6 +312,8 @@ export function DetailAnsicht({
               />
             )}
           </section>
+
+          <MaterialAmZiel key={`${zielTyp}:${zielId}`} ziel={{ art: zielTyp, id: zielId }} />
 
           <section className="detail-abschnitt" aria-labelledby="detail-anhaenge">
             <h3 id="detail-anhaenge" className="aufgaben-untertitel">Anhänge</h3>

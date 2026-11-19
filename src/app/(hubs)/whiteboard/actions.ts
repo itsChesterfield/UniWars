@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { elementeLesen, type Element } from "@/lib/whiteboard/elemente";
@@ -53,8 +55,6 @@ export async function whiteboardFachSetzen(id: string, fachId: string | null) {
 }
 
 export async function whiteboardLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { error } = await supabase.from("whiteboard").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await materialPapierkorb({ art: "whiteboard", id }, true);
   revalidatePath("/whiteboard");
 }

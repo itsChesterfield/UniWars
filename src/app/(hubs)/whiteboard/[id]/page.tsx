@@ -8,6 +8,8 @@ import { WhiteboardEditor } from "@/components/whiteboard/whiteboard-editor";
 export default async function WhiteboardEditorSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) notFound();
   const [{ data: w, error }, { data: faecher }] = await Promise.all([
     supabase.from("whiteboard").select("*").eq("id", id).maybeSingle(),
     supabase.from("fach").select("id, name, farbe").eq("aktiv", true).order("erstellt_am", { ascending: true }),
@@ -24,6 +26,7 @@ export default async function WhiteboardEditorSeite({ params }: { params: Promis
     <WhiteboardEditor
       key={w.id}
       id={w.id}
+      darfBilderEinfuegen={w.user_id === user.id}
       startName={w.name}
       startFachId={w.fach_id}
       startElemente={elementeLesen(w.daten)}

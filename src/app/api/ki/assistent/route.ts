@@ -20,6 +20,7 @@ import { kiFehlerAntwort } from "@/lib/ki/stream-antwort";
 import { lesewerkzeuge } from "@/lib/ki/werkzeuge/lesen";
 import { umfeldLaden } from "@/lib/ki/werkzeuge/vorschlagen";
 import { handlungswerkzeuge, type Sammlung } from "@/lib/ki/werkzeuge/handeln";
+import { crashkursFach, crashkursMaterial, materialFuerStudio } from "@/lib/dateiablage/studio-material";
 import { studioQuellen } from "@/lib/ki/lernraum-server";
 import { absichtSchaetzen, FORMAT, kontextBauen, MAX_KONTEXT_GANZ, PERSOENLICHKEITEN, profilLesen, profilText } from "@/lib/ki/lernraum";
 import { chatNochAktuell, STUDIO_SYSTEM, type Gemerkt } from "@/lib/ki/studio";
@@ -186,13 +187,20 @@ export async function POST(request: Request) {
 
     /** Alles laden, was das Modell braucht – läuft schon im Stream, damit sofort etwas zu sehen ist */
     const vorbereiten = async () => {
+      const istCrashkurs = !!kontext.crashkursFachId || (/crashkurs/i.test(frage) && /(?:zuletzt|letzte|verpasst)/i.test(frage));
+      const fachKurs = istCrashkurs ? await crashkursFach(supabase, frage, kontext.crashkursFachId ?? kontext.fachId) : null;
+      const kurs = fachKurs ? await crashkursMaterial(supabase, fachKurs.id, jetzt) : null;
+      const auswahl = kurs?.material ?? kontext.material ?? [];
+      const materialLaden = istCrashkurs || auswahl.length
+        ? materialFuerStudio(supabase, auswahl)
+        : studioQuellen(supabase, kontext);
       const offeneNotiz = kontext.objekt?.art === "notiz" ? kontext.objekt.id : kontext.zweite?.art === "notiz" ? kontext.zweite.id : null;
       const [objekt, zweitesObjekt, laufend, umfeld, material, { data: settings }, ueberPerson, lagebild, fachAusNotiz, fachAusPdf] = await Promise.all([
         objektTitel(supabase, kontext.objekt),
         objektTitel(supabase, kontext.zweite ? { art: kontext.zweite.art, id: kontext.zweite.id } : null),
         laufendeVorlesung(supabase, jetzt),
         umfeldLaden(supabase),
-        studioQuellen(supabase, kontext),
+        materialLaden,
         supabase.from("settings").select("ki_profil").eq("user_id", userId).maybeSingle(),
         persoenlichKontext(supabase, [kontext.markiert, frage].filter(Boolean).join(" "), kontext.fachId ?? null).catch(() => ""),
         lagebildText(supabase).catch(() => ""),
@@ -212,8 +220,14 @@ export async function POST(request: Request) {
         gross && absicht.ganz ? MAX_KONTEXT_GANZ : CHAT_KONTEXT,
         material.bevorzugt,
       );
-      const quellenInfo = material.quellen.map((q) => ({ nr: q.nr, art: q.art, id: q.id, titel: q.titel }));
+      const quellenInfo = material.quellen.map((q) => ({ nr: q.nr, art: q.art, id: q.id, titel: q.titel, href: q.href, materialArt: q.materialArt }));
       const zusatz = [
+        istCrashkurs ? (
+          !fachKurs ? "Für den Crashkurs ist das Fach offen. Frage nach dem Fach, bevor du Inhalte auswählst."
+            : !quellenInfo.length ? "Für diesen Crashkurs liegen keine lesbaren Unterlagen vor. Sage das klar und frage nach Material."
+            : `Erstelle zum Fach ${einbetten(fachKurs.name, "quelle")} einen kurzen Crashkurs mit Überblick, einem Beispiel und Übungsfragen. Grundlage sind ${kurs?.basis === "vorlesungen" ? "die letzten verknüpften Vorlesungen" : "die zuletzt hinzugefügten Unterlagen"}. Nenne diese Grundlage und setze Quellenbelege.`
+        ) : "",
+        !istCrashkurs && auswahl.length ? "Die ausgewählten Unterlagen bilden den gewünschten Kontext. Belege Aussagen aus diesen Unterlagen mit Q-Quellen." : "",
         kontextBlock({ jetzt, hub: kontext.hub, objekt, laufend }),
         kontext.objekt?.art === "pdf" && kontext.seite ? `- Der Nutzer ist in der PDF gerade auf Seite ${kontext.seite}.` : "",
         zweitesObjekt ? `- Daneben (geteilte Ansicht) offen: ${zweitesObjekt.titel} (${zweitesObjekt.art})` : "",
@@ -227,7 +241,7 @@ export async function POST(request: Request) {
         `Erklärweise: ${profilText(profil)}`,
         absicht.web ? "Der Nutzer möchte eine Recherche: nutze web_recherchieren." : "",
         quellenInfo.length
-          ? `Quellenliste:\n${quellenInfo.map((q) => `Q${q.nr}: ${q.titel} (${q.art === "pdf" ? "PDF" : "Notiz"})`).join("\n")}\n\n${MATERIAL_REGEL}\n\n${stoff.text}`
+          ? `Quellenliste:\n${quellenInfo.map((q) => `Q${q.nr}: ${q.titel} (${q.art === "pdf" ? "PDF" : q.materialArt ?? "Notiz"})`).join("\n")}\n\n${MATERIAL_REGEL}\n\n${stoff.text}`
           : "",
       ]
         .filter(Boolean)

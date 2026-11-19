@@ -147,6 +147,7 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
  * Der Name bleibt "Sidebar", damit beide Gerüste (Hubs und Zentraler Hub) sie unverändert einbinden.
  */
 export function Sidebar({
+  userId,
   name,
   email,
   avatarUrl = null,
@@ -154,6 +155,7 @@ export function Sidebar({
   symbolleiste,
   kiVerfuegbar = false,
 }: {
+  userId: string;
   /** Anzeigename (Nutzername) */
   name: string;
   email: string;
@@ -288,7 +290,7 @@ export function Sidebar({
           <AssistentStarter />
         </Suspense>
       )}
-      <Befehlspalette kiVerfuegbar={kiVerfuegbar} theme={theme} />
+      <Befehlspalette userId={userId} kiVerfuegbar={kiVerfuegbar} theme={theme} />
       <InaktivitaetsWaechter />
     </>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { positionLesen, positionMerken } from "@/lib/dateiablage/fortsetzen";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,10 +48,12 @@ const TEIL_TEXT: Record<TeilStatus, string> = {
 };
 
 export function TranskriptAnsicht({
+  userId,
   transkript,
   startStand,
   faecher,
 }: {
+  userId: string;
   transkript: Transkript;
   startStand: TranskriptStand;
   faecher: FachOption[];
@@ -208,13 +212,29 @@ export function TranskriptAnsicht({
 
   useEffect(() => {
     let ab = false;
-    void urlFuer(1).then((url) => {
-      if (!ab && url && player.current && !player.current.src) player.current.src = url;
+    const position = positionLesen(userId, transkript.id);
+    const teil = position?.art === "transkript" ? position.teil : 1;
+    const sekunde = position?.art === "transkript" ? position.sekunde : 0;
+    let beimLaden: (() => void) | undefined;
+    let audio: HTMLAudioElement | null = null;
+    void urlFuer(teil).then(async (url) => {
+      if (ab || !player.current || player.current.getAttribute("src")) return;
+      const adresse = url ?? await urlFuer(1);
+      if (ab || !adresse || !player.current) return;
+      audio = player.current;
+      const sprung = url ? sekunde : 0;
+      beimLaden = () => {
+        if (audio && sprung > 0) audio.currentTime = Math.min(sprung, Number.isFinite(audio.duration) ? audio.duration : sprung);
+      };
+      audio.addEventListener("loadedmetadata", beimLaden, { once: true });
+      setPlayerTeil(url ? teil : 1);
+      audio.src = adresse;
     });
     return () => {
       ab = true;
+      if (beimLaden) audio?.removeEventListener("loadedmetadata", beimLaden);
     };
-  }, [urlFuer]);
+  }, [urlFuer, userId, transkript.id]);
 
   async function springen(teil: number, start: number | null, abspielen: boolean) {
     const el = player.current;
@@ -238,6 +258,7 @@ export function TranskriptAnsicht({
 
   function zeitAktualisiert() {
     const t = player.current?.currentTime ?? 0;
+    if (t > 0) positionMerken(userId, transkript.id, { art: "transkript", teil: playerTeil, sekunde: Math.floor(t) });
     let gefunden = -1;
     absaetze.forEach((a, i) => {
       if (a.teil === playerTeil && a.start !== null && a.start <= t + 0.1) gefunden = i;

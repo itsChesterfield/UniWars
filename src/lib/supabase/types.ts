@@ -6,6 +6,22 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+type AblageTabelle<Row, Insert> = { Row: Row; Insert: Insert; Update: Partial<Row>; Relationships: [] };
+type AblageInfo = {
+  user_id: string; art: string; material_id: string; anzeigetitel: string | null;
+  papierkorb_am: string | null; papierkorb_titel: string | null;
+};
+type AblageThema = { id: string; user_id: string; fach_id: string; name: string; position: number };
+type AblageVerknuepfung = {
+  id: string; user_id: string; art: string; material_id: string; ziel_art: string;
+  ziel_id: string; termin_datum: string | null; seite: number | null;
+};
+
+type MaterialFreigabe = { user_id: string; empfaenger_id: string; chat_id: string; art: string; material_id: string; bearbeiten: boolean };
+type MaterialPaket = { id: string; user_id: string; chat_id: string; titel: string };
+type MaterialPaketElement = { paket_id: string; user_id: string; art: string; material_id: string };
+type MaterialPaketPflege = { paket_id: string; user_id: string; pfleger_id: string };
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -231,6 +247,7 @@ export type Database = {
           id: string
           mime_typ: string
           name: string
+          pdf_index_status: string | null
           pdf_ordner_id: string | null
           speicher_pfad: string
           user_id: string
@@ -243,6 +260,7 @@ export type Database = {
           id?: string
           mime_typ: string
           name: string
+          pdf_index_status?: string | null
           pdf_ordner_id?: string | null
           speicher_pfad: string
           user_id?: string
@@ -255,6 +273,7 @@ export type Database = {
           id?: string
           mime_typ?: string
           name?: string
+          pdf_index_status?: string | null
           pdf_ordner_id?: string | null
           speicher_pfad?: string
           user_id?: string
@@ -1227,6 +1246,49 @@ export type Database = {
           },
         ]
       }
+      material_freigabe: AblageTabelle<MaterialFreigabe, Omit<MaterialFreigabe, "user_id" | "bearbeiten"> & Partial<MaterialFreigabe>>;
+      material_paket: AblageTabelle<MaterialPaket, Pick<MaterialPaket, "chat_id" | "titel"> & Partial<MaterialPaket>>;
+      material_paket_element: AblageTabelle<MaterialPaketElement, Omit<MaterialPaketElement, "user_id"> & Partial<MaterialPaketElement>>;
+      material_paket_pflege: AblageTabelle<MaterialPaketPflege, Omit<MaterialPaketPflege, "user_id"> & Partial<MaterialPaketPflege>>;
+      material_ablage_info: AblageTabelle<AblageInfo, Pick<AblageInfo, "art" | "material_id"> & Partial<AblageInfo>>;
+      material_thema: AblageTabelle<AblageThema, Pick<AblageThema, "name" | "fach_id"> & Partial<AblageThema>>;
+      material_verknuepfung: AblageTabelle<AblageVerknuepfung,
+        Pick<AblageVerknuepfung, "art" | "material_id" | "ziel_art" | "ziel_id"> & Partial<AblageVerknuepfung>>;
+      material_ablage_fach: {
+        Row: {
+          art: string
+          ausgeblendet: boolean
+          fach_id: string
+          material_id: string
+          thema_id: string | null
+          user_id: string
+        }
+        Insert: {
+          art: string
+          ausgeblendet?: boolean
+          fach_id: string
+          material_id: string
+          thema_id?: string | null
+          user_id?: string
+        }
+        Update: {
+          art?: string
+          ausgeblendet?: boolean
+          fach_id?: string
+          material_id?: string
+          thema_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_ablage_fach_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mindmap: {
         Row: {
           daten: Json
@@ -1553,7 +1615,7 @@ export type Database = {
           {
             foreignKeyName: "pdf_stand_datei_id_fkey"
             columns: ["datei_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "datei"
             referencedColumns: ["id"]
           },
@@ -2251,6 +2313,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      material_paket_erstellen: { Args: { p_chat_id: string; p_titel: string; p_material: Json }; Returns: string }
+      material_thema_vorschlag: { Args: { p_fach: string; p_name: string; p_material: Json }; Returns: undefined }
+      material_themen_sortieren: { Args: { p_fach: string; p_reihenfolge: string[] }; Returns: undefined };
+      material_speicherbelegung: { Args: Record<never, never>; Returns: number };
+      material_dateinamen: { Args: { p_fach: string | null; p_ohne: string | null }; Returns: string[] };
+
       aufgabe_arbeitszeit: {
         Args: { p_id: string; p_typ: string }
         Returns: { minuten: number; user_id: string; username: string | null }[]

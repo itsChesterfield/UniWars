@@ -12,7 +12,12 @@ import { belegtZeitenLaden } from "@/app/kalender/actions";
 import type { BelegtBlock } from "@/lib/kalender/google";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
-import { useRouter } from "next/navigation";
+import { materialZiel } from "@/lib/dateiablage/material";
+import { berlinDatum } from "@/lib/zeit";
+import { mitschriftAnlegen } from "@/app/(hubs)/notizen/actions";
+import { MaterialAmZiel } from "@/components/dateiablage/material-verknuepfungen";
+import { MaterialDialog } from "@/components/dateiablage/material-dialog";
+import { useRouter, useSearchParams } from "next/navigation";
 import { StundenplanFotoDialog } from "@/components/stundenplan-foto-dialog";
 import { spurenVerteilen } from "@/lib/spuren";
 import { Zustand } from "@/components/zustand";
@@ -115,6 +120,13 @@ export function StundenplanManager({
   const [formOpen, setFormOpen] = useState(false);
   const [fotoOffen, setFotoOffen] = useState(false);
   const router = useRouter();
+  const parameter = useSearchParams();
+  const direkteVorlesung = materialZiel({ art: "vorlesung", id: parameter.get("vorlesung"), datum: parameter.get("datum") });
+  const [termin, setTermin] = useState<{ id: string; datum: string } | null>(null);
+  const vorlesung = termin ?? (direkteVorlesung?.art === "vorlesung" ? direkteVorlesung : null);
+  const ausgewaehlterTermin = vorlesung ? eintraege.find((e) => e.id === vorlesung.id) : undefined;
+  const [mitschriftFehler, setMitschriftFehler] = useState("");
+  const [mitschriftWartet, mitschriftStarten] = useTransition();
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<StundenplanInput>(leeresFormular(faecher[0]?.id ?? null));
   const [error, setError] = useState<string | null>(null);
@@ -380,7 +392,13 @@ export function StundenplanManager({
                           "--c": fach?.farbe ?? "var(--text-3)",
                         } as CSSProperties
                       }
-                      onClick={() => openEditForm(e)}
+                      onClick={() => {
+                        const datum = new Date(montag);
+                        datum.setDate(datum.getDate() + tagIndex);
+                        datum.setHours(12);
+                        setTermin({ id: e.id, datum: berlinDatum(datum) });
+                        setMitschriftFehler("");
+                      }}
                       title={`${fach?.name ?? "Eintrag"}, ${zeit}${e.raum ? `, ${e.raum}` : ""}`}
                     >
                       <span className="stundenplan-block-fach">{fach?.name ?? "Eintrag"}</span>
@@ -426,6 +444,31 @@ export function StundenplanManager({
         </div>
       )}
 
+      {vorlesung && ausgewaehlterTermin && (
+        <MaterialDialog titel={faecher.find((f) => f.id === ausgewaehlterTermin.fach_id)?.name ?? "Vorlesung"}
+          schliessen={() => {
+            setTermin(null);
+            if (direkteVorlesung) {
+              const params = new URLSearchParams(parameter);
+              params.delete("vorlesung"); params.delete("datum");
+              router.replace(params.size ? `/termine?${params}` : "/termine", { scroll: false });
+            }
+          }}>
+          <p><time dateTime={vorlesung.datum}>{new Date(`${vorlesung.datum}T12:00:00Z`).toLocaleDateString("de-DE")}</time>
+            {ausgewaehlterTermin.raum ? ` · ${ausgewaehlterTermin.raum}` : ""}</p>
+          <MaterialAmZiel key={`${vorlesung.id}:${vorlesung.datum}`} ziel={{ art: "vorlesung", id: vorlesung.id, datum: vorlesung.datum }} />
+          {mitschriftFehler && <p role="alert">{mitschriftFehler}</p>}
+          <div className="dat-auswahl-form">
+            <button type="button" className="knopf neben klein" disabled={mitschriftWartet} onClick={() => mitschriftStarten(async () => {
+              try {
+                const notiz = await mitschriftAnlegen(vorlesung.id, vorlesung.datum);
+                router.push(`/notizen?id=${notiz.id}`);
+              } catch { setMitschriftFehler("Die Mitschrift konnte nicht geöffnet werden."); }
+            })}>Mitschrift öffnen</button>
+            <button type="button" className="knopf leise klein" onClick={() => { setTermin(null); openEditForm(ausgewaehlterTermin); }}>Termin bearbeiten</button>
+          </div>
+        </MaterialDialog>
+      )}
       {formOpen && (
         <form className="crud-form" onSubmit={handleSubmit}>
           <h3>{editId ? "Eintrag bearbeiten" : "Neuer Eintrag"}</h3>

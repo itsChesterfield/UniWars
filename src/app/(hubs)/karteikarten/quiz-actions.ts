@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { persoenlichKontext, themenAktualisieren } from "@/lib/ki/gedaechtnis-server";
@@ -180,8 +182,8 @@ export async function quizUmbenennen(id: string, titel: string): Promise<{ ok: b
 }
 
 export async function quizLoeschen(id: string): Promise<{ ok: boolean }> {
-  const { supabase } = await kiNutzer();
-  const { error } = await supabase.from("quiz").delete().eq("id", id);
-  revalidatePath("/karteikarten");
-  return { ok: !error };
+  try {
+    await materialPapierkorb({ art: "quiz", id }, true);
+    return { ok: true };
+  } catch { return { ok: false }; }
 }

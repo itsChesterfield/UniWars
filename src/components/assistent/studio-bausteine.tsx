@@ -7,7 +7,8 @@ import { MarkdownLesen } from "@/components/lernraum/markdown-lesen";
 import { belegeVerlinken, type QuizFrage } from "@/lib/ki/lernraum";
 import type { Block, Erledigt, QuellInfo } from "@/lib/ki/studio";
 import type { KontextEingabe } from "@/lib/ki/assistent";
-import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { pdfPfad } from "@/lib/pdf-reader/fundstelle";
+import { inZweiterAnsichtOeffnen, istAppPfad } from "@/lib/geteilte-ansicht";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 
@@ -16,7 +17,7 @@ export function belegOeffnen(quellen: QuellInfo[], nr: number, seite: number | n
   const q = quellen.find((x) => x.nr === nr);
   if (!q) return;
   track("studio_beleg_geoeffnet", { art: q.art });
-  inZweiterAnsichtOeffnen(q.art === "pdf" ? `/pdf-reader/${q.id}${seite ? `?seite=${seite}` : ""}` : `/notizen?id=${q.id}`, "rechts");
+  inZweiterAnsichtOeffnen(q.art === "pdf" ? pdfPfad(q.id, seite ?? undefined) : istAppPfad(q.href) ? q.href : `/notizen?id=${q.id}`, "rechts");
 }
 
 /** Antworttext mit anklickbaren Belegen */

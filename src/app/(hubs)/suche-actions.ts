@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { MATERIAL_ARTEN, istMaterialId, materialRef } from "@/lib/dateiablage/material";
+import { materialQuelle } from "@/lib/dateiablage/material-server";
+import { pdfAusschnitt, pdfPfad } from "@/lib/pdf-reader/fundstelle";
 import type { SuchTreffer } from "@/lib/befehle";
 
 /** Für ilike: % und _ wörtlich nehmen */
@@ -28,7 +31,7 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   const sicher = muster(q.replace(/[,()]/g, " "));
   const n = 6;
 
-  const [pdfs, dateien, notizen, stapel, quizze, podcasts, deadlines, pruefungen, todos, faecher, dokumente, tabellen, praesentationen, mindmaps, whiteboards, transkripte, literatur, seiten, karten, noten] =
+  const [pdfs, dateien, notizen, stapel, quizze, podcasts, deadlines, pruefungen, todos, faecher, dokumente, tabellen, praesentationen, mindmaps, whiteboards, transkripte, literatur, seiten, karten, noten, titelTreffer] =
     await Promise.all([
       supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf").ilike("name", m).limit(n),
       supabase.from("datei").select("id, name, mime_typ").neq("mime_typ", "application/pdf").ilike("name", m).limit(n),
@@ -51,6 +54,7 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
       q.length >= 3 ? supabase.from("quelle_seite").select("datei_id, seite, text").ilike("text", m).limit(8) : Promise.resolve({ data: [] as { datei_id: string; seite: number; text: string }[] }),
       supabase.from("kk_karte").select("id, stapel_id, vorderseite").or(`vorderseite.ilike.${sicher},rueckseite.ilike.${sicher}`).limit(4),
       supabase.from("note").select("id, titel").ilike("titel", m).limit(4),
+      supabase.from("material_ablage_info").select("art, material_id").is("papierkorb_am", null).ilike("anzeigetitel", m).limit(12),
     ]);
 
   const t: SuchTreffer[] = [];
@@ -70,22 +74,88 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   for (const x of whiteboards.data ?? []) t.push({ art: "whiteboard", id: x.id, titel: x.name, href: `/whiteboard/${x.id}`, icon: "🖍️", info: "Whiteboard" });
   for (const x of transkripte.data ?? []) t.push({ art: "transkript", id: x.id, titel: x.titel, href: `/transkription/${x.id}`, icon: "🎙️", info: "Transkript" });
   for (const x of podcasts.data ?? []) t.push({ art: "podcast", id: x.id, titel: x.titel, href: `/transkription/podcast/${x.id}`, icon: "🎧", info: "Podcast" });
-  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung`, icon: "📚", info: "Literatur" });
+  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung?id=${x.id}`, icon: "📚", info: "Literatur" });
   for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "🃏", info: "Karteikarte" });
   for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "💯", info: "Note" });
-  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: x.name, href: `/dateiablage`, icon: "📎", info: "Datei" });
+  for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: x.name, href: `/dateiablage/oeffnen/${x.id}`, icon: "📎", info: "Datei" });
+
+  const eigeneTitel = await Promise.all((titelTreffer.data ?? []).map((x) => {
+    const ref = materialRef({ art: x.art, id: x.material_id });
+    return ref ? materialQuelle(supabase, ref, 0) : null;
+  }));
+  for (const eintrag of eigeneTitel) {
+    if (!eintrag) continue;
+    const art = eintrag.istPdf ? "pdf" : eintrag.art;
+    const bekannt = t.find((x) => x.id === eintrag.id && x.art === art);
+    if (bekannt) bekannt.titel = eintrag.titel;
+    else t.push({
+      art, id: eintrag.id, titel: eintrag.titel, href: eintrag.href, icon: "",
+      info: eintrag.istPdf ? "PDF" : eintrag.art === "datei" ? "Datei" : MATERIAL_ARTEN[eintrag.art].name,
+    });
+  }
 
   // Fundstellen im Text der PDFs (Titel nachladen)
   const seitenTreffer = seiten.data ?? [];
   if (seitenTreffer.length) {
     const ids = [...new Set(seitenTreffer.map((s) => s.datei_id))];
-    const { data: namen } = await supabase.from("datei").select("id, name").in("id", ids);
+    const [{ data: dateiDetails }, { data: titel }, { data: extras }, { data: faecherDaten }] = await Promise.all([
+      supabase.from("datei").select("id, name, fach_id, fach(name)").in("id", ids).eq("mime_typ", "application/pdf"),
+      supabase.from("material_ablage_info").select("material_id, anzeigetitel").eq("art", "datei").in("material_id", ids),
+      supabase.from("material_ablage_fach").select("material_id, fach_id, ausgeblendet").eq("art", "datei").in("material_id", ids),
+      supabase.from("fach").select("id, name"),
+    ]);
+    const titelMap = new Map((titel ?? []).map((e) => [e.material_id, e.anzeigetitel]));
+    const fachMap = new Map((faecherDaten ?? []).map((e) => [e.id, e.name]));
+    const dateienNachId = new Map(dateiDetails?.map((datei) => [datei.id, datei]));
     for (const s of seitenTreffer) {
-      const name = namen?.find((x) => x.id === s.datei_id)?.name ?? "PDF";
-      const pos = s.text.toLowerCase().indexOf(q.toLowerCase());
-      const ausschnitt = s.text.slice(Math.max(0, pos - 50), pos + q.length + 70).replace(/\s+/g, " ").trim();
-      t.push({ art: "fundstelle", id: `${s.datei_id}-${s.seite}`, titel: `${name} · S. ${s.seite}`, href: `/pdf-reader/${s.datei_id}?seite=${s.seite}`, icon: "🔎", info: `…${ausschnitt}…` });
+      const datei = dateienNachId.get(s.datei_id);
+      const ausschnitt = pdfAusschnitt(s.text, q);
+      if (!datei || !ausschnitt) continue;
+      t.push({
+        art: "fundstelle",
+        id: `${s.datei_id}-${s.seite}`,
+        titel: `${titelMap.get(datei.id) ?? datei.name} · S. ${s.seite}`,
+        href: pdfPfad(s.datei_id, s.seite),
+        icon: "🔎",
+        info: (extras ?? []).filter((e) => e.material_id === datei.id && !e.ausgeblendet).map((e) => fachMap.get(e.fach_id)).filter(Boolean).join(", ")
+          || ((extras ?? []).some((e) => e.material_id === datei.id && e.fach_id === datei.fach_id && e.ausgeblendet) ? null : datei.fach?.name) || "Ohne Fach",
+        ausschnitt,
+      });
     }
   }
   return t;
+}
+
+export async function zuletztSichtbareTreffer(roh: unknown): Promise<SuchTreffer[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !Array.isArray(roh)) return [];
+  const erlaubt = await Promise.all(roh.slice(0, 6).map(async (wert: unknown): Promise<SuchTreffer | null> => {
+    if (!wert || typeof wert !== "object") return null;
+    const { art, id, seite } = wert as { art?: string; id?: string; seite?: number };
+    if (!istMaterialId(id) || typeof art !== "string") return null;
+    const ref = materialRef({ art: art === "pdf" || art === "fundstelle" ? "datei" : art, id });
+    if (ref) {
+      const q = await materialQuelle(supabase, ref, 0);
+      if (!q) return null;
+      const pdfSeite = q.istPdf && Number.isSafeInteger(seite) && seite! > 0 && seite! <= 100000 ? seite : undefined;
+      return { art, id: pdfSeite ? `${id}-${pdfSeite}` : id, titel: q.titel, href: pdfSeite ? pdfPfad(id, pdfSeite) : q.href,
+        icon: "", info: pdfSeite ? `Seite ${pdfSeite}` : q.istPdf ? "PDF" : ref.art === "datei" ? "Datei" : MATERIAL_ARTEN[ref.art].name };
+    }
+    if (art === "fach") {
+      const { data } = await supabase.from("fach").select("name").eq("id", id).maybeSingle();
+      return data ? { art, id, titel: data.name, href: `/lernraum/${id}`, icon: "", info: "Fach" } : null;
+    }
+    if (art === "karte") {
+      const { data } = await supabase.from("kk_karte").select("stapel_id, vorderseite").eq("id", id).maybeSingle();
+      return data ? { art, id, titel: data.vorderseite.slice(0, 120), href: `/karteikarten/${data.stapel_id}`, icon: "", info: "Karteikarte" } : null;
+    }
+    if (art === "note" || art === "todo" || art === "deadline" || art === "pruefung") {
+      const { data } = await supabase.from(art).select("titel").eq("id", id).maybeSingle();
+      return data ? { art, id, titel: data.titel, href: art === "note" ? "/noten" : `/?detail=${art}:${id}`, icon: "",
+        info: art === "note" ? "Note" : art === "pruefung" ? "Prüfung" : "Aufgabe" } : null;
+    }
+    return null;
+  }));
+  return erlaubt.flatMap((t) => t ? [t] : []);
 }

@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { designLesen, folienLesen, neueFolie, type Design, type Folie } from "@/lib/praesentationen/folien";
@@ -50,8 +52,6 @@ export async function praesentationFachSetzen(id: string, fachId: string | null)
 }
 
 export async function praesentationLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { error } = await supabase.from("praesentation").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await materialPapierkorb({ art: "praesentation", id }, true);
   revalidatePath("/praesentationen");
 }

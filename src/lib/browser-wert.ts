@@ -7,7 +7,7 @@ import { useSyncExternalStore } from "react";
 const listeners = new Map<string, Set<() => void>>();
 const ersatz = new Map<string, string | null>();
 
-function lesen(schluessel: string): string | null {
+export function browserWertLesen(schluessel: string): string | null {
   try {
     return window.localStorage.getItem(schluessel);
   } catch {
@@ -41,7 +41,7 @@ export function useBrowserWert(schluessel: string, standard: string): string {
         window.removeEventListener("storage", beiStorage);
       };
     },
-    () => lesen(schluessel) ?? standard,
+    () => browserWertLesen(schluessel) ?? standard,
     () => standard,
   );
 }

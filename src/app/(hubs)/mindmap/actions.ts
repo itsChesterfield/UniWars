@@ -1,5 +1,7 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { datenLesen, startDaten, type MindmapDaten } from "@/lib/mindmap/knoten";
@@ -51,8 +53,6 @@ export async function mindmapFachSetzen(id: string, fachId: string | null) {
 }
 
 export async function mindmapLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { error } = await supabase.from("mindmap").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await materialPapierkorb({ art: "mindmap", id }, true);
   revalidatePath("/mindmap");
 }

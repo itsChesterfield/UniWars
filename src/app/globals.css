@@ -4298,7 +4298,7 @@ kbd {
 }
 
 .dat-spalte-groesse,
-.dat-spalte-datum {
+.dat-spalte-material {
   color: var(--text-2);
   white-space: nowrap;
 }
@@ -4318,6 +4318,22 @@ kbd {
   max-width: 0;
 }
 
+.dat-name-zeile {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.dat-name-zeile .dat-name-knopf {
+  min-width: 0;
+}
+
+.dat-zuletzt-hinweis {
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
 .dat-name-knopf {
   display: block;
   max-width: 100%;
@@ -4330,6 +4346,7 @@ kbd {
   font: inherit;
   font-weight: 550;
   text-align: left;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -5375,7 +5392,7 @@ dialog.dat-vorschau::backdrop {
     overflow: visible;
   }
 
-  .dat-spalte-datum {
+  .dat-spalte-material {
     display: none;
   }
 
@@ -18221,4 +18238,147 @@ html[data-bewegung="reduziert"] .szene .bue-zieht,
 html[data-bewegung="reduziert"] .szene .bue-waechst,
 html[data-bewegung="reduziert"] .buehne-weiter .pf svg {
   animation: none;
+}
+
+.dat-spalte-auswahl input {
+  accent-color: var(--akzent);
+}
+
+.dat-auswahl-aktion {
+  align-self: flex-start;
+}
+
+.pdf-notch {
+  margin-bottom: var(--space-3);
+}
+
+.pdf-notch-eintrag {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pdf-notch-eintrag a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+dialog.dat-material-vorschau {
+  gap: var(--space-2);
+  padding: var(--space-2);
+}
+
+dialog.dat-material-vorschau:has(.dat-material-pdf:not([hidden])) {
+  width: max-content;
+}
+
+.dat-material-vorschau .dat-vorschau-kopf {
+  padding-inline: var(--space-1);
+}
+
+.dat-material-pdf {
+  align-self: center;
+  max-width: 100%;
+  max-height: 66dvh;
+  width: min(calc(66dvh * var(--pdf-vorschau-format, 1)), 86vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.dat-material-board {
+  display: block;
+  width: 100%;
+  height: 55dvh;
+}
+
+.dat-material-vorschau > .knopf {
+  align-self: flex-end;
+}
+
+.dat-material-vorschau ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding-inline-start: var(--space-5);
+}
+
+.dat-auswahl-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pdf-notch-eintrag :focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: calc(-1 * var(--space-half));
+}
+
+dialog.dat-workflow-dialog {
+  width: min(92vw, 36rem);
+  max-height: 84dvh;
+}
+
+.dat-workflow-feld,
+.dat-workflow-liste {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.dat-workflow-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dat-workflow-liste > li,
+.dat-workflow-mitglied {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dat-workflow-pakete h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.dat-thema-linie {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-thema-linie::before,
+.dat-thema-linie::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--linie);
+}
+
+.dat-tabelle .dat-thema-zeile td {
+  border: 0;
+}
+
+.dat-fortsetzen {
+  display: inline-block;
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-index-hinweis {
+  display: block;
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.dat-arbeitsaktionen:empty {
+  display: none;
+}
+
+
+.dat-aktion-einzeilig {
+  white-space: nowrap;
 }

@@ -12,6 +12,8 @@ export const metadata = { title: "Transkript · UniVerse" };
 export default async function TranskriptSeite({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) notFound();
   const [{ data: transkript, error }, { data: teile }, { data: faecher }] = await Promise.all([
     supabase.from("transkript").select("id, titel, fach_id, sprache, quelle, erstellt_am, absaetze, text").eq("id", id).maybeSingle(),
     supabase.from("transkript_teil").select("id, nr, datei_id, sekunden, status, fehler, gestartet_am, text").eq("transkript_id", id).order("nr"),
@@ -32,6 +34,7 @@ export default async function TranskriptSeite({ params }: { params: Promise<{ id
 
   return (
     <TranskriptAnsicht
+      userId={user.id}
       key={transkript.id}
       transkript={{
         id: transkript.id,

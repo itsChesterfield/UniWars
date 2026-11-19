@@ -1,8 +1,11 @@
 "use server";
 
+import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
+
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { berlinDatum, datumDeutsch } from "@/lib/zeit";
+import { materialZiel } from "@/lib/dateiablage/material";
+import { berlinDatum, berlinWochentag, datumDeutsch } from "@/lib/zeit";
 import type { Tables } from "@/lib/supabase/types";
 import { istPdfName, linksUmbenennen, wikilinksFinden } from "@/lib/notizen/wikilinks";
 import { vorlageInhalt, type VorlageId } from "@/lib/notizen/vorlagen";
@@ -68,9 +71,10 @@ export async function notizAnlegen(fachId: string | null, vorlage: VorlageId = "
 }
 
 /** NOT-08: Mitschrift zur laufenden Vorlesung – pro Vorlesung und Tag nur eine. */
-export async function mitschriftAnlegen(stundenplanEintragId: string): Promise<Notiz> {
+export async function mitschriftAnlegen(stundenplanEintragId: string, terminDatum?: string): Promise<Notiz> {
   const { supabase, userId } = await nutzer();
-  const heute = berlinDatum();
+  const heute = terminDatum ?? berlinDatum();
+  if (!materialZiel({ art: "vorlesung", id: stundenplanEintragId, datum: heute })) throw new Error("Ungültiger Vorlesungstermin.");
 
   const { data: vorhanden } = await supabase
     .from("notiz")
@@ -83,10 +87,10 @@ export async function mitschriftAnlegen(stundenplanEintragId: string): Promise<N
 
   const { data: eintrag, error: eintragFehler } = await supabase
     .from("stundenplan_eintrag")
-    .select("id, fach_id, fach(name)")
+    .select("id, tag, fach_id, fach(name)")
     .eq("id", stundenplanEintragId)
     .single();
-  if (eintragFehler) throw new Error(eintragFehler.message);
+  if (eintragFehler || berlinWochentag(new Date(`${heute}T12:00:00Z`)) !== eintrag.tag) throw new Error("Vorlesungstermin nicht gefunden.");
   const fachName = (eintrag.fach as { name: string } | null)?.name ?? "Vorlesung";
 
   const { data, error } = await supabase
@@ -94,7 +98,7 @@ export async function mitschriftAnlegen(stundenplanEintragId: string): Promise<N
     .insert({
       user_id: userId,
       fach_id: eintrag.fach_id,
-      titel: `Mitschrift ${fachName} – ${datumDeutsch(new Date().toISOString())}`,
+      titel: `Mitschrift ${fachName} – ${datumDeutsch(`${heute}T12:00:00Z`)}`,
       stundenplan_eintrag_id: eintrag.id,
       vorlesung_datum: heute,
     })
@@ -163,9 +167,7 @@ export async function notizFachSetzen(id: string, fachId: string | null) {
 
 /** NOT-07 */
 export async function notizLoeschen(id: string) {
-  const { supabase } = await nutzer();
-  const { error } = await supabase.from("notiz").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await materialPapierkorb({ art: "notiz", id }, true);
   revalidatePath("/notizen");
 }
 

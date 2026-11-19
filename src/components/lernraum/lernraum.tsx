@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { quelleSeitenSpeichern, quelleSetzen, quelleUeberblick } from "@/app/(hubs)/lernraum/actions";
 import { dateiLink } from "@/app/(hubs)/dateiablage/actions";
+import { pdfjsLaden } from "@/lib/pdf-reader/pdfjs-browser";
+import type { PDFDocumentLoadingTask } from "pdfjs-dist";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
@@ -32,15 +34,6 @@ const VORSCHLAEGE = [
   "Erklär mir das schwierigste Thema ganz einfach",
   "Frag mich zu dem Stoff ab",
 ];
-
-let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
-function pdfjsLaden() {
-  pdfjsPromise ??= import("pdfjs-dist").then((pdfjs) => {
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-    return pdfjs;
-  });
-  return pdfjsPromise;
-}
 
 function profilText(p: Lernprofil) {
   const laenge = { kurz: "kurz", normal: "mittel", ausfuehrlich: "ausführlich" }[p.laenge];
@@ -90,13 +83,17 @@ export function Lernraum({
     let abgebrochen = false;
     (async () => {
       for (const q of offen) {
+        if (abgebrochen) return;
         eingelesen.current.add(q.id);
+        let laden: PDFDocumentLoadingTask | undefined;
         try {
           setEinlesen((e) => ({ ...e, [q.id]: "Wird eingelesen" }));
           const pdfjs = await pdfjsLaden();
-          const doc = await pdfjs.getDocument({ url: await dateiLink(q.id) }).promise;
+          const url = await dateiLink(q.id);
+          if (abgebrochen) return;
+          laden = pdfjs.getDocument({ url });
+          const doc = await laden.promise;
           let block: { seite: number; text: string }[] = [];
-          let erster = true;
           let zeichen = 0;
           for (let nr = 1; nr <= doc.numPages; nr++) {
             if (abgebrochen) return;
@@ -105,19 +102,19 @@ export function Lernraum({
             zeichen += text.length;
             block.push({ seite: nr, text });
             if (block.length === 40 || nr === doc.numPages) {
-              await quelleSeitenSpeichern(q.id, block, erster);
-              erster = false;
+              await quelleSeitenSpeichern(q.id, block);
               block = [];
               setEinlesen((e) => ({ ...e, [q.id]: `Liest ein, Seite ${nr} von ${doc.numPages}` }));
             }
           }
-          void doc.destroy();
           setQuellen((l) => l.map((x) => (x.id === q.id ? { ...x, seiten: doc.numPages } : x)));
           setEinlesen((e) => ({ ...e, [q.id]: zeichen < 50 ? "Kein Text (gescannt?)" : "" }));
           track("lernraum_pdf_eingelesen", { seiten: doc.numPages, mit_text: zeichen >= 50 });
         } catch (err) {
           fehlerMelden(err, { ort: "lernraum_einlesen" });
           setEinlesen((e) => ({ ...e, [q.id]: "Einlesen fehlgeschlagen" }));
+        } finally {
+          await laden?.destroy().catch(() => undefined);
         }
       }
     })();
