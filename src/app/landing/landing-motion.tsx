@@ -13,16 +13,79 @@ export function LandingMotion() {
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     const videos = [...root.querySelectorAll<HTMLVideoElement>("video")];
     const sections = root.querySelectorAll("[data-uni-reveal]");
+    const panels = [...root.querySelectorAll<HTMLElement>("[data-uni-panel]")];
     const visibleVideos = new Set<HTMLVideoElement>();
     const pointer = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
     let frame = 0;
     let lastFrame: number | undefined;
+    let lastWheel = -Infinity;
+    let lastPageTurn = -Infinity;
+    let wheelDirection = 0;
+    let swipe: { x: number; y: number; decided: boolean; pageTurned: boolean } | null = null;
 
-    const updateNavSize = () => root.style.setProperty("--uni-nav-size", `${header.offsetHeight}px`);
+    const pageStyle = document.documentElement.style;
+    const updateNavSize = () => pageStyle.setProperty("--uni-nav-size", `${header.offsetHeight}px`);
     const resizeObserver = new ResizeObserver(updateNavSize);
     updateNavSize();
     resizeObserver.observe(header);
+
+    const turnPage = (direction: number) => {
+      const top = header.getBoundingClientRect().bottom;
+      const index = panels.findIndex((panel) => panel.getBoundingClientRect().bottom > top + 2);
+      const active = panels[index];
+      const next = panels[index + direction];
+      if (!active || !next) return false;
+
+      const bounds = active.getBoundingClientRect();
+      // Lange Bereiche bleiben frei scrollbar, bis der sichtbare Rand erreicht ist.
+      if (direction > 0 ? bounds.bottom > window.innerHeight + 2 : bounds.top < top - 2) return false;
+
+      const previousOverflows = direction < 0 && next.offsetHeight > window.innerHeight - top + 2;
+      next.scrollIntoView({ behavior: "smooth", block: previousOverflows ? "end" : "start" });
+      return true;
+    };
+
+    const pageOnWheel = (event: WheelEvent) => {
+      if (!event.cancelable || reducedMotion.matches || event.ctrlKey || event.shiftKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+      const direction = Math.sign(event.deltaY);
+      const now = performance.now();
+      const sameGesture = direction === wheelDirection && now - lastWheel < 160;
+      lastWheel = now;
+      if (sameGesture || now - lastPageTurn < 500) {
+        event.preventDefault();
+        return;
+      }
+      wheelDirection = 0;
+      if (!turnPage(direction)) return;
+
+      event.preventDefault();
+      lastPageTurn = now;
+      wheelDirection = direction;
+    };
+
+    const startSwipe = (event: TouchEvent) => {
+      const touch = event.touches.length === 1 ? event.touches[0] : null;
+      swipe = touch ? { x: touch.clientX, y: touch.clientY, decided: false, pageTurned: false } : null;
+    };
+
+    const pageOnSwipe = (event: TouchEvent) => {
+      if (!swipe || reducedMotion.matches || !event.cancelable || event.touches.length !== 1) return;
+      if (!swipe.decided) {
+        const touch = event.touches[0];
+        const x = swipe.x - touch.clientX;
+        const y = swipe.y - touch.clientY;
+        if (Math.max(Math.abs(x), Math.abs(y)) < 12) return;
+        swipe.decided = true;
+        swipe.pageTurned = Math.abs(y) > Math.abs(x) * 1.2 && turnPage(Math.sign(y));
+      }
+      if (swipe.pageTurned) event.preventDefault();
+    };
+
+    const endSwipe = () => {
+      swipe = null;
+    };
 
     for (const video of videos) {
       video.defaultPlaybackRate = 0.65;
@@ -112,11 +175,17 @@ export function LandingMotion() {
     hero.addEventListener("pointermove", moveOrbit, { passive: true });
     hero.addEventListener("pointerleave", releaseOrbit);
     hero.addEventListener("pointercancel", releaseOrbit);
+    root.addEventListener("wheel", pageOnWheel, { passive: false });
+    root.addEventListener("touchstart", startSwipe, { passive: true });
+    root.addEventListener("touchmove", pageOnSwipe, { passive: false });
+    root.addEventListener("touchend", endSwipe);
+    root.addEventListener("touchcancel", endSwipe);
     reducedMotion.addEventListener("change", updateMotion);
     document.addEventListener("visibilitychange", updateVideos);
 
     return () => {
       resetOrbit();
+      pageStyle.removeProperty("--uni-nav-size");
       observer.disconnect();
       resizeObserver.disconnect();
       sections.forEach((section) => section.classList.remove("uni-awaiting"));
@@ -124,6 +193,11 @@ export function LandingMotion() {
       hero.removeEventListener("pointermove", moveOrbit);
       hero.removeEventListener("pointerleave", releaseOrbit);
       hero.removeEventListener("pointercancel", releaseOrbit);
+      root.removeEventListener("wheel", pageOnWheel);
+      root.removeEventListener("touchstart", startSwipe);
+      root.removeEventListener("touchmove", pageOnSwipe);
+      root.removeEventListener("touchend", endSwipe);
+      root.removeEventListener("touchcancel", endSwipe);
       reducedMotion.removeEventListener("change", updateMotion);
       document.removeEventListener("visibilitychange", updateVideos);
     };

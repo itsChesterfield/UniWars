@@ -61,7 +61,7 @@ export default function LandingPage() {
           <div className="uni-wrap" data-uni-reveal>
             <h2 id="uni-hub-title" data-uni-stage="heading">Ein Semester mit UniVerse</h2>
             <figure className="uni-reel uni-shot-overview">
-              <video className="uni-video" data-uni-stage="media" width="896" height="456" muted playsInline loop preload="none" poster="/universe-landing/hub.webp" src="/universe-landing/hub.mp4" aria-label="Zentraler Hub wechselt von einer Abgabefrist zu Terminen und Aufgaben" />
+              <video className="uni-video" data-uni-stage="media" width="2396" height="1220" muted playsInline loop preload="none" poster="/universe-landing/hub.webp" src="/universe-landing/hub.mp4" aria-label="Zentraler Hub wechselt von einer Abgabefrist zu Terminen und Aufgaben" />
               <figcaption data-uni-stage="last">Im Zentralen Hub siehst du, was heute ansteht und wie weit du im Semester bist. Erinnerungen helfen dir, die nächste Frist im Blick zu behalten.</figcaption>
             </figure>
           </div>
@@ -70,7 +70,7 @@ export default function LandingPage() {
             <div className="uni-wrap uni-feature" data-uni-reveal>
               <div className="uni-feature-copy"><h2 id="uni-studio-title" data-uni-stage="heading">Vom Lesen zum Lernen</h2><p data-uni-stage="copy">Wenn du im Skript hängenbleibst, frag UniVerse Studio direkt beim Lesen. Für dein nächstes Lernziel kann es dir passende Schritte für den Tag vorschlagen.</p></div>
               <figure className="uni-reel uni-reel-studio" data-uni-stage="media">
-                <video className="uni-video" width="596" height="490" muted playsInline loop preload="none" poster="/universe-landing/studio.webp" src="/universe-landing/studio.mp4" aria-label="UniVerse Studio beantwortet eine Frage zur Tagesplanung und schlägt drei Lernblöcke vor" />
+                <video className="uni-video" width="1192" height="980" muted playsInline loop preload="none" poster="/universe-landing/studio.webp" src="/universe-landing/studio.mp4" aria-label="UniVerse Studio beantwortet eine Frage zur Tagesplanung und schlägt drei Lernblöcke vor" />
               </figure>
             </div>
         </section>
@@ -78,7 +78,7 @@ export default function LandingPage() {
             <div className="uni-wrap uni-feature uni-feature-reverse" data-uni-reveal>
               <div className="uni-feature-copy"><h2 id="uni-datenbank-title" data-uni-stage="heading">Ein Stand fürs ganze Team</h2><p data-uni-stage="copy">Beim Gruppenreferat bleiben eure Unterlagen in der gemeinsamen Datenbank zusammen. Teilt die Aufgaben dazu, damit alle wissen, wer woran arbeitet.</p></div>
               <figure className="uni-reel uni-reel-files">
-                <video className="uni-video" data-uni-stage="media" width="896" height="414" muted playsInline loop preload="none" poster="/universe-landing/dateien.webp" src="/universe-landing/dateien.mp4" aria-label="Die Dateiablage wechselt von allen Dateien in die Fachordner Methodenlehre und Diagnostik" />
+                <video className="uni-video" data-uni-stage="media" width="2396" height="1106" muted playsInline loop preload="none" poster="/universe-landing/dateien.webp" src="/universe-landing/dateien.mp4" aria-label="Die Dateiablage wechselt von allen Dateien in die Fachordner Methodenlehre und Diagnostik" />
                 <figcaption data-uni-stage="last">Die Dateiablage als Vorlage für die gemeinsame Datenbank</figcaption>
               </figure>
             </div>
@@ -88,15 +88,15 @@ export default function LandingPage() {
               <div className="uni-section-head" data-uni-reveal><h2 id="uni-toolkit-title" data-uni-stage="heading">Alles in einer App</h2><p data-uni-stage="copy">Für ein Referat kannst du im Skript anfangen und aus deinen Notizen direkt die Folien vorbereiten.</p></div>
               <div className="uni-tools">
                 <figure className="uni-tool" data-uni-reveal>
-                  <video className="uni-video" data-uni-stage="media" width="600" height="360" muted playsInline loop preload="none" poster="/universe-landing/pdf.webp" src="/universe-landing/pdf.mp4" aria-label="Der PDF-Reader zeigt markierte Stellen in einem Skript über Angststörungen" />
+                  <video className="uni-video" data-uni-stage="media" width="1704" height="1024" muted playsInline loop preload="none" poster="/universe-landing/pdf.webp" src="/universe-landing/pdf.mp4" aria-label="Der PDF-Reader zeigt markierte Stellen in einem Skript über Angststörungen" />
                   <figcaption data-uni-stage="last"><strong>Im Skript anfangen</strong><span>Markiere die Stelle, auf die du dich im Referat beziehen willst.</span></figcaption>
                 </figure>
                 <figure className="uni-tool" data-uni-reveal>
-                  <video className="uni-video" data-uni-stage="media" width="600" height="388" muted playsInline loop preload="none" poster="/universe-landing/notizen.webp" src="/universe-landing/notizen.mp4" aria-label="Mitschrift zu Angststörungen und Notiz der Lerngruppe mit Fragen für ein Fallbeispiel" />
+                  <video className="uni-video" data-uni-stage="media" width="1466" height="950" muted playsInline loop preload="none" poster="/universe-landing/notizen.webp" src="/universe-landing/notizen.mp4" aria-label="Mitschrift zu Angststörungen und Notiz der Lerngruppe mit Fragen für ein Fallbeispiel" />
                   <figcaption data-uni-stage="last"><strong>Gedanken ordnen</strong><span>Halte die Argumente in einer Notiz fest und verlinke die Quelle.</span></figcaption>
                 </figure>
                 <figure className="uni-tool" data-uni-reveal>
-                  <video className="uni-video" data-uni-stage="media" width="600" height="360" muted playsInline loop preload="none" poster="/universe-landing/praesentationen.webp" src="/universe-landing/praesentationen.mp4" aria-label="Drei Folien im UniVerse-Präsentationseditor" />
+                  <video className="uni-video" data-uni-stage="media" width="1704" height="1024" muted playsInline loop preload="none" poster="/universe-landing/praesentationen.webp" src="/universe-landing/praesentationen.mp4" aria-label="Drei Folien im UniVerse-Präsentationseditor" />
                   <figcaption data-uni-stage="last"><strong>Das Referat vorbereiten</strong><span>Mach aus deiner Notiz die Folien, die du vorführst.</span></figcaption>
                 </figure>
               </div>
