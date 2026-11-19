@@ -1,7 +1,7 @@
 "use client";
 
 import { NavMond } from "@/components/bewegung/nav-mond";
-import { Fragment, Suspense, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
+import { Fragment, Suspense, useEffect, useId, useRef, useState, useTransition, type DragEvent } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
@@ -65,79 +65,79 @@ function Funke() {
 function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: string; avatarUrl: string | null; theme: Enums<"theme"> }) {
   const [offen, setOffen] = useState(false);
   const [laeuft, starte] = useTransition();
-  const rahmen = useRef<HTMLDivElement>(null);
+  const menueId = useId();
+  const dialog = useRef<HTMLDialogElement>(null);
   const knopf = useRef<HTMLButtonElement>(null);
   // Gewechselt wird zum anderen der beiden Designs; „Wie das System“ zählt als das, was gerade zu sehen ist
   const anderes = sichtbaresDesign(usePersoenlich("theme", theme), useSystemDunkel()) === "DUNKEL" ? "HELL" : "DUNKEL";
 
-  useEffect(() => {
-    if (!offen) return;
-    function aussen(e: PointerEvent) {
-      if (!rahmen.current?.contains(e.target as Node)) setOffen(false);
-    }
-    function taste(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOffen(false);
-        knopf.current?.focus();
-      }
-    }
-    document.addEventListener("pointerdown", aussen);
-    document.addEventListener("keydown", taste);
-    return () => {
-      document.removeEventListener("pointerdown", aussen);
-      document.removeEventListener("keydown", taste);
-    };
-  }, [offen]);
-
   return (
-    <div className="profilmenue" ref={rahmen}>
+    <div className="profilmenue">
       <button
         ref={knopf}
         type="button"
         className="rprofil"
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={offen}
+        aria-controls={menueId}
         aria-label={avatarName(name, avatarUrl, `Profil, ${name}`)}
-        onClick={() => setOffen((o) => !o)}
+        onClick={() => {
+          if (dialog.current?.open) return;
+          dialog.current?.showModal();
+          setOffen(true);
+        }}
       >
         <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
       </button>
-      {offen && (
-        <div className="menue" role="menu" aria-label="Profil">
-          <div className="menue-kopf">
-            <ProfilAvatar name={name} url={avatarUrl} groesse={32} />
-            <span>
-              <b>{name}</b>
-              <small>{email}</small>
-            </span>
-          </div>
-          <Link role="menuitem" href="/einstellungen/personalisierung" className="menue-eintrag" onClick={() => setOffen(false)}>
-            Personalisierung
-          </Link>
-          <button
-            role="menuitem"
-            type="button"
-            className="menue-eintrag"
-            disabled={laeuft}
-            onClick={() =>
-              starte(async () => {
-                track("theme_gewechselt", { theme: anderes, ort: "profilmenue" });
-                await designWaehlen(anderes);
-              })
-            }
-          >
-            {DESIGN_NAMEN[anderes]} verwenden
-          </button>
-          <Link role="menuitem" href="/einstellungen" className="menue-eintrag" onClick={() => setOffen(false)}>
-            Einstellungen
-          </Link>
-          <form action={logout} className="menue-trenn">
-            <button role="menuitem" type="submit" className="menue-eintrag" onClick={() => abmelden()}>
-              Abmelden
-            </button>
-          </form>
+      <dialog
+        ref={dialog}
+        id={menueId}
+        className="menue"
+        aria-label="Profil"
+        onClose={() => {
+          setOffen(false);
+          knopf.current?.focus();
+        }}
+        onClick={(e) => {
+          if (e.target !== e.currentTarget) return;
+          const rand = e.currentTarget.getBoundingClientRect();
+          if (e.clientX < rand.left || e.clientX > rand.right || e.clientY < rand.top || e.clientY > rand.bottom) {
+            e.currentTarget.close();
+          }
+        }}
+      >
+        <div className="menue-kopf">
+          <ProfilAvatar name={name} url={avatarUrl} groesse={32} />
+          <span>
+            <b>{name}</b>
+            <small>{email}</small>
+          </span>
         </div>
-      )}
+        <Link href="/einstellungen/personalisierung" className="menue-eintrag" onNavigate={() => dialog.current?.close()}>
+          Personalisierung
+        </Link>
+        <button
+          type="button"
+          className="menue-eintrag"
+          disabled={laeuft}
+          onClick={() =>
+            starte(async () => {
+              track("theme_gewechselt", { theme: anderes, ort: "profilmenue" });
+              await designWaehlen(anderes);
+            })
+          }
+        >
+          {DESIGN_NAMEN[anderes]} verwenden
+        </button>
+        <Link href="/einstellungen" className="menue-eintrag" onNavigate={() => dialog.current?.close()}>
+          Einstellungen
+        </Link>
+        <form action={logout} className="menue-trenn">
+          <button type="submit" className="menue-eintrag" onClick={() => abmelden()}>
+            Abmelden
+          </button>
+        </form>
+      </dialog>
     </div>
   );
 }

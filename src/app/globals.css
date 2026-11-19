@@ -13400,18 +13400,23 @@ html[data-bewegung="reduziert"] .ki-spur i {
   box-shadow: 0 0 0 2px var(--linie-2);
 }
 
-.menue {
+dialog.menue {
   position: fixed;
-  left: 68px;
-  bottom: var(--space-3);
-  z-index: var(--z-modal);
+  inset: auto auto var(--space-3) 68px;
   width: 248px;
+  margin: 0;
   padding: var(--space-1);
+  border: 0;
   border-radius: var(--radius-m);
   background: var(--flaeche);
+  color: var(--text);
   box-shadow:
     0 0 0 1px var(--linie-2),
     0 24px 48px -20px var(--schatten);
+}
+
+dialog.menue::backdrop {
+  background: transparent;
 }
 
 .menue-kopf {
