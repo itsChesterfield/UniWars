@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+import { pdfIndexieren } from "@/lib/pdf-reader/index-server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -107,6 +109,15 @@ async function dateiEintragen(
       .select()
       .single();
     if (!error) {
+      if (data.mime_typ === "application/pdf") {
+        after(async () => {
+          try {
+            await pdfIndexieren(supabase, data);
+          } catch {
+            console.error("[dateiablage] PDF-Text konnte nicht erfasst werden");
+          }
+        });
+      }
       revalidatePath("/dateiablage");
       return data;
     }

@@ -1,5 +1,6 @@
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { MaterialBesuch } from "@/components/dateiablage/material-besuch";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
@@ -19,10 +20,7 @@ import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 // Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   // Schnell erfassen (Knopf, Strg+O) gibt es in der ganzen App – dafür die Auswahllisten laden
@@ -59,6 +57,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
       <Sidebar name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
       <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
       <SegmentMarke />
+      <Suspense fallback={null}><MaterialBesuch userId={user.id} /></Suspense>
       <div className="arbeitsflaeche">
         <Kopfleiste
           name={name}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   dateiLink,
@@ -15,6 +15,8 @@ import {
   uploadVorbereiten,
   type Datei,
 } from "@/app/(hubs)/dateiablage/actions";
+import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-actions";
+import { MaterialVorschauFenster, useGedruecktHalten } from "./material-vorschau";
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
 import type { IconName } from "@/lib/icons";
@@ -33,7 +35,10 @@ import {
   type DateiArt,
 } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
-import { MATERIAL_ARTEN, materialPfad, type HubMaterial } from "@/lib/dateiablage/material";
+import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
+import { useMaterialAktivitaet } from "@/lib/dateiablage/material-aktivitaet";
+import { pdfPfad } from "@/lib/pdf-reader/fundstelle";
+import { fachZuordnungen, MATERIAL_ARTEN, materialPfad, type HubMaterial, type MaterialFachZuordnung } from "@/lib/dateiablage/material";
 import { linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -74,18 +79,27 @@ function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
 
 const DRAG_TYP = "application/x-uniwars-datei";
 
-export function Dateiablage({ initialDateien, material, ordner, limit }: { initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; limit: number }) {
+export function Dateiablage({ userId, initialDateien, material, ordner, limit, zuordnungen, mehrfachVerfuegbar }: {
+  userId: string; initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; limit: number;
+  zuordnungen: MaterialFachZuordnung[]; mehrfachVerfuegbar: boolean }) {
   const router = useRouter();
   const pfad = usePathname();
   const searchParams = useSearchParams();
   const ordnerParam = searchParams.get("ordner");
   const aktuellerOrdner = ordner.find((o) => o.id === ordnerParam) ?? ordner[0];
 
+  const aktivitaet = useMaterialAktivitaet(userId);
+  const [leselisteOffen, setLeselisteOffen] = useState(false);
+  const [auswahl, setAuswahl] = useState<string[]>([]);
+  const [fachWahl, setFachWahl] = useState("");
+  const [sortiert, setSortiert] = useState(false);
   const [dateien, setDateien] = useState(initialDateien);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [sortierung, setSortierung] = useState<Sortierung>({ spalte: "datum", absteigend: true });
   const [umbenennenId, setUmbenennenId] = useState<string | null>(null);
   const [verschiebenId, setVerschiebenId] = useState<string | null>(null);
+  const [materialVorschau, setMaterialVorschau] = useState<string | null>(null);
+  const druck = useGedruecktHalten(setMaterialVorschau);
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
   const [ziehenUeber, setZiehenUeber] = useState(false);
   const [ordnerZiel, setOrdnerZiel] = useState<string | null | undefined>(undefined);
@@ -98,26 +112,107 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
   const belegt = dateien.reduce((s, d) => s + Number(d.groesse), 0);
   const voll = belegt >= limit;
 
-  const imOrdner = useMemo(() => {
-    const liste = dateien.filter((d) => (d.fach_id ?? null) === aktuellerOrdner.id);
-    const faktor = sortierung.absteigend ? -1 : 1;
-    return liste.sort((a, b) => {
-      if (sortierung.spalte === "groesse") return faktor * (Number(a.groesse) - Number(b.groesse));
-      return faktor * a.erstellt_am.localeCompare(b.erstellt_am);
-    });
-  }, [dateien, aktuellerOrdner.id, sortierung]);
-
-  const materialImOrdner = material.filter((m) => m.fachId === aktuellerOrdner.id);
-  const eintraege = [
-    ...imOrdner.map((datei) => ({ titel: datei.name, datei, hub: null })),
-    ...materialImOrdner.map((hub) => ({ titel: hub.titel, datei: null, hub })),
+  const alle = [
+    ...dateien.map((datei) => ({ id: `datei:${datei.id}`, titel: datei.name, fachId: datei.fach_id, datei, hub: null })),
+    ...material.map((hub) => ({ id: `${hub.art}:${hub.id}`, titel: hub.titel, fachId: hub.fachId, datei: null, hub })),
   ];
-  if (sortierung.spalte === "name") {
-    const faktor = sortierung.absteigend ? -1 : 1;
-    eintraege.sort((a, b) => faktor * a.titel.localeCompare(b.titel, "de", { numeric: true }));
+  type Eintrag = (typeof alle)[number];
+  const nachId = new Map(alle.map((e) => [e.id, e]));
+  const zuordnungenNachId = new Map<string, MaterialFachZuordnung[]>();
+  for (const z of zuordnungen) {
+    const key = `${z.art}:${z.material_id}`;
+    const gruppe = zuordnungenNachId.get(key) ?? [];
+    gruppe.push(z);
+    zuordnungenNachId.set(key, gruppe);
+  }
+  function liegtIn(eintrag: Eintrag, fachId: string | null) {
+    const faecher = fachZuordnungen(eintrag.fachId, zuordnungenNachId.get(eintrag.id) ?? []);
+    return fachId ? faecher.includes(fachId) : faecher.length === 0;
+  }
+  const vorschauEintrag = materialVorschau ? nachId.get(materialVorschau) : null;
+  const zuletzt = aktivitaet.zuletzt.flatMap((id) => {
+    const eintrag = nachId.get(id);
+    return eintrag ? [eintrag] : [];
+  }).slice(0, 4);
+  const istPin = (id: string) => aktivitaet.pins.includes(`${aktuellerOrdner.id ?? "lose"}:${id}`);
+  const eintraege = alle.filter((e) => leselisteOffen ? Object.hasOwn(aktivitaet.lesen, e.id) : liegtIn(e, aktuellerOrdner.id));
+  const faktor = sortierung.absteigend ? -1 : 1;
+  eintraege.sort((a, b) => {
+    if (!leselisteOffen && istPin(a.id) !== istPin(b.id)) return istPin(a.id) ? -1 : 1;
+    if (sortierung.spalte === "name") return faktor * a.titel.localeCompare(b.titel, "de", { numeric: true });
+    if (sortierung.spalte === "groesse") {
+      return faktor * (Number(a.datei?.groesse ?? 0) - Number(b.datei?.groesse ?? 0));
+    }
+    return (b.datei?.erstellt_am ?? "").localeCompare(a.datei?.erstellt_am ?? "");
+  });
+  const ausgewaehlt = eintraege.filter((e) => auswahl.includes(e.id));
+
+  function eintragOeffnen(eintrag: Eintrag) {
+    if (eintrag.datei) void oeffnen(eintrag.datei);
+    if (eintrag.hub) {
+      aktivitaet.oeffnen(eintrag.id);
+      router.push(materialPfad(eintrag.hub));
+    }
+  }
+
+  function eintragPfad(eintrag: Eintrag): string | null {
+    if (eintrag.hub) return materialPfad(eintrag.hub);
+    if (!eintrag.datei) return null;
+    const art = dateiTyp(eintrag.datei.name)?.art;
+    if (art === "pdf") return pdfPfad(eintrag.datei.id);
+    if (art === "bild" || art === "audio" || art === "text") return `/dateiablage/oeffnen/${eintrag.datei.id}`;
+    return null;
+  }
+
+  async function zuordnen(eintraege: Eintrag[], fachId: string, entfernen = false) {
+    setSortiert(true);
+    try {
+      await fachZuordnungenSpeichern(eintraege.map((e) => ({
+        art: e.hub?.art ?? "datei",
+        material_id: e.hub?.id ?? e.datei?.id ?? "",
+        fach_id: fachId,
+        ausgeblendet: entfernen,
+      })));
+      setAuswahl([]);
+      setFachWahl("");
+    } catch {
+      setMeldung("Die Fachzuordnung konnte nicht gespeichert werden.");
+    } finally {
+      setSortiert(false);
+    }
+  }
+
+  function nebeneinanderOeffnen() {
+    const [links, rechts] = ausgewaehlt.map(eintragPfad);
+    if (!links || !rechts) return;
+    inZweiterAnsichtOeffnen(rechts);
+    router.push(links);
+  }
+
+  function auswahlUmschalten(id: string) {
+    setAuswahl((vorher) => vorher.includes(id) ? vorher.filter((x) => x !== id) : [...vorher, id]);
+  }
+
+  function privateAktionen(eintrag: Eintrag) {
+    const aufListe = Object.hasOwn(aktivitaet.lesen, eintrag.id);
+    return [
+      { label: "Vorschau", onClick: () => setMaterialVorschau(eintrag.id) },
+      ...(mehrfachVerfuegbar && aktuellerOrdner.id && !leselisteOffen ? [{
+        label: "Aus diesem Fach entfernen",
+        onClick: () => { if (aktuellerOrdner.id) void zuordnen([eintrag], aktuellerOrdner.id, true); },
+      }] : []),
+      ...(!leselisteOffen ? [{ label: istPin(eintrag.id) ? "Pin lösen" : "Anpinnen", onClick: () => aktivitaet.pin(aktuellerOrdner.id, eintrag.id) }] : []),
+      { label: aufListe ? "Von Leseliste entfernen" : "Später lesen", onClick: () => aktivitaet.leseliste(eintrag.id, aufListe ? null : false) },
+      ...(leselisteOffen ? [{
+        label: aktivitaet.lesen[eintrag.id] ? "Als ungelesen markieren" : "Als gelesen markieren",
+        onClick: () => aktivitaet.leseliste(eintrag.id, !aktivitaet.lesen[eintrag.id]),
+      }] : []),
+    ];
   }
 
   function ordnerOeffnen(id: string | null) {
+    setAuswahl([]);
+    setLeselisteOffen(false);
     const params = new URLSearchParams(searchParams.toString());
     if (id) params.set("ordner", id);
     else params.delete("ordner");
@@ -126,7 +221,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
   }
 
   function anzahl(id: string | null) {
-    return dateien.filter((d) => d.fach_id === id).length + material.filter((m) => m.fachId === id).length;
+    return alle.filter((e) => liegtIn(e, id)).length;
   }
 
   // --- DAT-02 Hochladen ---------------------------------------------------
@@ -249,15 +344,15 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
     const art = dateiTyp(d.name)?.art;
     track("datei_geoeffnet", { art: art ?? "unbekannt" });
     if (art === "pdf") {
-      router.push(`/pdf-reader/${d.id}`);
+      aktivitaet.oeffnen(`datei:${d.id}`);
+      router.push(pdfPfad(d.id));
       return;
     }
     try {
-      if (art === "bild" || art === "audio") {
-        setVorschau({ art, url: await dateiLink(d.id), name: d.name, id: d.id });
-      } else {
-        window.location.assign(await dateiLink(d.id, true));
-      }
+      const url = await dateiLink(d.id, art !== "bild" && art !== "audio");
+      aktivitaet.oeffnen(`datei:${d.id}`);
+      if (art === "bild" || art === "audio") setVorschau({ art, url, name: d.name, id: d.id });
+      else window.location.assign(url);
     } catch (err) {
       setMeldung("Datei konnte nicht geöffnet werden.");
       fehlerMelden(err, { ort: "datei_oeffnen" });
@@ -403,9 +498,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
             Abbrechen
           </button>
           <p className="muted dat-link-tipp">
-            Öffne die PDF im Browser, kopiere die Adresse und füg sie hier ein – oder drück einfach Strg+V auf dieser Seite. Die Datei landet im
-            Ordner „{aktuellerOrdner.name}“. Links hinter einer Anmeldung (z. B. Moodle, ILIAS) gehen nicht – die Datei dann herunterladen und
-            hierher ziehen.
+            Füge die Adresse einer öffentlich erreichbaren Datei ein. Für Dateien aus Moodle oder ILIAS kannst du den Download hierher ziehen.
           </p>
         </form>
       )}
@@ -455,6 +548,16 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
             ))}
           </ul>
 
+          <button
+            type="button"
+            className="knopf leise klein"
+            aria-pressed={leselisteOffen}
+            onClick={() => { setLeselisteOffen(!leselisteOffen); setAuswahl([]); }}
+          >
+            <Icon name="lesezeichen" groesse={14} />
+            Leseliste
+          </button>
+
           {/* DAT-09 */}
           <div className="dat-speicher">
             <span className={`balkenf${voll ? " voll" : ""}`} aria-hidden>
@@ -463,7 +566,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
             <span className={voll ? "dat-speicher-voll" : undefined}>
               {groesseText(belegt)} von {groesseText(limit)} belegt
             </span>
-            {voll && <span className="dat-speicher-voll">Speicher voll – lösche Dateien, um neue hochzuladen.</span>}
+            {voll && <span className="dat-speicher-voll">Dein Speicher ist voll. Lösche Dateien, um neue hochzuladen.</span>}
           </div>
         </aside>
 
@@ -493,7 +596,35 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
             if (!voll) hochladen(e.dataTransfer.files);
           }}
         >
-          <h2 className="abschnitt-titel dat-titel">{aktuellerOrdner.name}</h2>
+          {zuletzt.length > 0 && !leselisteOffen && (
+            <div className="dat-zuletzt">
+              <h2>Zuletzt geöffnet</h2>
+              <ul>
+                {zuletzt.map((eintrag) => (
+                  <li key={eintrag.id}>
+                    <button type="button" className="dat-name-knopf" onClick={() => eintragOeffnen(eintrag)}>{eintrag.titel}</button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <h2 className="abschnitt-titel dat-titel">{leselisteOffen ? "Leseliste" : aktuellerOrdner.name}</h2>
+          {mehrfachVerfuegbar && !leselisteOffen && ausgewaehlt.length > 0 && (
+            <div className="dat-auswahl-form">
+              <select className="field" value={fachWahl} onChange={(e) => setFachWahl(e.target.value)} aria-label="Zielfach">
+                <option value="">Fach auswählen</option>
+                {ordner.filter((o) => o.id && o.id !== aktuellerOrdner.id).map((o) => <option key={o.id} value={o.id ?? ""}>{o.name}</option>)}
+              </select>
+              <button type="button" className="knopf neben klein" disabled={!fachWahl || sortiert} onClick={() => void zuordnen(ausgewaehlt, fachWahl)}>
+                Dem Fach zuordnen
+              </button>
+            </div>
+          )}
+          {ausgewaehlt.length === 2 && ausgewaehlt.every(eintragPfad) && (
+            <button type="button" className="knopf neben klein dat-auswahl-aktion" onClick={nebeneinanderOeffnen}>
+              Nebeneinander öffnen
+            </button>
+          )}
 
           {uploads.length > 0 && (
             <ul className="dat-uploads" aria-live="polite">
@@ -534,22 +665,22 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
               region
               ebene={3}
               icon="dateiablage"
-              titel="Noch keine Unterlagen"
-              aktion={
+              titel={leselisteOffen ? "Keine Unterlagen auf der Leseliste" : "Noch keine Unterlagen"}
+              aktion={!leselisteOffen && (
                 <button type="button" className="knopf neben klein" onClick={() => eingabe.current?.click()} disabled={voll}>
                   <Icon name="hochladen" groesse={16} />
                   Dateien hochladen
                 </button>
-              }
-            >
-              Lade eine Datei hoch oder ordne vorhandenes Lernmaterial diesem Fach zu.
+              )}
+            >{leselisteOffen ? "Wähle bei einer Unterlage „Später lesen“." : aktuellerOrdner.id ? "Lade eine Datei hoch oder ordne vorhandenes Lernmaterial diesem Fach zu." : "Hier erscheinen Unterlagen ohne Fach."}
             </Zustand>
           ) : (
             <div className="dat-tabelle-wrap">
               <table className="dat-tabelle">
                 <thead>
                   <tr>
-                    <th className="dat-spalte-typ" aria-label="Typ" />
+                    <th className="dat-spalte-auswahl" aria-label="Auswahl" />
+                    <th className="dat-spalte-typ" aria-label="Symbol" />
                     <th aria-sort={ariaSort("name")}>
                       <button type="button" onClick={() => sortierenNach("name")}>
                         Name{pfeil("name")}
@@ -565,17 +696,25 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
                   </tr>
                 </thead>
                 <tbody>
-                  {eintraege.map(({ datei: d, hub }) => hub ? (
-                    <tr key={`${hub.art}:${hub.id}`}>
+                  {eintraege.map((eintrag) => {
+                    const { id, datei: d, hub } = eintrag;
+                    const auswahlZelle = (
+                      <td className="dat-spalte-auswahl">
+                        <input type="checkbox" aria-label={`${eintrag.titel} auswählen`} checked={auswahl.includes(id)} onChange={() => auswahlUmschalten(id)} />
+                      </td>
+                    );
+                    return hub ? (
+                    <tr key={id}>
+                      {auswahlZelle}
                       <td className="dat-spalte-typ" aria-hidden>
                         <span className="dat-typ"><Icon name={MATERIAL_ARTEN[hub.art].icon} groesse={14} /></span>
                       </td>
                       <td className="dat-spalte-name">
-                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false}>{hub.titel}</Link>
+                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{hub.titel}</Link>
                       </td>
                       <td className="dat-spalte-groesse" />
                       <td className="dat-spalte-material">{MATERIAL_ARTEN[hub.art].name}</td>
-                      <td />
+                      <td className="dat-spalte-aktion"><DreiPunkteMenue punkte={privateAktionen(eintrag)} /></td>
                     </tr>
                   ) : d && (
                     <tr
@@ -588,6 +727,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
                         ziehbildSetzen(e, d.name);
                       }}
                     >
+                      {auswahlZelle}
                       <td className="dat-spalte-typ" aria-hidden>
                         <span className="dat-typ">
                           <Icon name={icon(d.name)} groesse={14} />
@@ -603,7 +743,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
                             }}
                           />
                         ) : (
-                          <button type="button" className="dat-name-knopf" onClick={() => void oeffnen(d)}>
+                          <button type="button" className="dat-name-knopf" {...druck(id)} onClick={() => void oeffnen(d)}>
                             {d.name}
                           </button>
                         )}
@@ -614,6 +754,7 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
                         <DreiPunkteMenue
                           punkte={[
                             { label: "Öffnen", onClick: () => void oeffnen(d) },
+                            ...privateAktionen(eintrag),
                             { label: "Umbenennen", onClick: () => setUmbenennenId(d.id) },
                             { label: "Verschieben nach …", onClick: () => setVerschiebenId(d.id) },
                             { label: "Herunterladen", onClick: () => void herunterladen(d) },
@@ -637,7 +778,8 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -646,6 +788,16 @@ export function Dateiablage({ initialDateien, material, ordner, limit }: { initi
         </section>
       </div>
 
+      {vorschauEintrag && (
+        <MaterialVorschauFenster
+          key={vorschauEintrag.id}
+          id={vorschauEintrag.hub?.id ?? vorschauEintrag.datei?.id ?? ""}
+          art={vorschauEintrag.hub?.art ?? "datei"}
+          titel={vorschauEintrag.titel}
+          schliessen={() => setMaterialVorschau(null)}
+          oeffnen={() => eintragOeffnen(vorschauEintrag)}
+        />
+      )}
       {vorschau && <VorschauFenster vorschau={vorschau} onSchliessen={() => setVorschau(null)} />}
     </>
   );

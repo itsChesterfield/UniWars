@@ -10,6 +10,7 @@ export type SuchTreffer = {
   href: string;
   icon: string;
   info: string;
+  ausschnitt?: { davor: string; begriff: string; danach: string };
 };
 
 /** Was sich erstellen lässt */

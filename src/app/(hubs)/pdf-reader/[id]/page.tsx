@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { PdfNotch } from "@/components/pdf-reader/pdf-notch";
 import { PdfReader } from "@/components/pdf-reader/pdf-reader";
 import { alsRechtecke, istFarbe } from "@/lib/pdf-reader/markierungen";
 import { markdownAlsText } from "@/lib/markdown-text";
@@ -15,9 +16,12 @@ export default async function PdfAnsehenSeite({
 }) {
   const { id } = await params;
   // ?seite=12 – z. B. aus einer Verlinkung [[Skript.pdf#S12]] in einer Notiz
-  const zielSeite = Number((await searchParams).seite) || null;
+  const seite = Number((await searchParams).seite);
+  const zielSeite = Number.isSafeInteger(seite) && seite > 0 ? seite : null;
   const supabase = await createClient();
-  const [{ data: datei, error }, { data: stand }, { data: markierungen }, { data: links }, { count: eingelesen }] = await Promise.all([
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) notFound();
+  const [{ data: datei, error }, { data: stand }, { data: markierungen }, { data: links }, { count: eingelesen }, { data: pdfs }] = await Promise.all([
     supabase.from("datei").select("id, name, mime_typ, speicher_pfad").eq("id", id).maybeSingle(),
     supabase.from("pdf_stand").select("letzte_seite, lesezeichen").eq("datei_id", id).maybeSingle(),
     // Fehlt die Tabelle noch, bleibt die Liste einfach leer
@@ -26,6 +30,7 @@ export default async function PdfAnsehenSeite({
     supabase.from("notiz_link").select("von_notiz_id, seite").eq("ziel_datei_id", id),
     // Hat UniVerse Studio den Text schon? (sonst liest der Reader ihn einmal ein)
     supabase.from("quelle_seite").select("seite", { count: "exact", head: true }).eq("datei_id", id),
+    supabase.from("datei").select("id, name").eq("mime_typ", "application/pdf"),
   ]);
   const seitenProNotiz = new Map<string, number[]>();
   for (const l of links ?? []) {
@@ -53,24 +58,27 @@ export default async function PdfAnsehenSeite({
   if (linkFehler) throw new Error(linkFehler.message);
 
   return (
-    <PdfReader
-      key={datei.id}
-      datei={{ id: datei.id, name: datei.name }}
-      url={link.signedUrl}
-      startSeite={zielSeite ?? stand?.letzte_seite ?? 1}
-      startLesezeichen={stand?.lesezeichen ?? []}
-      eingelesen={eingelesen ?? 0}
-      startNotizen={(notizen ?? []).map((n) => ({
-        id: n.id,
-        titel: n.titel,
-        vorschau: markdownAlsText(n.inhalt.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_g, z: string, l?: string) => l ?? z)).slice(0, 140),
-        seiten: (seitenProNotiz.get(n.id) ?? []).sort((a, b) => a - b),
-      }))}
-      startMarkierungen={(markierungen ?? []).map((m) => ({
-        ...m,
-        farbe: istFarbe(m.farbe) ? m.farbe : "GELB",
-        rechtecke: alsRechtecke(m.rechtecke),
-      }))}
-    />
+    <>
+      <PdfNotch userId={user.id} aktuell={datei} verfuegbar={pdfs ?? []} />
+      <PdfReader
+        key={`${datei.id}:${zielSeite ?? "letzte"}`}
+        datei={{ id: datei.id, name: datei.name }}
+        url={link.signedUrl}
+        startSeite={zielSeite ?? stand?.letzte_seite ?? 1}
+        startLesezeichen={stand?.lesezeichen ?? []}
+        eingelesen={eingelesen ?? 0}
+        startNotizen={(notizen ?? []).map((n) => ({
+          id: n.id,
+          titel: n.titel,
+          vorschau: markdownAlsText(n.inhalt.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_g, z: string, l?: string) => l ?? z)).slice(0, 140),
+          seiten: (seitenProNotiz.get(n.id) ?? []).sort((a, b) => a - b),
+        }))}
+        startMarkierungen={(markierungen ?? []).map((m) => ({
+          ...m,
+          farbe: istFarbe(m.farbe) ? m.farbe : "GELB",
+          rechtecke: alsRechtecke(m.rechtecke),
+        }))}
+      />
+    </>
   );
 }

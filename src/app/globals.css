@@ -17568,3 +17568,92 @@ html[data-bewegung="reduziert"] .lade-skelett {
 [data-bewegung="reduziert"] .pfeil-vorn {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
+
+.dat-zuletzt h2 {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.dat-zuletzt ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dat-spalte-auswahl input {
+  accent-color: var(--akzent);
+}
+
+.dat-auswahl-aktion {
+  align-self: flex-start;
+}
+
+.pdf-notch {
+  margin-bottom: var(--space-3);
+}
+
+.pdf-notch-eintrag {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pdf-notch-eintrag a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+dialog.dat-material-vorschau {
+  gap: var(--space-2);
+  padding: var(--space-2);
+}
+
+dialog.dat-material-vorschau:has(.dat-material-pdf:not([hidden])) {
+  width: max-content;
+}
+
+.dat-material-vorschau .dat-vorschau-kopf {
+  padding-inline: var(--space-1);
+}
+
+.dat-material-pdf {
+  align-self: center;
+  max-width: 100%;
+  max-height: 66dvh;
+  width: min(calc(66dvh * var(--pdf-vorschau-format, 1)), 86vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.dat-material-board {
+  display: block;
+  width: 100%;
+  height: 55dvh;
+}
+
+.dat-material-vorschau > .knopf {
+  align-self: flex-end;
+}
+
+.dat-material-vorschau ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding-inline-start: var(--space-5);
+}
+
+.dat-auswahl-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pdf-notch-eintrag :focus-visible {
+  outline: 2px solid var(--fokus);
+  outline-offset: calc(-1 * var(--space-half));
+}

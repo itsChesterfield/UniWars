@@ -1227,6 +1227,38 @@ export type Database = {
           },
         ]
       }
+      material_ablage_fach: {
+        Row: {
+          art: string
+          ausgeblendet: boolean
+          fach_id: string
+          material_id: string
+          user_id: string
+        }
+        Insert: {
+          art: string
+          ausgeblendet?: boolean
+          fach_id: string
+          material_id: string
+          user_id?: string
+        }
+        Update: {
+          art?: string
+          ausgeblendet?: boolean
+          fach_id?: string
+          material_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_ablage_fach_fach_id_fkey"
+            columns: ["fach_id"]
+            isOneToOne: false
+            referencedRelation: "fach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mindmap: {
         Row: {
           daten: Json

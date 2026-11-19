@@ -454,6 +454,11 @@ export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar:
                   <span className="bp-text">
                     <span className="bp-titel">{e.titel}</span>
                     {e.info && <span className="bp-info">{e.info}</span>}
+                    {e.treffer?.ausschnitt && (
+                      <span className="bp-info">
+                        {e.treffer.ausschnitt.davor}<mark>{e.treffer.ausschnitt.begriff}</mark>{e.treffer.ausschnitt.danach}
+                      </span>
+                    )}
                   </span>
                   {i === aktivIndex && <span className="bp-enter">{e.href ? "↵ öffnen" : "↵"}</span>}
                 </button>

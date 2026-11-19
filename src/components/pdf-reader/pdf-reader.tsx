@@ -2,6 +2,8 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { pdfjsLaden } from "@/lib/pdf-reader/pdfjs-browser";
+import { pdfMarkdownLink } from "@/lib/pdf-reader/fundstelle";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
@@ -62,16 +64,6 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2;
 const SEITEN_ABSTAND = 10;
 const RAND = 12;
-
-let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
-
-function pdfjsLaden() {
-  pdfjsPromise ??= import("pdfjs-dist").then((pdfjs) => {
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-    return pdfjs;
-  });
-  return pdfjsPromise;
-}
 
 function vorkommen(text: string, suche: string): number[] {
   const t = text.toLocaleLowerCase("de-DE");
@@ -598,11 +590,10 @@ export function PdfReader({
 
   // Text der PDF einmal speichern, damit UniVerse Studio die ganze PDF lesen kann
   useEffect(() => {
-    if (!doc || eingelesen > 0) return;
+    if (!doc || eingelesen >= doc.numPages) return;
     let abgebrochen = false;
     const id = window.setTimeout(async () => {
       let block: { seite: number; text: string }[] = [];
-      let erster = true;
       for (let nr = 1; nr <= doc.numPages; nr++) {
         if (abgebrochen) return;
         const texte = await seitenText(nr).catch(() => [] as string[]);
@@ -610,8 +601,7 @@ export function PdfReader({
         if (block.length === 40 || nr === doc.numPages) {
           const teil = block;
           block = [];
-          await quelleSeitenSpeichern(datei.id, teil, erster).catch((err) => fehlerMelden(err, { ort: "pdf_einlesen" }));
-          erster = false;
+          await quelleSeitenSpeichern(datei.id, teil).catch((err) => fehlerMelden(err, { ort: "pdf_einlesen" }));
         }
       }
       track("pdf_eingelesen", { seiten: doc.numPages });
@@ -792,6 +782,22 @@ export function PdfReader({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               {vollbild ? <path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6" /> : <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />}
             </svg>
+          </button>
+        </div>
+
+        <div className="pdf-gruppe">
+          <button
+            type="button"
+            className="knopf leise klein nur-symbol"
+            aria-label="Markdown-Link zu dieser Seite kopieren"
+            title="Markdown-Link zu dieser Seite kopieren"
+            disabled={anzahl === 0}
+            onClick={() => {
+              void navigator.clipboard.writeText(pdfMarkdownLink(datei.name, datei.id, seiteRef.current, window.location.origin))
+                .catch(() => window.alert("Kopieren hat nicht geklappt."));
+            }}
+          >
+            <Icon name="link" groesse={16} />
           </button>
         </div>
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { pdfAusschnitt, pdfPfad } from "@/lib/pdf-reader/fundstelle";
 import type { SuchTreffer } from "@/lib/befehle";
 
 /** Für ilike: % und _ wörtlich nehmen */
@@ -70,7 +71,7 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   for (const x of whiteboards.data ?? []) t.push({ art: "whiteboard", id: x.id, titel: x.name, href: `/whiteboard/${x.id}`, icon: "🖍️", info: "Whiteboard" });
   for (const x of transkripte.data ?? []) t.push({ art: "transkript", id: x.id, titel: x.titel, href: `/transkription/${x.id}`, icon: "🎙️", info: "Transkript" });
   for (const x of podcasts.data ?? []) t.push({ art: "podcast", id: x.id, titel: x.titel, href: `/transkription/podcast/${x.id}`, icon: "🎧", info: "Podcast" });
-  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung`, icon: "📚", info: "Literatur" });
+  for (const x of literatur.data ?? []) t.push({ art: "literatur", id: x.id, titel: x.titel, href: `/literaturverwaltung?id=${x.id}`, icon: "📚", info: "Literatur" });
   for (const x of karten.data ?? []) t.push({ art: "karte", id: x.id, titel: x.vorderseite.slice(0, 120), href: `/karteikarten/${x.stapel_id}`, icon: "🃏", info: "Karteikarte" });
   for (const x of noten.data ?? []) t.push({ art: "note", id: x.id, titel: x.titel, href: "/noten", icon: "💯", info: "Note" });
   for (const x of dateien.data ?? []) t.push({ art: "datei", id: x.id, titel: x.name, href: `/dateiablage`, icon: "📎", info: "Datei" });
@@ -79,12 +80,21 @@ export async function allesSuchen(eingabe: string): Promise<SuchTreffer[]> {
   const seitenTreffer = seiten.data ?? [];
   if (seitenTreffer.length) {
     const ids = [...new Set(seitenTreffer.map((s) => s.datei_id))];
-    const { data: namen } = await supabase.from("datei").select("id, name").in("id", ids);
+    const { data: dateiDetails } = await supabase.from("datei").select("id, name, fach(name)").in("id", ids).eq("mime_typ", "application/pdf");
+    const dateienNachId = new Map(dateiDetails?.map((datei) => [datei.id, datei]));
     for (const s of seitenTreffer) {
-      const name = namen?.find((x) => x.id === s.datei_id)?.name ?? "PDF";
-      const pos = s.text.toLowerCase().indexOf(q.toLowerCase());
-      const ausschnitt = s.text.slice(Math.max(0, pos - 50), pos + q.length + 70).replace(/\s+/g, " ").trim();
-      t.push({ art: "fundstelle", id: `${s.datei_id}-${s.seite}`, titel: `${name} · S. ${s.seite}`, href: `/pdf-reader/${s.datei_id}?seite=${s.seite}`, icon: "🔎", info: `…${ausschnitt}…` });
+      const datei = dateienNachId.get(s.datei_id);
+      const ausschnitt = pdfAusschnitt(s.text, q);
+      if (!datei || !ausschnitt) continue;
+      t.push({
+        art: "fundstelle",
+        id: `${s.datei_id}-${s.seite}`,
+        titel: `${datei.name} · S. ${s.seite}`,
+        href: pdfPfad(s.datei_id, s.seite),
+        icon: "🔎",
+        info: datei.fach?.name ?? "Lose Blätter",
+        ausschnitt,
+      });
     }
   }
   return t;

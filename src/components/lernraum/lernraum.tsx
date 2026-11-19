@@ -96,7 +96,6 @@ export function Lernraum({
           const pdfjs = await pdfjsLaden();
           const doc = await pdfjs.getDocument({ url: await dateiLink(q.id) }).promise;
           let block: { seite: number; text: string }[] = [];
-          let erster = true;
           let zeichen = 0;
           for (let nr = 1; nr <= doc.numPages; nr++) {
             if (abgebrochen) return;
@@ -105,8 +104,7 @@ export function Lernraum({
             zeichen += text.length;
             block.push({ seite: nr, text });
             if (block.length === 40 || nr === doc.numPages) {
-              await quelleSeitenSpeichern(q.id, block, erster);
-              erster = false;
+              await quelleSeitenSpeichern(q.id, block);
               block = [];
               setEinlesen((e) => ({ ...e, [q.id]: `Liest ein, Seite ${nr} von ${doc.numPages}` }));
             }

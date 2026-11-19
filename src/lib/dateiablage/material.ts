@@ -20,3 +20,32 @@ export type HubMaterial = { art: MaterialArt; id: string; titel: string; fachId:
 export function materialPfad(material: Pick<HubMaterial, "art" | "id">): string {
   return MATERIAL_ARTEN[material.art].pfad + encodeURIComponent(material.id);
 }
+
+
+export type MaterialFachZuordnung = { art: string; material_id: string; fach_id: string; ausgeblendet: boolean };
+
+export function fachZuordnungen(fachId: string | null, aenderungen: MaterialFachZuordnung[]): string[] {
+  const faecher = new Set(fachId ? [fachId] : []);
+  for (const eintrag of aenderungen) {
+    if (eintrag.ausgeblendet) faecher.delete(eintrag.fach_id);
+    else faecher.add(eintrag.fach_id);
+  }
+  return [...faecher];
+}
+
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function materialVomPfad(pfad: string, suche: URLSearchParams): string | null {
+  const pdfId = pfad.startsWith("/pdf-reader/") ? pfad.slice("/pdf-reader/".length) : "";
+  if (UUID.test(pdfId)) return `datei:${pdfId}`;
+  for (const [art, { pfad: route }] of Object.entries(MATERIAL_ARTEN)) {
+    const query = route.endsWith("?id=");
+    const id = query
+      ? (pfad === route.slice(0, -4) ? suche.get("id") : null)
+      : (pfad.startsWith(route) ? pfad.slice(route.length) : null);
+    if (id && UUID.test(id)) return `${art}:${id}`;
+  }
+  const lernId = pfad.match(/^\/karteikarten\/([0-9a-f-]+)\/lernen$/i)?.[1];
+  return lernId && UUID.test(lernId) ? `stapel:${lernId}` : null;
+}
