@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums, Json } from "@/lib/supabase/types";
-import { hubLayoutLesen } from "@/lib/hub-layout";
 import { darstellungLesen, istTheme, symbolleisteLesen } from "@/lib/personalisierung";
 
 export async function setTheme(theme: Enums<"theme">): Promise<{ ok: boolean }> {
@@ -55,27 +54,6 @@ export async function darstellungSpeichern(roh: unknown): Promise<{ ok: boolean 
     .eq("user_id", user.id);
   if (error) return { ok: false };
   revalidatePath("/", "layout");
-  return { ok: true };
-}
-
-/**
- * Design B3: Anordnung der Hub-Übersicht speichern. Der Wert wird hier noch einmal geprüft,
- * damit nur bekannte Bausteine und erlaubte Größen in der Datenbank landen.
- */
-export async function hubLayoutSpeichern(roh: unknown): Promise<{ ok: boolean }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Nicht angemeldet");
-
-  const layout = hubLayoutLesen(roh);
-  const { error } = await supabase
-    .from("settings")
-    .update({ hub_layout: layout as unknown as Json })
-    .eq("user_id", user.id);
-  if (error) return { ok: false };
-  revalidatePath("/");
   return { ok: true };
 }
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useState, useTransition, type CSSProperties, type ReactNode } from "react";
-import Link from "next/link";
 import {
   DndContext,
   KeyboardSensor,
@@ -13,10 +12,8 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { hubLayoutSpeichern } from "@/app/settings/actions";
 import { NavIcon } from "@/components/nav-icon";
 import { track } from "@/lib/analytics";
-import { VOREINSTELLUNGEN, VOREINSTELLUNG_NAMEN, kopie, voreinstellungVon, type HubLayout, type Voreinstellung } from "@/lib/hub-layout";
 import { hubVonId } from "@/lib/hubs/navigation";
 import {
   DESIGN_NAMEN,
@@ -253,17 +250,14 @@ export function Personalisierung({
   theme,
   darstellung,
   symbolleiste,
-  hubLayout,
 }: {
   theme: Theme;
   darstellung: Darstellung;
   symbolleiste: Symbolleiste;
-  hubLayout: HubLayout;
 }) {
   const design = usePersoenlich("theme", theme);
   const d = usePersoenlich("darstellung", darstellung);
   const leiste = usePersoenlich("symbolleiste", symbolleiste);
-  const [hub, setHub] = useState<HubLayout>(hubLayout);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ansage, setAnsage] = useState("");
   const [, starte] = useTransition();
@@ -292,7 +286,6 @@ export function Personalisierung({
     if (fokus) requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-schieb="${fokus}"]:not(:disabled)`)?.focus());
   };
 
-  const voreinstellung = voreinstellungVon(hub);
   const name = (id: string) => hubVonId(id)?.name ?? id;
 
   return (
@@ -343,40 +336,6 @@ export function Personalisierung({
             aria-label="Design-Schalter in der Kopfleiste zeigen"
             onClick={() => darstellungSetzen("design_schalter", !d.design_schalter)}
           />
-        </Zeile>
-      </Abschnitt>
-
-      <Abschnitt id="hub" titel="Zentraler Hub" text="Welche Bausteine der Hub zeigt, in welcher Reihenfolge und wie breit.">
-        <Zeile label="Voreinstellung" info={voreinstellung ? undefined : "Gerade gilt deine eigene Anordnung."}>
-          <Segment
-            label="Voreinstellung des Hubs"
-            wert={voreinstellung}
-            optionen={(Object.keys(VOREINSTELLUNG_NAMEN) as Voreinstellung[]).map((k) => [k, VOREINSTELLUNG_NAMEN[k]])}
-            onWahl={(v: Voreinstellung) => {
-              const vorher = hub;
-              const neu = kopie(VOREINSTELLUNGEN[v]);
-              setHub(neu);
-              track("hub_voreinstellung", { voreinstellung: v, ort: "personalisierung" });
-              ausfuehren(
-                async () => {
-                  const { ok } = await hubLayoutSpeichern(neu).catch(() => ({ ok: false }));
-                  if (!ok) setHub(vorher);
-                  return ok;
-                },
-                `Hub: ${VOREINSTELLUNG_NAMEN[v]}.`,
-              );
-            }}
-          />
-        </Zeile>
-        <Zeile label="Eigene Anordnung" info="Verschieben, Breite ändern, ausblenden. Direkt im Hub.">
-          <Link href="/?anordnen" className="knopf neben klein" onClick={() => track("hub_anordnen_gestartet", { ort: "personalisierung" })}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <rect x="4" y="4" width="7" height="7" rx="1.5" />
-              <rect x="13" y="4" width="7" height="7" rx="1.5" />
-              <rect x="4" y="13" width="16" height="7" rx="1.5" />
-            </svg>
-            Hub anordnen
-          </Link>
         </Zeile>
       </Abschnitt>
 

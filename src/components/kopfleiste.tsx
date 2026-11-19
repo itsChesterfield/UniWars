@@ -8,7 +8,6 @@ import { NotificationBell } from "@/components/notification-bell";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { befehleOeffnen } from "@/components/befehlspalette";
 import { hubAusPfad } from "@/lib/hubs/navigation";
-import { HUB_ANORDNEN } from "@/lib/hub-layout";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useJetzt, useTimerZustand } from "@/lib/work-station/timer-store";
 import { alsUhr, anzeigeZeit, istFlow } from "@/lib/work-station/timer";
@@ -125,16 +124,6 @@ export function Kopfleiste({
           </>
         ) : (
           <span>{titel}</span>
-        )}
-        {pfad === "/" && (
-          <button type="button" className="knopf leise klein anp-knopf" aria-label="Hub anpassen" onClick={() => window.dispatchEvent(new CustomEvent(HUB_ANORDNEN))}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <rect x="4" y="4" width="7" height="7" rx="1.5" />
-              <rect x="13" y="4" width="7" height="7" rx="1.5" />
-              <rect x="4" y="13" width="16" height="7" rx="1.5" />
-            </svg>
-            <span>Anpassen</span>
-          </button>
         )}
       </div>
 

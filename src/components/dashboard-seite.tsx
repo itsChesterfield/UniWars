@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { speiseplan } from "@/lib/mensa-server";
@@ -11,6 +12,7 @@ import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { DashboardContent } from "@/components/dashboard-content";
 import type { Bereich } from "@/lib/dashboard-bereiche";
 import { anzeigeName } from "@/lib/anzeige-name";
+import { EINRICHTUNG_COOKIE, einrichtungZeigen, standLesen } from "@/lib/einrichtung";
 
 
 /**
@@ -45,6 +47,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: settingsRoh, error: settingsError },
     { data: kalenderVerbindung },
     { data: faelligeKarten },
+    { data: zuletztDateien },
   ] = await Promise.all([
     supabase.from("fach").select("*").eq("aktiv", true).order("erstellt_am", { ascending: true }),
     supabase.from("deadline").select("*").order("faellig_am", { ascending: true }),
@@ -62,6 +65,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
       .maybeSingle(),
     // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
     supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000),
+    // Szene „Zuletzt geöffnet“ der Hub-Bühne
+    supabase.from("datei").select("id, name, mime_typ, geaendert_am, fach_id").order("geaendert_am", { ascending: false }).limit(6),
   ]);
 
   const error =
@@ -77,6 +82,20 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
   if (error) throw new Error(error.message);
 
   const settings = await pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh);
+
+  // Einrichtung beim ersten Login: nur neue, leere Konten oder eine laufende Einrichtung
+  if (bereich === "uebersicht") {
+    const stand = standLesen((await cookies()).get(EINRICHTUNG_COOKIE)?.value);
+    const konto = {
+      seit: user.created_at,
+      faecher: faecher?.length ?? 0,
+      aufgaben: (deadlines?.length ?? 0) + (todos?.length ?? 0),
+      stundenplan: stundenplanEintraege?.length ?? 0,
+      hochschule: Boolean(settings.hochschule_id || settings.hochschule_frei),
+      mensa: Boolean(settings.mensa_id),
+    };
+    if (einrichtungZeigen(stand, konto, new Date())) redirect("/einrichtung");
+  }
 
   const kalenderProbleme = googleEinrichtungsProbleme();
   const kalenderKonfiguriert = kalenderProbleme.length === 0;
@@ -124,6 +143,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         bereich={bereich}
         mensa={mensa}
         semester={semesterText}
+        dateien={zuletztDateien ?? []}
       />
     </Suspense>
   );

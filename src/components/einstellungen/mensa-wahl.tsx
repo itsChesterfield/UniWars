@@ -29,7 +29,7 @@ function suchen(liste: Mensa[], eingabe: string): Mensa[] {
 }
 
 /** Lieblingsmensa für „Mensa heute“ (Daten: OpenMensa) */
-export function MensaWahl({ mensa, vorschlag }: { mensa: string | null; vorschlag: string | null }) {
+export function MensaWahl({ mensa, vorschlag, ohneKopf = false }: { mensa: string | null; vorschlag: string | null; ohneKopf?: boolean }) {
   const router = useRouter();
   const [laeuft, starte] = useTransition();
   const [offen, setOffen] = useState(false);
@@ -62,8 +62,12 @@ export function MensaWahl({ mensa, vorschlag }: { mensa: string | null; vorschla
 
   return (
     <div className="hs-verif">
-      <h3>Mensa</h3>
-      <p className="muted">Deine Mensa erscheint mit dem Speiseplan von heute in der Übersicht.</p>
+      {!ohneKopf && (
+        <>
+          <h3>Mensa</h3>
+          <p className="muted">Deine Mensa erscheint mit dem Speiseplan von heute in der Übersicht.</p>
+        </>
+      )}
       {!offen ? (
         <div className="hs-gewaehlt">
           <span className={mensa ? "hs-name" : "faint"}>{mensa ?? "Keine Mensa gewählt"}</span>

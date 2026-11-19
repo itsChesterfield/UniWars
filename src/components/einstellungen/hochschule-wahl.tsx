@@ -41,7 +41,8 @@ function Meldung({ e }: { e: Ergebnis | null }) {
 }
 
 /** Hochschule suchen und wählen (Kürzel, Name oder Ort), sonst frei eintragen */
-function Suche({
+/** Hochschule suchen; auch in der Einrichtung beim ersten Login */
+export function Suche({
   onGewaehlt,
 }: {
   onGewaehlt: (h: HochschuleKurz | null, frei?: string) => void;
