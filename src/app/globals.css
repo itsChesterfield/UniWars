@@ -14256,33 +14256,6 @@ a.knopf:hover {
   }
 }
 
-.hubbox .symbolknopf {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--radius-m);
-  background: none;
-  color: var(--text-2);
-  cursor: pointer;
-  transition: background-color var(--dur-micro) var(--ease-out);
-}
-
-.hubbox .symbolknopf:hover:not(:disabled) {
-  background: var(--hover);
-  color: var(--text);
-}
-
-.hubbox .symbolknopf:active:not(:disabled) {
-  background: var(--aktiv);
-}
-
-.hubbox .symbolknopf:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
 /* Kontextspalte */
 .kontext {
   position: sticky;
@@ -14397,15 +14370,6 @@ html[data-eingebettet] .kontext-mobil {
   padding: 0;
 }
 
-.kopfleiste .anp-knopf {
-  flex: none;
-  margin-left: var(--space-2);
-}
-
-html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
-  display: none;
-}
-
 .seitenkopf {
   display: flex;
   align-items: end;
@@ -14436,67 +14400,8 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 }
 
 /* Raster: Trennlinien nur zwischen Bausteinen */
-.hubraster {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.hubraster .block {
-  grid-column: span var(--span);
-  min-width: 0;
-  container-type: inline-size;
-}
-
-.hubraster .block:not([data-zeile="0"]) {
-  border-top: 1px solid var(--linie);
-}
-
-.hubraster .block:not([data-spalte="0"]) {
-  border-left: 1px solid var(--linie);
-}
 
 /* Als Nächstes */
-.hubraster .kopf {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--space-8);
-  padding: var(--space-10) var(--space-8) var(--space-8);
-  overflow: hidden;
-}
-
-.hubraster .kopf h2 {
-  max-width: 22ch;
-  font-size: clamp(32px, 3.4vw, 44px);
-  line-height: 1.04;
-  font-weight: 650;
-  letter-spacing: -0.035em;
-  overflow-wrap: anywhere;
-}
-
-.hubraster .kopf .bahn {
-  position: absolute;
-  right: -120px;
-  top: -200px;
-  width: 560px;
-  height: 380px;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--akzent) 26%, transparent);
-  transform: rotate(-14deg);
-  pointer-events: none;
-}
-
-.hubraster .kopf .planet {
-  position: absolute;
-  right: 72px;
-  top: 56px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--akzent);
-  pointer-events: none;
-}
 
 .kopf-text {
   position: relative;
@@ -14509,60 +14414,7 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   color: var(--text-2);
 }
 
-.hubraster .unter {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-xl);
-  color: var(--text-2);
-  letter-spacing: -0.01em;
-}
-
-.hubraster .unter i {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: var(--space-2);
-  border-radius: 2px;
-  vertical-align: 2px;
-}
-
-.hubraster .aktionen {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-6);
-}
-
-.hubraster .rest {
-  position: relative;
-  text-align: right;
-}
-
-.hubraster .rest .zahl {
-  font-size: 32px;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.hubraster .rest .rest-ueber {
-  font-family: var(--font-body);
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--warnung);
-}
-
-.hubraster .rest p {
-  margin: var(--space-1) 0 0;
-  color: var(--text-3);
-  font-size: var(--text-sm);
-}
-
 /* Überblick */
-.fakten {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
 
 .fakt {
   position: relative;
@@ -14637,14 +14489,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   margin-left: auto;
 }
 
-.hubraster .heute,
-.hubraster .wiederholen,
-.hubraster .mensa-ab,
-.hubraster .vorschlag {
-  padding-top: var(--space-2);
-  padding-bottom: var(--space-4);
-}
-
 /* Heute */
 .plan {
   list-style: none;
@@ -14685,34 +14529,9 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   background: var(--c);
 }
 
-.plan strong,
-.plan-titel {
+.plan strong {
   display: block;
   font-weight: 550;
-}
-
-.plan-titel {
-  max-width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-weight: 550;
-  text-align: left;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.plan-titel:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.plan-titel:active {
-  color: var(--akzent-text);
 }
 
 .plan .meta {
@@ -14736,8 +14555,7 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   color: var(--text-3);
 }
 
-.plan li.vorbei strong,
-.plan li.vorbei .plan-titel {
+.plan li.vorbei strong {
   font-weight: 500;
   text-decoration: line-through;
   text-decoration-color: var(--linie-2);
@@ -14745,26 +14563,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 
 .plan li.vorbei .balken {
   opacity: 0.45;
-}
-
-.jetztlinie {
-  position: absolute;
-  left: var(--space-8);
-  right: var(--space-8);
-  top: 0;
-  height: 1px;
-  background: var(--akzent);
-}
-
-.jetztlinie::before {
-  content: "";
-  position: absolute;
-  left: -4px;
-  top: -3px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--akzent);
 }
 
 .plan .haken {
@@ -14885,143 +14683,15 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 }
 
 /* Diese Woche */
-.woche-ab {
-  padding-bottom: var(--space-8);
-}
-
-.raster-rahmen {
-  padding: 0 var(--space-8);
-  overflow-x: auto;
-}
-
-.plan-raster {
-  width: 100%;
-  min-width: 480px;
-  table-layout: fixed;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: var(--radius-m);
-  box-shadow: 0 0 0 1px var(--linie);
-  font-size: var(--text-xs);
-  overflow: hidden;
-}
-
-.plan-raster th,
-.plan-raster td {
-  height: 56px;
-  padding: var(--space-1);
-  border-right: 1px solid var(--linie);
-  border-bottom: 1px solid var(--linie);
-  text-align: left;
-  vertical-align: top;
-  font-weight: 400;
-}
-
-.plan-raster tr > :last-child {
-  border-right: 0;
-}
-
-.plan-raster tbody tr:last-child > * {
-  border-bottom: 0;
-}
-
-.plan-raster thead th,
-.plan-raster thead td {
-  height: 32px;
-  padding: var(--space-2);
-  color: var(--text-3);
-  font-weight: 500;
-  vertical-align: middle;
-}
-
-.plan-raster tr > :first-child {
-  width: 52px;
-  padding: var(--space-2);
-  color: var(--text-3);
-}
-
-.plan-raster thead th.ist-heute {
-  color: var(--akzent-text);
-  font-weight: 600;
-}
-
-.plan-raster .ist-heute {
-  background: color-mix(in srgb, var(--akzent) 5%, transparent);
-}
-
-.plan-raster .z {
-  display: block;
-  height: 100%;
-  padding: var(--space-1) var(--space-2);
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--c) 16%, var(--flaeche));
-  box-shadow: inset 3px 0 0 var(--c);
-  color: var(--text);
-  font-weight: 550;
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.plan-raster .z small {
-  display: block;
-  font-weight: 400;
-  color: var(--text-2);
-}
 
 /* Wiederholen */
-.stapel-kurz {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 var(--space-2);
-}
-
-.stapel-kurz a {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-8);
-  color: inherit;
-  text-decoration: none;
-  transition: background-color var(--dur-micro) var(--ease-out);
-}
-
-.stapel-kurz a:hover {
-  background: var(--hover);
-}
-
-.stapel-kurz a:active {
-  background: var(--aktiv);
-}
-
-.stapel-kurz .zahl {
-  color: var(--text-3);
-  font-size: var(--text-sm);
-}
 
 /* Schmale Bausteine richten sich nach ihrer eigenen Breite, nicht nach dem Fenster */
 @container (max-width: 600px) {
-  .fakten {
-    grid-template-columns: minmax(0, 1fr);
-  }
 
   .fakt + .fakt {
     border-left: 0;
     border-top: 1px solid var(--linie);
-  }
-
-  .hubraster .kopf {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
-  }
-
-  .hubraster .rest {
-    text-align: left;
-  }
-
-  .hubraster .kopf .bahn,
-  .hubraster .kopf .planet {
-    display: none;
   }
 }
 
@@ -15035,10 +14705,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     display: none;
   }
 
-  .hubraster .kopf h2 {
-    font-size: var(--text-2xl);
-  }
-
   .kopfzeile {
     flex-wrap: wrap;
     row-gap: 0;
@@ -15050,99 +14716,19 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   .tb-gruss,
   .plan li,
   .vliste li > a,
-  .vliste li > button,
-  .stapel-kurz a {
+  .vliste li > button {
     padding-left: var(--space-6);
     padding-right: var(--space-6);
-  }
-
-  .raster-rahmen {
-    padding: 0 var(--space-6);
   }
 }
 
 /* Bearbeiten-Modus */
-.bearbleiste {
-  position: sticky;
-  top: 52px;
-  z-index: var(--z-raised);
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-6);
-  border-bottom: 1px solid var(--linie);
-  background: var(--flaeche);
-}
-
-.bearbleiste > div:first-child {
-  display: flex;
-  flex-direction: column;
-  margin-right: auto;
-  min-width: 0;
-}
-
-.bearbleiste strong {
-  font-weight: 600;
-}
-
-.bearbleiste > div:first-child span {
-  font-size: var(--text-sm);
-  color: var(--text-2);
-}
-
-.hubraster.im-bearb {
-  gap: var(--space-3);
-  padding: var(--space-5) var(--space-6);
-}
-
-.hubraster.im-bearb .block {
-  border: 0;
-  border-radius: var(--radius-m);
-  background: var(--flaeche-2);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--linie-2);
-  overflow: hidden;
-  transition:
-    box-shadow var(--dur-micro) var(--ease-out),
-    background-color var(--dur-micro) var(--ease-out);
-}
-
-.bwerk {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  border-bottom: 1px solid var(--linie);
-  background: var(--flaeche);
-}
-
-.bname {
-  margin-right: auto;
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.bwerk-rechts {
-  display: flex;
-  gap: var(--space-half);
-}
 
 .segment.gr button {
   min-width: 28px;
   height: 26px;
   padding: 0 var(--space-2);
   font-size: var(--text-xs);
-}
-
-.im-bearb .binhalt {
-  max-height: 300px;
-  overflow: hidden;
-  opacity: 0.6;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(var(--text) 75%, transparent);
-  mask-image: linear-gradient(var(--text) 75%, transparent);
 }
 
 .griff {
@@ -15173,34 +14759,8 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   background: var(--aktiv);
 }
 
-.hubraster.im-bearb .block.zieht {
-  background: color-mix(in srgb, var(--akzent) 8%, var(--flaeche-2));
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--akzent) 55%, transparent);
-}
-
 .block.zieht > * {
   opacity: 0.35;
-}
-
-.geist {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 36px;
-  padding: 0 var(--space-4) 0 var(--space-3);
-  border-radius: var(--radius-m);
-  background: var(--flaeche);
-  box-shadow:
-    0 0 0 1px var(--linie-2),
-    0 16px 32px -12px var(--schatten);
-  font-size: var(--text-sm);
-  font-weight: 550;
-  white-space: nowrap;
-  cursor: grabbing;
-}
-
-.geist svg {
-  color: var(--text-3);
 }
 
 .ablage {
@@ -15323,15 +14883,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     padding: 0 var(--space-2) var(--space-4);
   }
 
-  .hubraster .block {
-    grid-column: 1 / -1;
-  }
-
-  .hubraster .block:not([data-spalte="0"]) {
-    border-left: 0;
-    border-top: 1px solid var(--linie);
-  }
-
   .frei {
     display: none;
   }
@@ -15346,20 +14897,8 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
     margin-left: 0;
   }
 
-  .bearbleiste {
-    padding: var(--space-3) var(--space-4);
-  }
-
-  .hubraster.im-bearb {
-    padding: var(--space-4);
-  }
-
   .ablage {
     padding: 0 var(--space-4) var(--space-8);
-  }
-
-  .kopfleiste .anp-knopf span {
-    display: none;
   }
 }
 
@@ -15371,7 +14910,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
   .plan li,
   .plan .haken,
   .griff,
-  .hubraster.im-bearb .block,
   .kontext-mobil summary svg {
     transition: none;
   }
@@ -15384,7 +14922,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 @media print {
   .kontext,
   .kontext-mobil,
-  .bearbleiste,
   .ablage {
     display: none;
   }
@@ -15788,9 +15325,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 }
 
 /* Begrüßung über „Dein Tag" im Zentralen Hub */
-.hub-gruss {
-  padding: var(--space-8) var(--space-8) var(--space-4);
-}
 
 /* Stundenplan aus Foto: alten Plan ersetzen */
 .sp-foto-ersetzen {
@@ -15803,13 +15337,6 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 }
 
 /* Diese Woche: mehrere Kurse in einer Zelle untereinander statt übereinander */
-.plan-raster .z:not(:only-child) {
-  height: auto;
-}
-
-.plan-raster .z + .z {
-  margin-top: 2px;
-}
 
 /* Ladeanzeige beim Wechsel zwischen Bereichen: Skelett in der Form des Ziels (`components/skelett.tsx`).
    Erst nach 300 ms sichtbar, damit schnelle Wechsel nicht flackern (DESIGN.md Abschnitt 7). Bewegung nur über opacity. */
@@ -15967,38 +15494,14 @@ html[data-hub-bearbeiten] .kopfleiste .anp-knopf {
 }
 
 html[data-erscheinen="flaeche"] .dashboard-main > :not(.lade-skelett),
-html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox),
-html[data-erscheinen="kaesten"] .hubbox > :not(.hubraster),
-html[data-erscheinen="kaesten"] .hubraster > * {
+html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox) {
   animation: erscheinen var(--dur-short) var(--ease-out) both;
-}
-
-html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(2) {
-  animation-delay: var(--stagger);
-}
-
-html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(3) {
-  animation-delay: calc(var(--stagger) * 2);
-}
-
-html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(4) {
-  animation-delay: calc(var(--stagger) * 3);
-}
-
-html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(5) {
-  animation-delay: calc(var(--stagger) * 4);
-}
-
-html[data-erscheinen="kaesten"] :is(.dashboard-main, .hubbox, .hubraster) > :nth-child(n + 6) {
-  animation-delay: calc(var(--stagger) * 5);
 }
 
 /* Reduziert: nur Überblenden, alles zugleich */
 @media (prefers-reduced-motion: reduce) {
   html[data-erscheinen="flaeche"] .dashboard-main > :not(.lade-skelett),
-  html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox),
-  html[data-erscheinen="kaesten"] .hubbox > :not(.hubraster),
-  html[data-erscheinen="kaesten"] .hubraster > * {
+  html[data-erscheinen="kaesten"] .dashboard-main > :not(.lade-skelett, .hubbox) {
     animation-name: lade-ein;
     animation-delay: 0ms;
   }
@@ -16217,51 +15720,6 @@ html[data-bewegung="reduziert"] .lade-skelett {
 }
 
 /* Mensa heute */
-.mensa-liste {
-  list-style: none;
-  margin: 0;
-  padding: 0 var(--space-8);
-}
-
-.mensa-liste li {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-  border-top: 1px solid var(--linie);
-}
-
-.mensa-liste li:first-child {
-  border-top: 0;
-}
-
-.mensa-liste li > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.mensa-gericht {
-  font-weight: 550;
-}
-
-.mensa-liste .meta {
-  font-size: var(--text-xs);
-  color: var(--text-3);
-}
-
-.mensa-preis {
-  margin-left: auto;
-  white-space: nowrap;
-  color: var(--text-2);
-}
-
-@media (max-width: 760px) {
-  .mensa-liste {
-    padding: 0 var(--space-4);
-  }
-}
 
 /* Einstellungen › Hochschule › Semester */
 .sem-termine {
@@ -17934,7 +17392,6 @@ html[data-bewegung="reduziert"] .einr-ring .hak {
 [data-bewegung="reduziert"] .pfeil-vorn {
   transform: translateX(calc(var(--pfeil-weg) * -1)) !important;
 }
-
 
 /* ==========================================================================
    Zentraler Hub als Bühne (Entscheidung Didi, 19.11., Entwurf „A · Bühne“)

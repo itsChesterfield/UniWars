@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { allesSuchen } from "@/app/(hubs)/suche-actions";
 import { notizAnlegen } from "@/app/(hubs)/notizen/actions";
 import { stapelAnlegen } from "@/app/(hubs)/karteikarten/actions";
@@ -19,7 +19,6 @@ import { WEITERE_HUBS } from "@/lib/hubs/navigation";
 import { inZweiterAnsichtOeffnen, istEingebettet } from "@/lib/geteilte-ansicht";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
-import { HUB_ANORDNEN } from "@/lib/hub-layout";
 import { DESIGN_NAMEN, THEMES, type Theme } from "@/lib/personalisierung";
 import { designWaehlen, usePersoenlich } from "@/lib/personalisierung-store";
 
@@ -83,7 +82,6 @@ const SCHNELL: ErstellArt[] = ["abgabe", "pruefung", "todo", "notiz", "stapel", 
  */
 export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar: boolean; theme?: Theme }) {
   const router = useRouter();
-  const pfad = usePathname();
   const design = usePersoenlich("theme", theme);
   const [offen, setOffen] = useState(false);
   const [q, setQ] = useState("");
@@ -281,22 +279,8 @@ export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar:
       },
     });
 
-    // Personalisierung: Hub anordnen und Design wechseln (DESIGN.md Abschnitt 6)
+    // Personalisierung: Design wechseln (DESIGN.md Abschnitt 6)
     const einstellen: (Eintrag & { woerter: string })[] = [
-      {
-        schluessel: "hub-anordnen",
-        gruppe: "Einstellen",
-        icon: "🏠",
-        titel: "Hub anordnen",
-        info: "Zentraler Hub",
-        woerter: "hub anordnen anpassen bausteine layout verschieben ausblenden",
-        ausfuehren: () => {
-          schliessen();
-          track("hub_anordnen_gestartet", { ort: "befehlspalette" });
-          if (pfad === "/") window.dispatchEvent(new CustomEvent(HUB_ANORDNEN));
-          else router.push("/?anordnen");
-        },
-      },
       ...THEMES.filter((t) => t !== design).map((t) => ({
         schluessel: `design-${t}`,
         gruppe: "Einstellen" as const,
@@ -373,7 +357,7 @@ export function Befehlspalette({ kiVerfuegbar, theme = "HELL" }: { kiVerfuegbar:
       });
     }
     return liste;
-  }, [q, gefunden, zuletzt, kiVerfuegbar, erstellen, gehe, merken, schliessen, design, pfad, router]);
+  }, [q, gefunden, zuletzt, kiVerfuegbar, erstellen, gehe, merken, schliessen, design]);
 
   const aktivIndex = Math.min(aktiv, Math.max(0, eintraege.length - 1));
 
