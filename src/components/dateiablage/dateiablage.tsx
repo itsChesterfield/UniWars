@@ -171,10 +171,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
   const aktionsEintrag = aktion ? nachId.get(aktion.id) : null;
   const themaVon = (e: Eintrag) => zuordnungenNachId.get(e.id)?.find((z) => z.fach_id === aktuellerOrdner.id)?.thema_id ?? null;
   const vorschauEintrag = materialVorschau ? nachId.get(materialVorschau) : null;
-  const zuletzt = aktivitaet.zuletzt.flatMap((id) => {
-    const eintrag = nachId.get(id);
-    return eintrag ? [eintrag] : [];
-  }).slice(0, 4);
+  const zuletzt = new Set(aktivitaet.zuletzt.filter((id) => nachId.has(id)).slice(0, 4));
   const istPin = (id: string) => aktivitaet.pins.includes(`${aktuellerOrdner.id ?? "lose"}:${id}`);
   const eintraege = alle.filter((e) => sonderansicht === "pakete" ? !eigenes(e) : leselisteOffen ? Object.hasOwn(aktivitaet.lesen, e.id) : liegtIn(e, aktuellerOrdner.id));
   const faktor = sortierung.absteigend ? -1 : 1;
@@ -656,23 +653,6 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
             if (!voll) hochladen(e.dataTransfer.files);
           }}
         >
-          {zuletzt.length > 0 && !leselisteOffen && !sonderansicht && (
-            <div className="dat-zuletzt">
-              <h2>Zuletzt geöffnet</h2>
-              <ul>
-                {zuletzt.map((eintrag) => (
-                  <li key={eintrag.id}>
-                    <button type="button" className="dat-name-knopf" onClick={() => eintragOeffnen(eintrag)}>{eintrag.titel}</button>
-                    {eintrag.datei && pdfStand.some((p) => p.datei_id === eintrag.datei?.id) && (
-                      <Link prefetch={false} className="dat-fortsetzen" href={pdfPfad(eintrag.datei.id)}>
-                        Weiter auf Seite {pdfStand.find((p) => p.datei_id === eintrag.datei?.id)?.letzte_seite}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
           <h2 className="abschnitt-titel dat-titel">{sonderansicht === "papierkorb" ? "Papierkorb" : sonderansicht === "pakete" ? "Mit mir geteilt" : leselisteOffen ? "Leseliste" : aktuellerOrdner.name}</h2>
           {sonderansicht === "pakete" && <MaterialPakete />}
           {sonderansicht === "papierkorb" && (
@@ -800,6 +780,9 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                       <span className="dat-thema-linie">{eintrag.name}</span>
                     </td></tr>;
                     const { id, datei: d, hub } = eintrag;
+                    const kuerzlichGeoeffnet = zuletzt.has(id);
+                    const zuletztHinweis = kuerzlichGeoeffnet && <span className="dat-zuletzt-hinweis">Zuletzt geöffnet</span>;
+                    const letzteSeite = d && kuerzlichGeoeffnet ? pdfStand.find((p) => p.datei_id === d.id)?.letzte_seite : undefined;
                     const auswahlZelle = (
                       <td className="dat-spalte-auswahl">
                         <input type="checkbox" aria-label={`${eintrag.titel} auswählen`} checked={auswahl.includes(id)} onChange={() => auswahlUmschalten(id)} />
@@ -812,7 +795,10 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                         <span className="dat-typ"><Icon name={MATERIAL_ARTEN[hub.art].icon} groesse={14} /></span>
                       </td>
                       <td className="dat-spalte-name">
-                        <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{eintrag.titel}</Link>
+                        <div className="dat-name-zeile">
+                          <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{eintrag.titel}</Link>
+                          {zuletztHinweis}
+                        </div>
                       </td>
                       <td className="dat-spalte-groesse" />
                       <td className="dat-spalte-material">{MATERIAL_ARTEN[hub.art].name}</td>
@@ -845,9 +831,19 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
                             }}
                           />
                         ) : (
-                          <button type="button" className="dat-name-knopf" {...druck(id)} onClick={() => void oeffnen(d)}>
-                            {eintrag.titel}
-                          </button>
+                          <>
+                            <div className="dat-name-zeile">
+                              <button type="button" className="dat-name-knopf" {...druck(id)} onClick={() => void oeffnen(d)}>
+                                {eintrag.titel}
+                              </button>
+                              {zuletztHinweis}
+                            </div>
+                            {letzteSeite !== undefined && (
+                              <Link prefetch={false} className="dat-fortsetzen" href={pdfPfad(d.id)}>
+                                Weiter auf Seite {letzteSeite}
+                              </Link>
+                            )}
+                          </>
                         )}
                         {d.pdf_index_status === "wartet" && <span className="dat-index-hinweis">Inhalt wird für die Suche vorbereitet</span>}
                         {d.pdf_index_status === "fehler" && <span className="dat-index-hinweis">PDF-Text konnte nicht erfasst werden</span>}
