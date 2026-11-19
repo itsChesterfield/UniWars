@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   dateiLink,
   pdfIndexStatusLaden,
-  dateiLoeschen,
+  dateiEndgueltigLoeschen,
   dateiUmbenennen,
   dateiVerschieben,
   dateiVerwendung,
@@ -296,7 +296,9 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
       track("datei_hochgeladen", { art: dateiTyp(datei.name)?.art ?? "unbekannt", kb: Math.round(datei.size / 1024), mit_fach: Boolean(fachId) });
     } catch (err) {
       if (ticketPfad) void uploadVerwerfen(ticketPfad).catch(() => undefined);
-      setzen({ fehler: err instanceof Error ? err.message : "Upload fehlgeschlagen.", wiederholbar: true });
+      const text = err instanceof Error && !/minified react error|server components render/i.test(err.message) && !("digest" in err)
+        ? err.message : "Die Datei konnte nicht hochgeladen werden. Versuch es noch einmal.";
+      setzen({ fehler: text, wiederholbar: true });
       fehlerMelden(err, { ort: "datei_upload" });
     }
   }
@@ -457,7 +459,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
     } catch {
       // Hinweis ist optional
     }
-    if (!window.confirm(`„${d.name}“ wirklich löschen?${hinweis}`)) return;
+    if (!window.confirm(`„${d.name}“ endgültig löschen?${hinweis}`)) return;
     // Bewegung: die Zeile tritt zurück, bevor sie verschwindet (nur Deckkraft, kein Weg)
     const zeile = document.querySelector<HTMLElement>(`[data-datei="${d.id}"]`);
     if (zeile && !bewegungReduziert()) {
@@ -465,7 +467,8 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
     }
     setDateien((liste) => liste.filter((x) => x.id !== d.id));
     try {
-      await dateiLoeschen(d.id);
+      if (!await dateiEndgueltigLoeschen(d.id)) throw new Error("Endgültiges Löschen nicht verfügbar.");
+      setMeldung(null);
       track("datei_geloescht");
     } catch (err) {
       setDateien((liste) => [d, ...liste]);
@@ -681,6 +684,9 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
           {freigaben && sonderansicht !== "papierkorb" && ausgewaehlt.length > 0 && ausgewaehlt.every(eigenes) && (
             <button type="button" className="knopf neben klein dat-auswahl-aktion" onClick={() => setPaketOffen(true)}>Als Materialpaket teilen</button>
           )}
+          {!mehrfachVerfuegbar && !leselisteOffen && !sonderansicht && ausgewaehlt.length > 0 && (
+            <span className="dat-index-hinweis" role="status">Die Mehrfachzuordnung wird mit dem Datenbank-Update verfügbar.</span>
+          )}
           {mehrfachVerfuegbar && !leselisteOffen && sonderansicht !== "papierkorb" && ausgewaehlt.length > 0 && (
             <div className="dat-auswahl-form">
               <select className="field" value={fachWahl} onChange={(e) => { setFachWahl(e.target.value); setZielThema(""); }} aria-label="Zielfach">
@@ -859,7 +865,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
                             { label: "Umbenennen", onClick: () => setUmbenennenId(d.id) },
                             { label: "Verschieben nach …", onClick: () => setVerschiebenId(d.id) },
                             { label: "Herunterladen", onClick: () => void herunterladen(d) },
-                            ...(!workflow ? [{ label: "Löschen", onClick: () => void loeschen(d), gefahr: true }] : []),
+                            ...(!workflow && eigenes(eintrag) ? [{ label: "Endgültig löschen", onClick: () => void loeschen(d), gefahr: true }] : []),
                           ]}
                         />
                         {verschiebenId === d.id && (

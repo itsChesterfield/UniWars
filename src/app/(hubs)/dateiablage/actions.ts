@@ -1,7 +1,6 @@
 "use server";
 
 import { fachZuordnungenSpeichern } from "./zuordnung-actions";
-import { materialPapierkorb } from "./workflow-actions";
 import { istMaterialId } from "@/lib/dateiablage/material";
 import { after } from "next/server";
 import { pdfIndexieren } from "@/lib/pdf-reader/index-server";
@@ -16,7 +15,7 @@ import {
 } from "@/lib/dateiablage/dateien";
 import { dateiBestimmen, LinkFehler, linkNormalisieren } from "@/lib/dateiablage/link-import";
 import { linkHerunterladen } from "@/lib/dateiablage/link-laden";
-import type { Tables } from "@/lib/supabase/types";
+import type { Tables, TablesInsert } from "@/lib/supabase/types";
 
 export type Datei = Tables<"datei">;
 
@@ -33,16 +32,25 @@ async function nutzer() {
 
 type Supabase = Awaited<ReturnType<typeof nutzer>>["supabase"];
 
-async function belegterSpeicher(supabase: Supabase): Promise<number> {
+async function belegterSpeicher(supabase: Supabase, userId: string): Promise<number> {
   const { data, error } = await supabase.rpc("material_speicherbelegung");
-  if (error) throw new Error("Der Speicherstand konnte nicht geladen werden.");
-  return Number(data ?? 0);
+  if (!error) return Number(data ?? 0);
+  if (error.code === "PGRST202" || error.code === "42883") {
+    const alt = await supabase.from("datei").select("groesse").eq("user_id", userId);
+    if (!alt.error) return (alt.data ?? []).reduce((summe, d) => summe + Number(d.groesse), 0);
+  }
+  throw new Error("Der Speicherstand konnte nicht geladen werden.");
 }
 
-async function namenImOrdner(supabase: Supabase, fachId: string | null, ohneId?: string): Promise<string[]> {
+async function namenImOrdner(supabase: Supabase, userId: string, fachId: string | null, ohneId?: string): Promise<string[]> {
   const { data, error } = await supabase.rpc("material_dateinamen", { p_fach: fachId, p_ohne: ohneId ?? null });
-  if (error) throw new Error("Die Dateinamen konnten nicht geladen werden.");
-  return data ?? [];
+  if (!error) return data ?? [];
+  if (error.code === "PGRST202" || error.code === "42883") {
+    const abfrage = supabase.from("datei").select("id, name").eq("user_id", userId);
+    const alt = await (fachId ? abfrage.eq("fach_id", fachId) : abfrage.is("fach_id", null));
+    if (!alt.error) return (alt.data ?? []).filter((d) => d.id !== ohneId).map((d) => d.name);
+  }
+  throw new Error("Die Dateinamen konnten nicht geladen werden.");
 }
 
 async function fachPruefen(supabase: Supabase, userId: string, fachId: string | null) {
@@ -65,10 +73,10 @@ export async function uploadVorbereiten(eingabe: { name: string; groesse: number
   const { supabase, userId } = await nutzer();
   if (!eingabe || typeof eingabe.name !== "string" || !Number.isSafeInteger(eingabe.groesse)) throw new Error("Ungültige Datei.");
   await fachPruefen(supabase, userId, eingabe.fachId);
-  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase));
+  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase, userId));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
 
-  const name = freierName(eingabe.name.trim(), await namenImOrdner(supabase, eingabe.fachId));
+  const name = freierName(eingabe.name.trim(), await namenImOrdner(supabase, userId, eingabe.fachId));
   const pfad = `${userId}/${eingabe.fachId ?? "allgemein"}/${crypto.randomUUID()}-${speicherName(name)}`;
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(pfad);
   if (error) throw new Error(error.message);
@@ -117,40 +125,41 @@ async function dateiEintragen(
   eingabe: { pfad: string; name: string; fachId: string | null; groesse: number; mime: string },
 ): Promise<Datei> {
   let name = eingabe.name;
+  const istPdf = eingabe.mime === "application/pdf";
+  let mitIndexStatus = istPdf;
   for (let versuch = 0; versuch < 5; versuch++) {
-    const { data, error } = await supabase
-      .from("datei")
-      .insert({
-        user_id: userId,
-        fach_id: eingabe.fachId || null,
-        name,
-        groesse: eingabe.groesse,
-        mime_typ: eingabe.mime,
-        pdf_index_status: eingabe.mime === "application/pdf" ? "wartet" : null,
-        speicher_pfad: eingabe.pfad,
-      })
-      .select()
-      .single();
+    const zeile: TablesInsert<"datei"> = {
+      user_id: userId, fach_id: eingabe.fachId, name, groesse: eingabe.groesse,
+      mime_typ: eingabe.mime, speicher_pfad: eingabe.pfad,
+    };
+    const mitStatus: TablesInsert<"datei"> = { ...zeile, pdf_index_status: "wartet" };
+    let gespeichert = await supabase.from("datei").insert(mitIndexStatus ? mitStatus : zeile).select().single();
+    if (mitIndexStatus && gespeichert.error?.message.includes("pdf_index_status") && ["PGRST204", "42703"].includes(gespeichert.error.code)) {
+      mitIndexStatus = false;
+      gespeichert = await supabase.from("datei").insert(zeile).select().single();
+    }
+    const { data, error } = gespeichert;
     if (!error) {
-      if (data.mime_typ === "application/pdf") {
+      const datei = { ...data, pdf_index_status: data.pdf_index_status ?? null };
+      if (istPdf) {
         after(async () => {
           let status = "fertig";
-          try { await pdfIndexieren(supabase, data); }
+          try { await pdfIndexieren(supabase, datei); }
           catch {
             status = "fehler";
             console.error("[dateiablage] PDF-Text konnte nicht erfasst werden");
           }
-          await supabase.from("datei").update({ pdf_index_status: status }).eq("id", data.id);
+          if (mitIndexStatus) await supabase.from("datei").update({ pdf_index_status: status }).eq("id", datei.id);
           revalidatePath("/dateiablage");
         });
       }
       revalidatePath("/dateiablage");
-      return data;
+      return datei;
     }
     if (error.code === "23505") {
       const vorhanden = await dateiAmSpeicherpfad(supabase, userId, eingabe.pfad);
       if (vorhanden) return vorhanden;
-      name = freierName(name, await namenImOrdner(supabase, eingabe.fachId));
+      name = freierName(name, await namenImOrdner(supabase, userId, eingabe.fachId));
       continue;
     }
     await supabase.storage.from(BUCKET).remove([eingabe.pfad]);
@@ -176,10 +185,10 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
 
     const geladen = await linkHerunterladen(url);
     const { name: vorschlag, mime } = dateiBestimmen(geladen);
-    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase));
+    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase, userId));
     if (!pruefung.ok) return { ok: false, fehler: pruefung.fehler };
 
-    const name = freierName(vorschlag, await namenImOrdner(supabase, eingabe.fachId));
+    const name = freierName(vorschlag, await namenImOrdner(supabase, userId, eingabe.fachId));
     const pfad = `${userId}/${eingabe.fachId ?? "allgemein"}/${crypto.randomUUID()}-${speicherName(name)}`;
     const { error } = await supabase.storage.from(BUCKET).upload(pfad, geladen.bytes, { contentType: mime, upsert: false });
     if (error) throw new Error(error.message);
@@ -207,7 +216,7 @@ export async function dateiUmbenennen(id: string, eingabe: string): Promise<Date
   if (ladeFehler) throw new Error(ladeFehler.message);
   const neu = umbenannt(datei.name, eingabe);
   if (!neu) throw new Error("Der Name darf nicht leer sein.");
-  if ((await namenImOrdner(supabase, datei.fach_id, id)).some((n) => n.toLowerCase() === neu.toLowerCase())) {
+  if ((await namenImOrdner(supabase, datei.user_id, datei.fach_id, id)).some((n) => n.toLowerCase() === neu.toLowerCase())) {
     throw new Error("In diesem Ordner gibt es schon eine Datei mit diesem Namen.");
   }
   const { data, error } = await supabase.from("datei").update({ name: neu }).eq("id", id).select().single();
@@ -223,7 +232,7 @@ export async function dateiVerschieben(id: string, fachId: string | null): Promi
   await fachPruefen(supabase, userId, fachId);
   const { data: datei, error: ladeFehler } = await supabase.from("datei").select("*").eq("id", id).single();
   if (ladeFehler) throw new Error(ladeFehler.message);
-  const name = freierName(datei.name, await namenImOrdner(supabase, fachId, id));
+  const name = freierName(datei.name, await namenImOrdner(supabase, userId, fachId, id));
   const { data, error } = await supabase
     .from("datei")
     .update({ fach_id: fachId || null, name })
@@ -245,9 +254,21 @@ export async function dateiVerwendung(id: string): Promise<{ anhaenge: number; q
   return { anhaenge: anhaenge ?? 0, quellen: quellen ?? 0 };
 }
 
-/** DAT-08: aus Storage und Datenbank entfernen. */
-export async function dateiLoeschen(id: string) {
-  await materialPapierkorb({ art: "datei", id }, true);
+/** Altes Löschverhalten ausschließlich vor der Einführung des Papierkorbs. */
+export async function dateiEndgueltigLoeschen(id: string) {
+  const { supabase, userId } = await nutzer();
+  if (!istMaterialId(id)) return false;
+  const stand = await supabase.from("material_ablage_info").select("art").limit(1);
+  if (!stand.error || !["PGRST205", "42P01"].includes(stand.error.code)) return false;
+  const { data, error } = await supabase.from("datei").delete().eq("id", id).eq("user_id", userId).select("speicher_pfad").maybeSingle();
+  if (error || !data) return false;
+  if (data.speicher_pfad.startsWith(`${userId}/`)) {
+    const entfernt = await supabase.storage.from(BUCKET).remove([data.speicher_pfad]);
+    if (entfernt.error) console.error("[dateiablage] Storage-Bereinigung nach Löschung fehlgeschlagen", entfernt.error.name);
+  }
+  revalidatePath("/dateiablage");
+  revalidatePath("/");
+  return true;
 }
 
 export async function dateiLink(id: string, herunterladen = false): Promise<string> {
@@ -259,8 +280,8 @@ export async function dateiLink(id: string, herunterladen = false): Promise<stri
 }
 
 export async function speicherStand(): Promise<{ belegt: number; limit: number }> {
-  const { supabase } = await nutzer();
-  return { belegt: await belegterSpeicher(supabase), limit: SPEICHER_LIMIT_BYTES };
+  const { supabase, userId } = await nutzer();
+  return { belegt: await belegterSpeicher(supabase, userId), limit: SPEICHER_LIMIT_BYTES };
 }
 
 export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null): Promise<{ id: string }> {
@@ -282,9 +303,9 @@ export async function chatDateiUebernehmen(nachrichtId: string, fachId: string |
   }
   const { data, error } = await supabase.storage.from(BUCKET).download(anhang.pfad);
   if (error || !data) throw new Error("Der Anhang konnte nicht geladen werden.");
-  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase));
+  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase, userId));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
-  const name = freierName(anhang.titel, await namenImOrdner(supabase, fachId));
+  const name = freierName(anhang.titel, await namenImOrdner(supabase, userId, fachId));
   const pfad = `${userId}/chat/${crypto.randomUUID()}-${speicherName(name)}`;
   const { error: uploadFehler } = await supabase.storage.from(BUCKET).upload(pfad, data, { contentType: pruefung.mime });
   if (uploadFehler) throw new Error("Der Anhang konnte nicht abgelegt werden.");
