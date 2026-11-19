@@ -1,3 +1,32 @@
+create or replace function public.datei_speicherlimit_pruefen() returns trigger
+language plpgsql set search_path = '' as $$
+declare v_belegt bigint;
+begin
+  select coalesce(sum(groesse), 0) into v_belegt from public.datei where user_id = new.user_id;
+  if v_belegt + new.groesse > 2147483648 then
+    raise exception 'SPEICHER_VOLL';
+  end if;
+  return new;
+end;
+$$;
+grant execute on function public.datei_speicherlimit_pruefen() to public;
+drop function public.material_speicherbelegung(), public.material_dateinamen(uuid, uuid);
+
+drop policy material_pdf_stand_zugriff on public.pdf_stand;
+alter policy pdf_stand_insert_eigene on public.pdf_stand with check (
+  user_id = (select auth.uid())
+  and exists (select 1 from public.datei d where d.id = pdf_stand.datei_id and d.user_id = (select auth.uid()))
+);
+delete from public.pdf_stand s using public.datei d where s.datei_id = d.id and s.user_id <> d.user_id;
+alter table public.pdf_stand drop constraint pdf_stand_pkey;
+alter table public.pdf_stand add primary key (datei_id);
+alter policy dateiablage_select_chat_anhang on storage.objects using (
+  bucket_id = 'dateiablage' and exists (
+    select 1 from public.chat_nachricht n where n.anhang ->> 'pfad' = storage.objects.name and not n.geloescht
+  )
+);
+alter table public.datei drop constraint material_dateipfad_eigentuemer;
+
 drop function public.material_paket_erstellen(uuid, text, jsonb);
 alter policy material_ablage_fach_einfuegen on public.material_ablage_fach with check (
    user_id = (select auth.uid())
@@ -37,6 +66,7 @@ drop function private.material_storage_aktiv(text);
 drop function private.material_storage_geteilt(text);
 drop policy material_medium_geteilt on public.datei;
 drop function private.material_medium_geteilt(uuid);
+drop function private.material_bildreferenzen(text, jsonb);
 
 drop function private.material_geteilt(text, uuid, boolean);
 drop function private.material_paket_mitglied(uuid, uuid);

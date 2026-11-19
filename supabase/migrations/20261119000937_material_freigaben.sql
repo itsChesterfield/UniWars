@@ -87,7 +87,8 @@ language sql stable security definer set search_path = '' as $$
 $$;
 create function private.material_storage_aktiv(p_pfad text) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select not exists (select 1 from public.datei d where d.speicher_pfad = p_pfad and not private.material_aktiv('datei', d.id))
+  select not exists (select 1 from public.datei d where d.speicher_pfad = p_pfad
+    and pg_catalog.split_part(p_pfad, '/', 1) = d.user_id::text and not private.material_aktiv('datei', d.id))
 $$;
 revoke all on function private.material_gruppe(uuid, uuid), private.material_paket_recht(uuid, boolean, boolean),
   private.material_paket_mitglied(uuid, uuid), private.material_geteilt(text, uuid, boolean),
@@ -145,19 +146,54 @@ create policy material_paket_pflege_loeschen on public.material_paket_pflege for
 create policy material_info_geteilt on public.material_ablage_info for select to authenticated
   using (papierkorb_am is null and private.material_geteilt(art, material_id));
 create policy material_datei_geteilt on storage.objects for select to authenticated
-  using (bucket_id = 'dateiablage' and private.material_storage_geteilt(name));
+  using (bucket_id = 'dateiablage' and storage.allow_only_operation('object.get_authenticated')
+    and private.material_storage_geteilt(name));
 create policy material_datei_aktiv on storage.objects as restrictive for select to authenticated
   using (bucket_id <> 'dateiablage' or private.material_storage_aktiv(name));
 
+-- Die Sichtbarkeit eines Datenbankeintrags darf nie Zugriff auf fremde Speicherpfade verleihen.
+alter table public.datei add constraint material_dateipfad_eigentuemer
+  check (pg_catalog.starts_with(speicher_pfad, user_id::text || '/')) not valid;
+alter policy dateiablage_select_chat_anhang on storage.objects using (
+  bucket_id = 'dateiablage' and storage.allow_only_operation('object.get_authenticated') and exists (
+    select 1 from public.chat_nachricht n where n.anhang ->> 'pfad' = storage.objects.name
+      and pg_catalog.split_part(storage.objects.name, '/', 1) = n.user_id::text and not n.geloescht
+  )
+);
+
+create function private.material_bildreferenzen(p_tabelle text, p_zeile jsonb) returns setof jsonb
+language sql immutable set search_path = '' as $$
+  select bild from pg_catalog.jsonb_path_query(p_zeile, case p_tabelle
+    when 'whiteboard' then '$.daten.elemente[*] ? (@.typ == "bild").datei_id'::jsonpath
+    when 'praesentation' then '$.folien[*].bild'::jsonpath
+  end) as bilder(bild)
+  where pg_catalog.jsonb_typeof(bild) = 'string'
+$$;
+revoke all on function private.material_bildreferenzen(text, jsonb) from public, anon, authenticated;
+grant execute on function private.material_bildreferenzen(text, jsonb) to authenticated;
+
 -- Bearbeitende dürfen den Inhalt ändern. Identität, Besitzer und Dateipfad bleiben dem Eigentümer vorbehalten.
 create function private.material_eigentuemer_schuetzen() returns trigger
-language plpgsql set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 begin
+  if auth.uid() is not null and tg_table_name = 'datei' and
+    (pg_catalog.to_jsonb(new) -> 'id' is distinct from pg_catalog.to_jsonb(old) -> 'id'
+      or pg_catalog.to_jsonb(new) -> 'user_id' is distinct from pg_catalog.to_jsonb(old) -> 'user_id'
+      or pg_catalog.to_jsonb(new) -> 'speicher_pfad' is distinct from pg_catalog.to_jsonb(old) -> 'speicher_pfad'
+      or pg_catalog.to_jsonb(new) -> 'groesse' is distinct from pg_catalog.to_jsonb(old) -> 'groesse') then
+    raise exception using errcode = '42501', message = 'Die Identität und der Speicherort der Datei können nicht geändert werden.';
+  end if;
   if auth.uid() is not null and old.user_id is distinct from auth.uid() then
     if (pg_catalog.to_jsonb(old) - array['name','titel','inhalt','klartext','woerter','daten','folien','design','text','skript','fragen','notiz','autoren','verlag','ort','doi','url','jahr','geaendert_am'])
       is distinct from
       (pg_catalog.to_jsonb(new) - array['name','titel','inhalt','klartext','woerter','daten','folien','design','text','skript','fragen','notiz','autoren','verlag','ort','doi','url','jahr','geaendert_am']) then
       raise exception using errcode = '42501', message = 'Nur der Eigentümer kann diese Angaben ändern.';
+    end if;
+    if tg_table_name in ('whiteboard', 'praesentation') and exists (
+      select private.material_bildreferenzen(tg_table_name::text, pg_catalog.to_jsonb(new))
+      except select private.material_bildreferenzen(tg_table_name::text, pg_catalog.to_jsonb(old))
+    ) then
+      raise exception using errcode = '42501', message = 'Neue Bilder kann nur der Eigentümer einfügen.';
     end if;
   end if;
   return new;
@@ -240,11 +276,10 @@ language sql stable security definer set search_path = '' as $$
         where tt.datei_id = d.id and t.user_id = d.user_id and private.material_geteilt('transkript', t.id))
       or exists (select 1 from public.praesentation p
         where p.user_id = d.user_id and private.material_geteilt('praesentation', p.id)
-          and pg_catalog.jsonb_path_exists(p.folien, '$[*] ? (@.bild == $id)'::jsonpath, pg_catalog.jsonb_build_object('id', d.id::text)))
+          and pg_catalog.to_jsonb(d.id::text) in (select private.material_bildreferenzen('praesentation', pg_catalog.to_jsonb(p))))
       or exists (select 1 from public.whiteboard w
         where w.user_id = d.user_id and private.material_geteilt('whiteboard', w.id)
-          and pg_catalog.jsonb_path_exists(w.daten, '$.elemente[*] ? (@.typ == "bild" && @.datei_id == $id)'::jsonpath,
-            pg_catalog.jsonb_build_object('id', d.id::text)))
+          and pg_catalog.to_jsonb(d.id::text) in (select private.material_bildreferenzen('whiteboard', pg_catalog.to_jsonb(w))))
     )
   )
 $$;
@@ -254,6 +289,43 @@ create policy material_medium_geteilt on public.datei for select to authenticate
   using (private.material_medium_geteilt(id));
 create or replace function private.material_storage_geteilt(p_pfad text) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from public.datei d where d.speicher_pfad = p_pfad and
-    (private.material_geteilt('datei', d.id, false) or private.material_medium_geteilt(d.id)))
+  select exists (select 1 from public.datei d where d.speicher_pfad = p_pfad
+    and pg_catalog.split_part(p_pfad, '/', 1) = d.user_id::text
+    and (private.material_geteilt('datei', d.id, false) or private.material_medium_geteilt(d.id)))
 $$;
+
+-- Lesefortschritt und Lesezeichen bleiben auch bei geteilten PDFs persönlich.
+alter table public.pdf_stand drop constraint pdf_stand_pkey;
+alter table public.pdf_stand add primary key (datei_id, user_id);
+alter policy pdf_stand_insert_eigene on public.pdf_stand
+  with check (user_id = (select auth.uid()) and exists (select 1 from public.datei d where d.id = pdf_stand.datei_id));
+create policy material_pdf_stand_zugriff on public.pdf_stand as restrictive for all to authenticated
+  using (exists (select 1 from public.datei d where d.id = pdf_stand.datei_id))
+  with check (exists (select 1 from public.datei d where d.id = pdf_stand.datei_id));
+
+-- Papierkorbeinträge belegen weiterhin Speicher und reservieren ihren Originalnamen.
+create function public.material_speicherbelegung() returns bigint
+language sql stable security definer set search_path = '' as $$
+  select coalesce(pg_catalog.sum(groesse), 0)::bigint from public.datei where user_id = auth.uid()
+$$;
+create function public.material_dateinamen(p_fach uuid, p_ohne uuid) returns text[]
+language sql stable security definer set search_path = '' as $$
+  select coalesce(pg_catalog.array_agg(name), array[]::text[]) from public.datei
+    where user_id = auth.uid() and fach_id is not distinct from p_fach and id is distinct from p_ohne
+$$;
+revoke all on function public.material_speicherbelegung(), public.material_dateinamen(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.material_speicherbelegung(), public.material_dateinamen(uuid, uuid) to authenticated;
+
+create or replace function public.datei_speicherlimit_pruefen() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare v_belegt bigint;
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.user_id::text, 141667));
+  select coalesce(pg_catalog.sum(groesse), 0) into v_belegt from public.datei where user_id = new.user_id;
+  if v_belegt + new.groesse > 2147483648 then
+    raise exception 'SPEICHER_VOLL';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.datei_speicherlimit_pruefen() from public, anon, authenticated;

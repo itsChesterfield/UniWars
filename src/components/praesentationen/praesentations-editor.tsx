@@ -31,6 +31,7 @@ type Aenderung = { titel: string; design: Design; folien: Folie[] };
 export function PraesentationsEditor({
   id,
   userId,
+  darfBilderEinfuegen,
   startTitel,
   startFachId,
   startDesign,
@@ -40,6 +41,7 @@ export function PraesentationsEditor({
 }: {
   id: string;
   userId: string;
+  darfBilderEinfuegen: boolean;
   startTitel: string;
   startFachId: string | null;
   startDesign: Design;
@@ -296,7 +298,7 @@ export function PraesentationsEditor({
             design={design}
             modus="bearbeiten"
             onAendern={folieAendern}
-            onBildWaehlen={() => setBildFuer(aktiv.id)}
+            onBildWaehlen={darfBilderEinfuegen ? () => setBildFuer(aktiv.id) : undefined}
           />
           <div className="prae-buehne-leiste">
             <label className="prae-layout">

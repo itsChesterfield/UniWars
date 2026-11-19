@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { materialGeoeffnet } from "@/lib/dateiablage/material-aktivitaet";
 import { allesSuchen, zuletztSichtbareTreffer } from "@/app/(hubs)/suche-actions";
 import { notizAnlegen } from "@/app/(hubs)/notizen/actions";

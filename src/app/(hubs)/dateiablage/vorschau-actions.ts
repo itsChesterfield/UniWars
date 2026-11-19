@@ -27,8 +27,13 @@ export async function vorschauLaden(art: string, id: string): Promise<MaterialVo
         const { data: blob } = await supabase.storage.from("dateiablage").download(data.speicher_pfad);
         if (!blob || blob.size > 25 * 1024 * 1024) return null;
         try {
+          let folieGefunden = false;
           const dateien = unzipSync(new Uint8Array(await blob.arrayBuffer()), {
-            filter: (datei) => datei.name === "ppt/slides/slide1.xml" && datei.originalSize < 200_000,
+            filter: (datei) => {
+              if (folieGefunden || datei.name !== "ppt/slides/slide1.xml" || datei.originalSize >= 200_000) return false;
+              folieGefunden = true;
+              return true;
+            },
           });
           const erste = dateien["ppt/slides/slide1.xml"];
           if (!erste) return null;

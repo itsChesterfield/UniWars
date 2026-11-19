@@ -16,7 +16,7 @@ export default async function DateiablageSeite() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: dateien, error }, { data: faecher, error: fachFehler }, material, zuordnung, themen, info, freigabeTabellen, pdfStand] = await Promise.all([
+  const [{ data: dateien, error }, { data: faecher, error: fachFehler }, material, zuordnung, themen, info, freigabeTabellen, pdfStand, belegung] = await Promise.all([
     supabase.from("datei").select("*").order("erstellt_am", { ascending: false }),
     supabase.from("fach").select("id, name, farbe, aktiv").order("erstellt_am", { ascending: true }),
     hubMaterialLaden(supabase),
@@ -25,6 +25,7 @@ export default async function DateiablageSeite() {
     supabase.from("material_ablage_info").select("art, material_id, anzeigetitel, papierkorb_am, papierkorb_titel"),
     supabase.from("material_paket").select("id").limit(1),
     supabase.from("pdf_stand").select("datei_id, letzte_seite").eq("user_id", user.id),
+    supabase.rpc("material_speicherbelegung"),
   ]);
 
   if (tabelleFehlt(error)) {
@@ -53,7 +54,7 @@ export default async function DateiablageSeite() {
 
   return (
     <Suspense fallback={null}>
-      <Dateiablage userId={user.id} initialDateien={liste} material={material} themen={themen.data ?? []} info={info.data ?? []} workflow={!themen.error && !info.error} freigaben={!freigabeTabellen.error} ki={kiKonfiguriert()} pdfStand={pdfStand.data ?? []} zuordnungen={zuordnungen} mehrfachVerfuegbar={!zuordnung.error} ordner={ordner} limit={SPEICHER_LIMIT_BYTES} />
+      <Dateiablage userId={user.id} initialDateien={liste} material={material} themen={themen.data ?? []} info={info.data ?? []} workflow={!themen.error && !info.error} freigaben={!freigabeTabellen.error} ki={kiKonfiguriert()} pdfStand={pdfStand.data ?? []} zuordnungen={zuordnungen} mehrfachVerfuegbar={!zuordnung.error} ordner={ordner} speicherBelegt={belegung.data} limit={SPEICHER_LIMIT_BYTES} />
     </Suspense>
   );
 }

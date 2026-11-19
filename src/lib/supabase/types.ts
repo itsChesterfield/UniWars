@@ -1615,7 +1615,7 @@ export type Database = {
           {
             foreignKeyName: "pdf_stand_datei_id_fkey"
             columns: ["datei_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "datei"
             referencedColumns: ["id"]
           },
@@ -2316,6 +2316,8 @@ export type Database = {
       material_paket_erstellen: { Args: { p_chat_id: string; p_titel: string; p_material: Json }; Returns: string }
       material_thema_vorschlag: { Args: { p_fach: string; p_name: string; p_material: Json }; Returns: undefined }
       material_themen_sortieren: { Args: { p_fach: string; p_reihenfolge: string[] }; Returns: undefined };
+      material_speicherbelegung: { Args: Record<never, never>; Returns: number };
+      material_dateinamen: { Args: { p_fach: string | null; p_ohne: string | null }; Returns: string[] };
 
       aufgabe_arbeitszeit: {
         Args: { p_id: string; p_typ: string }

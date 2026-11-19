@@ -57,12 +57,14 @@ type Aktion =
 
 export function WhiteboardEditor({
   id,
+  darfBilderEinfuegen,
   startName,
   startFachId,
   startElemente,
   faecher,
 }: {
   id: string;
+  darfBilderEinfuegen: boolean;
   startName: string;
   startFachId: string | null;
   startElemente: wb.Element[];
@@ -331,6 +333,10 @@ export function WhiteboardEditor({
 
   // --- WB-07: Bilder -------------------------------------------------------------------
   async function bildEinfuegen(datei: File, punkt?: { x: number; y: number }) {
+    if (!darfBilderEinfuegen) {
+      setHinweis("Neue Bilder kann nur der Eigentümer einfügen.");
+      return;
+    }
     if (dateiTyp(datei.name || "bild.png")?.art !== "bild" && !/^image\/(png|jpeg)$/.test(datei.type)) {
       setHinweis("Nur JPG- oder PNG-Bilder.");
       return;

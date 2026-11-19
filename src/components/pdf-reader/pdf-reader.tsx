@@ -6,7 +6,7 @@ import { pdfjsLaden } from "@/lib/pdf-reader/pdfjs-browser";
 import { pdfMarkdownLink } from "@/lib/pdf-reader/fundstelle";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
-import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import {
   markierungAendern,
   markierungAnlegen,
@@ -141,11 +141,13 @@ export function PdfReader({
   // --- Laden -----------------------------------------------------------------
   useEffect(() => {
     let abgebrochen = false;
-    let geladen: PDFDocumentProxy | null = null;
+    let laden: PDFDocumentLoadingTask | undefined;
     (async () => {
       try {
         const pdfjs = await pdfjsLaden();
-        geladen = await pdfjs.getDocument({ url }).promise;
+        if (abgebrochen) return;
+        laden = pdfjs.getDocument({ url });
+        const geladen = await laden.promise;
         if (abgebrochen) return;
         const liste: Masse[] = [];
         for (let i = 1; i <= geladen.numPages; i++) {
@@ -166,7 +168,7 @@ export function PdfReader({
     })();
     return () => {
       abgebrochen = true;
-      void geladen?.destroy();
+      void laden?.destroy().catch(() => undefined);
     };
   }, [url]);
 

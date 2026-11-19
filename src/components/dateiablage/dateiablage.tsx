@@ -85,8 +85,8 @@ function OrdnerZeichen({ ordner }: { ordner: Ordner }) {
 
 const DRAG_TYP = "application/x-uniwars-datei";
 
-export function Dateiablage({ userId, initialDateien, material, ordner, limit, zuordnungen, mehrfachVerfuegbar, themen, info, workflow, freigaben, ki, pdfStand }: {
-  userId: string; initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; limit: number;
+export function Dateiablage({ userId, initialDateien, material, ordner, speicherBelegt, limit, zuordnungen, mehrfachVerfuegbar, themen, info, workflow, freigaben, ki, pdfStand }: {
+  userId: string; initialDateien: Datei[]; material: HubMaterial[]; ordner: Ordner[]; speicherBelegt: number | null; limit: number;
   zuordnungen: MaterialFachZuordnung[]; mehrfachVerfuegbar: boolean;
   themen: { id: string; fach_id: string; name: string }[];
   info: { art: string; material_id: string; anzeigetitel: string | null; papierkorb_am: string | null; papierkorb_titel: string | null }[];
@@ -142,7 +142,8 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
     }, 2500);
     return () => { aktiv = false; window.clearInterval(timer); };
   }, [pdfOffen]);
-  const belegt = dateien.reduce((s, d) => s + (d.user_id === userId ? Number(d.groesse) : 0), 0);
+  const eigeneBytes = (liste: Datei[]) => liste.reduce((summe, d) => summe + (d.user_id === userId ? Number(d.groesse) : 0), 0);
+  const belegt = eigeneBytes(dateien) + (speicherBelegt === null ? 0 : Math.max(0, Number(speicherBelegt) - eigeneBytes(initialDateien)));
   const voll = belegt >= limit;
 
   const infoNachId = new Map(info.map((i) => [`${i.art}:${i.material_id}`, i]));
@@ -623,7 +624,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, limit, z
             <span className={voll ? "dat-speicher-voll" : undefined}>
               {groesseText(belegt)} von {groesseText(limit)} belegt
             </span>
-            {voll && <span className="dat-speicher-voll">Dein Speicher ist voll. Lösche Dateien, um neue hochzuladen.</span>}
+            {voll && <span className="dat-speicher-voll">Dein Speicher ist voll. Dateien im Papierkorb belegen weiterhin Speicher.</span>}
           </div>
         </aside>
 

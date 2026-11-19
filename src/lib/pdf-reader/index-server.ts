@@ -1,8 +1,5 @@
 import "server-only";
 
-import { createRequire } from "node:module";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import type { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -11,11 +8,9 @@ export async function pdfIndexieren(supabase: Supabase, datei: { id: string; use
   const { data, error } = await supabase.storage.from("dateiablage").download(datei.speicher_pfad);
   if (error) throw error;
 
-  const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // PDF.js nutzt im Node-Prozess seinen eigenen Worker als Modul. Der Browser-Worker
-  // aus dem Next-Bundle hat einen anderen Einstiegspunkt.
-  const ladeModul = createRequire(resolve("package.json"));
-  GlobalWorkerOptions.workerSrc = pathToFileURL(ladeModul.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs")).href;
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // Der Worker registriert seinen Message Handler für PDF.js im Node-Prozess.
+  await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
   const laden = getDocument({
     data: new Uint8Array(await data.arrayBuffer()),
     stopAtErrors: true,

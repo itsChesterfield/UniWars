@@ -33,17 +33,29 @@ async function nutzer() {
 
 type Supabase = Awaited<ReturnType<typeof nutzer>>["supabase"];
 
-async function belegterSpeicher(supabase: Supabase, userId: string): Promise<number> {
-  const { data, error } = await supabase.from("datei").select("groesse").eq("user_id", userId);
-  if (error) throw new Error(error.message);
-  return (data ?? []).reduce((summe, d) => summe + Number(d.groesse), 0);
+async function belegterSpeicher(supabase: Supabase): Promise<number> {
+  const { data, error } = await supabase.rpc("material_speicherbelegung");
+  if (error) throw new Error("Der Speicherstand konnte nicht geladen werden.");
+  return Number(data ?? 0);
 }
 
 async function namenImOrdner(supabase: Supabase, fachId: string | null, ohneId?: string): Promise<string[]> {
-  let abfrage = supabase.from("datei").select("id, name");
-  abfrage = fachId ? abfrage.eq("fach_id", fachId) : abfrage.is("fach_id", null);
-  const { data } = await abfrage;
-  return (data ?? []).filter((d) => d.id !== ohneId).map((d) => d.name);
+  const { data, error } = await supabase.rpc("material_dateinamen", { p_fach: fachId, p_ohne: ohneId ?? null });
+  if (error) throw new Error("Die Dateinamen konnten nicht geladen werden.");
+  return data ?? [];
+}
+
+async function fachPruefen(supabase: Supabase, userId: string, fachId: string | null) {
+  if (fachId === null) return;
+  if (!istMaterialId(fachId)) throw new Error("Ungültiges Fach.");
+  const { data } = await supabase.from("fach").select("id").eq("id", fachId).eq("user_id", userId).maybeSingle();
+  if (!data) throw new Error("Ungültiges Fach.");
+}
+
+async function dateiAmSpeicherpfad(supabase: Supabase, userId: string, pfad: string) {
+  const { data, error } = await supabase.from("datei").select("*").eq("user_id", userId).eq("speicher_pfad", pfad).maybeSingle();
+  if (error) throw new Error("Die Datei konnte nicht geprüft werden.");
+  return data;
 }
 
 export type UploadTicket = { pfad: string; signedUrl: string; name: string; mime: string };
@@ -51,7 +63,9 @@ export type UploadTicket = { pfad: string; signedUrl: string; name: string; mime
 /** DAT-02 Schritt 1: prüfen und eine signierte Upload-Adresse holen (Upload läuft direkt zum Storage). */
 export async function uploadVorbereiten(eingabe: { name: string; groesse: number; fachId: string | null }): Promise<UploadTicket> {
   const { supabase, userId } = await nutzer();
-  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase, userId));
+  if (!eingabe || typeof eingabe.name !== "string" || !Number.isSafeInteger(eingabe.groesse)) throw new Error("Ungültige Datei.");
+  await fachPruefen(supabase, userId, eingabe.fachId);
+  const pruefung = uploadPruefen(eingabe.name, eingabe.groesse, await belegterSpeicher(supabase));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
 
   const name = freierName(eingabe.name.trim(), await namenImOrdner(supabase, eingabe.fachId));
@@ -78,7 +92,12 @@ async function hochgeladeneGroesse(supabase: Supabase, pfad: string): Promise<nu
 /** DAT-02 Schritt 2: hochgeladene Datei eintragen. */
 export async function uploadAbschliessen(eingabe: { pfad: string; name: string; fachId: string | null }): Promise<Datei> {
   const { supabase, userId } = await nutzer();
-  if (!eingabe.pfad.startsWith(`${userId}/`)) throw new Error("Ungültiger Pfad");
+  if (!eingabe || typeof eingabe.pfad !== "string" || !eingabe.pfad.startsWith(`${userId}/`) || typeof eingabe.name !== "string") {
+    throw new Error("Ungültiger Upload.");
+  }
+  const vorhanden = await dateiAmSpeicherpfad(supabase, userId, eingabe.pfad);
+  if (vorhanden) return vorhanden;
+  await fachPruefen(supabase, userId, eingabe.fachId);
 
   const groesse = await hochgeladeneGroesse(supabase, eingabe.pfad);
   if (groesse === null) throw new Error("Upload nicht gefunden – bitte erneut versuchen.");
@@ -129,6 +148,8 @@ async function dateiEintragen(
       return data;
     }
     if (error.code === "23505") {
+      const vorhanden = await dateiAmSpeicherpfad(supabase, userId, eingabe.pfad);
+      if (vorhanden) return vorhanden;
       name = freierName(name, await namenImOrdner(supabase, eingabe.fachId));
       continue;
     }
@@ -151,10 +172,11 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
     const { supabase, userId } = await nutzer();
     const url = linkNormalisieren(eingabe.link);
     if (!url) return { ok: false, fehler: "Das ist kein gültiger Link. Kopiere die Adresse aus der Adresszeile deines Browsers (beginnt mit https://)." };
+    await fachPruefen(supabase, userId, eingabe.fachId);
 
     const geladen = await linkHerunterladen(url);
     const { name: vorschlag, mime } = dateiBestimmen(geladen);
-    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase, userId));
+    const pruefung = uploadPruefen(vorschlag, geladen.bytes.length, await belegterSpeicher(supabase));
     if (!pruefung.ok) return { ok: false, fehler: pruefung.fehler };
 
     const name = freierName(vorschlag, await namenImOrdner(supabase, eingabe.fachId));
@@ -174,7 +196,7 @@ export async function ausLinkImportieren(eingabe: { link: string; fachId: string
 /** Upload abgebrochen: Objekt wieder entfernen. */
 export async function uploadVerwerfen(pfad: string) {
   const { supabase, userId } = await nutzer();
-  if (!pfad.startsWith(`${userId}/`)) return;
+  if (typeof pfad !== "string" || !pfad.startsWith(`${userId}/`) || await dateiAmSpeicherpfad(supabase, userId, pfad)) return;
   await supabase.storage.from(BUCKET).remove([pfad]);
 }
 
@@ -197,7 +219,8 @@ export async function dateiUmbenennen(id: string, eingabe: string): Promise<Date
 
 /** DAT-06: Name wird bei Bedarf automatisch eindeutig gemacht. */
 export async function dateiVerschieben(id: string, fachId: string | null): Promise<Datei> {
-  const { supabase } = await nutzer();
+  const { supabase, userId } = await nutzer();
+  await fachPruefen(supabase, userId, fachId);
   const { data: datei, error: ladeFehler } = await supabase.from("datei").select("*").eq("id", id).single();
   if (ladeFehler) throw new Error(ladeFehler.message);
   const name = freierName(datei.name, await namenImOrdner(supabase, fachId, id));
@@ -236,8 +259,8 @@ export async function dateiLink(id: string, herunterladen = false): Promise<stri
 }
 
 export async function speicherStand(): Promise<{ belegt: number; limit: number }> {
-  const { supabase, userId } = await nutzer();
-  return { belegt: await belegterSpeicher(supabase, userId), limit: SPEICHER_LIMIT_BYTES };
+  const { supabase } = await nutzer();
+  return { belegt: await belegterSpeicher(supabase), limit: SPEICHER_LIMIT_BYTES };
 }
 
 export async function chatDateiUebernehmen(nachrichtId: string, fachId: string | null): Promise<{ id: string }> {
@@ -259,7 +282,7 @@ export async function chatDateiUebernehmen(nachrichtId: string, fachId: string |
   }
   const { data, error } = await supabase.storage.from(BUCKET).download(anhang.pfad);
   if (error || !data) throw new Error("Der Anhang konnte nicht geladen werden.");
-  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase, userId));
+  const pruefung = uploadPruefen(anhang.titel, data.size, await belegterSpeicher(supabase));
   if (!pruefung.ok) throw new Error(pruefung.fehler);
   const name = freierName(anhang.titel, await namenImOrdner(supabase, fachId));
   const pfad = `${userId}/chat/${crypto.randomUUID()}-${speicherName(name)}`;

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(30);
 
 insert into auth.users (id, email) values
   ('92000000-0000-4000-8000-000000000001', 'workflow-eins@example.test'),
@@ -17,6 +17,13 @@ insert into public.chat(id, typ, name) values
 insert into public.chat_mitglied(chat_id,user_id) values
   ('92000000-0000-4000-8000-000000000007','92000000-0000-4000-8000-000000000001'),
   ('92000000-0000-4000-8000-000000000007','92000000-0000-4000-8000-000000000002');
+insert into public.datei(id,user_id,name,groesse,mime_typ,speicher_pfad) values
+  ('92000000-0000-4000-8000-000000000009','92000000-0000-4000-8000-000000000001','Skript.pdf',20,'application/pdf','92000000-0000-4000-8000-000000000001/skript.pdf'),
+  ('92000000-0000-4000-8000-000000000010','92000000-0000-4000-8000-000000000001','Privat.png',30,'image/png','92000000-0000-4000-8000-000000000001/privat.png');
+insert into public.pdf_stand(datei_id,user_id,letzte_seite) values
+  ('92000000-0000-4000-8000-000000000009','92000000-0000-4000-8000-000000000001',3);
+insert into storage.objects (bucket_id, name) values
+  ('dateiablage','92000000-0000-4000-8000-000000000001/skript.pdf');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '92000000-0000-4000-8000-000000000001', true);
@@ -43,6 +50,20 @@ select lives_ok($$
   select set_config('test.paket',public.material_paket_erstellen('92000000-0000-4000-8000-000000000007','Statistik',
     '[{"art":"whiteboard","id":"92000000-0000-4000-8000-000000000005"}]'::jsonb)::text,true)
 $$, 'Gruppenpaket wird mit Inhalt atomar erstellt');
+insert into public.material_freigabe(art,material_id,chat_id,empfaenger_id) values
+ ('datei','92000000-0000-4000-8000-000000000009','92000000-0000-4000-8000-000000000007','92000000-0000-4000-8000-000000000002');
+select throws_ok($$
+  update public.datei set speicher_pfad='92000000-0000-4000-8000-000000000003/privat.pdf'
+  where id='92000000-0000-4000-8000-000000000009'
+$$,'42501',null,'Eigentümer können die Datei keinem fremden Speicherpfad zuordnen');
+select throws_ok($$
+  update public.datei set groesse=0 where id='92000000-0000-4000-8000-000000000009'
+$$,'42501',null,'Ein registrierter Upload kann seine Speichermenge nicht nachträglich ändern');
+insert into public.material_ablage_info(art,material_id,papierkorb_am) values
+  ('datei','92000000-0000-4000-8000-000000000010',now());
+select is(public.material_speicherbelegung(),50::bigint,'Papierkorb zählt zur Speicherbelegung');
+select ok('Privat.png' = any (public.material_dateinamen(null,null)), 'Originalname bleibt im Papierkorb reserviert');
+update public.material_ablage_info set papierkorb_am=null where material_id='92000000-0000-4000-8000-000000000010';
 
 select set_config('request.jwt.claim.sub', '92000000-0000-4000-8000-000000000003', true);
 select throws_ok($$
@@ -56,6 +77,16 @@ select throws_ok($$
 $$,'42501',null,'Außenstehende können kein fremdes Original löschen');
 
 select set_config('request.jwt.claim.sub', '92000000-0000-4000-8000-000000000002', true);
+select is((select count(*) from public.pdf_stand),0::bigint,'PDF-Empfänger sehen keinen fremden Lesefortschritt');
+select lives_ok($$
+  insert into public.pdf_stand(datei_id,letzte_seite) values ('92000000-0000-4000-8000-000000000009',7)
+$$,'PDF-Empfänger speichern ihren eigenen Lesefortschritt');
+select set_config('storage.operation','storage.object.get_authenticated',true);
+select is((select count(*) from storage.objects where bucket_id='dateiablage' and name='92000000-0000-4000-8000-000000000001/skript.pdf'),
+  1::bigint,'PDF-Empfänger können authentifiziert herunterladen');
+select set_config('storage.operation','storage.object.sign',true);
+select is((select count(*) from storage.objects where bucket_id='dateiablage' and name='92000000-0000-4000-8000-000000000001/skript.pdf'),
+  0::bigint,'PDF-Empfänger können keine signierten Download-Links ausstellen');
 select is((select count(*) from public.whiteboard where id='92000000-0000-4000-8000-000000000005'),1::bigint,'Paket gibt Lesezugriff');
 select results_eq($$
   with bearbeitet as (update public.whiteboard set name='Unerlaubt' where id='92000000-0000-4000-8000-000000000005' returning id)
@@ -80,6 +111,10 @@ $$,array[1::bigint],'Gezieltes Bearbeitungsrecht gilt am Original');
 select throws_ok($$
   update public.whiteboard set user_id='92000000-0000-4000-8000-000000000002' where id='92000000-0000-4000-8000-000000000005'
 $$,'42501',null,'Bearbeitende können keine Eigentümerschaft übernehmen');
+select throws_ok($$
+  update public.whiteboard set daten='{"elemente":[{"typ":"bild","datei_id":"92000000-0000-4000-8000-000000000010"}]}'
+  where id='92000000-0000-4000-8000-000000000005'
+$$,'42501',null,'Bearbeitende können durch neue Bildverweise keine Dateifreigabe erteilen');
 select results_eq($$
   with geloest as (delete from public.material_paket_element where paket_id=current_setting('test.paket')::uuid returning paket_id)
   select count(*) from geloest
@@ -91,8 +126,11 @@ select is((select count(*) from public.whiteboard where id='92000000-0000-4000-8
 update public.material_ablage_info set papierkorb_am=null where material_id='92000000-0000-4000-8000-000000000005';
 select is((select count(*) from public.material_verknuepfung where material_id='92000000-0000-4000-8000-000000000005'),1::bigint,'Verknüpfung bleibt bei Wiederherstellung erhalten');
 delete from public.material_freigabe where material_id='92000000-0000-4000-8000-000000000005';
+select is((select letzte_seite from public.pdf_stand where datei_id='92000000-0000-4000-8000-000000000009'),3,'Der Lesefortschritt des Eigentümers bleibt erhalten');
+delete from public.material_freigabe where material_id='92000000-0000-4000-8000-000000000009';
 select set_config('request.jwt.claim.sub', '92000000-0000-4000-8000-000000000002', true);
 select is((select count(*) from public.whiteboard where id='92000000-0000-4000-8000-000000000005'),0::bigint,'Entzogene Freigabe ist auch am Original wirksam');
+select is((select count(*) from public.pdf_stand),0::bigint,'Nach Rechteentzug ist der PDF-Lesefortschritt nicht zugänglich');
 
 select * from finish();
 rollback;

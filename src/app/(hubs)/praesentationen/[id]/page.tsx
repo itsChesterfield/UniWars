@@ -31,6 +31,7 @@ export default async function PraesentationSeite({
   return (
     <PraesentationsEditor
       userId={user.id}
+      darfBilderEinfuegen={p.user_id === user.id}
       key={p.id}
       id={p.id}
       startTitel={p.titel}
