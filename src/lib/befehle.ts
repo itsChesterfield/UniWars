@@ -3,12 +3,15 @@
  * Reine Logik (Bewertung der Treffer, Erkennen von „neue Notiz …“), testbar.
  */
 
+import type { IconName } from "@/lib/icons";
+
 export type SuchTreffer = {
   art: string;
   id: string;
   titel: string;
   href: string;
-  icon: string;
+  /** Symbol aus dem eigenen Satz; null bei Treffern ohne eigenes Symbol */
+  icon: IconName | null;
   info: string;
   ausschnitt?: { davor: string; begriff: string; danach: string };
 };
@@ -34,24 +37,24 @@ export type ErstellArt =
   | "note"
   | "aufnahme";
 
-export const ERSTELLEN: { art: ErstellArt; name: string; icon: string; woerter: string[] }[] = [
-  { art: "abgabe", name: "Abgabe / Deadline", icon: "⏰", woerter: ["deadline", "abgabe", "frist", "hausarbeit", "einreichen"] },
-  { art: "pruefung", name: "Prüfung", icon: "🎓", woerter: ["prüfung", "pruefung", "klausur", "exam", "test"] },
-  { art: "termin", name: "Termin", icon: "📅", woerter: ["termin", "treffen", "meeting", "sprechstunde"] },
-  { art: "todo", name: "To-do", icon: "✅", woerter: ["todo", "to-do", "aufgabe", "erledigen"] },
-  { art: "notiz", name: "Notiz", icon: "📝", woerter: ["notiz", "mitschrift", "note taking"] },
-  { art: "stapel", name: "Karteikarten-Stapel", icon: "🗂️", woerter: ["stapel", "karteikarte", "karteikarten", "flashcard"] },
-  { art: "quiz", name: "Quiz", icon: "🎯", woerter: ["quiz", "abfragen"] },
-  { art: "podcast", name: "Lern-Podcast", icon: "🎧", woerter: ["podcast", "anhören"] },
-  { art: "whiteboard", name: "Whiteboard", icon: "🖍️", woerter: ["whiteboard", "zeichnen", "board"] },
-  { art: "mindmap", name: "MindMap", icon: "🧠", woerter: ["mindmap", "mind map"] },
-  { art: "dokument", name: "Dokument", icon: "📄", woerter: ["dokument", "text", "word"] },
-  { art: "tabelle", name: "Tabelle", icon: "📊", woerter: ["tabelle", "excel", "sheet"] },
-  { art: "praesentation", name: "Präsentation", icon: "🖥️", woerter: ["präsentation", "praesentation", "folien", "powerpoint"] },
-  { art: "gruppenarbeit", name: "Gruppenarbeit", icon: "👥", woerter: ["gruppenarbeit", "gruppe", "team"] },
-  { art: "fach", name: "Fach", icon: "📚", woerter: ["fach", "modul", "kurs"] },
-  { art: "note", name: "Note eintragen", icon: "💯", woerter: ["note", "noten", "bewertung", "grade"] },
-  { art: "aufnahme", name: "Aufnahme starten", icon: "🎙️", woerter: ["aufnahme", "aufnehmen", "transkription", "vorlesung aufnehmen"] },
+export const ERSTELLEN: { art: ErstellArt; name: string; icon: IconName; woerter: string[] }[] = [
+  { art: "abgabe", name: "Abgabe / Deadline", icon: "uhr", woerter: ["deadline", "abgabe", "frist", "hausarbeit", "einreichen"] },
+  { art: "pruefung", name: "Prüfung", icon: "ziel", woerter: ["prüfung", "pruefung", "klausur", "exam", "test"] },
+  { art: "termin", name: "Termin", icon: "termine", woerter: ["termin", "treffen", "meeting", "sprechstunde"] },
+  { art: "todo", name: "To-do", icon: "haken", woerter: ["todo", "to-do", "aufgabe", "erledigen"] },
+  { art: "notiz", name: "Notiz", icon: "notizen", woerter: ["notiz", "mitschrift", "note taking"] },
+  { art: "stapel", name: "Karteikarten-Stapel", icon: "karteikarten", woerter: ["stapel", "karteikarte", "karteikarten", "flashcard"] },
+  { art: "quiz", name: "Quiz", icon: "frage", woerter: ["quiz", "abfragen"] },
+  { art: "podcast", name: "Lern-Podcast", icon: "kopfhoerer", woerter: ["podcast", "anhören"] },
+  { art: "whiteboard", name: "Whiteboard", icon: "whiteboard", woerter: ["whiteboard", "zeichnen", "board"] },
+  { art: "mindmap", name: "MindMap", icon: "mindmap", woerter: ["mindmap", "mind map"] },
+  { art: "dokument", name: "Dokument", icon: "text", woerter: ["dokument", "text", "word"] },
+  { art: "tabelle", name: "Tabelle", icon: "tabelle", woerter: ["tabelle", "excel", "sheet"] },
+  { art: "praesentation", name: "Präsentation", icon: "praesentation", woerter: ["präsentation", "praesentation", "folien", "powerpoint"] },
+  { art: "gruppenarbeit", name: "Gruppenarbeit", icon: "gruppe", woerter: ["gruppenarbeit", "gruppe", "team"] },
+  { art: "fach", name: "Fach", icon: "faecher", woerter: ["fach", "modul", "kurs"] },
+  { art: "note", name: "Note eintragen", icon: "noten", woerter: ["note", "noten", "bewertung", "grade"] },
+  { art: "aufnahme", name: "Aufnahme starten", icon: "mikrofon", woerter: ["aufnahme", "aufnehmen", "transkription", "vorlesung aufnehmen"] },
 ];
 
 /** Groß/klein, Umlaute und Satzzeichen egal */

@@ -47,7 +47,7 @@ test("KI-02: Prompt mit Markern, Mindestlänge 200", () => {
 test("KI-02: Markdown-Abschnitt mit optionalen offenen Punkten", () => {
   const z = { zusammenfassung: ["A", "B"], luecken: [{ stelle: "Formel", grund: "Herleitung fehlt" }] };
   assert.equal(zusammenfassungAlsMarkdown(z, false), "## Zusammenfassung\n\n- A\n- B");
-  assert.equal(zusammenfassungAlsMarkdown(z, true), "## Zusammenfassung\n\n- A\n- B\n\n### Offene Punkte\n\n- [ ] **Formel** – Herleitung fehlt");
+  assert.equal(zusammenfassungAlsMarkdown(z, true), "## Zusammenfassung\n\n- A\n- B\n\n### Offene Punkte\n\n- [ ] **Formel**: Herleitung fehlt");
 });
 
 // ---------------------------------------------------------------------------

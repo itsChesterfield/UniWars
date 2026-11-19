@@ -10,6 +10,7 @@ import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { MarkdownAnzeige } from "@/components/hubs/markdown-editor";
 import type { KiFehlerTyp } from "@/lib/ki/fehler";
 import { kiFehlerTracken, kiGestartet, kiVorschauAngezeigt, kiVorschauUebernommen } from "@/lib/ki/tracking";
+import { Icon } from "@/components/nav-icon";
 
 type Plan = { abschnitte: number; anfragen: number };
 
@@ -124,7 +125,7 @@ export function KiMitschriftDialog({ transkriptId, onSchliessen }: { transkriptI
       ) : schritt === "fertig" && notizId ? (
         <div className="ki-mitte">
           <div className="hub-leer-icon" aria-hidden>
-            🎉
+            <Icon name="haken" groesse={16} />
           </div>
           <p>Die Mitschrift wurde als neue Notiz gespeichert.</p>
           <div className="hub-formular-knoepfe">
@@ -138,7 +139,7 @@ export function KiMitschriftDialog({ transkriptId, onSchliessen }: { transkriptI
         </div>
       ) : schritt === "vorschau" ? (
         <>
-          <p className="ki-hinweis">⚠️ Prüf die Mitschrift, die KI kann sich verhören oder irren.</p>
+          <p className="ki-hinweis"><Icon name="warnung" groesse={14} /> Prüf die Mitschrift, die KI kann sich verhören oder irren.</p>
           <div className="segwrap" role="tablist">
             <button type="button" role="tab" aria-selected={ansicht === "vorschau"} className={`seg ${ansicht === "vorschau" ? "on" : ""}`} onClick={() => setAnsicht("vorschau")}>
               Vorschau

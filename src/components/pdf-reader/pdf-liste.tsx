@@ -271,7 +271,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
     for (const datei of dateien) {
       const schluessel = crypto.randomUUID();
       if (!istPdf(datei)) {
-        neue.push({ schluessel, name: datei.name, anteil: 0, fehler: "Nur PDFs – andere Dateien bitte in der Dateiablage hochladen." });
+        neue.push({ schluessel, name: datei.name, anteil: 0, fehler: "Nur PDFs, andere Dateien bitte in der Dateiablage hochladen." });
         continue;
       }
       // Datei bleibt am Eintrag, damit ein abgebrochener Upload erneut versucht werden kann
@@ -337,7 +337,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
           className={`pdf-pfad-teil ${ziel === "wurzel" ? "pdf-ordner-ziel" : ""}`}
           onClick={() => oeffnen(null)}
           aria-current={ort === null ? "page" : undefined}
-          title={ort ? "Zurück – PDFs hierher ziehen, um sie aus dem Ordner zu nehmen" : undefined}
+          title={ort ? "Zurück, PDFs hierher ziehen, um sie aus dem Ordner zu nehmen" : undefined}
           {...(ort ? ablage(null, "wurzel") : {})}
         >
           Meine PDFs
@@ -422,7 +422,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
                     <span className="pdf-ordner-name">{o.name}</span>
                     <span className="pdf-ordner-zahl">
                       {anzahl(o.schluessel)} {anzahl(o.schluessel) === 1 ? "PDF" : "PDFs"}
-                      {!o.eigen && " · Fach"}
+                      {!o.eigen && ", aus dem Fach"}
                     </span>
                   </button>
                   {o.eigen && (
@@ -506,7 +506,7 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
         )}
       </section>
       <p className="pdf-explorer-tipp">
-        Tipp: PDFs auf einen Ordner ziehen verschiebt sie – auf „Meine PDFs“ ziehen nimmt sie wieder heraus.
+        Tipp: PDFs auf einen Ordner ziehen verschiebt sie, auf „Meine PDFs“ ziehen nimmt sie wieder heraus.
       </p>
     </div>
   );

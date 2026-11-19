@@ -160,5 +160,5 @@ function semesterKurz(t: Parameters<typeof semesterStand>[0], land: string): str
         : s.phase === "pruefungen"
           ? "Prüfungszeit"
           : "vorlesungsfrei";
-  return `${semesterName(t.semester, land, true)} · ${wann}`;
+  return `${semesterName(t.semester, land, true)}, ${wann}`;
 }

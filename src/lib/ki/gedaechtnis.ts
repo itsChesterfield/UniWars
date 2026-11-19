@@ -2,6 +2,7 @@
  * Persönliches Modell: Was UniVerse Studio über die Person weiß, wie es dazulernt und
  * wie es das Wissen in Antworten nutzt. Reine Logik (keine Datenbank), testbar.
  */
+import type { IconName } from "@/lib/icons";
 import { alsObjekt, jsonLesen, text } from "./json.ts";
 import { markerEntschaerfen } from "./material.ts";
 
@@ -10,14 +11,14 @@ export type Bereich = (typeof BEREICHE)[number];
 export type Quelle = "ausdruecklich" | "gespraech" | "ergebnis" | "kennenlernen";
 export type Status = "aktiv" | "vorschlag" | "verworfen";
 
-export const BEREICH_INFO: Record<Bereich, { name: string; icon: string }> = {
-  ziel: { name: "Ziele", icon: "🎯" },
-  rahmen: { name: "Studium und Alltag", icon: "🗓️" },
-  lernstil: { name: "Lernstil", icon: "🧩" },
-  wissen: { name: "Wissensstand", icon: "📚" },
-  rhythmus: { name: "Rhythmus", icon: "⏱️" },
-  interesse: { name: "Interessen", icon: "✨" },
-  kommunikation: { name: "Kommunikation", icon: "💬" },
+export const BEREICH_INFO: Record<Bereich, { name: string; icon: IconName }> = {
+  ziel: { name: "Ziele", icon: "ziel" },
+  rahmen: { name: "Studium und Alltag", icon: "termine" },
+  lernstil: { name: "Lernstil", icon: "lernraum" },
+  wissen: { name: "Wissensstand", icon: "faecher" },
+  rhythmus: { name: "Rhythmus", icon: "uhr" },
+  interesse: { name: "Interessen", icon: "studio" },
+  kommunikation: { name: "Kommunikation", icon: "chat" },
 };
 
 export const QUELLE_NAME: Record<Quelle, string> = {
@@ -283,7 +284,7 @@ export const KENNENLERN_FRAGEN: KennenlernFrage[] = [
   },
   {
     id: "zeit",
-    frage: "Wann hast du Zeit zum Lernen – und was steht fest im Kalender (Job, Sport …)?",
+    frage: "Wann hast du Zeit zum Lernen, und was steht fest im Kalender (Job, Sport …)?",
     bereich: "rahmen",
     vorschlaege: ["eher morgens", "eher abends", "Nebenjob unter der Woche", "am Wochenende viel Zeit"],
     vorlage: (a) => `Zeit und feste Termine: ${a}`,

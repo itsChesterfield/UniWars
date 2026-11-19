@@ -36,6 +36,7 @@ import {
   type TeilStatus,
 } from "@/lib/transkription/transkript";
 import { Umlauf } from "@/components/bewegung/umlauf";
+import { Icon } from "@/components/nav-icon";
 
 type Transkript = { id: string; titel: string; fach_id: string | null; sprache: "de" | "en"; erstellt_am: string };
 type Speicherstand = "gespeichert" | "ungespeichert" | "speichert" | "fehler";
@@ -393,7 +394,7 @@ export function TranskriptAnsicht({
         <section className="card tra-umwandeln" aria-live="polite">
           <h2 className="ct">In Text umwandeln</h2>
           <p className="muted">
-            {stand.teile.length > 1 ? `${stand.teile.length} Teile · ` : ""}
+            {stand.teile.length > 1 ? `${stand.teile.length} Teile, ` : ""}
             {zeitText(gesamt)} Aufnahme
           </p>
           {stand.teile.length > 1 && (
@@ -402,8 +403,8 @@ export function TranskriptAnsicht({
                 const s = wirksamerStatus(t);
                 return (
                   <li key={t.id} className={`tra-teil-${s}`}>
-                    Teil {t.nr} · {zeitText(t.sekunden)} · {TEIL_TEXT[s]}
-                    {s === "fehler" && t.fehler ? ` – ${t.fehler}` : ""}
+                    Teil {t.nr}, {zeitText(t.sekunden)}, {TEIL_TEXT[s]}
+                    {s === "fehler" && t.fehler ? `, ${t.fehler}` : ""}
                   </li>
                 );
               })}
@@ -439,7 +440,7 @@ export function TranskriptAnsicht({
               {audio && (
                 <p className="muted">
                   Verbraucht etwa {Math.ceil(offen / 60)} von deinen Audio-Minuten.{" "}
-                  {!reicht && restSekunden > 0 && "Dein Kontingent reicht nicht für alles – es wird umgewandelt, so weit es reicht."}
+                  {!reicht && restSekunden > 0 && "Dein Kontingent reicht nicht für alles, es wird umgewandelt, so weit es reicht."}
                 </p>
               )}
               <div className="ki-fuss">
@@ -454,7 +455,7 @@ export function TranskriptAnsicht({
                   <span />
                 )}
                 <button type="button" className="btnp" onClick={starten} disabled={!audio || restSekunden <= 0 || !naechster}>
-                  🎙️ {fehlerTeil ? "Erneut versuchen" : stand.teile.some((t) => t.status === "fertig") ? "Fortsetzen" : "Transkribieren"}
+                  <Icon name="mikrofon" groesse={16} /> {fehlerTeil ? "Erneut versuchen" : stand.teile.some((t) => t.status === "fertig") ? "Fortsetzen" : "Transkribieren"}
                 </button>
               </div>
               {audio && !audio.verfuegbar && <p className="muted">Die Umwandlung ist gerade nicht verfügbar.</p>}
@@ -467,13 +468,13 @@ export function TranskriptAnsicht({
         <>
           <div className="tra-aktionen">
             <span className="muted tra-speicher" aria-live="polite">
-              <KiMarkierung /> Von der KI umgewandelt – Fehler beim Hören sind möglich.{" "}
+              <KiMarkierung /> Von der KI umgewandelt, Fehler beim Hören sind möglich.{" "}
               {speicher === "speichert" ? "Speichert …" : speicher === "ungespeichert" ? "Ungespeicherte Änderungen" : speicher === "fehler" ? "Nicht gespeichert" : "Gespeichert"}
             </span>
             <span className="tra-knoepfe">
               {notiz ? (
                 <Link href={`/notizen?id=${notiz.id}`} className="btng">
-                  📝 Notiz öffnen
+                  <Icon name="notizen" groesse={16} /> Notiz öffnen
                 </Link>
               ) : (
                 <button type="button" className="btng" onClick={() => void notizSpeichern()} disabled={notizSpeichert || leer}>

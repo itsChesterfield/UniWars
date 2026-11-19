@@ -37,7 +37,7 @@ export async function semesterSpeichern(t: SemesterTermine): Promise<Ergebnis> {
   if (error) return { ok: false, fehler: "Speichern hat nicht geklappt." };
   revalidatePath("/einstellungen");
   revalidatePath("/");
-  return { ok: true, hinweis: "Gespeichert – gilt jetzt für alle an deiner Hochschule." };
+  return { ok: true, hinweis: "Gespeichert. Das gilt jetzt für alle an deiner Hochschule." };
 }
 
 /** Rückmeldefrist als eigene Frist in „Aufgaben“ eintragen */

@@ -110,7 +110,7 @@ export async function uploadAbschliessen(eingabe: { pfad: string; name: string; 
   await fachPruefen(supabase, userId, eingabe.fachId);
 
   const groesse = await hochgeladeneGroesse(supabase, eingabe.pfad);
-  if (groesse === null) throw new Error("Upload nicht gefunden – bitte erneut versuchen.");
+  if (groesse === null) throw new Error("Upload nicht gefunden. Bitte versuch es noch einmal.");
   const pruefung = uploadPruefen(eingabe.name, groesse, 0);
   if (!pruefung.ok) {
     await supabase.storage.from(BUCKET).remove([eingabe.pfad]);

@@ -14,7 +14,7 @@ export function vorlageInhalt(id: VorlageId): { titel: string; inhalt: string } 
   switch (id) {
     case "vorlesung":
       return {
-        titel: "Vorlesung – ",
+        titel: "Vorlesung: ",
         inhalt: [
           "## Thema",
           "",
@@ -35,7 +35,7 @@ export function vorlageInhalt(id: VorlageId): { titel: string; inhalt: string } 
       };
     case "klausur":
       return {
-        titel: "Klausur – ",
+        titel: "Klausur: ",
         inhalt: [
           "## Termin & Infos",
           "",
@@ -58,12 +58,12 @@ export function vorlageInhalt(id: VorlageId): { titel: string; inhalt: string } 
       };
     case "zusammenfassung":
       return {
-        titel: "Zusammenfassung – ",
+        titel: "Zusammenfassung: ",
         inhalt: ["## Quelle", "", "", "## Kernpunkte", "", "1. ", "", "## Eigene Gedanken", "", ""].join("\n"),
       };
     case "lernplan":
       return {
-        titel: "Lernplan – ",
+        titel: "Lernplan: ",
         inhalt: ["## Ziel", "", "", "## Diese Woche", "", "- [ ] ", "", "## Nächste Woche", "", "- [ ] ", ""].join("\n"),
       };
     default:

@@ -63,7 +63,7 @@ export function TagesBriefing() {
           className="link rechts"
           onClick={() => {
             track("briefing_studio");
-            studioOeffnen("Plan mit mir meinen Tag: Was sollte ich heute in welcher Reihenfolge machen – mit Zeiten?");
+            studioOeffnen("Plan mit mir meinen Tag: Was sollte ich heute in welcher Reihenfolge machen, mit Zeiten?");
           }}
         >
           Mit Studio planen

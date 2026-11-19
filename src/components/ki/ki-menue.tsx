@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/nav-icon";
 
 export type KiMenuePunkt = {
   label: string;
@@ -43,7 +44,7 @@ export function KiMenue({ punkte, verfuegbar, label = "KI" }: { punkte: KiMenueP
           setOffen((o) => !o);
         }}
       >
-        ✨ <span className="ki-knopf-text">{verfuegbar ? label : "KI gerade nicht verfügbar"}</span>
+        <Icon name="studio" groesse={16} /> <span className="ki-knopf-text">{verfuegbar ? label : "KI gerade nicht verfügbar"}</span>
       </button>
       {offen && (
         <div className="drei-punkte-menue ki-menue-liste" role="menu">

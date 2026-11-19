@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 
 const MELDUNG: Record<string, { text: string; fehler: boolean }> = {
-  verbunden: { text: "Google Kalender verbunden – deine Einträge werden übertragen.", fehler: false },
+  verbunden: { text: "Google Kalender verbunden. Deine Einträge werden übertragen.", fehler: false },
   abgebrochen: { text: "Verbindung abgebrochen.", fehler: true },
   "rechte-fehlen": { text: "Bitte beide Berechtigungen erlauben, sonst funktioniert die Verbindung nicht.", fehler: true },
   "nicht-eingerichtet": { text: "Die Google-Verbindung ist noch nicht eingerichtet.", fehler: true },

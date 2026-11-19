@@ -48,7 +48,7 @@ export const WEITERE_HUBS: { name: string; icon: string; href?: string }[] = [
     icon: ICONS.whiteboard,
   },
   {
-    name: "Literaturverwaltung",
+    name: "Literatur",
     href: "/literaturverwaltung",
     icon: ICONS.literatur,
   },

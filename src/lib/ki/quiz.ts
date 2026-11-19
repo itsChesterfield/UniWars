@@ -249,7 +249,7 @@ export function bewertungLesen(antwort: string): Bewertung {
   const o = alsObjekt(jsonLesen(antwort));
   const roh = Number(o.punkte);
   const punkte = roh >= 0.75 ? 1 : roh >= 0.25 ? 0.5 : 0;
-  return { punkte, richtig: punkte === 1, feedback: text(o.feedback, 1200) || (punkte === 1 ? "Richtig!" : "Da fehlt noch etwas – schau dir die Musterlösung an.") };
+  return { punkte, richtig: punkte === 1, feedback: text(o.feedback, 1200) || (punkte === 1 ? "Richtig!" : "Da fehlt noch etwas, schau dir die Musterlösung an.") };
 }
 
 // ---------------------------------------------------------------------------

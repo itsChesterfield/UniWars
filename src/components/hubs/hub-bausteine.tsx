@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { SteigText } from "@/components/bewegung/steig-text";
+import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 
 export function HubKopf({ titel, untertitel, aktionen }: { titel: string; untertitel?: string; aktionen?: ReactNode }) {
   return (
@@ -16,11 +18,11 @@ export function HubKopf({ titel, untertitel, aktionen }: { titel: string; untert
 }
 
 /** ALL-07: Hinweistext + großer Button für den ersten Eintrag. */
-export function LeererZustand({ icon, text, aktion }: { icon: string; text: string; aktion?: ReactNode }) {
+export function LeererZustand({ icon, text, aktion }: { icon: IconName; text: string; aktion?: ReactNode }) {
   return (
     <div className="hub-leer">
       <div className="hub-leer-icon" aria-hidden>
-        {icon}
+        <Icon name={icon} groesse={28} />
       </div>
       <p>{text}</p>
       {aktion}

@@ -64,7 +64,7 @@ export function KiQuelleDialog({ onErkannt, onSchliessen }: { onErkannt: (e: Que
               onChange={(e) => setEingabe(e.target.value)}
             />
           </label>
-          <p className="muted ki-klein">Die KI übernimmt nur, was in der Angabe steht – fehlende Felder bleiben leer.</p>
+          <p className="muted ki-klein">Die KI übernimmt nur, was in der Angabe steht, fehlende Felder bleiben leer.</p>
           <KiFehlerMeldung meldung={fehler} />
           <div className="ki-fuss">
             <KiLimitHinweis verbleibend={ki.verbleibend} limit={ki.status?.limit ?? 0} />

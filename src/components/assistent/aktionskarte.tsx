@@ -157,7 +157,7 @@ export function AktionskarteAnzeige({
               <strong>{karte.titel}</strong>
               <span className="muted">
                 {datumText(karte.faellig_am)}
-                {karte.fach_name ? ` · ${karte.fach_name}` : ""}
+                {karte.fach_name ? `, ${karte.fach_name}` : ""}
               </span>
             </>
           )}
@@ -166,7 +166,7 @@ export function AktionskarteAnzeige({
               <strong>{karte.titel}</strong>
               <span className="muted">
                 Priorität {PRIO_TEXT[karte.prioritaet]}
-                {karte.fach_name ? ` · ${karte.fach_name}` : ""}
+                {karte.fach_name ? `, ${karte.fach_name}` : ""}
               </span>
             </>
           )}
@@ -193,8 +193,8 @@ export function AktionskarteAnzeige({
           )}
           {karte.typ === "lernsession" && (
             <strong>
-              Fokus-Session{karte.fach_name ? ` · ${karte.fach_name}` : ""}
-              {karte.minuten ? ` · ${karte.minuten} Min` : ""}
+              Fokus-Session{karte.fach_name ? `, ${karte.fach_name}` : ""}
+              {karte.minuten ? `, ${karte.minuten} Min` : ""}
             </strong>
           )}
           {karte.typ === "stapel_lernen" && (

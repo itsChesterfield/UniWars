@@ -153,7 +153,7 @@ export function absaetzeLesen(roh: unknown, maxZeichen = 400_000): Absatz[] | nu
 /** TRA-05: "Transkript – Mathe 1 – 13.11.2026" */
 export function notizTitel(fachName: string | null, datum: Date, art: "Transkript" | "Mitschrift" = "Transkript"): string {
   const tag = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(datum);
-  return [art, fachName?.trim() || null, tag].filter(Boolean).join(" – ");
+  return [art, fachName?.trim() || null, tag].filter(Boolean).join(", ");
 }
 
 /** Name der Aufnahme-Datei: "Aufnahme 13.11.2026 14-03.webm" bzw. "… (Teil 2).webm" */

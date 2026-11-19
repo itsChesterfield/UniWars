@@ -418,7 +418,7 @@ export function StundenplanManager({
                       key={d.id}
                       className="kalender-marker kalender-marker-deadline"
                       style={{ top: positionFuerZeitpunkt(new Date(d.faellig_am)) }}
-                      title={`${uhrzeit(d.faellig_am)} · ${d.titel}`}
+                      title={`${uhrzeit(d.faellig_am)}, ${d.titel}`}
                     >
                       <span className="vh">Frist: </span>
                       {uhrzeit(d.faellig_am)} {d.titel}
@@ -432,7 +432,7 @@ export function StundenplanManager({
                       key={p.id}
                       className="kalender-marker kalender-marker-pruefung"
                       style={{ top: positionFuerZeitpunkt(new Date(p.datum)) }}
-                      title={`${uhrzeit(p.datum)} · ${p.titel}`}
+                      title={`${uhrzeit(p.datum)}, ${p.titel}`}
                     >
                       <span className="vh">Prüfung: </span>
                       {uhrzeit(p.datum)} {p.titel}
@@ -455,7 +455,7 @@ export function StundenplanManager({
             }
           }}>
           <p><time dateTime={vorlesung.datum}>{new Date(`${vorlesung.datum}T12:00:00Z`).toLocaleDateString("de-DE")}</time>
-            {ausgewaehlterTermin.raum ? ` · ${ausgewaehlterTermin.raum}` : ""}</p>
+            {ausgewaehlterTermin.raum ? `, ${ausgewaehlterTermin.raum}` : ""}</p>
           <MaterialAmZiel key={`${vorlesung.id}:${vorlesung.datum}`} ziel={{ art: "vorlesung", id: vorlesung.id, datum: vorlesung.datum }} />
           {mitschriftFehler && <p role="alert">{mitschriftFehler}</p>}
           <div className="dat-auswahl-form">

@@ -13,7 +13,7 @@ export function DokumentListe({ dokumente, faecher }: { dokumente: Eintrag[]; fa
   return (
     <ObjektListe
       hub="Textverarbeitung"
-      untertitel="Hausarbeiten, Protokolle und andere lange Texte – mit Export als PDF oder Word."
+      untertitel="Hausarbeiten, Protokolle und andere lange Texte, mit Export als PDF oder Word."
       icon="text"
       neuLabel="Neues Dokument"
       leerTitel="Noch keine Dokumente."

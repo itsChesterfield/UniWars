@@ -20,7 +20,7 @@ const zahlen = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "UniVerse",
-  description: "Study Platform — Main Hub",
+  description: "UniVerse: dein Studium an einem Ort. Aufgaben, Unterlagen und Lernen, ruhig geordnet.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

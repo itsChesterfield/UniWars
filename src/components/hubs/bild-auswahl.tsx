@@ -6,6 +6,7 @@ import { uploadAbschliessen, uploadVorbereiten } from "@/app/(hubs)/dateiablage/
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
 import { dateiTyp } from "@/lib/dateiablage/dateien";
 import { fehlerMelden } from "@/lib/analytics";
+import { Icon } from "@/components/nav-icon";
 
 export function bildUrl(dateiId: string) {
   return `/dateiablage/oeffnen/${dateiId}`;
@@ -65,7 +66,7 @@ export function BildAuswahl({
       <div className="rowb">
         <h3 className="ct">Bild einfügen</h3>
         <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
-          ✕
+          <Icon name="schliessen" groesse={16} />
         </button>
       </div>
       <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>

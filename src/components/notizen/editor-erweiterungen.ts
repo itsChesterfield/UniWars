@@ -334,10 +334,10 @@ export const Wikilink = Node.create<WikilinkOptionen>({
         art === "fehlt"
           ? istPdfName(name)
             ? "PDF nicht gefunden"
-            : "Notiz gibt es noch nicht – Klick legt sie an"
+            : "Notiz gibt es noch nicht, Klick legt sie an"
           : `${art === "pdf" ? "PDF öffnen" : "Notiz öffnen"} (Strg/⌘+Klick: daneben)`;
       if (art === "pdf" || istPdfName(name)) dom.append(symbolKnoten("pdf"));
-      dom.append(node.attrs.label || (seite ? `${name.replace(/\.pdf$/i, "")} · S. ${seite}` : name));
+      dom.append(node.attrs.label || (seite ? `${name.replace(/\.pdf$/i, "")}, S. ${seite}` : name));
       return { dom };
     };
   },

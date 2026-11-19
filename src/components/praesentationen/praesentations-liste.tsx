@@ -19,7 +19,7 @@ export function PraesentationsListe({
     <>
       <ObjektListe
         hub="Präsentationen"
-        untertitel="Einfache Referatsfolien – präsentieren im Vollbild oder als PDF exportieren."
+        untertitel="Einfache Referatsfolien, präsentieren im Vollbild oder als PDF exportieren."
         icon="praesentation"
         neuLabel="Neue Präsentation"
         leerTitel="Noch keine Präsentationen."

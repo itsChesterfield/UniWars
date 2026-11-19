@@ -84,7 +84,7 @@ export function NotizEditorFlaeche({
       platzhalter,
       aufloesen: (ziel) => aufloesenRef.current(ziel),
       onFormelKlick: (art, latex, pos) => {
-        const neu = window.prompt("Formel (LaTeX) bearbeiten – leer lassen zum Löschen:", latex);
+        const neu = window.prompt("Formel (LaTeX) bearbeiten, leer lassen zum Löschen:", latex);
         const e = editorRef.current;
         if (neu === null || !e) return;
         if (!neu.trim()) {

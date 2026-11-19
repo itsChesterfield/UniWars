@@ -172,7 +172,7 @@ export function dateiBestimmen(eingabe: {
   const inhalt = inhaltErkennen(eingabe.bytes);
   if (inhalt === "html") {
     throw new LinkFehler(
-      "Der Link führt zu einer Webseite, nicht direkt zu einer Datei – oft eine Anmeldeseite (z. B. Moodle/ILIAS). Lade die Datei dann bitte herunter und zieh sie hierher.",
+      "Der Link führt zu einer Webseite, nicht direkt zu einer Datei, oft eine Anmeldeseite (z. B. Moodle/ILIAS). Lade die Datei dann bitte herunter und zieh sie hierher.",
     );
   }
 
@@ -190,7 +190,7 @@ export function dateiBestimmen(eingabe: {
     throw new LinkFehler("Diesen Dateityp kann die Dateiablage nicht speichern (PDF, Bilder, Office, TXT, Audio).");
   }
   if (passend && !passend.includes(e)) {
-    throw new LinkFehler("Der Inhalt passt nicht zum Dateityp – der Link liefert offenbar keine gültige Datei.");
+    throw new LinkFehler("Der Inhalt passt nicht zum Dateityp, der Link liefert offenbar keine gültige Datei.");
   }
   if (!passend && e !== "txt") {
     throw new LinkFehler("Der Link liefert keine gültige Datei.");
@@ -203,7 +203,7 @@ export function dateiBestimmen(eingabe: {
 
 /** Meldung für HTTP-Status beim Abruf */
 export function statusMeldung(status: number): string {
-  if (status === 401 || status === 403) return "Auf diese Datei kann UniVerse nicht zugreifen – sie ist geschützt (Anmeldung nötig). Lade sie bitte herunter und zieh sie hierher.";
+  if (status === 401 || status === 403) return "Auf diese Datei kann UniVerse nicht zugreifen, sie ist geschützt (Anmeldung nötig). Lade sie bitte herunter und zieh sie hierher.";
   if (status === 404 || status === 410) return "Unter diesem Link wurde keine Datei gefunden.";
   if (status === 429) return "Die Seite lässt gerade keine Downloads zu. Versuch es später noch einmal.";
   return `Die Datei konnte nicht geladen werden (Fehler ${status}).`;

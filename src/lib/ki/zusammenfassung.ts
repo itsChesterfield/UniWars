@@ -58,7 +58,7 @@ export function zusammenfassungParsen(antwort: string): Zusammenfassung {
 export function zusammenfassungAlsMarkdown(z: Zusammenfassung, mitLuecken: boolean): string {
   const teile = ["## Zusammenfassung", "", ...z.zusammenfassung.map((p) => `- ${p}`)];
   if (mitLuecken && z.luecken.length) {
-    teile.push("", "### Offene Punkte", "", ...z.luecken.map((l) => `- [ ] **${l.stelle}** – ${l.grund}`));
+    teile.push("", "### Offene Punkte", "", ...z.luecken.map((l) => `- [ ] **${l.stelle}**: ${l.grund}`));
   }
   return teile.join("\n");
 }

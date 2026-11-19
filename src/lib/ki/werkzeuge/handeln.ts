@@ -85,7 +85,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
     const { ergebnisId, link } = await karteAusfuehren(u.supabase, { id: crypto.randomUUID(), status: "offen", ...inhalt } as Aktionskarte);
     const text =
       inhalt.typ === "deadline"
-        ? `Deadline „${inhalt.titel}“ – ${datumText(inhalt.faellig_am)}`
+        ? `Deadline „${inhalt.titel}“, ${datumText(inhalt.faellig_am)}`
         : inhalt.typ === "todo"
           ? `To-do „${inhalt.titel}“`
           : inhalt.typ === "notiz"
@@ -215,7 +215,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
         if (!fach) throw new KiEingabe(`Für die Prüfung brauche ich ein Fach. Vorhanden: ${u.faecher.map((f) => f.name).join(", ") || "keine"}.`);
         const datum = datumAufloesen(t(a.datum, 80), u.jetzt, [9, 0]);
         if (!datum) throw new KiEingabe("Das Datum der Prüfung habe ich nicht verstanden.");
-        if (angelegt() >= MAX_DIREKT) throw new KiEingabe("Zu viele Einträge auf einmal – bitte einzeln anlegen.");
+        if (angelegt() >= MAX_DIREKT) throw new KiEingabe("Zu viele Einträge auf einmal. Bitte einzeln anlegen.");
         const titel = t(a.titel, 200) || `Prüfung ${fach.name}`;
         const neu = await createPruefung({
           titel,
@@ -225,7 +225,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
           status: "ANSTEHEND",
           dauer_minuten: Number.isInteger(a.dauer_minuten) ? Number(a.dauer_minuten) : null,
         });
-        const text = `Prüfung „${titel}“ – ${datumText(datum.iso, datum.mitUhrzeit)}`;
+        const text = `Prüfung „${titel}“, ${datumText(datum.iso, datum.mitUhrzeit)}`;
         s.erledigt.push({ id: crypto.randomUUID(), art: "pruefung", text, link: `/?detail=pruefung:${neu.id}`, status: "ok", ziel: neu.id });
         return { erledigt: true, was: text };
       },
@@ -278,7 +278,7 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
           notizId = n.id;
           titel = `„${n.titel}“`;
         }
-        if (!notizId) throw new KiEingabe("Gerade ist keine Notiz offen – sag mir, in welche Notiz der Text soll, oder lege eine neue an.");
+        if (!notizId) throw new KiEingabe("Gerade ist keine Notiz offen, sag mir, in welche Notiz der Text soll, oder lege eine neue an.");
         // Ist die Notiz offen, fügt der Editor im Browser ein (sonst hängt der Browser es per Server an)
         s.aktionen.push({ art: "notiz_einfuegen", notizId, text });
         s.erledigt.push({ id: crypto.randomUUID(), art: "notiz_ergaenzt", text: `Text in ${titel} eingefügt`, link: `/notizen?id=${notizId}`, status: "ok", ziel: null });
@@ -330,20 +330,20 @@ export function handlungswerkzeuge(u: Umfeld, s: Sammlung): Werkzeug[] {
           { system: p.system, nutzer: p.nutzer, json: STUDIO[art].json, temperatur: 0.3, maxTokens: 4000, timeoutMs: 60_000 },
           "stark",
         );
-        const titel = `${STUDIO[art].name} – ${fachName}`;
+        const titel = `${STUDIO[art].name}, ${fachName}`;
         if (art === "quiz") {
           const fragen = quizLesen(antwort.text);
-          if (!fragen.length) throw new KiEingabe("Das Quiz ist nicht gelungen – bitte noch einmal.");
+          if (!fragen.length) throw new KiEingabe("Das Quiz ist nicht gelungen, bitte noch einmal.");
           s.bloecke.push({ id: crypto.randomUUID(), typ: "quiz", titel, fragen });
           return { erstellt: titel, anzahl: fragen.length, hinweis: "Der Nutzer sieht das Quiz im Chat." };
         }
         if (art === "karteikarten") {
           const karten = kartenLesen(antwort.text);
-          if (!karten.length) throw new KiEingabe("Die Karteikarten sind nicht gelungen – bitte noch einmal.");
+          if (!karten.length) throw new KiEingabe("Die Karteikarten sind nicht gelungen, bitte noch einmal.");
           s.bloecke.push({ id: crypto.randomUUID(), typ: "karten", titel, karten, fachId });
           return { erstellt: titel, anzahl: karten.length, hinweis: "Der Nutzer sieht die Karten im Chat und kann sie als Stapel speichern." };
         }
-        if (!antwort.text.trim()) throw new KiEingabe("Es kam keine Antwort – bitte noch einmal.");
+        if (!antwort.text.trim()) throw new KiEingabe("Es kam keine Antwort, bitte noch einmal.");
         s.bloecke.push({ id: crypto.randomUUID(), typ: "markdown", titel, markdown: antwort.text.trim() });
         return { erstellt: titel, hinweis: "Der Nutzer sieht das Ergebnis im Chat. Wiederhole den Inhalt nicht." };
       },

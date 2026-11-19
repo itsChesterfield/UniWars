@@ -98,7 +98,7 @@ export async function mitschriftAnlegen(stundenplanEintragId: string, terminDatu
     .insert({
       user_id: userId,
       fach_id: eintrag.fach_id,
-      titel: `Mitschrift ${fachName} – ${datumDeutsch(`${heute}T12:00:00Z`)}`,
+      titel: `Mitschrift ${fachName}, ${datumDeutsch(`${heute}T12:00:00Z`)}`,
       stundenplan_eintrag_id: eintrag.id,
       vorlesung_datum: heute,
     })

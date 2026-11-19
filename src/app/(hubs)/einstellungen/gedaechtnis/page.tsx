@@ -24,7 +24,7 @@ export default async function GedaechtnisSeite() {
   const eintraege = eintraegeLesen(roh ?? []);
   return (
     <>
-      <HubKopf titel="Was Studio über dich weiß" untertitel="UniVerse Studio lernt dich mit jeder Woche besser kennen – hier siehst und steuerst du alles." />
+      <HubKopf titel="Was Studio über dich weiß" untertitel="UniVerse Studio lernt dich mit jeder Woche besser kennen, hier siehst und steuerst du alles." />
       <GedaechtnisVerwaltung
         startEintraege={eintraege}
         lernenAn={settings?.ki_gedaechtnis_an !== false}
