@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "@/components/nav-icon";
+import { FaecherImHub } from "@/components/dateiablage/material-faecher";
 import { NotificationBell } from "@/components/notification-bell";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
 import { befehleOeffnen } from "@/components/befehlspalette";
@@ -127,6 +128,7 @@ export function Kopfleiste({
         )}
       </div>
 
+      <Suspense fallback={null}><FaecherImHub /></Suspense>
       <button
         type="button"
         className="suchpille"

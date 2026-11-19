@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 
-export type MenuePunkt = { label: string; onClick: () => void; gefahr?: boolean };
+export type MenuePunkt = { label: string; onClick: () => void; gefahr?: boolean; icon?: IconName };
 
 /**
  * Design B3: Symbolknopf „Mehr“ mit Menü. Das Menü ist ein modaler Dialog am Knopf:
@@ -106,6 +107,7 @@ export function DreiPunkteMenue({
                   p.onClick();
                 }}
               >
+                {p.icon && <Icon name={p.icon} groesse={15} />}
                 {p.label}
               </button>
             ))}

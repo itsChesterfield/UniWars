@@ -1,3 +1,23 @@
+function stoffWoerter(text: string): string[] {
+  return text.normalize("NFKC").toLocaleLowerCase("de-DE").match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+export function fragtNachLetztemStoff(frage: string): boolean {
+  const text = stoffWoerter(frage).join(" ");
+  const zeitraum = /\b(?:zuletzt|letzt(?:e[rmns]?)?|verpasst)\b/.test(text);
+  if (/\bcrashkurs\b/.test(text)) return true;
+  if (!zeitraum) return false;
+  return /\b(?:stoff|vorlesung(?:en)?|unterricht|durchgenommen|behandelt|besprochen|gelernt)\b/.test(text)
+    || (/\bwir\b/.test(text) && /\b(?:gemacht|gearbeitet|angeschaut)\b/.test(text));
+}
+
+export function fachAusStofffrage<T extends { name: string }>(frage: string, faecher: T[]): T | undefined {
+  const text = ` ${stoffWoerter(frage).join(" ")} `;
+  return faecher.map((fach) => ({ fach, name: stoffWoerter(fach.name).join(" ") }))
+    .filter(({ name }) => name && text.includes(` ${name} `))
+    .sort((a, b) => b.name.length - a.name.length)[0]?.fach;
+}
+
 export function aktuelleMaterialfolge<T>(
   termine: { datum: string; material: T }[],
   hinzugefuegt: { zeit: string; material: T }[],

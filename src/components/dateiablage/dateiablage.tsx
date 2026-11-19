@@ -20,7 +20,8 @@ import {
 import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-actions";
 import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
 import { MaterialPakete, MaterialTeilen } from "./material-teilen";
-import { PapierkorbDialog, ThemenDialog, TitelDialog } from "./material-ordnen";
+import { MaterialFaecherDialog } from "./material-faecher";
+import { PapierkorbDialog, ThemenDialog, TitelDialog, UnterlageEinsortieren } from "./material-ordnen";
 import { MaterialRueckverweise } from "./material-verknuepfungen";
 import { MaterialVorschauFenster, useGedruecktHalten } from "./material-vorschau";
 import { Zustand } from "@/components/zustand";
@@ -102,7 +103,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
 
   const aktivitaet = useMaterialAktivitaet(userId);
   const [sonderansicht, setSonderansicht] = useState<"pakete" | "papierkorb" | null>(null);
-  const [aktion, setAktion] = useState<{ art: "titel" | "verknuepfen" | "teilen" | "papierkorb"; id: string } | null>(null);
+  const [aktion, setAktion] = useState<{ art: "titel" | "titel-vorschlag" | "thema" | "faecher" | "verknuepfen" | "teilen" | "papierkorb"; id: string } | null>(null);
   const [paketOffen, setPaketOffen] = useState(false);
   const [themenOffen, setThemenOffen] = useState(false);
   const [leselisteOffen, setLeselisteOffen] = useState(false);
@@ -251,15 +252,24 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
       { label: "Vorschau", onClick: () => setMaterialVorschau(eintrag.id) },
       ...(workflow && eigenes(eintrag) ? [
         { label: "Anzeigetitel bearbeiten", onClick: () => setAktion({ art: "titel", id: eintrag.id }) },
+        ...(ki ? [{ label: "Titel vorschlagen", icon: "studio" as const, onClick: () => setAktion({ art: "titel-vorschlag", id: eintrag.id }) }] : []),
         { label: "Mit Aufgabe oder Prüfung verknüpfen", onClick: () => setAktion({ art: "verknuepfen", id: eintrag.id }) },
         ...(freigaben ? [{ label: "Freigeben", onClick: () => setAktion({ art: "teilen", id: eintrag.id }) }] : []),
         { label: "In den Papierkorb verschieben", onClick: () => setAktion({ art: "papierkorb", id: eintrag.id }), gefahr: true },
       ] : []),
+      ...(mehrfachVerfuegbar ? [{
+        label: "Fächer zuordnen",
+        onClick: () => setAktion({ art: "faecher", id: eintrag.id }),
+      }] : []),
       ...(mehrfachVerfuegbar && aktuellerOrdner.id && !leselisteOffen ? [{
         label: "Aus diesem Fach entfernen",
         onClick: () => { if (aktuellerOrdner.id) void zuordnen([eintrag], aktuellerOrdner.id, true); },
       }] : []),
-      ...(!leselisteOffen ? [{ label: istPin(eintrag.id) ? "Pin lösen" : "Anpinnen", onClick: () => aktivitaet.pin(aktuellerOrdner.id, eintrag.id) }] : []),
+      ...(workflow && ordner.some((o) => o.id) ? [{
+        label: "In Themenstapel legen",
+        onClick: () => setAktion({ art: "thema", id: eintrag.id }),
+      }] : []),
+      ...(!leselisteOffen ? [{ label: istPin(eintrag.id) ? "Pin lösen" : "Anpinnen", icon: "anheften" as const, onClick: () => aktivitaet.pin(aktuellerOrdner.id, eintrag.id) }] : []),
       { label: aufListe ? "Von Leseliste entfernen" : "Später lesen", onClick: () => aktivitaet.leseliste(eintrag.id, aufListe ? null : false) },
 
     ];
@@ -843,6 +853,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
                       <td className="dat-spalte-name">
                         <div className="dat-name-zeile">
                           <Link className="dat-name-knopf" href={materialPfad(hub)} prefetch={false} {...druck(id)} onNavigate={() => aktivitaet.oeffnen(id)}>{eintrag.titel}</Link>
+                          {!leselisteOffen && istPin(id) && <span className="muted" role="img" aria-label="Angepinnt" title="Angepinnt"><Icon name="anheften" groesse={14} /></span>}
                           {zuletztHinweis}
                         </div>
                       </td>
@@ -882,6 +893,7 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
                               <button type="button" className="dat-name-knopf" {...druck(id)} onClick={() => void oeffnen(d)}>
                                 {eintrag.titel}
                               </button>
+                              {!leselisteOffen && istPin(id) && <span className="muted" role="img" aria-label="Angepinnt" title="Angepinnt"><Icon name="anheften" groesse={14} /></span>}
                               {zuletztHinweis}
                             </div>
                             {letzteSeite !== undefined && (
@@ -942,7 +954,14 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
       />}
       {paketOffen && <MaterialTeilen refs={ausgewaehlt.map(ref)} titel="" paket schliessen={() => setPaketOffen(false)} />}
       {aktionsEintrag && aktion && <Fragment key={aktion.id}>
-        {aktion.art === "titel" && <TitelDialog material={ref(aktionsEintrag)} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} ki={ki} />}
+        {(aktion.art === "titel" || aktion.art === "titel-vorschlag") && <TitelDialog
+          material={ref(aktionsEintrag)} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} ki={ki} direkt={aktion.art === "titel-vorschlag"} />}
+        {aktion.art === "faecher" && <MaterialFaecherDialog material={ref(aktionsEintrag)} schliessen={() => setAktion(null)} />}
+        {aktion.art === "thema" && <UnterlageEinsortieren
+          material={{ ...ref(aktionsEintrag), titel: aktionsEintrag.titel }}
+          faecher={ordner.flatMap((o) => o.id ? [{ id: o.id, name: o.name }] : [])}
+          themen={themen} startFach={aktuellerOrdner.id} schliessen={() => setAktion(null)}
+        />}
         {aktion.art === "teilen" && <MaterialTeilen refs={[ref(aktionsEintrag)]} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} />}
         {aktion.art === "verknuepfen" && <MaterialRueckverweise material={ref(aktionsEintrag)} titel={aktionsEintrag.titel} schliessen={() => setAktion(null)} />}
         {aktion.art === "papierkorb" && <PapierkorbDialog material={ref(aktionsEintrag)} titel={aktionsEintrag.titel}
