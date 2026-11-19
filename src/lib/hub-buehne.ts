@@ -1,16 +1,15 @@
 /**
- * Zentraler Hub als Bühne (Entscheidung Didi, 19.11.): fünf Szenen, die sich beim Scrollen ablösen.
+ * Zentraler Hub als Bühne (Entscheidung Didi, 19.11.; Idee A vom 19.11. abends): vier Kapitel, die sich beim Scrollen ablösen.
  * Hier nur Rechnung ohne React und ohne Supabase-Import, damit Tests sie prüfen.
  */
 import { berlinDatum, berlinTageZwischen, berlinUhrzeit } from "./zeit.ts";
 import { wochenTage } from "./hub-texte.ts";
 
 export const SZENEN = [
-  { id: "ueberblick", name: "Überblick" },
+  { id: "heute", name: "Heute" },
   { id: "woche", name: "Diese Woche" },
-  { id: "lernen", name: "Lernen" },
   { id: "mensa", name: "Mensa" },
-  { id: "dateien", name: "Dateien" },
+  { id: "zuletzt", name: "Zuletzt geöffnet" },
 ] as const;
 export type SzeneId = (typeof SZENEN)[number]["id"];
 
@@ -60,19 +59,85 @@ export function wannKurz(iso: string | null, jetzt: Date): string {
   return `${t}.${m}.`;
 }
 
-/** Ein Satz zur Lage über der Liste. `betont` sind die Wörter, die im Akzent stehen. */
-export function lageSatz(eintraege: Eintrag[], jetzt: Date): { text: string; betont: string[] } {
+/**
+ * Die Lage in einem großen Satz (`text`) und einer ruhigen Zeile darunter (`unter`).
+ * `betont` sind die Wörter, die im Akzent stehen.
+ */
+export function lageSatz(eintraege: Eintrag[], jetzt: Date): { text: string; betont: string[]; unter: string } {
   const erster = eintraege.find((e) => e.wann);
+  const danach = eintraege.filter((e) => e !== erster).length;
+  const rest = danach === 0 ? "Sonst ist nichts offen." : danach === 1 ? "Danach wartet noch eine Sache." : `Danach warten noch ${danach} Sachen.`;
   if (!erster || !erster.wann) {
-    return eintraege.length ? { text: "Keine Frist in Sicht. Zeit für das, was liegen geblieben ist.", betont: [] } : { text: "Gerade steht nichts an. Genieß den freien Kopf.", betont: [] };
+    return eintraege.length
+      ? { text: "Keine Frist in Sicht.", betont: [], unter: "Zeit für das, was liegen geblieben ist." }
+      : { text: "Gerade steht nichts an.", betont: [], unter: "Genieß den freien Kopf." };
   }
   const kurz = kuerzen(erster.titel, 36);
-  const tage = berlinTageZwischen(jetzt, new Date(erster.wann));
+  const wann = new Date(erster.wann);
+  const tage = berlinTageZwischen(jetzt, wann);
   const woerter = kurz.split(/\s+/);
-  if (new Date(erster.wann).getTime() < jetzt.getTime()) return { text: `${kurz} ist überfällig. Das zuerst.`, betont: woerter };
-  if (tage === 0) return { text: `Heute zählt ${kurz}. Der Rest kann warten.`, betont: woerter.map((w, i) => (i === woerter.length - 1 ? `${w}.` : w)) };
-  if (tage === 1) return { text: `Morgen ist ${kurz} dran. Heute ist Zeit zum Vorbereiten.`, betont: woerter };
-  return { text: `Als Nächstes: ${kurz}. Bis dahin ist Luft.`, betont: woerter.map((w, i) => (i === woerter.length - 1 ? `${w}.` : w)) };
+  const mitPunkt = woerter.map((w, i) => (i === woerter.length - 1 ? `${w}.` : w));
+  const uhr = berlinUhrzeit(wann);
+  if (wann.getTime() < jetzt.getTime()) return { text: `${kurz} ist überfällig.`, betont: woerter, unter: `Das zuerst. ${rest}` };
+  if (tage === 0) return { text: `Heute zählt ${kurz}.`, betont: mitPunkt, unter: `Fällig um ${uhr}. ${rest}` };
+  if (tage === 1) return { text: `Morgen ist ${kurz} dran.`, betont: woerter, unter: `Heute ist Zeit zum Vorbereiten. ${rest}` };
+  return { text: `Als Nächstes: ${kurz}.`, betont: mitPunkt, unter: `Bis dahin ist Luft. ${rest}` };
+}
+
+/** Führt eine Aufgabe zum Lernen? Dann direkt zum passenden Stapel oder zu den Karteikarten. */
+export function lernZiel(titel: string, stapel: { id: string; name: string }[]): string | null {
+  const t = titel.toLowerCase();
+  const passend = stapel.find((s) => s.name.trim().length > 2 && t.includes(s.name.trim().toLowerCase()));
+  if (passend) return `/karteikarten/${passend.id}/lernen`;
+  return /karteikart|karten\b|abfrag|wiederhol|vokabel|lernen\b/.test(t) ? "/karteikarten" : null;
+}
+
+/** Vorschlag von Studio, wie die Liste ihn zeigt */
+export type HubVorschlag = { id: string; titel: string; grund: string; href?: string; frage?: string };
+
+/**
+ * Höchstens zwei Vorschläge von Studio für „Als Nächstes“. Fristen und „offene To-dos“ stehen schon in der
+ * Liste, die fallen weg. Gedankenstriche aus den Texten werden zu Kommas.
+ */
+export function hubVorschlaege(v: { id: string; titel: string; grund: string; href?: string; frage?: string }[]): HubVorschlag[] {
+  return v
+    .filter((x) => !x.id.startsWith("deadline-") && x.id !== "todos" && (x.href || x.frage))
+    .slice(0, 2)
+    .map((x) => ({ id: `studio-${x.id}`, titel: x.titel, grund: x.grund.replace(/\s+[–—]\s+/g, ", "), href: x.href, frage: x.frage }));
+}
+
+/** Liste mit Vorschlägen dazwischen: nach dem ersten und nach dem dritten Eintrag */
+export function mischen<A, B>(liste: A[], vorschlaege: B[], max = 5): (A | B)[] {
+  const out: (A | B)[] = [];
+  const v = [...vorschlaege];
+  liste.forEach((e, i) => {
+    out.push(e);
+    if ((i === 0 || i === 2) && v.length) out.push(v.shift() as B);
+  });
+  out.push(...v);
+  return out.slice(0, max);
+}
+
+/** Termine, die sich überschneiden, bekommen eigene Spuren. `mindest` ist die sichtbare Mindestdauer in Stunden. */
+export function spuren<T extends { von: number; bis: number }>(liste: T[], mindest = 1.25): (T & { spur: number })[] {
+  const enden: number[] = [];
+  return [...liste]
+    .sort((a, b) => a.von - b.von)
+    .map((e) => {
+      let s = enden.findIndex((x) => x <= e.von + 0.001);
+      if (s < 0) {
+        s = enden.length;
+        enden.push(0);
+      }
+      enden[s] = Math.max(e.bis, e.von + mindest);
+      return { ...e, spur: s };
+    });
+}
+
+/** „08:15“ aus 8.25 */
+export function uhrAus(h: number): string {
+  const min = Math.round(h * 60);
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 }
 
 export function kuerzen(text: string, max: number): string {
@@ -83,7 +148,8 @@ export function kuerzen(text: string, max: number): string {
 }
 
 type Stunde = { id: string; tag: string; start_zeit: string; end_zeit: string; fach_id: string | null; raum: string | null };
-export type Ereignis = { id: string; von: number; bis: number; titel: string; ort: string; fachId: string | null; art: "stunde" | "frist" | "pruefung" };
+/** `uhr` ist die echte Uhrzeit, wenn `von` für die Anzeige verschoben wurde (Frist kurz vor Mitternacht) */
+export type Ereignis = { id: string; von: number; bis: number; titel: string; ort: string; fachId: string | null; art: "stunde" | "frist" | "pruefung"; uhr?: string };
 export type Wochentag = { datum: string; kurz: string; zahl: number; heute: boolean; ereignisse: Ereignis[] };
 
 const TAG_KUERZEL = ["MO", "DI", "MI", "DO", "FR", "SA", "SO"];
@@ -105,13 +171,14 @@ export function woche(d: { stundenplan: Stunde[]; deadlines: Deadline[]; pruefun
         .filter((p) => berlinDatum(new Date(p.datum)) === datum)
         .map((p) => {
           const v = stundeVon(berlinUhrzeit(new Date(p.datum)));
-          return { id: p.id, von: v, bis: v + 1.5, titel: p.titel, ort: p.raum ? `Prüfung, ${p.raum}` : "Prüfung", fachId: p.fach_id, art: "pruefung" as const };
+          return { id: p.id, von: v, bis: v + 1.5, titel: p.titel, ort: p.raum ?? "", fachId: p.fach_id, art: "pruefung" as const };
         }),
       ...d.deadlines
         .filter((f) => !f.erledigt && berlinDatum(new Date(f.faellig_am)) === datum)
         .map((f) => {
-          const v = Math.min(stundeVon(berlinUhrzeit(new Date(f.faellig_am))), 22.5);
-          return { id: f.id, von: v, bis: v + 0.5, titel: f.titel, ort: "Frist", fachId: f.fach_id, art: "frist" as const };
+          const uhr = berlinUhrzeit(new Date(f.faellig_am));
+          const v = Math.min(stundeVon(uhr), 22.5);
+          return { id: f.id, von: v, bis: v + 0.5, titel: f.titel, ort: "", fachId: f.fach_id, art: "frist" as const, uhr };
         }),
     ].sort((a, b) => a.von - b.von);
     return { datum, kurz: TAG_NAME[i], zahl: Number(datum.slice(8, 10)), heute: datum === heute, ereignisse };

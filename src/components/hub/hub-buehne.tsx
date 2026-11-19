@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { toggleDeadlineErledigt } from "@/app/deadline/actions";
 import { toggleTodoErledigt } from "@/app/todo/actions";
@@ -8,7 +9,11 @@ import { SteigText } from "@/components/bewegung/steig-text";
 import { RollText } from "@/components/bewegung/roll-text";
 import { Icon } from "@/components/nav-icon";
 import type { HubDaten } from "@/components/hub/hub-daten";
-import { alsNaechstes, bandLage, BAND, dateiTyp, kuerzen, lageSatz, SZENEN, szeneBeiScroll, wannKurz, woche, zuletztText } from "@/lib/hub-buehne";
+import { alsNaechstes, bandLage, BAND, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, SZENEN, szeneBeiScroll, uhrAus, wannKurz, woche, zuletztText, type Eintrag, type HubVorschlag } from "@/lib/hub-buehne";
+import { briefingHolen } from "@/components/ki/tages-briefing";
+import { studioOeffnen } from "@/lib/ki/studio-kontext";
+import { SCHNELL_ERFASSEN } from "@/components/quick-add";
+import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { berlinDatum } from "@/lib/zeit";
 import { bewegungReduziert } from "@/lib/personalisierung-store";
 import { fehlerMelden } from "@/lib/analytics";
@@ -19,10 +24,17 @@ export type BuehneDaten = HubDaten & {
 };
 
 const verz = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
+/** Sichtbare Mindestdauer eines Termins im Wochenband (Stunden) */
+const MINDEST = 1.25;
+/** So viele Gerichte passen in die Szene Mensa */
+const GERICHTE_MAX = 6;
+
+type Posten = Eintrag | HubVorschlag;
+
 const zahl = (n: number, stellen = 1) => n.toLocaleString("de-DE", { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
 
 /**
- * Zentraler Hub als Bühne (Entscheidung Didi, 19.11., Entwurf „A · Bühne“): fünf Szenen, die sich beim
+ * Zentraler Hub als Bühne (Entscheidung Didi, 19.11., Entwurf „A · Bühne“, Inhalt nach Idee A): vier Kapitel, die sich beim
  * Scrollen ablösen wie Seiten. Echtes Scrollen bleibt: Die Strecke ist so hoch wie alle Szenen, die Bühne
  * steht (sticky), Einrastpunkte je Szene. Die alte Szene geht in Scrollrichtung hinaus, die neue baut sich auf
  * (Buchstaben steigen, Zeilen steigen, Flächen heben sich). Nur transform und opacity.
@@ -120,12 +132,31 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
 
   const fach = useCallback((id: string | null) => d.faecher.find((f) => f.id === id) ?? null, [d.faecher]);
 
-  // ---- Szene 1: Überblick
+  // ---- 01 Heute: Fristen, Prüfungen, To-dos und Vorschläge von Studio
   const [erledigt, setErledigt] = useState<Record<string, boolean>>({});
   const eintraege = useMemo(() => alsNaechstes(d, jetzt), [d, jetzt]);
   const lage = lageSatz(eintraege, jetzt);
   const offen = eintraege.filter((e) => !erledigt[e.id]).length;
-  const umschalten = (e: (typeof eintraege)[number]) => {
+  const [vorschlaege, setVorschlaege] = useState<HubVorschlag[]>([]);
+  // Kommen die Vorschläge erst nach dem Aufbau, steigen sie ohne Wartezeit ein
+  const [spaet, setSpaet] = useState(false);
+  useEffect(() => {
+    let ab = false;
+    const start = performance.now();
+    briefingHolen().then((b) => {
+      if (ab || !b) return;
+      setSpaet(performance.now() - start > 300);
+      setVorschlaege(hubVorschlaege(b.vorschlaege));
+    });
+    return () => {
+      ab = true;
+    };
+  }, []);
+  const zeilen: Posten[] = mischen<Posten, Posten>(eintraege, vorschlaege, 5);
+  const { oeffne } = useAufgabenDetail();
+  const router = useRouter();
+  const umschalten = (e: Eintrag) => {
+    if (e.quelle === "pruefung") return;
     const neu = !erledigt[e.id];
     setErledigt((x) => ({ ...x, [e.id]: neu }));
     const aufruf = e.quelle === "deadline" ? toggleDeadlineErledigt(e.id, neu) : toggleTodoErledigt(e.id, neu);
@@ -134,8 +165,23 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
       setErledigt((x) => ({ ...x, [e.id]: !neu }));
     });
   };
+  const ziel = (z: Posten): string | null => ("quelle" in z ? (z.quelle === "pruefung" ? null : lernZiel(z.titel, d.karten.stapel)) : (z.href ?? null));
+  const oeffnen = (z: Posten) => {
+    const href = ziel(z);
+    if (href) {
+      router.push(href);
+      return;
+    }
+    if ("quelle" in z) oeffne(z.quelle, z.id);
+    else if (z.frage) studioOeffnen(z.frage);
+  };
+  const meta = (z: Posten) => {
+    if (!("quelle" in z)) return z.grund;
+    const f = fach(z.fachId);
+    return `${f ? `${f.name} · ` : ""}${z.art}`;
+  };
 
-  // ---- Szene 2: Woche
+  // ---- 02 Woche
   const tage = useMemo(() => woche({ stundenplan: d.stundenplan, deadlines: d.deadlines, pruefungen: d.pruefungen, fachName: (id) => fach(id)?.name ?? null }, jetzt), [d, jetzt, fach]);
   const heuteIndex = Math.max(0, tage.findIndex((t) => t.heute));
   const [tag, setTag] = useState<number | null>(null);
@@ -145,9 +191,12 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
     return h + m / 60;
   })();
 
-  // ---- Szene 3: Lernen
   const heute = berlinDatum(jetzt);
-  const fokusMin = d.lernSessions.filter((s) => berlinDatum(new Date(s.start)) === heute).reduce((a, s) => a + (s.dauer_minuten ?? 0), 0);
+  const gelegt = useMemo(() => spuren(gewaehlt.ereignisse, MINDEST), [gewaehlt]);
+  const spurZahl = Math.max(1, ...gelegt.map((e) => e.spur + 1));
+
+  // ---- 03 Mensa
+  const gerichte = d.mensa?.gerichte ?? [];
 
   const datum = new Intl.DateTimeFormat("de-DE", { weekday: "long", month: "long", timeZone: "Europe/Berlin" }).formatToParts(jetzt);
   const wochentag = datum.find((p) => p.type === "weekday")?.value ?? "";
@@ -170,66 +219,59 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   const aktiv = (i: number) => modus === "fluss" || i === sz;
 
   const szenen = [
-    // 01 Überblick
-    <section key={`s0-${besuch[0]}`} className={klasse(0)} aria-label="Überblick" aria-hidden={!aktiv(0)} inert={!aktiv(0)}>
+    // 01 Heute
+    <section key={`s0-${besuch[0]}`} className={klasse(0)} aria-label="Heute" aria-hidden={!aktiv(0)} inert={!aktiv(0)}>
       <div className="bue-oben">
         <div className="bue-datum">
           <p className="bue-tag">
             <SteigText text={String(Number(heute.slice(8, 10)))} schritt={90} />
           </p>
-          <p className="bue-blende" style={verz(500)}>
-            {wochentag}, {monat} <span>· KW <span className="zahl">{kw}</span></span>
+          <p className="bue-dz bue-blende" style={verz(420)}>
+            <b>{wochentag}</b>
+            <span>
+              {monat} · KW <span className="zahl">{kw}</span>
+            </span>
           </p>
         </div>
-        <h1 className="bue-lage">
-          <SteigText text={lage.text} start={260} akzent={lage.betont} />
-        </h1>
+        <div className="bue-text">
+          <h1 className="bue-lage">
+            <SteigText text={lage.text} start={260} akzent={lage.betont} />
+          </h1>
+          <p className="bue-unter bue-blende" style={verz(760)}>
+            {lage.unter}
+          </p>
+        </div>
       </div>
-      <div className="bue-trenn bue-zieht" style={verz(200)} />
-      <div className="bue-raster">
-        <p className="bue-links bue-blende" style={verz(700)}>
+      <div className="bue-liste">
+        <div className="bue-links bue-blende" style={verz(820)}>
           <b>Als Nächstes</b>
-          {aktiv(0) && <RollText wert={String(offen)} start="0" className="zahl" />} offen, nach Frist
-        </p>
-        {eintraege.length ? (
+          <span>
+            {aktiv(0) ? <RollText wert={String(offen)} start="0" className="zahl" /> : offen} offen
+            {vorschlaege.length ? ` · ${vorschlaege.length === 1 ? "ein Vorschlag" : `${vorschlaege.length} Vorschläge`} von Studio` : ""}
+          </span>
+          <Link className="bue-zum" href="/aufgaben">
+            Alle Aufgaben
+            <Icon name="pfeil-rechts" groesse={16} />
+          </Link>
+        </div>
+        {zeilen.length ? (
           <ol className="bue-reihen">
-            {eintraege.slice(0, 4).map((e, i) => {
-              const f = fach(e.fachId);
-              const inhalt = (
-                <>
-                  <span className="zahl bue-nr">0{i + 1}</span>
-                  <span className="bue-t">
-                    <span className="bue-strich">{e.titel}</span>
-                    <small>
-                      {f ? `${f.name} · ` : ""}
-                      {e.art}
-                    </small>
-                  </span>
-                  <span className={`zahl bue-w${e.dringend ? " dringend" : ""}`}>{wannKurz(e.wann, jetzt)}</span>
-                  <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
-                </>
-              );
-              return (
-                <li key={e.id} className="bue-zeile">
-                  <span className="bue-innen" style={verz(820 + i * 70)}>
-                    {e.quelle === "pruefung" ? (
-                      <Link className="bue-reihe" href="/aufgaben">
-                        {inhalt}
-                      </Link>
-                    ) : (
-                      <button type="button" className={`bue-reihe${erledigt[e.id] ? " fertig" : ""}`} aria-pressed={!!erledigt[e.id]} onClick={() => umschalten(e)} aria-label={`${e.titel} erledigt`}>
-                        {inhalt}
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
+            {zeilen.map((z, i) => (
+              <li key={z.id} className="bue-zeile">
+                <span className="bue-innen" style={verz(spaet && !("quelle" in z) ? 60 : 860 + i * 70)}>
+                  <Zeile z={z} fertig={!!erledigt[z.id]} onHaken={() => "quelle" in z && umschalten(z)} onOeffnen={() => oeffnen(z)} ziel={ziel(z)} meta={meta(z)} wann={"quelle" in z ? wannKurz(z.wann, jetzt) : ""} />
+                </span>
+              </li>
+            ))}
           </ol>
         ) : (
-          <p className="bue-leer bue-blende" style={verz(800)}>
-            Nichts offen. Neue Aufgaben legst du mit <kbd>Q</kbd> an.
-          </p>
+          <div className="bue-leer bue-blende" style={verz(860)}>
+            <p>Nichts offen.</p>
+            <button type="button" className="knopf klein" onClick={() => window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN, { detail: { quelle: "hub" } }))}>
+              <Icon name="plus" groesse={16} />
+              Aufgabe anlegen
+            </button>
+          </div>
         )}
       </div>
     </section>,
@@ -249,91 +291,83 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           </span>
         ))}
       </div>
-      <div className="bue-band" key={gewaehlt.datum}>
+      <div className="bue-band" key={gewaehlt.datum} style={{ "--spuren": spurZahl } as CSSProperties}>
         {[8, 10, 12, 14, 16, 18, 20, 22].map((h, i) => (
           <span key={h} className="bue-tick bue-blende" style={{ left: `${bandLage(h, h).links}%`, ...verz(500 + i * 35) }}>
             <span className="zahl">{String(h).padStart(2, "0")}</span>
           </span>
         ))}
-        {gewaehlt.ereignisse.map((e, i) => {
+        {gelegt.map((e, i) => {
           const l = bandLage(e.von, e.bis);
+          const breite = Math.max(l.breite, (MINDEST / (BAND.bis - BAND.von)) * 100);
+          const links = Math.min(l.links, 100 - breite);
           const farbe = e.art === "frist" ? "var(--color-error)" : e.art === "pruefung" ? "var(--akzent)" : (fach(e.fachId)?.farbe ?? "var(--linie-2)");
+          const art = e.art === "frist" ? "Frist" : e.art === "pruefung" ? "Prüfung" : "Vorlesung";
+          const beginn = e.uhr ?? uhrAus(e.von);
+          const zeit = e.art === "frist" ? `fällig um ${beginn}` : `${beginn} bis ${uhrAus(e.bis)}`;
           return (
-            <span key={e.id} className="bue-ereignis bue-hebt" style={{ left: `${l.links}%`, width: `calc(${Math.max(l.breite, 6)}% - 4px)`, "--c": farbe, ...verz(620 + i * 110) } as CSSProperties}>
-              <b>{e.titel}</b>
-              <span>{e.ort}</span>
-            </span>
+            <Link
+              key={e.id}
+              href="/termine"
+              className="bue-ereignis bue-hebt"
+              aria-label={`${art}: ${e.titel}, ${zeit}${e.ort ? `, ${e.ort}` : ""}`}
+              style={{ left: `${links}%`, width: `calc(${breite}% - 4px)`, "--spur": e.spur, "--c": farbe, ...verz(620 + i * 110) } as CSSProperties}
+            >
+              <span className="bue-kurz" aria-hidden="true">
+                <b>{e.titel}</b>
+                <span>
+                  <span className="zahl">{beginn}</span>
+                  {e.ort ? ` · ${e.ort}` : ""}
+                </span>
+              </span>
+              <span className={`bue-voll${links > 66 ? " rechts" : ""}`} aria-hidden="true">
+                <small>{art}</small>
+                <b>{e.titel}</b>
+                <span className="bue-vz">
+                  <Icon name="uhr" groesse={14} />
+                  <span className="zahl">{zeit}</span>
+                </span>
+                {e.ort && (
+                  <span className="bue-vz">
+                    <Icon name="globus" groesse={14} />
+                    {e.ort}
+                  </span>
+                )}
+              </span>
+            </Link>
           );
         })}
         {!gewaehlt.ereignisse.length && <span className="bue-frei bue-blende" style={verz(300)}>Frei. Nichts eingetragen.</span>}
         {gewaehlt.heute && jetztStunde >= BAND.von && jetztStunde <= BAND.bis && (
-          <span className="bue-jetzt bue-waechst" style={{ left: `${bandLage(jetztStunde, jetztStunde).links}%`, ...verz(1000) }} aria-label="jetzt" />
+          <span className="bue-jetzt bue-waechst" style={{ left: `${bandLage(jetztStunde, jetztStunde).links}%`, ...verz(1000) }} role="img" aria-label="jetzt" />
         )}
       </div>
+      <Link className="bue-zum bue-blende" style={verz(900)} href="/termine">
+        Ganze Woche in Termine
+        <Icon name="pfeil-rechts" groesse={16} />
+      </Link>
     </section>,
 
-    // 03 Lernen
-    <section key={`s2-${besuch[2]}`} className={klasse(2)} aria-label="Lernen" aria-hidden={!aktiv(2)} inert={!aktiv(2)}>
-      <Kapitel nr="03" titel="Lernen" unter="Was heute fällig ist" />
-      <div className="bue-werte">
-        <div className="bue-hebt" style={verz(380)}>
-          <b>{aktiv(2) ? <RollText wert={String(d.karten.anzahl)} start="0" /> : d.karten.anzahl}</b>
-          <span>Karteikarten fällig</span>
-        </div>
-        <div className="bue-hebt" style={verz(460)}>
-          <b>{`${Math.floor(fokusMin / 60)}:${String(fokusMin % 60).padStart(2, "0")}`}</b>
-          <span>Fokus heute, Std.</span>
-        </div>
-        <div className="bue-hebt" style={verz(540)}>
-          <b>{aktiv(2) ? <RollText wert={String(d.streak)} start="0" /> : d.streak}</b>
-          <span>Tage in Folge</span>
-        </div>
-      </div>
-      <div className="bue-raster bue-abstand">
-        <p className="bue-links bue-blende" style={verz(600)}>
-          <b>Stapel</b>mit fälligen Karten
-        </p>
-        {d.karten.stapel.length ? (
-          <ol className="bue-reihen">
-            {d.karten.stapel.slice(0, 3).map((s, i) => (
-              <li key={s.id} className="bue-zeile">
-                <span className="bue-innen" style={verz(700 + i * 70)}>
-                  <Link className="bue-reihe" href={`/karteikarten/${s.id}/lernen`}>
-                    <span className="zahl bue-nr">0{i + 1}</span>
-                    <span className="bue-t">{s.name}</span>
-                    <span className="zahl bue-w">{s.anzahl} fällig</span>
-                    <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
-                  </Link>
-                </span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="bue-leer bue-blende" style={verz(700)}>
-            Für heute ist alles wiederholt. <Link className="link" href="/karteikarten">Zu den Karteikarten</Link>
-          </p>
-        )}
-      </div>
-    </section>,
-
-    // 04 Mensa
-    <section key={`s3-${besuch[3]}`} className={klasse(3)} aria-label="Mensa heute" aria-hidden={!aktiv(3)} inert={!aktiv(3)}>
-      <Kapitel nr="04" titel="Mensa heute" unter={d.mensa ? d.mensa.mensa : "Noch keine Mensa gewählt"} />
+    // 03 Mensa
+    <section key={`s2-${besuch[2]}`} className={klasse(2)} aria-label="Mensa heute" aria-hidden={!aktiv(2)} inert={!aktiv(2)}>
+      <Kapitel nr="03" titel="Mensa heute" unter={d.mensa ? d.mensa.mensa : "Noch keine Mensa gewählt"} />
       <div className="bue-raster bue-abstand">
         <p className="bue-links bue-blende" style={verz(600)}>
           <b>{d.mensa?.heute ? "Heute" : d.mensa?.datum ? "Nächster Tag" : "Speiseplan"}</b>
           {d.mensa?.datum ? `${d.mensa.datum.slice(8, 10)}.${d.mensa.datum.slice(5, 7)}.` : ""}
+          {gerichte.length > GERICHTE_MAX ? <span className="bue-mehr">und {gerichte.length - GERICHTE_MAX} weitere</span> : null}
         </p>
-        {d.mensa && d.mensa.gerichte.length ? (
-          <ol className="bue-reihen">
-            {d.mensa.gerichte.slice(0, 4).map((g, i) => (
+        {gerichte.length ? (
+          <ol className={`bue-gerichte${gerichte.length > 3 ? " zwei" : ""}`}>
+            {gerichte.slice(0, GERICHTE_MAX).map((g, i) => (
               <li key={`${g.name}-${i}`} className="bue-zeile">
-                <span className="bue-innen bue-gericht" style={verz(560 + i * 80)}>
-                  <span className="zahl bue-nr">0{i + 1}</span>
-                  <span className="bue-t gross">
-                    {kuerzen(g.name, 60)}
-                    {g.vegan && <span className="bue-vegan">vegan</span>}
-                    <small>{g.kategorie}</small>
+                <span className="bue-innen bue-gericht" style={verz(560 + i * 70)}>
+                  <span className="bue-t">
+                    <span className="bue-gname">{kuerzen(g.name, 70)}</span>
+                    <small>
+                      {g.kategorie}
+                      {g.vegan && <span className="bue-vegan">vegan</span>}
+                    </small>
                   </span>
                   <span className="zahl bue-preis">{g.preis !== null ? `${zahl(g.preis, 2)} €` : ""}</span>
                 </span>
@@ -353,9 +387,9 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
       </div>
     </section>,
 
-    // 05 Dateien
-    <section key={`s4-${besuch[4]}`} className={klasse(4)} aria-label="Zuletzt geöffnet" aria-hidden={!aktiv(4)} inert={!aktiv(4)}>
-      <Kapitel nr="05" titel="Zuletzt geöffnet" unter="Weiter, wo du aufgehört hast" />
+    // 04 Zuletzt geöffnet
+    <section key={`s3-${besuch[3]}`} className={klasse(3)} aria-label="Zuletzt geöffnet" aria-hidden={!aktiv(3)} inert={!aktiv(3)}>
+      <Kapitel nr="04" titel="Zuletzt geöffnet" unter="Weiter, wo du aufgehört hast" />
       {d.dateien.length ? (
         <div className="bue-dateien">
           {d.dateien.map((f, i) => {
@@ -415,6 +449,52 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
         )}
         {szenen}
       </div>
+    </div>
+  );
+}
+
+/** Eine Zeile in „Als Nächstes“: vorne der Haken (oder das Studio-Zeichen), der Rest öffnet. */
+function Zeile({ z, fertig, onHaken, onOeffnen, ziel, meta, wann }: { z: Posten; fertig: boolean; onHaken: () => void; onOeffnen: () => void; ziel: string | null; meta: string; wann: string }) {
+  const studio = !("quelle" in z);
+  const pruefung = "quelle" in z && z.quelle === "pruefung";
+  const dringend = "quelle" in z && z.dringend;
+  const inhalt = (
+    <>
+      <span className="bue-t">
+        <span className="bue-strich">{z.titel}</span>
+        <small>
+          {studio && <span className="bue-st">Studio</span>}
+          {meta}
+        </small>
+      </span>
+      <span className={`zahl bue-w${dringend ? " dringend" : ""}`}>{wann}</span>
+      <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
+    </>
+  );
+  return (
+    <div className={`bue-reihe${fertig ? " fertig" : ""}${studio ? " studio" : ""}`}>
+      {studio ? (
+        <span className="bue-marke" aria-hidden="true">
+          <Icon name="studio" groesse={14} />
+        </span>
+      ) : pruefung ? (
+        <span className="bue-marke" aria-hidden="true">
+          <Icon name="ziel" groesse={14} />
+        </span>
+      ) : (
+        <button type="button" className="bue-haken" aria-pressed={fertig} aria-label={`${z.titel} ${fertig ? "wieder öffnen" : "erledigt"}`} onClick={onHaken}>
+          <Icon name="haken" groesse={14} />
+        </button>
+      )}
+      {ziel ? (
+        <Link className="bue-auf" href={ziel}>
+          {inhalt}
+        </Link>
+      ) : (
+        <button type="button" className="bue-auf" onClick={onOeffnen}>
+          {inhalt}
+        </button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { alsNaechstes, bandLage, dateiTyp, kuerzen, lageSatz, szeneBeiScroll, wannKurz, woche, zuletztText } from "./hub-buehne.ts";
+import { alsNaechstes, bandLage, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, szeneBeiScroll, uhrAus, wannKurz, woche, zuletztText } from "./hub-buehne.ts";
 
 const jetzt = new Date("2026-11-18T17:42:00Z"); // Mi 18:42 in Berlin
 
@@ -81,4 +81,36 @@ test("dateiTyp und zuletztText", () => {
   assert.equal(zuletztText("2026-11-18T15:42:00Z", jetzt), "vor 2 Std.");
   assert.equal(zuletztText("2026-11-17T10:00:00Z", jetzt), "gestern");
   assert.equal(zuletztText("2026-11-04T10:00:00Z", jetzt), "04.11.");
+});
+
+test("lageSatz mit Zeile darunter", () => {
+  const s = lageSatz(alsNaechstes(daten, jetzt), jetzt);
+  assert.ok(!s.text.includes("Der Rest"));
+  assert.match(s.unter, /Sache/);
+});
+
+test("lernZiel", () => {
+  const stapel = [{ id: "k1", name: "Testgütekriterien" }];
+  assert.equal(lernZiel("Testgütekriterien wiederholen", stapel), "/karteikarten/k1/lernen");
+  assert.equal(lernZiel("Karteikarten Statistik", stapel), "/karteikarten");
+  assert.equal(lernZiel("Hausarbeit abgeben", stapel), null);
+});
+
+test("hubVorschlaege und mischen", () => {
+  const v = hubVorschlaege([
+    { id: "deadline-1", titel: "A", grund: "x", href: "/" },
+    { id: "karten", titel: "8 Karteikarten wiederholen", grund: "Stapel – ca. 5 Minuten", href: "/karteikarten/k1/lernen" },
+    { id: "todos", titel: "3 offene To-dos", grund: "", href: "/aufgaben" },
+    { id: "pruefung-1", titel: "Für X lernen", grund: "morgen", frage: "Plan?" },
+  ]);
+  assert.deepEqual(v.map((x) => x.id), ["studio-karten", "studio-pruefung-1"]);
+  assert.equal(v[0].grund, "Stapel, ca. 5 Minuten");
+  assert.deepEqual(mischen([1, 2, 3, 4], ["a", "b"]), [1, "a", 2, 3, "b"]);
+});
+
+test("spuren und uhrAus", () => {
+  const s = spuren([{ von: 9, bis: 10.5 }, { von: 10, bis: 11 }, { von: 14, bis: 15.5 }]);
+  assert.deepEqual(s.map((e) => e.spur), [0, 1, 0]);
+  assert.equal(uhrAus(8.25), "08:15");
+  assert.equal(uhrAus(13.5), "13:30");
 });
