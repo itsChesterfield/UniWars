@@ -342,6 +342,34 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           <span className="bue-jetzt bue-waechst" style={{ left: `${bandLage(jetztStunde, jetztStunde).links}%`, ...verz(1000) }} role="img" aria-label="jetzt" />
         )}
       </div>
+      {/* Handy: der gewählte Tag als Liste statt Zeitband (nur per CSS sichtbar) */}
+      <ol className="bue-agenda" aria-label={`${gewaehlt.kurz} ${gewaehlt.zahl}.`}>
+        {gewaehlt.ereignisse.length ? (
+          gewaehlt.ereignisse.map((e) => {
+            const farbe = e.art === "frist" ? "var(--color-error)" : e.art === "pruefung" ? "var(--akzent)" : (fach(e.fachId)?.farbe ?? "var(--linie-2)");
+            const beginn = e.uhr ?? uhrAus(e.von);
+            return (
+              <li key={e.id}>
+                <Link className="bue-agenda-zeile" href="/termine" style={{ "--c": farbe } as CSSProperties}>
+                  <span className="bue-agenda-zeit zahl">
+                    {beginn}
+                    {e.art !== "frist" && <small>bis {uhrAus(e.bis)}</small>}
+                  </span>
+                  <span className="bue-agenda-text">
+                    <b>{e.titel}</b>
+                    <small>
+                      {e.art === "frist" ? "Frist" : e.art === "pruefung" ? "Prüfung" : "Vorlesung"}
+                      {e.ort ? ` · ${e.ort}` : ""}
+                    </small>
+                  </span>
+                </Link>
+              </li>
+            );
+          })
+        ) : (
+          <li className="bue-agenda-frei">Frei. Nichts eingetragen.</li>
+        )}
+      </ol>
       <Link className="bue-zum bue-blende" style={verz(900)} href="/termine">
         Ganze Woche in Termine
         <Icon name="pfeil-rechts" groesse={16} />
