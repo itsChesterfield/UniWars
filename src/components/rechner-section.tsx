@@ -49,7 +49,7 @@ export function NotenKopf({
     <div className="noten-kopf">
       <p className="noten-schnitt zahl">
         <span className="vh">{fachName ? `Schnitt in ${fachName}: ` : "Notenschnitt: "}</span>
-        {schnitt != null ? <RollText wert={notenText(schnitt)} /> : "–"}
+        {schnitt != null ? <RollText wert={notenText(schnitt)} start={notenText(0)} /> : "–"}
       </p>
       <div className="noten-kopf-text">
         <p>

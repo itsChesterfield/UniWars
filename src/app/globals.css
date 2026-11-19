@@ -18390,18 +18390,70 @@ html::-webkit-scrollbar {
   display: none;
 }
 
-/* Handy: Szenen untereinander, schmaler Satzspiegel */
+/* Tagesliste: nur am Handy, dort ersetzt sie das Zeitband */
+.bue-agenda {
+  display: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bue-agenda-zeile {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--linie);
+  box-shadow: inset 3px 0 0 var(--c);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.bue-agenda-zeit {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.bue-agenda-zeit small,
+.bue-agenda-text small {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.bue-agenda-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  min-width: 0;
+}
+
+.bue-agenda-text b {
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bue-agenda-frei {
+  padding: var(--space-4) 0;
+  font-size: var(--text-md);
+  color: var(--text-3);
+}
+
+/* Handy: Kapitel untereinander, kompakte Köpfe, Woche als Liste */
 @media (max-width: 760px) {
+  .buehne-strecke.fluss > .buehne {
+    gap: var(--space-16);
+  }
+
   .szene {
     padding: 0 var(--space-4);
   }
 
-  .bue-wt b {
-    font-size: var(--text-xl);
-  }
-
-  .bue-band {
-    display: none;
+  .szene + .szene {
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--linie-2);
   }
 
   .bue-oben,
@@ -18423,16 +18475,66 @@ html::-webkit-scrollbar {
     grid-column: 1;
   }
 
+  .bue-oben {
+    margin-top: var(--space-2);
+  }
+
+  .bue-tag {
+    font-size: 96px;
+  }
+
+  .bue-lage,
+  .bue-kap h2 {
+    font-size: var(--text-2xl);
+    line-height: 1.12;
+  }
+
+  .bue-unter,
+  .bue-kap h2 small {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  /* Kapitelnummer klein über dem Titel statt groß daneben */
+  .bue-kap {
+    margin-top: 0;
+    row-gap: var(--space-2);
+  }
+
+  .bue-kap-nr {
+    font-size: var(--text-sm);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .bue-liste {
+    margin-top: var(--space-8);
+    padding-top: var(--space-4);
+  }
+
+  .bue-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3);
+  }
+
+  .bue-links .bue-zum {
+    margin: 0 0 0 auto;
+  }
+
   .bue-reihen {
     margin-top: 0;
   }
 
-  .bue-gerichte.zwei {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .bue-auf {
     grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 56px;
+    gap: var(--space-3);
+  }
+
+  .bue-t {
+    font-size: var(--text-md);
   }
 
   .bue-p {
@@ -18440,16 +18542,47 @@ html::-webkit-scrollbar {
   }
 
   .bue-woche {
-    overflow-x: auto;
-    grid-template-columns: repeat(7, minmax(48px, 1fr));
+    margin-top: var(--space-6);
+  }
+
+  .bue-wt b {
+    font-size: var(--text-xl);
   }
 
   .bue-band {
-    overflow-x: auto;
+    display: none;
+  }
+
+  .bue-agenda {
+    display: block;
+  }
+
+  .bue-abstand {
+    margin-top: var(--space-6);
+  }
+
+  .bue-gerichte.zwei {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bue-gname,
+  .bue-gerichte.zwei .bue-gname {
+    font-size: var(--text-md);
   }
 
   .bue-dateien {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+
+  .bue-datei {
+    min-height: 120px;
+    padding: var(--space-4);
+  }
+
+  .bue-datei b {
+    font-size: var(--text-md);
   }
 }
 
