@@ -17480,6 +17480,11 @@ html:has(.buehne-strecke.buehne) {
   padding: var(--space-6) var(--space-16) var(--space-6) var(--space-4);
 }
 
+/* Rechts bleibt Platz für die Kapitelleiste mit Namen, auch wenn der Rand schmal ist */
+.buehne-strecke.buehne .szene {
+  padding-right: max(var(--space-16), calc(210px - (100vw - 1300px) / 2));
+}
+
 .buehne-strecke.buehne .szene {
   position: absolute;
   inset: 0;
@@ -17728,47 +17733,84 @@ html:has(.buehne-strecke.buehne) {
 /* Typografie der Szenen: 12er-Raster, große Zahlen, Haarlinien statt Karten */
 .bue-oben,
 .bue-raster,
-.bue-kap {
+.bue-kap,
+.bue-liste {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: var(--space-6);
   align-items: end;
 }
 
+/* 01 Heute: Datum, ein Satz, eine Zeile darunter, dann die Liste */
 .bue-oben {
-  margin-top: var(--space-8);
+  margin-top: var(--space-6);
 }
 
 .bue-datum {
   grid-column: 1 / span 4;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5);
+  min-width: 0;
 }
 
 .bue-tag {
+  flex: none;
   margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-riese);
-  line-height: 0.8;
+  line-height: 0.78;
   letter-spacing: -0.06em;
+  white-space: nowrap;
 }
 
-.bue-datum p:not(.bue-tag) {
-  margin: var(--space-5) 0 0;
-  font-size: var(--text-md);
-  color: var(--text-2);
+.bue-tag .steig-wort {
+  margin-right: 0;
 }
 
-.bue-datum span {
+.bue-dz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  margin: 0;
+  padding-bottom: var(--space-1);
+  font-size: var(--text-sm);
   color: var(--text-3);
+  white-space: nowrap;
+}
+
+.bue-dz b {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bue-text {
+  grid-column: 5 / span 8;
+  padding-bottom: var(--space-1);
 }
 
 .bue-lage {
-  grid-column: 5 / span 8;
   margin: 0;
-  padding-bottom: var(--space-2);
   font-size: var(--text-buehne);
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.035em;
+}
+
+.bue-unter {
+  max-width: 520px;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.bue-liste {
+  align-items: start;
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--linie-2);
 }
 
 .bue-trenn {
@@ -17787,37 +17829,110 @@ html:has(.buehne-strecke.buehne) {
 
 .bue-links {
   grid-column: 1 / span 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
   margin: 0;
-  padding-top: var(--space-5);
   font-size: var(--text-sm);
   color: var(--text-3);
 }
 
+.bue-raster .bue-links {
+  padding-top: var(--space-4);
+}
+
 .bue-links b {
-  display: block;
-  margin-bottom: var(--space-1);
   font-size: var(--text-lg);
   font-weight: 650;
   color: var(--text);
 }
 
+.bue-zum {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  color: var(--akzent-text);
+  text-decoration: none;
+}
+
+.bue-zum svg {
+  transition: transform var(--dur-short) var(--ease-out);
+}
+
+.bue-zum:hover svg {
+  transform: translateX(4px);
+}
+
 .bue-reihen {
   grid-column: 5 / span 8;
-  margin: 0;
+  margin: calc(var(--space-4) * -1) 0 0;
   padding: 0;
   list-style: none;
 }
 
+/* Zeile: vorne Haken (erledigt) oder Zeichen, der Rest öffnet */
 .bue-reihe {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto 24px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--linie);
+}
+
+.bue-haken,
+.bue-marke {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.bue-haken {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: inset 0 0 0 1.5px var(--linie-2);
+  color: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    box-shadow var(--dur-short) var(--ease-out);
+}
+
+.bue-haken:hover {
+  box-shadow: inset 0 0 0 1.5px var(--text-3);
+}
+
+.bue-reihe.fertig .bue-haken {
+  background: var(--akzent);
+  box-shadow: none;
+  color: var(--auf-akzent);
+}
+
+.bue-marke {
+  color: var(--text-3);
+}
+
+.bue-reihe.studio .bue-marke {
+  background: color-mix(in srgb, var(--akzent) 16%, transparent);
+  color: var(--akzent-text);
+}
+
+.bue-auf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 20px;
   align-items: center;
   gap: var(--space-4);
   width: 100%;
-  min-height: 64px;
+  min-height: 60px;
   padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--linie);
   background: none;
   font: inherit;
   color: var(--text);
@@ -17826,32 +17941,39 @@ html:has(.buehne-strecke.buehne) {
   cursor: pointer;
 }
 
-.bue-nr {
-  font-size: var(--text-sm);
-  color: var(--text-3);
-}
-
 .bue-t {
   min-width: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 500;
   letter-spacing: -0.01em;
+}
+
+.bue-strich {
+  position: relative;
   transition: color var(--dur-short) var(--ease-out);
 }
 
-.bue-t.gross {
-  font-size: var(--text-2xl);
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+.bue-auf:hover .bue-strich {
+  color: var(--akzent-text);
 }
 
 .bue-t small {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-top: var(--space-half);
+  overflow: hidden;
   font-size: var(--text-xs);
   font-weight: 400;
   letter-spacing: 0;
   color: var(--text-3);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bue-st {
+  flex: none;
+  color: var(--akzent-text);
 }
 
 .bue-w {
@@ -17871,17 +17993,13 @@ html:has(.buehne-strecke.buehne) {
     color var(--dur-short) var(--ease-out);
 }
 
-.bue-reihe:hover .bue-p {
+.bue-auf:hover .bue-p {
   transform: translateX(4px);
   color: var(--text);
 }
 
 .bue-reihe.fertig .bue-t {
   color: var(--text-3);
-}
-
-.bue-strich {
-  position: relative;
 }
 
 .bue-strich::after {
@@ -17903,10 +18021,17 @@ html:has(.buehne-strecke.buehne) {
 
 .bue-leer {
   grid-column: 5 / span 8;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
   margin: 0;
-  padding-top: var(--space-5);
   font-size: var(--text-lg);
   color: var(--text-2);
+}
+
+.bue-leer p {
+  margin: 0;
 }
 
 .bue-kap {
@@ -17919,6 +18044,7 @@ html:has(.buehne-strecke.buehne) {
   line-height: 0.8;
   letter-spacing: -0.06em;
   color: var(--text-3);
+  white-space: nowrap;
 }
 
 .bue-kap h2 {
@@ -17939,7 +18065,7 @@ html:has(.buehne-strecke.buehne) {
   color: var(--text-3);
 }
 
-/* Szene „Diese Woche“ */
+/* 02 Diese Woche */
 .bue-woche {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -18002,9 +18128,10 @@ html:has(.buehne-strecke.buehne) {
   color: var(--akzent-text);
 }
 
+/* Zeitband: Termine, die sich überschneiden, liegen in eigenen Spuren */
 .bue-band {
   position: relative;
-  height: 152px;
+  height: calc(var(--spuren, 1) * 68px + var(--space-10));
   margin-top: var(--space-12);
   border-top: 1px solid var(--linie-2);
 }
@@ -18029,34 +18156,115 @@ html:has(.buehne-strecke.buehne) {
 
 .bue-ereignis {
   position: absolute;
-  top: var(--space-6);
-  height: 96px;
-  overflow: hidden;
-  padding: var(--space-3);
+  color: var(--text);
+  text-decoration: none;
+  top: calc(var(--space-6) + var(--spur, 0) * 68px);
+  height: 60px;
   border-radius: var(--radius-l);
-  background: color-mix(in srgb, var(--c) 22%, transparent);
+  background: color-mix(in srgb, var(--c) 24%, var(--grund));
   font-size: var(--text-xs);
+  outline: none;
 }
 
-.bue-ereignis b,
-.bue-ereignis span {
+.bue-ereignis:hover,
+.bue-ereignis:focus-visible {
+  z-index: 4;
+}
+
+.bue-kurz {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  padding: var(--space-2) var(--space-3);
+  border-radius: inherit;
+}
+
+.bue-kurz > b,
+.bue-kurz > span {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.bue-ereignis b {
-  font-size: var(--text-md);
+.bue-kurz > b {
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
-.bue-ereignis span {
+.bue-kurz > span {
+  color: var(--text);
+}
+
+/* Beim Drüberfahren wächst eine Karte aus der Fläche: voller Name, Zeit und Raum */
+.bue-voll {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: max(calc(100% + 12px), 248px);
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  background: var(--flaeche-3);
+  box-shadow:
+    inset 3px 0 0 var(--c),
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -20px var(--schatten);
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.94);
+  transform-origin: top left;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-short) var(--ease-out),
+    transform var(--dur-long) var(--ease-out),
+    visibility 0s linear var(--dur-short);
+}
+
+.bue-voll.rechts {
+  left: auto;
+  right: -6px;
+  transform-origin: top right;
+}
+
+.bue-ereignis:hover .bue-voll,
+.bue-ereignis:focus-visible .bue-voll {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
+}
+
+.bue-voll small {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+}
+
+.bue-voll b {
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.bue-vz {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
   color: var(--text-2);
+}
+
+.bue-vz svg {
+  flex: none;
+  color: var(--text-3);
 }
 
 .bue-jetzt {
   position: absolute;
+  z-index: 2;
   top: -6px;
   bottom: 0;
   width: 2px;
@@ -18066,69 +18274,69 @@ html:has(.buehne-strecke.buehne) {
 .bue-frei {
   position: absolute;
   left: 0;
-  top: var(--space-10);
+  top: var(--space-6);
   font-size: var(--text-xl);
   color: var(--text-3);
 }
 
-/* Szene „Lernen“ */
-.bue-werte {
+/* 03 Mensa: ab vier Gerichten zwei Spalten, damit nichts nach unten wegrutscht */
+.bue-gerichte {
+  grid-column: 5 / span 8;
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  column-gap: var(--space-6);
-  margin-top: var(--space-12);
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.bue-werte > div {
-  grid-column: span 2;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--linie-2);
+.bue-gerichte.zwei {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.bue-werte > div:first-child {
-  grid-column: 5 / span 4;
-}
-
-.bue-werte b {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: clamp(40px, 4.4vw, 64px);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.bue-werte > div > span {
-  font-size: var(--text-sm);
-  color: var(--text-3);
-}
-
-/* Szene „Mensa“ */
+.bue-zeile > .bue-innen.bue-gericht,
 .bue-gericht {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: var(--space-4);
   padding: var(--space-4) 0;
   border-bottom: 1px solid var(--linie);
 }
 
-.bue-preis {
+.bue-gname {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: var(--text-xl);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.bue-gerichte.zwei .bue-gname {
+  font-size: var(--text-lg);
+}
+
+.bue-preis {
+  font-size: var(--text-lg);
 }
 
 .bue-vegan {
-  margin-left: var(--space-2);
   padding: var(--space-half) var(--space-2);
   border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--ok) 16%, transparent);
   font-size: var(--text-xs);
   font-weight: 500;
-  letter-spacing: 0;
-  vertical-align: 3px;
+  color: var(--text);
 }
 
-/* Szene „Zuletzt geöffnet“ */
+.bue-mehr {
+  margin-top: var(--space-2);
+}
+
+/* 04 Zuletzt geöffnet */
 .bue-dateien {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -18173,6 +18381,15 @@ html:has(.buehne-strecke.buehne) {
   color: var(--text-3);
 }
 
+/* Keine Bildlaufleiste am Fensterrand (Entscheidung Didi, 19.11.): Scrollen bleibt, die Leiste fällt weg */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 /* Handy: Szenen untereinander, schmaler Satzspiegel */
 @media (max-width: 760px) {
   .szene {
@@ -18190,25 +18407,32 @@ html:has(.buehne-strecke.buehne) {
   .bue-oben,
   .bue-raster,
   .bue-kap,
-  .bue-werte {
+  .bue-liste {
     grid-template-columns: minmax(0, 1fr);
     row-gap: var(--space-4);
   }
 
   .bue-datum,
-  .bue-lage,
+  .bue-text,
   .bue-links,
   .bue-reihen,
   .bue-leer,
   .bue-kap-nr,
   .bue-kap h2,
-  .bue-werte > div,
-  .bue-werte > div:first-child {
+  .bue-gerichte {
     grid-column: 1;
   }
 
-  .bue-reihe {
-    grid-template-columns: 32px minmax(0, 1fr) auto;
+  .bue-reihen {
+    margin-top: 0;
+  }
+
+  .bue-gerichte.zwei {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bue-auf {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .bue-p {
