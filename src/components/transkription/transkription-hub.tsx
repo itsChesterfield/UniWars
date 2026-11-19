@@ -15,6 +15,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { gesamtStatus, MAX_DATEI_SEKUNDEN, zeitText, type TeilInfo, type TeilStatus } from "@/lib/transkription/transkript";
 import { OfflineHinweis } from "@/components/offline-hinweis";
+import { Icon } from "@/components/nav-icon";
 
 export type TranskriptEintrag = {
   id: string;
@@ -55,7 +56,7 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
 
   async function anlegen(datei: { id: string; name: string; fach_id: string | null }, sekunden: number) {
     if (sekunden > MAX_DATEI_SEKUNDEN) {
-      setFehler("Die Datei ist länger als 60 Minuten. Nimm längere Vorlesungen direkt hier auf – dann wird automatisch geteilt.");
+      setFehler("Die Datei ist länger als 60 Minuten. Nimm längere Vorlesungen direkt hier auf, dann wird automatisch geteilt.");
       return;
     }
     setLaeuft("Wird vorbereitet …");
@@ -112,8 +113,8 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
 
   return (
     <section className="card tra-datei" id="tra-datei" aria-label="Datei transkribieren">
-      <h2 className="ct">📁 Datei transkribieren</h2>
-      <p className="muted">Audio aus der Dateiablage wählen oder neu hochladen (MP3, M4A, WAV, WebM, Ogg · bis 25 MB und 60 Minuten).</p>
+      <h2 className="ct">Datei transkribieren</h2>
+      <p className="muted">Audio aus der Dateiablage wählen oder neu hochladen (MP3, M4A, WAV, WebM, Ogg, bis 25 MB und 60 Minuten).</p>
       <div className="tra-einstellungen">
         <label className="ki-feld tra-breit">
           <span>Aus der Dateiablage</span>
@@ -121,8 +122,8 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
             <option value="">{audioDateien.length ? "Datei wählen …" : "Noch keine Audiodateien"}</option>
             {audioDateien.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.name} · {groesseText(d.groesse)}
-                {d.fach_id ? ` · ${faecher.find((f) => f.id === d.fach_id)?.name ?? ""}` : ""}
+                {d.name}, {groesseText(d.groesse)}
+                {d.fach_id ? `, ${faecher.find((f) => f.id === d.fach_id)?.name ?? ""}` : ""}
               </option>
             ))}
           </select>
@@ -194,7 +195,7 @@ export function TranskriptionHub({
 
   return (
     <>
-      <HubKopf titel="Transkription" untertitel="Vorlesungen aufnehmen und in Text umwandeln – mit Zeitstempeln zum Nachhören." />
+      <HubKopf titel="Transkription" untertitel="Vorlesungen aufnehmen und in Text umwandeln, mit Zeitstempeln zum Nachhören." />
       <OfflineHinweis text="Offline. Hochladen und Umwandeln in Text geht wieder, sobald du online bist." />
       {!verfuegbar && <p className="ki-hinweis">Die Umwandlung in Text ist gerade nicht verfügbar. Aufnehmen und Hochladen funktioniert trotzdem.</p>}
       <div className="tra-start-raster">
@@ -205,7 +206,7 @@ export function TranskriptionHub({
       <h2 className="tra-liste-titel">Deine Transkripte</h2>
       <FachFilterChips faecher={faecher} />
       {sichtbar.length === 0 ? (
-        <LeererZustand icon="🎙️" text={eintraege.length ? "In diesem Fach gibt es noch keine Transkripte." : "Noch keine Transkripte. Starte eine Aufnahme oder wähle eine Audiodatei."} />
+        <LeererZustand icon="mikrofon" text={eintraege.length ? "In diesem Fach gibt es noch keine Transkripte." : "Noch keine Transkripte. Starte eine Aufnahme oder wähle eine Audiodatei."} />
       ) : (
         <section className="card">
           <ul className="tra-liste">
@@ -217,15 +218,15 @@ export function TranskriptionHub({
                 <li key={e.id}>
                   <Link href={`/transkription/${e.id}`} className="tra-eintrag">
                     <span className="tra-eintrag-titel">
-                      {e.quelle === "aufnahme" ? "🎙️" : "📁"} {e.titel}
+                      <Icon name={e.quelle === "aufnahme" ? "mikrofon" : "dateiablage"} groesse={16} /> {e.titel}
                     </span>
                     <span className="muted tra-eintrag-info">
                       {fach && (
                         <>
-                          <span className="dot" style={{ background: fach.farbe ?? "#94a3b8" }} aria-hidden /> {fach.name} ·{" "}
+                          <span className="dot" style={{ background: fach.farbe ?? "var(--text-3)" }} aria-hidden /> {fach.name},{" "}
                         </>
                       )}
-                      {datum(e.erstellt_am)} · {zeitText(dauer)}
+                      {datum(e.erstellt_am)}, {zeitText(dauer)}
                     </span>
                     <span className={`tra-status tra-status-${status}`}>{STATUS_TEXT[status]}</span>
                   </Link>

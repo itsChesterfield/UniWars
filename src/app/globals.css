@@ -7,7 +7,10 @@
 :root {
   /* Whiteboard-Papier: in beiden Designs hell (Entscheidung Didi), deshalb ohne Design-Umschaltung */
   --papier: #fffdf8;
+  --papier-text: #2a2318;
   --papier-text-2: #5c544a;
+  /* Abgedunkelter Hintergrund hinter Dialogen */
+  --abdunkeln: rgb(20 16 10 / 0.4);
   --papier-linie: rgba(42, 35, 24, 0.16);
   --papier-akzent: #946318;
 
@@ -384,7 +387,7 @@ textarea {
 }
 
 .navitem:hover {
-  background: rgba(0, 0, 0, 0.035);
+  background: var(--hover);
   text-decoration: none;
 }
 
@@ -688,7 +691,7 @@ select.field {
 .seg.on {
   background: var(--card);
   color: var(--accent-strong);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px var(--schatten);
 }
 
 .empty-state {
@@ -849,14 +852,12 @@ input[type="checkbox"]:disabled {
   padding: 8px 0;
   max-height: 360px;
   overflow-y: auto;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 50px var(--schatten);
 }
 
 .search-group h4 {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--text-xs);
+  font-weight: 600;
   color: var(--faint);
   padding: 0 20px;
   margin: 10px 0 4px;
@@ -911,7 +912,7 @@ input[type="checkbox"]:disabled {
   min-width: 300px;
   max-height: 360px;
   overflow-y: auto;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 50px var(--schatten);
 }
 
 .notification-dropdown ul {
@@ -959,7 +960,7 @@ input[type="checkbox"]:disabled {
   flex-direction: column;
   gap: 6px;
   min-width: 180px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 50px var(--schatten);
 }
 
 .widget-toggle-item {
@@ -1145,7 +1146,6 @@ input[type="checkbox"]:disabled {
 }
 
 .naechster-termin-countdown .einheit {
-  font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
 
@@ -1323,8 +1323,6 @@ input[type="checkbox"]:disabled {
 }
 
 .entry-countdown-einheit {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
   font-size: var(--text-xs);
   font-weight: 400;
 }
@@ -1995,14 +1993,14 @@ input[type="checkbox"]:disabled {
   font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(47, 99, 71, 0.4);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--akzent) 40%, transparent);
   z-index: 40;
 }
 
 .quick-add-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 24, 21, 0.5);
+  background: var(--abdunkeln);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -2020,7 +2018,7 @@ input[type="checkbox"]:disabled {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 50px var(--schatten);
 }
 
 dialog.quick-add-modal {
@@ -2029,7 +2027,7 @@ dialog.quick-add-modal {
 
 dialog.quick-add-modal::backdrop,
 dialog.card::backdrop {
-  background: rgba(20, 24, 21, 0.5);
+  background: var(--abdunkeln);
 }
 
 dialog.card {
@@ -2491,7 +2489,7 @@ dialog.card {
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 32px var(--schatten);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -2892,7 +2890,7 @@ kbd {
 .md-knopf.an {
   background: var(--card);
   color: var(--accent-strong);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px var(--schatten);
 }
 
 .md-fett {
@@ -5058,7 +5056,7 @@ dialog.dat-vorschau::backdrop {
 .pdf-markier-menue.gross {
   flex-direction: column;
   align-items: stretch;
-  width: min(300px, calc(100vw - 24px));
+  width: min(300px, calc(100% - 24px));
 }
 
 .pdf-menue-label {
@@ -5440,7 +5438,7 @@ dialog.dat-vorschau::backdrop {
   }
 
   .pdf-ki-leiste.eingeklappt .btnp {
-    box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+    box-shadow: 0 4px 14px var(--schatten);
   }
 
   .pdf-koerper.mit-ki,
@@ -5688,7 +5686,7 @@ dialog.bild-auswahl {
   }
 
   .txt-ki-leiste.eingeklappt .btnp {
-    box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+    box-shadow: 0 4px 14px var(--schatten);
   }
 
   
@@ -7226,8 +7224,8 @@ textarea.folie-punkte {
   gap: 10px;
   padding: 8px 10px;
   border-radius: var(--radius-m);
-  background: rgba(255, 255, 255, 0.85);
-  color: #2a2318;
+  background: var(--papier);
+  color: var(--papier-text);
   text-decoration: none;
   min-width: 200px;
 }
@@ -7240,12 +7238,12 @@ textarea.folie-punkte {
 
 .chat-karte .muted {
   font-size: 11.5px;
-  color: #7a6d51;
+  color: var(--papier-text-2);
 }
 
 a.chat-karte:hover {
   text-decoration: none;
-  background: #fff;
+  background: var(--papier);
 }
 
 .chat-eingabe {
@@ -7554,8 +7552,8 @@ dialog.ki-dialog-klein {
   dialog.ki-dialog,
   dialog.ki-dialog-gross,
   dialog.ki-dialog-klein {
-    width: 100vw;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 100dvh;
     max-height: 100dvh;
     margin: 0;
@@ -7751,8 +7749,8 @@ dialog.ki-dialog-klein {
 
 /* KI-09: von der KI ausgefüllte Felder */
 .field.ki-gefuellt {
-  background: color-mix(in srgb, #facc15 22%, var(--card2));
-  border-color: color-mix(in srgb, #ca8a04 55%, transparent);
+  background: color-mix(in srgb, var(--warnung) 22%, var(--card2));
+  border-color: color-mix(in srgb, var(--warnung) 55%, transparent);
 }
 
 .lit-ki-hinweis {
@@ -7859,7 +7857,7 @@ dialog.ki-dialog-klein {
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgb(193 78 52 / 0.3);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .tra-start:hover {
@@ -7875,7 +7873,7 @@ dialog.ki-dialog-klein {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--auf-fehler);
   flex: none;
 }
 
@@ -7919,7 +7917,6 @@ dialog.ki-dialog-klein {
   height: 100%;
   background: var(--success);
   border-radius: inherit;
-  transition: width 0.08s linear;
 }
 
 .tra-stopp {
@@ -8259,7 +8256,7 @@ dialog.ki-dialog-klein {
   color: var(--btn-fg);
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgb(42 35 24 / 0.25);
+  box-shadow: 0 6px 18px var(--schatten);
 }
 
 .ki-starter:hover {
@@ -8494,7 +8491,6 @@ dialog.ki-dialog-klein {
   display: block;
   height: 100%;
   background: var(--success);
-  transition: width 0.08s linear;
 }
 
 .ki-diktat-fehler {
@@ -8787,7 +8783,7 @@ dialog.ki-dialog-klein {
   border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--accent) 22%, transparent);
   margin: 8px;
-  transition: all 0.12s ease-out;
+  transition: opacity 0.12s ease-out;
 }
 
 .split-vorschau[data-seite="links"] {
@@ -8871,7 +8867,7 @@ html[data-eingebettet] .dashboard-main {
   min-height: 34px;
   border-radius: var(--radius-m);
   font-size: 12.5px;
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
+  box-shadow: 0 1px 6px var(--schatten);
 }
 
 .pdf-leiste .pdf-gruppe {
@@ -8954,7 +8950,7 @@ html[data-eingebettet] .dashboard-main {
 
 .sidebar-einklappen:hover {
   color: var(--text);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--hover);
 }
 
 @media (min-width: 761px) {
@@ -8963,7 +8959,6 @@ html[data-eingebettet] .dashboard-main {
     top: 0;
     height: 100vh;
     overflow-y: auto;
-    transition: width 0.15s ease-out;
   }
 
   .sidebar-nav {
@@ -11370,13 +11365,13 @@ html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"])
 }
 
 .lr-quiz-frage > button.richtig {
-  border-color: #16a34a;
-  background: color-mix(in srgb, #16a34a 14%, transparent);
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
 }
 
 .lr-quiz-frage > button.falsch {
-  border-color: #dc2626;
-  background: color-mix(in srgb, #dc2626 12%, transparent);
+  border-color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
 }
 
 .lr-quiz-ergebnis {
@@ -11934,7 +11929,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   justify-content: center;
   align-items: flex-start;
   padding: 12vh 16px 16px;
-  background: rgb(20 16 10 / 0.35);
+  background: var(--abdunkeln);
   backdrop-filter: blur(2px);
   animation: bp-ein 0.12s ease-out;
 }
@@ -11953,7 +11948,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  box-shadow: 0 24px 60px rgb(20 16 10 / 0.28);
+  box-shadow: 0 24px 60px var(--schatten);
   overflow: hidden;
 }
 
@@ -12007,11 +12002,9 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 }
 
 .bp-gruppe {
-  padding: 10px 10px 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
   color: var(--muted);
 }
 
@@ -12037,6 +12030,7 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
 
 .bp-eintrag:disabled {
   opacity: 0.6;
+  color: var(--text-3);
   cursor: progress;
 }
 
@@ -12244,7 +12238,7 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   gap: 6px;
   padding: 5px 9px;
   border-radius: var(--radius-m);
-  background: color-mix(in srgb, #7c5cff 10%, transparent);
+  background: color-mix(in srgb, var(--akzent) 10%, transparent);
 }
 
 .studio-gemerkt li.zurueck {
@@ -12613,7 +12607,7 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
   background: var(--card);
-  box-shadow: 0 16px 40px rgb(20 16 10 / 0.25);
+  box-shadow: 0 16px 40px var(--schatten);
   font-size: 14px;
 }
 
@@ -13582,6 +13576,7 @@ dialog.menue::backdrop {
 
 .menue-eintrag:disabled {
   opacity: 0.55;
+  color: var(--text-3);
   cursor: progress;
 }
 
@@ -15720,7 +15715,7 @@ html[data-bewegung="reduziert"] .lade-skelett {
   /* Beim Drüberfahren: über den Inhalt legen (auch über die Kopfleiste) statt ihn zu verschieben */
   [data-leiste="hover"] .rail {
     z-index: calc(var(--z-sticky) + 10);
-    transition: width 0s, margin 0s, box-shadow 0s;
+    transition: none;
   }
 
   [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {

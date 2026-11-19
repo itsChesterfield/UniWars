@@ -76,7 +76,7 @@ export async function quizSchwaechenErweitern(quizId: string): Promise<KiErgebni
     if (!quiz) throw new KiEingabe("Quiz nicht gefunden.");
     const fragen = fragenLesen(quiz.fragen);
     const { themen } = schwaechen(fragen, (versuche ?? []).map((v) => ({ antworten: versuchAntwortenLesen(v.antworten) })));
-    if (!themen.length) throw new KiEingabe("Du hast noch keine Schwächen – mach erst einen Durchgang.");
+    if (!themen.length) throw new KiEingabe("Du hast noch keine Schwächen, mach erst einen Durchgang.");
     const quellen = ((quiz.quellen ?? []) as unknown as QuellInfo[]).map((q) => ({ art: q.art, id: q.id }));
     const einstellungen = { ...einstellungenLesen(quiz.einstellungen), anzahl: 6 };
     const neu = await mitBuchung(supabase, userId, "quiz", "stark", async (anfrage) => {
@@ -100,7 +100,7 @@ export async function freiBewerten(quizId: string, frageId: string, antwort: str
   try {
     const { supabase, userId } = await kiNutzer();
     const text = String(antwort ?? "").trim();
-    if (!text) return { ok: true, daten: { punkte: 0, richtig: false, feedback: "Keine Antwort – schau dir die Musterlösung an." } };
+    if (!text) return { ok: true, daten: { punkte: 0, richtig: false, feedback: "Keine Antwort, schau dir die Musterlösung an." } };
     const { data: quiz } = await supabase.from("quiz").select("fragen").eq("id", quizId).maybeSingle();
     const frage = fragenLesen(quiz?.fragen).find((f) => f.id === frageId);
     if (!frage || frage.typ !== "frei") throw new KiEingabe("Frage nicht gefunden.");

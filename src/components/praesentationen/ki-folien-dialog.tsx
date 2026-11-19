@@ -9,6 +9,7 @@ import { KiLadeZustand } from "@/components/ki/ki-lade-zustand";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { ERLAUBTE_FOLIENZAHL, MAX_PUNKTE_JE_FOLIE, MIN_FOLIEN_ZEICHEN, type EntwurfFolie, type FolienEntwurf, type FolienLayout, type Folienzahl } from "@/lib/ki/folien";
 import { kiFehlerTracken, kiGestartet, kiVorschauAngezeigt, kiVorschauUebernommen } from "@/lib/ki/tracking";
+import { Icon } from "@/components/nav-icon";
 
 const LAYOUT_NAMEN: Record<FolienLayout, string> = { TITEL: "Titel", TEXT: "Titel & Text", BILD: "Titel & Bild", ZWEISPALTIG: "Zweispaltig" };
 const zeilen = (t: string) =>
@@ -153,8 +154,8 @@ export function KiFolienDialog({ onSchliessen }: { onSchliessen: () => void }) {
         </form>
       ) : entwurf ? (
         <>
-          <p className="ki-hinweis">⚠️ Prüf die Folien, die KI kann sich irren. Bilder fügst du danach im Editor ein.</p>
-          {gekuerzt && <p className="ki-hinweis">✂️ Nur der Anfang des Textes wurde verwendet.</p>}
+          <p className="ki-hinweis"><Icon name="warnung" groesse={14} /> Prüf die Folien, die KI kann sich irren. Bilder fügst du danach im Editor ein.</p>
+          {gekuerzt && <p className="ki-hinweis"><Icon name="schere" groesse={14} /> Nur der Anfang des Textes wurde verwendet.</p>}
           <label className="ki-feld">
             <span>Titel der Präsentation</span>
             <input className="field" value={entwurf.titel} maxLength={150} onChange={(e) => setEntwurf({ ...entwurf, titel: e.target.value })} />
@@ -180,14 +181,14 @@ export function KiFolienDialog({ onSchliessen }: { onSchliessen: () => void }) {
                   <input className="field" aria-label={`Titel Folie ${i + 1}`} value={f.titel} maxLength={150} onChange={(e) => folieAendern(i, { titel: e.target.value })} />
                   {i > 0 && (
                     <button type="button" className="icon-knopf" aria-label={`Folie ${i + 1} entfernen`} onClick={() => folieAendern(i, null)}>
-                      🗑
+                      <Icon name="loeschen" groesse={16} />
                     </button>
                   )}
                 </div>
                 {f.layout === "TITEL" && (
                   <input className="field" placeholder="Untertitel" value={f.untertitel} maxLength={200} onChange={(e) => folieAendern(i, { untertitel: e.target.value })} />
                 )}
-                {f.layout === "BILD" && <p className="muted ki-folie-bild">🖼️ Bild einfügen – das machst du danach im Editor.</p>}
+                {f.layout === "BILD" && <p className="muted ki-folie-bild"><Icon name="bild" groesse={14} /> Bild einfügen. Das machst du danach im Editor.</p>}
                 {(f.layout === "TEXT" || f.layout === "ZWEISPALTIG") && (
                   <div className={f.layout === "ZWEISPALTIG" ? "ki-folie-spalten" : ""}>
                     <textarea

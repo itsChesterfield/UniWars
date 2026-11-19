@@ -112,13 +112,13 @@ const RUECKMELDUNGEN: { art: Rueckmeldung; text: string; titel: string }[] = [
   {
     art: "einfacher",
     text: "Einfacher",
-    titel: "Bitte einfacher erklären – merke ich mir",
+    titel: "Bitte einfacher erklären, merke ich mir",
   },
-  { art: "kuerzer", text: "Kürzer", titel: "Bitte kürzer – merke ich mir" },
+  { art: "kuerzer", text: "Kürzer", titel: "Bitte kürzer, merke ich mir" },
   {
     art: "beispiele",
     text: "Mehr Beispiele",
-    titel: "Mehr Beispiele – merke ich mir",
+    titel: "Mehr Beispiele, merke ich mir",
   },
 ];
 
@@ -132,7 +132,7 @@ export function RueckmeldungKnoepfe({
   if (gewaehlt)
     return (
       <span className="studio-rueckmeldung-danke faint">
-        {gewaehlt === "gut" ? "Danke!" : "Gemerkt – ab jetzt so."}
+        {gewaehlt === "gut" ? "Danke!" : "Gemerkt, ab jetzt so."}
       </span>
     );
   return (

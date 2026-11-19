@@ -7,7 +7,7 @@ export type SpeicherStatus = "gespeichert" | "speichert" | "fehler";
 export const SPEICHER_TEXT: Record<SpeicherStatus, string> = {
   gespeichert: "Gespeichert",
   speichert: "Speichert …",
-  fehler: "Nicht gespeichert – wird erneut versucht",
+  fehler: "Nicht gespeichert, wird erneut versucht",
 };
 
 /**

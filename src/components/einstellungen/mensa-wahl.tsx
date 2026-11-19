@@ -89,7 +89,7 @@ export function MensaWahl({ mensa, vorschlag, ohneKopf = false }: { mensa: strin
             aria-expanded={treffer.length > 0}
             aria-controls={listeId}
             aria-label="Mensa suchen"
-            placeholder={alle ? "Stadt oder Name – z. B. Aachen, Bochum" : "Mensen werden geladen …"}
+            placeholder={alle ? "Stadt oder Name, z. B. Aachen, Bochum" : "Mensen werden geladen …"}
             value={eingabe}
             onChange={(e) => setEingabe(e.target.value)}
             onKeyDown={(e) => {
@@ -110,7 +110,7 @@ export function MensaWahl({ mensa, vorschlag, ohneKopf = false }: { mensa: strin
             </ul>
           )}
           {alle && eingabe.trim().length >= 2 && treffer.length === 0 && (
-            <p className="muted">Keine Mensa gefunden. Nicht jede Mensa ist bei OpenMensa eingetragen – versuch es mit der Stadt.</p>
+            <p className="muted">Keine Mensa gefunden. Nicht jede Mensa ist bei OpenMensa eingetragen, versuch es mit der Stadt.</p>
           )}
           <button type="button" className="link hs-nicht-dabei" onClick={() => setOffen(false)}>
             Abbrechen

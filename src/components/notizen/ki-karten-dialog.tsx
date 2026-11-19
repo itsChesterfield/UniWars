@@ -19,6 +19,7 @@ import type { Vorschlag } from "@/lib/ki/karten";
 import type { FachOption } from "@/lib/fach-option";
 import { track } from "@/lib/analytics";
 import { kiFehlerTracken, type KiFunktionsId } from "@/lib/ki/tracking";
+import { Icon } from "@/components/nav-icon";
 
 type Schritt = "laden" | "nicht_verfuegbar" | "einwilligung" | "einstellungen" | "erstellt" | "vorschau" | "fertig";
 type Entwurf = { id: number; vorderseite: string; rueckseite: string; an: boolean; original: string };
@@ -180,11 +181,11 @@ export function KiKartenDialog({
       {schritt !== "einwilligung" && (
         <div className="rowb ki-dialog-kopf">
           <h3 className="ct" id="ki-dialog-titel">
-            ✨ Karteikarten erstellen
+            Karteikarten erstellen
           </h3>
           {schliessbar && (
             <button type="button" className="icon-knopf" aria-label="Schließen" onClick={schliessen}>
-              ✕
+              <Icon name="schliessen" groesse={16} />
             </button>
           )}
         </div>
@@ -247,7 +248,7 @@ export function KiKartenDialog({
               {status.stapel.map((st) => (
                 <option key={st.id} value={st.id}>
                   {st.name}
-                  {st.fach_id && faecher.find((f) => f.id === st.fach_id) ? ` · ${faecher.find((f) => f.id === st.fach_id)?.name}` : ""}
+                  {st.fach_id && faecher.find((f) => f.id === st.fach_id) ? `, ${faecher.find((f) => f.id === st.fach_id)?.name}` : ""}
                 </option>
               ))}
               <option value={NEUER_STAPEL}>+ Neuer Stapel</option>
@@ -277,8 +278,8 @@ export function KiKartenDialog({
 
       {schritt === "vorschau" && (
         <>
-          <p className="ki-hinweis">⚠️ Prüf die Karten, die KI kann sich irren.</p>
-          {gekuerzt && <p className="ki-hinweis">✂️ {kuerzungsText}</p>}
+          <p className="ki-hinweis"><Icon name="warnung" groesse={14} /> Prüf die Karten, die KI kann sich irren.</p>
+          {gekuerzt && <p className="ki-hinweis"><Icon name="schere" groesse={14} /> {kuerzungsText}</p>}
           <ul className="ki-vorschau">
             {entwuerfe.map((e, i) => (
               <li key={e.id} className={e.an ? "" : "aus"}>
@@ -311,7 +312,7 @@ export function KiKartenDialog({
                   title="Entfernen"
                   onClick={() => setEntwuerfe((liste) => liste.filter((x) => x.id !== e.id))}
                 >
-                  🗑
+                  <Icon name="loeschen" groesse={16} />
                 </button>
               </li>
             ))}
@@ -339,7 +340,7 @@ export function KiKartenDialog({
       {schritt === "fertig" && ergebnis && (
         <div className="ki-mitte">
           <div className="hub-leer-icon" aria-hidden>
-            🎉
+            <Icon name="haken" groesse={16} />
           </div>
           <p>
             <strong>{ergebnis.anzahl}</strong> {ergebnis.anzahl === 1 ? "Karte" : "Karten"} in <em>{ergebnis.stapelName}</em> gespeichert.

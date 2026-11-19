@@ -13,6 +13,8 @@ import { dokumentAnlegen } from "@/app/(hubs)/textverarbeitung/actions";
 import { tabelleAnlegen } from "@/app/(hubs)/tabellen/actions";
 import { praesentationAnlegen } from "@/app/(hubs)/praesentationen/actions";
 import { createTodo } from "@/app/todo/actions";
+import { Icon } from "@/components/nav-icon";
+import type { IconName } from "@/lib/icons";
 import { SCHNELL_ERFASSEN, type QuickAddModus } from "@/components/quick-add";
 import { absichtErkennen, bewertung, ERSTELLEN, type ErstellArt, type SuchTreffer } from "@/lib/befehle";
 import { BEREICHE } from "@/lib/dashboard-bereiche";
@@ -35,7 +37,7 @@ export function befehleOeffnen() {
 type Eintrag = {
   schluessel: string;
   gruppe: "Zuletzt" | "Erstellen" | "Öffnen" | "Einstellen" | "Gefunden" | "In PDFs" | "KI";
-  icon: string;
+  icon: IconName | null;
   titel: string;
   info?: string;
   /** Treffer, die sich auch daneben (geteilte Ansicht) öffnen lassen */
@@ -44,35 +46,35 @@ type Eintrag = {
   ausfuehren: (daneben: boolean) => void | Promise<void>;
 };
 
-const SEITEN: { name: string; href: string; icon: string; woerter?: string }[] = [
-  { name: "Zentraler Hub", href: "/", icon: "🏠", woerter: "dashboard start übersicht home" },
-  ...BEREICHE.filter((b) => b.href !== "/").map((b) => ({ name: b.name, href: b.href, icon: "📌", woerter: b.untertitel })),
-  ...WEITERE_HUBS.filter((h) => h.href).map((h) => ({ name: h.name, href: h.href!, icon: "🧩" })),
-  { name: "Einstellungen", href: "/einstellungen", icon: "⚙️", woerter: "profil konto passwort e-mail abmelden" },
-  { name: "Personalisierung", href: "/einstellungen/personalisierung", icon: "⚙️", woerter: "design aussehen symbolleiste schrift dichte bewegung theme" },
-  { name: "Was Studio über dich weiß", href: "/einstellungen/gedaechtnis", icon: "🧠", woerter: "gedächtnis über mich wissen persönlich kennenlernen wissensstand" },
+const SEITEN: { name: string; href: string; icon: IconName; woerter?: string }[] = [
+  { name: "Zentraler Hub", href: "/", icon: "hub", woerter: "dashboard start übersicht home" },
+  ...BEREICHE.filter((b) => b.href !== "/").map((b) => ({ name: b.name, href: b.href, icon: "hub" as IconName, woerter: b.untertitel })),
+  ...WEITERE_HUBS.filter((h) => h.href).map((h) => ({ name: h.name, href: h.href!, icon: "hub" as IconName })),
+  { name: "Einstellungen", href: "/einstellungen", icon: "einstellungen", woerter: "profil konto passwort e-mail abmelden" },
+  { name: "Personalisierung", href: "/einstellungen/personalisierung", icon: "einstellungen", woerter: "design aussehen symbolleiste schrift dichte bewegung theme" },
+  { name: "Was Studio über dich weiß", href: "/einstellungen/gedaechtnis", icon: "studio", woerter: "gedächtnis über mich wissen persönlich kennenlernen wissensstand" },
 ];
 
-const ICONS: Record<string, string> = {
-  Termine: "📅",
-  Aufgaben: "✅",
-  Noten: "💯",
-  Fortschritt: "📈",
-  Fächer: "📚",
-  Dateiablage: "🗄️",
-  Notizen: "📝",
-  Karteikarten: "🗂️",
-  "PDF Reader": "📕",
-  Lernraum: "🎓",
-  "Work Station": "⏱️",
-  MindMap: "🧠",
-  Whiteboard: "🖍️",
-  Literaturverwaltung: "📚",
-  Textverarbeitung: "📄",
-  Präsentationen: "🖥️",
-  Tabellen: "📊",
-  Transkription: "🎙️",
-  Chat: "💬",
+const SEITEN_ICONS: Record<string, IconName> = {
+  Termine: "termine",
+  Aufgaben: "aufgaben",
+  Noten: "noten",
+  Fortschritt: "fortschritt",
+  Fächer: "faecher",
+  Dateiablage: "dateiablage",
+  Notizen: "notizen",
+  Karteikarten: "karteikarten",
+  "PDF Reader": "pdf",
+  Lernraum: "lernraum",
+  "Work Station": "fokus",
+  MindMap: "mindmap",
+  Whiteboard: "whiteboard",
+  Literatur: "literatur",
+  Textverarbeitung: "text",
+  Präsentationen: "praesentation",
+  Tabellen: "tabelle",
+  Transkription: "mikrofon",
+  Chat: "chat",
 };
 
 const SCHNELL: ErstellArt[] = ["abgabe", "pruefung", "todo", "notiz", "stapel", "quiz"];
@@ -278,7 +280,7 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
     const seitenEintrag = (s: (typeof SEITEN)[number]): Eintrag => ({
       schluessel: `seite-${s.href}`,
       gruppe: "Öffnen",
-      icon: ICONS[s.name] ?? s.icon,
+      icon: SEITEN_ICONS[s.name] ?? s.icon,
       titel: s.name,
       info: "Bereich",
       href: s.href,
@@ -293,7 +295,7 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
       ...THEMES.filter((t) => t !== design).map((t) => ({
         schluessel: `design-${t}`,
         gruppe: "Einstellen" as const,
-        icon: "🎨",
+        icon: "auge" as const,
         titel: `${DESIGN_NAMEN[t]} verwenden`,
         info: "Design",
         woerter: `design theme aussehen ${t === "DUNKEL" ? "dunkel nacht" : t === "HELL" ? "hell weiß" : "system automatisch gerät"}`,
@@ -356,7 +358,7 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
       liste.push({
         schluessel: "ki",
         gruppe: "KI",
-        icon: "✨",
+        icon: "studio",
         titel: `UniVerse Studio fragen: „${suche}“`,
         info: "Strg J",
         ausfuehren: () => {
@@ -399,7 +401,7 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
     <div className="bp-hintergrund" onMouseDown={(e) => e.target === e.currentTarget && schliessen()}>
       <div className="bp-fenster" role="dialog" aria-modal="true" aria-label="Suchen, öffnen, erstellen">
         <div className="bp-eingabe">
-          <span aria-hidden>🔍</span>
+          <Icon name="suchen" groesse={16} />
           <input
             ref={eingabe}
             value={q}
@@ -442,7 +444,7 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
                   disabled={beschaeftigt !== null}
                 >
                   <span className="bp-icon" aria-hidden>
-                    {e.icon}
+                    {e.icon && <Icon name={e.icon} groesse={16} />}
                   </span>
                   <span className="bp-text">
                     <span className="bp-titel">{e.titel}</span>

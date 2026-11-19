@@ -276,7 +276,7 @@ export function Einstellungen({
           {kiVerfuegbar && <PersoenlichkeitWahl startProfil={kiProfil} />}
           {kiVerfuegbar && (
             <Link href="/einstellungen/gedaechtnis" className="sidebar-theme-toggle einst-gedaechtnis-link">
-              <span>🧠 Was Studio über dich weiß</span>
+              <span>Was Studio über dich weiß</span>
               <span style={{ color: "var(--accent-strong)" }}>
                 <PfeilText>Ansehen</PfeilText>
               </span>

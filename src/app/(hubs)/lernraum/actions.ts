@@ -181,7 +181,7 @@ export async function kartenAlsStapel(lernraumId: string, karten: { vorderseite:
   const raum = await raumLaden(supabase, lernraumId);
   const gueltig = karten.filter((k) => k.vorderseite?.trim() && k.rueckseite?.trim()).slice(0, 50);
   if (!gueltig.length) throw new Error("Keine Karten.");
-  const name = `${raum.fach} – Lernraum ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`;
+  const name = `${raum.fach}, Lernraum ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`;
   const { data: stapel, error } = await supabase.from("kk_stapel").insert({ user_id: userId, name, fach_id: raum.fachId }).select("id").single();
   if (error) throw new Error(error.message);
   const { error: kartenFehler } = await supabase.from("kk_karte").insert(

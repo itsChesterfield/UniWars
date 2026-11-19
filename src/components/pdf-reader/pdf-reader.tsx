@@ -945,7 +945,7 @@ export function PdfReader({
                 </button>
                 {notizen.length === 0 ? (
                   <p className="pdf-leer">
-                    Noch keine Notiz verlinkt diese PDF. Leg eine an – oder verlinke die PDF in einer Notiz über „[[ ]] Verlinken“.
+                    Noch keine Notiz verlinkt diese PDF. Leg eine an, oder verlinke die PDF in einer Notiz über „[[ ]] Verlinken“.
                   </p>
                 ) : (
                   <ul>

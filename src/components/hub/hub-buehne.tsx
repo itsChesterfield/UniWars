@@ -178,7 +178,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   const meta = (z: Posten) => {
     if (!("quelle" in z)) return z.grund;
     const f = fach(z.fachId);
-    return `${f ? `${f.name} · ` : ""}${z.art}`;
+    return `${f ? `${f.name}, ` : ""}${z.art}`;
   };
 
   // ---- 02 Woche
@@ -229,7 +229,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           <p className="bue-dz bue-blende" style={verz(420)}>
             <b>{wochentag}</b>
             <span>
-              {monat} · KW <span className="zahl">{kw}</span>
+              {monat}, KW <span className="zahl">{kw}</span>
             </span>
           </p>
         </div>
@@ -247,7 +247,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           <b>Als Nächstes</b>
           <span>
             {aktiv(0) ? <RollText wert={String(offen)} start="0" className="zahl" /> : offen} offen
-            {vorschlaege.length ? ` · ${vorschlaege.length === 1 ? "ein Vorschlag" : `${vorschlaege.length} Vorschläge`} von Studio` : ""}
+            {vorschlaege.length ? `, ${vorschlaege.length === 1 ? "ein Vorschlag" : `${vorschlaege.length} Vorschläge`} von Studio` : ""}
           </span>
           <Link className="bue-zum" href="/aufgaben">
             Alle Aufgaben
@@ -317,7 +317,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
                 <b>{e.titel}</b>
                 <span>
                   <span className="zahl">{beginn}</span>
-                  {e.ort ? ` · ${e.ort}` : ""}
+                  {e.ort ? `, ${e.ort}` : ""}
                 </span>
               </span>
               <span className={`bue-voll${links > 66 ? " rechts" : ""}`} aria-hidden="true">
@@ -359,7 +359,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
                     <b>{e.titel}</b>
                     <small>
                       {e.art === "frist" ? "Frist" : e.art === "pruefung" ? "Prüfung" : "Vorlesung"}
-                      {e.ort ? ` · ${e.ort}` : ""}
+                      {e.ort ? `, ${e.ort}` : ""}
                     </small>
                   </span>
                 </Link>

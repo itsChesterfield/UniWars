@@ -82,7 +82,7 @@ const KNOEPFE: Knopf[] = [
     ausfuehren: (e) => e.chain().focus().toggleOrderedList().run(),
   },
   {
-    label: "☑",
+    label: "✓",
     titel: "Checkliste",
     aktiv: (e) => e.isActive("taskList"),
     ausfuehren: (e) => e.chain().focus().toggleTaskList().run(),

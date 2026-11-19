@@ -88,7 +88,7 @@ test("Lernraum: Belege finden, verlinken, als Wikilinks", () => {
   const titel = (nr: number) => (nr === 1 ? "Skript Mikro.pdf" : nr === 2 ? "Meine Notiz" : null);
   assert.equal(
     belegeVerlinken(text, titel),
-    "Die Nachfrage fällt [Skript Mikro · S. 2](#beleg-1-2). Elastizität [Skript Mikro · S. 3–4](#beleg-1-3) [Meine Notiz](#beleg-2-0). Allgemein gilt das auch sonst [ergänzt](#ergaenzt).",
+    "Die Nachfrage fällt [Skript Mikro, S. 2](#beleg-1-2). Elastizität [Skript Mikro, S. 3–4](#beleg-1-3) [Meine Notiz](#beleg-2-0). Allgemein gilt das auch sonst [ergänzt](#ergaenzt).",
   );
   assert.equal(
     belegeAlsWikilinks(text, [

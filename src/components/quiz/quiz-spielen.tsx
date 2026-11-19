@@ -190,7 +190,7 @@ function Durchgang({
         const a = await freiBewerten(quiz.id, frage.id, typeof antwort === "string" ? antwort : "");
         b = a.ok ? a.daten : { punkte: 0, richtig: false, feedback: a.fehler };
       } catch {
-        b = { punkte: 0, richtig: false, feedback: "Die Bewertung hat nicht geklappt – vergleiche selbst mit der Musterlösung." };
+        b = { punkte: 0, richtig: false, feedback: "Die Bewertung hat nicht geklappt, vergleiche selbst mit der Musterlösung." };
       }
       setPruefe(false);
     }
@@ -380,7 +380,7 @@ function Eingabe({ frage, antwort, setAntwort, gesperrt }: { frage: QuizFrage; a
         <textarea
           className="qz-text"
           rows={5}
-          placeholder="Antworte in eigenen Worten – die KI bewertet den Inhalt (Strg+Enter zum Prüfen)."
+          placeholder="Antworte in eigenen Worten, die KI bewertet den Inhalt (Strg+Enter zum Prüfen)."
           value={typeof antwort === "string" ? antwort : ""}
           disabled={gesperrt}
           autoFocus

@@ -34,12 +34,12 @@ export default function DatenschutzSeite() {
       </p>
       <p>
         <strong>Grundsatz:</strong> Die KI macht nur Vorschläge. Gespeichert wird erst, wenn du einen Vorschlag bestätigst.
-        Von der KI erstellte Inhalte sind mit ✨ gekennzeichnet.
+        Von der KI erstellte Inhalte sind mit dem Studio-Symbol gekennzeichnet.
       </p>
 
       <h3>Funktionen in den Bereichen (z. B. Notizen, PDF Reader, Textverarbeitung)</h3>
       <p>
-        Wenn du eine KI-Funktion startest – zum Beispiel „Karteikarten aus einer Notiz erstellen“ oder „Frage zum Skript“ –, wird
+        Wenn du eine KI-Funktion startest (zum Beispiel „Karteikarten aus einer Notiz erstellen“ oder „Frage zum Skript“), wird
         nur der dafür nötige Inhalt übertragen (z. B. Titel und Text der Notiz, die ausgewählten PDF-Seiten oder deine Frage).
       </p>
 
@@ -53,7 +53,7 @@ export default function DatenschutzSeite() {
       <p>
         <strong>Speicherung:</strong> Deine Unterhaltungen mit dem Assistenten speichern wir in deinem Konto, damit du sie später
         wieder aufrufen kannst. Du kannst einzelne Unterhaltungen oder alle auf einmal löschen (auf der Seite „Assistent“
-        oder in den Einstellungen (Profilbild anklicken) unter „KI-Verlauf“) – auch nachdem du deine Einwilligung widerrufen hast. Beim Löschen deines Kontos werden sie vollständig mitgelöscht.
+        oder in den Einstellungen (Profilbild anklicken) unter „KI-Verlauf“), auch nachdem du deine Einwilligung widerrufen hast. Beim Löschen deines Kontos werden sie vollständig mitgelöscht.
       </p>
 
       <h3>Vorschläge für heute (Dashboard)</h3>
@@ -67,7 +67,7 @@ export default function DatenschutzSeite() {
 
       <p>
         <strong>Protokoll für die Kontingente:</strong> Pro Anfrage speichern wir die Art der Funktion, den Zeitpunkt, die Anzahl
-        der verarbeiteten Tokens und ob die Anfrage erfolgreich war – <em>nicht</em> deine Inhalte oder die Antwort der KI.
+        der verarbeiteten Tokens und ob die Anfrage erfolgreich war, <em>nicht</em> deine Inhalte oder die Antwort der KI.
         Diese Einträge werden mit deinem Konto gelöscht.
       </p>
 
@@ -84,7 +84,7 @@ export default function DatenschutzSeite() {
       </p>
       <p>
         <strong>Diktieren:</strong> Die Aufnahme wird nur im Arbeitsspeicher deines Browsers gehalten, an Mistral AI gesendet und
-        danach verworfen. Wir speichern sie nicht – nur der erkannte Text landet im Eingabefeld.
+        danach verworfen. Wir speichern sie nicht, nur der erkannte Text landet im Eingabefeld.
       </p>
       <p>
         <strong>Vorlesen:</strong> Der vorzulesende Text wird an Mistral AI gesendet, das daraus Sprache erzeugt. Die Audiodaten
@@ -93,7 +93,7 @@ export default function DatenschutzSeite() {
       </p>
       <p>
         <strong>Was wir protokollieren:</strong> für die Monatskontingente die Dauer der umgewandelten Aufnahmen in Sekunden bzw.
-        die Anzahl der vorgelesenen Zeichen und den Zeitpunkt – nicht den Inhalt.
+        die Anzahl der vorgelesenen Zeichen und den Zeitpunkt, nicht den Inhalt.
       </p>
     </main>
   );

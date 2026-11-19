@@ -77,7 +77,7 @@ export function FolieAnsicht({
             <textarea
               className="folie-feld folie-untertitel"
               value={folie.text}
-              placeholder="Untertitel, z. B. Name · Seminar · Datum"
+              placeholder="Untertitel, z. B. Name, Seminar, Datum"
               rows={2}
               maxLength={5000}
               aria-label="Untertitel"
@@ -96,8 +96,8 @@ export function FolieAnsicht({
             {folie.layout === "TEXT" && textFeld("text", "folie-punkte", "Ein Punkt pro Zeile …", true)}
             {folie.layout === "ZWEISPALTIG" && (
               <div className="folie-spalten">
-                {textFeld("text", "folie-punkte", "Linke Spalte – ein Punkt pro Zeile", true)}
-                {textFeld("text2", "folie-punkte", "Rechte Spalte – ein Punkt pro Zeile", true)}
+                {textFeld("text", "folie-punkte", "Linke Spalte, ein Punkt pro Zeile", true)}
+                {textFeld("text2", "folie-punkte", "Rechte Spalte, ein Punkt pro Zeile", true)}
               </div>
             )}
             {folie.layout === "BILD" &&

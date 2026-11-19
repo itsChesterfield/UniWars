@@ -103,8 +103,8 @@ test("Transkription: Absätze vom Browser werden geprüft", () => {
 
 test("Transkription: Titel und Dateinamen", () => {
   const d = new Date("2026-11-13T13:03:00Z");
-  assert.equal(notizTitel("Mathe 1", d), "Transkript – Mathe 1 – 13.11.2026");
-  assert.equal(notizTitel(null, d, "Mitschrift"), "Mitschrift – 13.11.2026");
+  assert.equal(notizTitel("Mathe 1", d), "Transkript, Mathe 1, 13.11.2026");
+  assert.equal(notizTitel(null, d, "Mitschrift"), "Mitschrift, 13.11.2026");
   assert.equal(aufnahmeName(d, 1, "webm"), "Aufnahme 13.11.2026 14-03.webm");
   assert.equal(aufnahmeName(d, 3, "m4a"), "Aufnahme 13.11.2026 14-03 (Teil 3).m4a");
 });

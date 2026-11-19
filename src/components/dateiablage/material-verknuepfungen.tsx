@@ -46,7 +46,7 @@ export function MaterialAmZiel({ ziel }: { ziel: MaterialZiel }) {
       {daten && !daten.verknuepfbar && <p className="muted">Weitere Unterlagen können nach dem Datenbankupdate verknüpft werden.</p>}
       <ul className="dat-workflow-liste">{daten?.unterlagen.map((d) => (
         <li key={d.id ?? d.zielId}>
-          <Link href={d.href}>{d.titel}{d.seite ? ` · Seite ${d.seite}` : ""}</Link>
+          <Link href={d.href}>{d.titel}{d.seite ? `, Seite ${d.seite}` : ""}</Link>
           {d.id && <button type="button" className="knopf leise klein" disabled={wartet} onClick={() => aktualisieren(() => materialVerknuepfungLoesen(d.id!))}>Verknüpfung lösen</button>}
         </li>
       ))}</ul>
@@ -90,7 +90,7 @@ export function MaterialRueckverweise({ material, titel, schliessen }: { materia
   return (
     <MaterialDialog titel={titel} schliessen={schliessen}>
       <ul className="dat-workflow-liste">{daten?.verknuepfungen.map((v) => (
-        <li key={v.id}><Link href={v.href} onNavigate={schliessen}>{v.titel}{v.datum ? ` · ${v.datum}` : ""}</Link></li>
+        <li key={v.id}><Link href={v.href} onNavigate={schliessen}>{v.titel}{v.datum ? `, ${v.datum}` : ""}</Link></li>
       ))}</ul>
       {fehler && <p role="alert">{fehler}</p>}
       <MaterialAuswahl modus="aufgaben" gesperrt={wartet} waehlen={(t) => {

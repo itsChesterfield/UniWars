@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Icon } from "@/components/nav-icon";
 
 export type Nutzer = { user_id: string; username: string };
 
@@ -22,7 +23,7 @@ function Dialog({ titel, onSchliessen, children }: { titel: string; onSchliessen
       <div className="rowb">
         <h3 className="ct">{titel}</h3>
         <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
-          ✕
+          <Icon name="schliessen" groesse={16} />
         </button>
       </div>
       {children}
@@ -176,7 +177,7 @@ export function NeueGruppeDialog({
             <span key={m.user_id} className="tag tag-accent">
               @{m.username}
               <button type="button" aria-label={`${m.username} entfernen`} onClick={() => setMitglieder((l) => l.filter((x) => x.user_id !== m.user_id))}>
-                ✕
+                <Icon name="schliessen" groesse={16} />
               </button>
             </span>
           ))}
@@ -254,9 +255,9 @@ export function AnhangDialog({ onWahl, onSchliessen }: { onWahl: (a: AnhangWahl)
       <div className="segwrap" role="tablist">
         {(
           [
-            ["datei", "📎 Datei"],
-            ["deadline", "⏰ Deadline"],
-            ["todo", "☑ To-do"],
+            ["datei", "Datei"],
+            ["deadline", "Deadline"],
+            ["todo", "To-do"],
           ] as const
         ).map(([wert, label]) => (
           <button

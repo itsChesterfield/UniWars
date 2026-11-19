@@ -29,5 +29,5 @@ export async function mensaSetzen(mensa: { id: number; name: string } | null): P
   if (error) return { ok: false, fehler: "Speichern hat nicht geklappt." };
   revalidatePath("/");
   revalidatePath("/einstellungen");
-  return { ok: true, hinweis: mensa ? "Mensa gespeichert – sie erscheint jetzt in deiner Übersicht." : "Mensa entfernt." };
+  return { ok: true, hinweis: mensa ? "Mensa gespeichert. Sie erscheint jetzt in deiner Übersicht." : "Mensa entfernt." };
 }

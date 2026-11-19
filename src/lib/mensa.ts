@@ -24,7 +24,7 @@ export function gerichteAufbereiten(roh: unknown, max = 8): Gericht[] {
           .split("|")
           .map((t) => t.replace(/\s+/g, " ").trim())
           .filter(Boolean)
-          .join(" · "),
+          .join(", "),
         kategorie,
         preis,
         vegan,
