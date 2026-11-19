@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { HubKopf } from "@/components/hubs/hub-bausteine";
 import { Personalisierung } from "@/components/einstellungen/personalisierung";
-import { hubLayoutLesen } from "@/lib/hub-layout";
 import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 
 export const metadata = { title: "Personalisierung · UniVerse" };
@@ -16,7 +15,7 @@ export default async function PersonalisierungSeite() {
   if (!user) redirect("/login");
   const { data: settings } = await supabase
     .from("settings")
-    .select("theme, darstellung, symbolleiste, hub_layout")
+    .select("theme, darstellung, symbolleiste")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -27,7 +26,6 @@ export default async function PersonalisierungSeite() {
         theme={settings?.theme ?? "HELL"}
         darstellung={darstellungLesen(settings?.darstellung)}
         symbolleiste={symbolleisteLesen(settings?.symbolleiste)}
-        hubLayout={hubLayoutLesen(settings?.hub_layout)}
       />
     </>
   );

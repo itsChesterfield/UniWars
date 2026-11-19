@@ -36,7 +36,7 @@ import { BEREICHE, type Bereich } from "@/lib/dashboard-bereiche";
 import { HubBuehne, type BuehneDaten } from "@/components/hub/hub-buehne";
 import { HauptNotch } from "@/components/haupt-notch";
 import { SteigText } from "@/components/bewegung/steig-text";
-import type { FaelligeKarten } from "@/components/hub/hub-bausteine";
+import type { FaelligeKarten } from "@/components/hub/hub-daten";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;

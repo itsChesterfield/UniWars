@@ -7,7 +7,7 @@ import { toggleTodoErledigt } from "@/app/todo/actions";
 import { SteigText } from "@/components/bewegung/steig-text";
 import { RollText } from "@/components/bewegung/roll-text";
 import { Icon } from "@/components/nav-icon";
-import type { HubDaten } from "@/components/hub/hub-bausteine";
+import type { HubDaten } from "@/components/hub/hub-daten";
 import { alsNaechstes, bandLage, BAND, dateiTyp, kuerzen, lageSatz, SZENEN, szeneBeiScroll, wannKurz, woche, zuletztText } from "@/lib/hub-buehne";
 import { berlinDatum } from "@/lib/zeit";
 import { bewegungReduziert } from "@/lib/personalisierung-store";
