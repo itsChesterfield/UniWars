@@ -37,3 +37,5 @@ Der Dialog wird im angemeldeten App-Rahmen geöffnet, sobald vorhandene Dialoge 
 - Mit zwei Konten und zwei Tabs prüfen, dass Lesestatus und Schreibrechte getrennt bleiben. Nach dem Abmelden prüfen, dass kein Zugriff auf die Inhalte möglich ist. Beim Bestätigen eines offenen Dialogs gleichzeitig ein neues Update bereitstellen.
 - Dialog bei 390 und 1440 Pixeln im hellen und dunklen Design prüfen. Lange Zeilen, vorhandenen Dialog, Tastatur, Fokus nach Schließen und fehlgeschlagenes Speichern abdecken.
 - `node --test scripts/team-update*.test.mjs`, die SQL-Tests unter `supabase/tests` und die Prüfungen in `AGENTS.md` ausführen.
+
+<!-- Vorübergehende Probe für den Pflichtcheck der Team-Updates. -->
