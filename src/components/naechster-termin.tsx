@@ -42,14 +42,14 @@ export function NaechsterTermin({
   }
 
   const fach = faecher.find((f) => f.id === naechster.fach_id);
-  const { wert, einheit } = restzeitGross(naechster.zeitpunkt);
+  const { wert, einheit, ueberfaellig } = restzeitGross(naechster.zeitpunkt);
   const dringend = restMillisekunden(naechster.zeitpunkt) < 48 * 60 * 60 * 1000;
 
   return (
     <div className={`naechster-termin ${dringend ? "naechster-termin-dringend" : ""}`}>
       <div className="naechster-termin-countdown">
         <span className="wert">{wert}</span>
-        <span className="einheit">{einheit}</span>
+        <span className="einheit">{ueberfaellig ? `${einheit} überfällig` : einheit}</span>
       </div>
       <div className="naechster-termin-text">
         <p className="naechster-termin-art">

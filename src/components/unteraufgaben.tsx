@@ -17,8 +17,9 @@ import {
   type UnteraufgabeEingabe,
 } from "@/components/unteraufgaben-editor";
 import type { Tables } from "@/lib/supabase/types";
-import { restzeitGross, absolutesDatum } from "@/lib/countdown";
+import { restzeitText, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
+import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
 import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 
@@ -50,6 +51,7 @@ export function Unteraufgaben({
   const [aufgaben, setAufgaben] = useState(initial);
   const [formOpen, setFormOpen] = useState(false);
   const [mitglieder, setMitglieder] = useState<EditorMitglied[]>([]);
+  const [teilenId, setTeilenId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const hatZuweisungen = aufgaben.some((a) => a.zugewiesen_an);
@@ -119,7 +121,7 @@ export function Unteraufgaben({
         const name = nameVon(d.zugewiesen_an);
         const zeit = d.erledigt
           ? absolutesDatum(d.faellig_am)
-          : `${restzeitGross(d.faellig_am).wert} ${restzeitGross(d.faellig_am).einheit}, ${absolutesDatum(d.faellig_am)}`;
+          : `${absolutesDatum(d.faellig_am)}, ${restzeitText(d.faellig_am)}`;
         return (
           <div key={d.id} className={`unteraufgabe-row ${d.erledigt ? "entry-erledigt" : ""}`}>
             <input
@@ -132,10 +134,14 @@ export function Unteraufgaben({
               <span>{d.titel}</span>
               <span className="unteraufgabe-meta">{name ? `Für ${name}, ${zeit}` : zeit}</span>
             </div>
-            {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
-            <button type="button" className="unteraufgabe-weg" onClick={() => handleDelete(d.id)} aria-label="Unteraufgabe löschen">
-              <Icon name="schliessen" groesse={16} />
-            </button>
+            <DreiPunkteMenue
+              label={`Aktionen für „${d.titel}“`}
+              punkte={[
+                ...(userId && d.user_id === userId ? [{ label: "Teilen", icon: "gruppe", onClick: () => setTeilenId(d.id) } satisfies MenuePunkt] : []),
+                { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(d.id) },
+              ]}
+            />
+            {teilenId === d.id && <DeadlineTeilen deadlineId={d.id} onSchliessen={() => setTeilenId(null)} />}
           </div>
         );
       })}

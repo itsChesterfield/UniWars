@@ -19,6 +19,7 @@ import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 import { Skelett } from "@/components/skelett";
 import { FokusZeit } from "@/components/work-station/fokus-zeit";
+import { absolutesDatum } from "@/lib/countdown";
 
 const TYP_LABEL: Record<DetailZielTyp, string> = {
   todo: "To-Do",
@@ -26,9 +27,8 @@ const TYP_LABEL: Record<DetailZielTyp, string> = {
   pruefung: "Prüfung",
 };
 
-function formatKurz(iso: string): string {
-  return new Date(iso).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
-}
+/** Gleiches Datumsformat wie in den Listen („20. Nov., 23:59“) */
+const formatKurz = (iso: string) => absolutesDatum(iso);
 
 export function DetailAnsicht({
   zielTyp,

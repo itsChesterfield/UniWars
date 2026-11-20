@@ -495,7 +495,10 @@ function Zeile({ z, fertig, onHaken, onOeffnen, ziel, meta, wann }: { z: Posten;
           {meta}
         </small>
       </span>
-      <span className={`zahl bue-w${dringend ? " dringend" : ""}`}>{wann}</span>
+      <span className={`bue-w${dringend ? " dringend" : ""}`}>
+        {/* Mono nur für Zahlen und Zeiten, Wörter wie „heute“ in der Grundschrift */}
+        {wann.split(/(\d[\d.:]*)/).map((teil, i) => (/^\d/.test(teil) ? <span key={i} className="zahl">{teil}</span> : teil))}
+      </span>
       <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
     </>
   );
