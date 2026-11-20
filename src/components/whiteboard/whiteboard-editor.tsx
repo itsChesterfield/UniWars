@@ -22,6 +22,7 @@ import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 
 type Werkzeug = "auswahl" | "stift" | "linie" | "pfeil" | "rechteck" | "kreis" | "text" | "radierer";
 
@@ -410,7 +411,7 @@ export function WhiteboardEditor({
   }
 
   async function entfernen() {
-    if (!window.confirm(`Whiteboard „${name}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Das Whiteboard „${name}“`))) return;
     try {
       await whiteboardLoeschen(id);
       track("whiteboard_geloescht");

@@ -13,6 +13,7 @@ import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
 
 const SCHRIFT = "600 15px";
 const SCHRIFT_WURZEL = "700 18px";
@@ -150,7 +151,7 @@ export function MindmapEditor({
   }
 
   // --- MM-05: Löschen ----------------------------------------------------------
-  function loeschenKnoten(kid: string) {
+  async function loeschenKnoten(kid: string) {
     const k = daten.knoten.find((x) => x.id === kid);
     if (!k) return;
     if (k.parent_id === null) {
@@ -158,7 +159,7 @@ export function MindmapEditor({
       return;
     }
     const anzahl = mm.nachkommen(daten, kid).size;
-    if (anzahl > 3 && !window.confirm(`„${k.text || "Knoten"}“ mit ${anzahl} Unterknoten löschen?`)) return;
+    if (anzahl > 3 && !(await rueckfrage({ titel: "Knoten löschen?", text: `„${k.text || "Knoten"}“ wird mit ${anzahl} Unterknoten gelöscht.`, ja: "Löschen", gefahr: true }))) return;
     const neu = mm.loeschen(daten, kid);
     if (!neu) return;
     datenAendern(neu);
@@ -176,7 +177,7 @@ export function MindmapEditor({
       neuerKnoten("geschwister");
     } else if (e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault();
-      loeschenKnoten(auswahl);
+      void loeschenKnoten(auswahl);
     } else if (e.key === "F2") {
       e.preventDefault();
       const k = daten.knoten.find((x) => x.id === auswahl);
@@ -230,7 +231,7 @@ export function MindmapEditor({
   }
 
   async function entfernen() {
-    if (!window.confirm(`MindMap „${name}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Die MindMap „${name}“`))) return;
     try {
       await mindmapLoeschen(id);
       track("mindmap_geloescht");
@@ -310,7 +311,7 @@ export function MindmapEditor({
             type="button"
             className="wz-knopf"
             disabled={!ausgewaehlt || ausgewaehlt.parent_id === null}
-            onClick={() => ausgewaehlt && loeschenKnoten(ausgewaehlt.id)}
+            onClick={() => ausgewaehlt && void loeschenKnoten(ausgewaehlt.id)}
           >
             <Icon name="loeschen" groesse={16} />
             Löschen <kbd>Entf</kbd>

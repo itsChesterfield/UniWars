@@ -28,6 +28,7 @@ import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 
 type Pos = { s: number; z: number };
 type Bearbeitung = { s: number; z: number; wert: string; quelle: "zelle" | "leiste" };
@@ -258,7 +259,7 @@ export function TabellenEditor({
   }
 
   async function entfernen() {
-    if (!window.confirm(`„${titel || OHNE_TITEL_TABELLE}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Die Tabelle „${titel || OHNE_TITEL_TABELLE}“`))) return;
     try {
       await tabelleLoeschen(id);
       track("tabelle_geloescht");

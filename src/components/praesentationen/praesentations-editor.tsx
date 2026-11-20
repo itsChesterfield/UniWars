@@ -25,6 +25,7 @@ import {
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
+import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
 
 type Aenderung = { titel: string; design: Design; folien: Folie[] };
 
@@ -110,20 +111,20 @@ export function PraesentationsEditor({
     setAktivId(kopie.id);
   }
 
-  function folieLoeschen(index: number) {
+  async function folieLoeschen(index: number) {
     setKontext(null);
     if (folien.length <= 1) {
       window.alert("Eine Präsentation braucht mindestens eine Folie.");
       return;
     }
-    if (!window.confirm(`Folie ${index + 1} wirklich löschen?`)) return;
+    if (!(await rueckfrage({ titel: `Folie ${index + 1} löschen?`, ja: "Löschen", gefahr: true }))) return;
     const liste = folien.filter((_, i) => i !== index);
     folienAendern(liste);
     setAktivId(liste[Math.min(index, liste.length - 1)].id);
   }
 
   async function entfernen() {
-    if (!window.confirm(`„${titel}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Die Präsentation „${titel}“`))) return;
     try {
       await praesentationLoeschen(id);
       track("praesentation_geloescht");
