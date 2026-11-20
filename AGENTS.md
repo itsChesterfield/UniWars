@@ -112,4 +112,6 @@ Ein Paket ist erst fertig, wenn:
 
 ## 7. Team-Update vor dem Merge
 
-Jeder Pull Request für `main` braucht ein Team-Briefing für den geprüften Änderungsstand. Prüfe den automatisch erzeugten Text im PR auf verständliches Deutsch, belegte Änderungen und die tatsächliche Verfügbarkeit der beschriebenen Funktionen. Der Text ist für alle angemeldeten Konten sichtbar und enthält keine vertraulichen Details oder internen Verweise. Bei Korrekturen oder einem KI-Ausfall folgt die manuelle Eingabe dem Format im [Umsetzungsplan](docs/plaene/team-update-briefing.md).
+Wenn du einen Pull Request für `main` erstellst oder seinen Code aktualisierst, **schreibe das Team-Briefing selbst** und füge es in die PR-Beschreibung ein. Jeder PR braucht genau einen `team-update`-Block mit Titel, ein bis drei Stichpunkten und dem vollständigen SHA seines letzten Commits unter `stand`. Nach jedem weiteren Commit prüfst du den Text erneut und aktualisierst `stand`.
+
+Schreibe für alle angemeldeten Nutzer in verständlichem Deutsch. Beschreibe belegbare Änderungen und ihre Wirkung. Halte vertrauliche Details und interne Verweise aus dem Briefing. Bei interner Wartung reicht ein kurzer Satz zur Änderung. Vor dem Merge muss **Team-Update / Briefing** für den aktuellen Stand erfolgreich sein. Das Format steht im [Umsetzungsplan](docs/plaene/team-update-briefing.md).

@@ -11,3 +11,15 @@
 
 - [ ] Vercel-Vorschau angeschaut
 - [ ] Automatische Prüfung (Lint, Typen, Tests, Build) ist grün
+
+## Team-Update
+
+<!-- Schreibe das Briefing selbst in Alltagssprache. Ersetze den Platzhalter durch den vollständigen SHA des letzten Commits dieses PRs. Aktualisiere den Block nach jedem weiteren Commit. -->
+
+```team-update
+{
+  "stand": "<vollständiger PR-Commit>",
+  "titel": "",
+  "punkte": [""]
+}
+```
