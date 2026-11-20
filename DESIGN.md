@@ -51,7 +51,7 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - **UniVerse Studio** (⌘J): eine Leiste rechts, der Inhalt rückt zur Seite. Zeigt „Sieht gerade …“, nimmt markierten Text mit, Neuer Chat, Privater Chat, Groß/Klein. Am Handy als Vollbild.
 - **Befehlspalette** Strg/⌘+O (einziges Kürzel), **Schnell erfassen** mit Q.
 - **Geteilte Ansicht:** Bereich aus der Symbolleiste an den rechten oder unteren Rand ziehen, oder ohne Ziehen über die Palette „… daneben öffnen“. Kopf der zweiten Ansicht: Bereich wählen, drehen, als Hauptansicht öffnen, schließen. Trenner per Maus, Pfeiltasten, Doppelklick 50/50.
-- **Handy (unter 60 rem):** Tab-Leiste unten (die ersten vier Bereiche der Symbolleiste plus „Alles“), Kontextspalte als aufklappbare Leiste oben, Studio und Avatar in der Kopfleiste.
+- **Handy (bis 760 px, ab 761 px gilt die Symbolleiste):** Tab-Leiste unten mit sechs Plätzen: die ersten vier sichtbaren Bereiche der Symbolleiste (Standard: Hub, Work Station, Karteikarten, Notizen), an dritter Stelle das Plus „Erfassen“ (öffnet Schnell erfassen), rechts „Alles“ (Blatt mit allen Bereichen und Suche). Kontextspalte als aufklappbare Leiste oben, Studio und Avatar in der Kopfleiste.
 
 ## 5. Zentraler Hub
 - Unterseiten als Segment oben in der Arbeitsfläche („Notch“): Übersicht, Termine, Aufgaben, Noten, Fortschritt, Fächer. Ein gesetzter Fach-Filter bleibt beim Wechsel erhalten; Termine, Aufgaben und Noten haben einen Fach-Filter. Das Segment ist getönt und ohne Rand (Abschnitt 3); am Handy scrollt es waagerecht.
