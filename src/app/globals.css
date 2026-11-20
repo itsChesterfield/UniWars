@@ -1305,7 +1305,8 @@ input[type="checkbox"]:disabled {
 .tab-formelzeile input,
 .txt-quellen input,
 .wz-feld input:not([type="checkbox"]),
-.rechner-feld input {
+.rechner-feld input,
+.rueckfrage-feld input {
   height: 40px;
   padding: 0 var(--space-3);
   border: 0;
@@ -1378,7 +1379,7 @@ input[type="checkbox"]:disabled {
   background: color-mix(in srgb, var(--grund) 70%, transparent);
 }
 
-/* Rückfrage vor Löschen und anderen Schritten, die sich nicht zurücknehmen lassen (ersetzt window.confirm) */
+/* Rückfrage vor Löschen und ähnlichen Schritten, auch mit einem Eingabefeld (ersetzt window.confirm und window.prompt) */
 .formular-dialog.rueckfrage {
   width: min(400px, calc(100% - var(--space-8)));
 }
@@ -1397,6 +1398,71 @@ input[type="checkbox"]:disabled {
   line-height: 1.5;
   color: var(--text-2);
   overflow-wrap: anywhere;
+}
+
+.rueckfrage-feld {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+/* Meldung unten in der Mitte (ersetzt window.alert): Fläche mit Ring wie die Dialoge, am Handy über der Tab-Leiste */
+.meldung {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-8);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: max-content;
+  max-width: min(480px, calc(100% - var(--space-8)));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-l);
+  background: var(--flaeche-2);
+  color: var(--text);
+  font-size: var(--text-sm);
+  box-shadow:
+    0 0 0 1px var(--linie-2),
+    0 24px 48px -20px var(--schatten);
+  transform: translateX(-50%);
+  animation: meldung-ein var(--dur-short) var(--ease-out);
+}
+
+.meldung p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.meldung-fehler > svg {
+  flex: none;
+  color: var(--fehler-text);
+}
+
+@keyframes meldung-ein {
+  from {
+    opacity: 0;
+    transform: translate(-50%, var(--space-2));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meldung {
+    animation: none;
+  }
+}
+
+html[data-bewegung="reduziert"] .meldung {
+  animation: none;
+}
+
+@media (max-width: 760px) {
+  .meldung {
+    bottom: calc(var(--space-16) + var(--space-3) + env(safe-area-inset-bottom));
+  }
 }
 
 .rueckfrage-knoepfe {
