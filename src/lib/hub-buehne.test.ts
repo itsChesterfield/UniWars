@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { alsNaechstes, bandLage, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, szeneBeiScroll, uhrAus, wannKurz, woche, zuletztText } from "./hub-buehne.ts";
+import { alsNaechstes, bandLage, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, szeneBeiScroll, tagZeile, uhrAus, wannKurz, woche, zuletztText } from "./hub-buehne.ts";
 
 const jetzt = new Date("2026-11-18T17:42:00Z"); // Mi 18:42 in Berlin
 
@@ -115,4 +115,10 @@ test("spuren und uhrAus", () => {
   assert.deepEqual(s.map((e) => e.spur), [0, 1, 0]);
   assert.equal(uhrAus(8.25), "08:15");
   assert.equal(uhrAus(13.5), "13:30");
+});
+
+test("tagZeile: ausgeschriebener Tag und Zahl der Einträge über dem Zeitband", () => {
+  assert.equal(tagZeile("2026-11-20", 2), "Freitag, 20. November, 2 Einträge");
+  assert.equal(tagZeile("2026-11-16", 1), "Montag, 16. November, 1 Eintrag");
+  assert.equal(tagZeile("2026-11-22", 0), "Sonntag, 22. November, frei");
 });

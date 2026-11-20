@@ -9,7 +9,7 @@ import { SteigText } from "@/components/bewegung/steig-text";
 import { RollText } from "@/components/bewegung/roll-text";
 import { Icon } from "@/components/nav-icon";
 import type { HubDaten } from "@/components/hub/hub-daten";
-import { alsNaechstes, bandLage, BAND, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, SZENEN, szeneBeiScroll, uhrAus, wannKurz, woche, zuletztText, type Eintrag, type HubVorschlag } from "@/lib/hub-buehne";
+import { alsNaechstes, bandLage, BAND, dateiTyp, hubVorschlaege, kuerzen, lageSatz, lernZiel, mischen, spuren, SZENEN, szeneBeiScroll, tagZeile, uhrAus, wannKurz, woche, zuletztText, type Eintrag, type HubVorschlag } from "@/lib/hub-buehne";
 import { briefingHolen } from "@/components/ki/tages-briefing";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { SCHNELL_ERFASSEN } from "@/components/quick-add";
@@ -292,6 +292,8 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           </span>
         ))}
       </div>
+      {/* Der gewählte Tag ausgeschrieben: trennt die Tagesreiter vom Zeitband, dessen Stunden sonst wie Wochentage wirken */}
+      <p className="bue-tagzeile">{tagZeile(gewaehlt.datum, gewaehlt.ereignisse.length)}</p>
       <div className="bue-band" key={gewaehlt.datum} style={{ "--spuren": spurZahl } as CSSProperties}>
         {[8, 10, 12, 14, 16, 18, 20, 22].map((h, i) => (
           <span key={h} className="bue-tick bue-blende" style={{ left: `${bandLage(h, h).links}%`, ...verz(500 + i * 35) }}>
