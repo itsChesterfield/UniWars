@@ -2,7 +2,7 @@ name: Team-Update prüfen
 
 on:
   pull_request_target:
-    branches: [main]
+    branches: [qa/team-update-gate-base]
     types: [opened, reopened, synchronize, edited, ready_for_review]
   workflow_dispatch:
     inputs:
