@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { github } from "./team-update-github.mjs";
 import { briefingKommentar, briefingPruefen } from "./team-update-format.mjs";
+import { produktionPruefen, ProduktionNichtBereit } from "./team-update-produktion.mjs";
 
 const ereignis = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
 const nachtragen = ereignis.pull_request == null;
@@ -11,13 +12,14 @@ const sha = ereignis.pull_request?.head.sha ?? (await pullRequest()).head.sha;
 const gueltigerStand = (stand) => stand.head.sha === sha &&
   (nachtragen
     ? stand.state === "closed" && stand.merged_at && stand.base?.ref === "main"
-    : stand.state === "open");
-const status = (state, description) => github(`statuses/${sha}`, {
+    : stand.state === "open" && stand.base?.ref === "main");
+// Ein nachgetragenes Briefing für einen geschlossenen PR setzt keine Merge-Freigabe.
+const status = (state, description) => nachtragen ? undefined : github(`statuses/${sha}`, {
   method: "POST",
-  body: JSON.stringify({ state, description, context: "Team-Update / Briefing", target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` }),
+  body: JSON.stringify({ state, description: description.slice(0, 140), context: "Team-Update / Briefing", target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` }),
 });
 
-await status("pending", "Briefing wird geprüft");
+await status("pending", "Briefing und Produktionsabgleich werden geprüft");
 try {
   const aktuell = await pullRequest();
   if (!gueltigerStand(aktuell)) throw new Error("stand_geaendert");
@@ -26,6 +28,7 @@ try {
   const daten = JSON.parse(bloecke[0][1]);
   if (daten?.stand !== sha) throw new Error("stand_veraltet");
   const briefing = briefingPruefen(daten);
+  if (!nachtragen) await produktionPruefen(process.env);
   const letzte = await pullRequest();
   if (!gueltigerStand(letzte) || letzte.body !== aktuell.body || letzte.title !== aktuell.title) {
     throw new Error("stand_geaendert");
@@ -34,13 +37,13 @@ try {
     method: "POST",
     body: JSON.stringify({ body: briefingKommentar(sha, briefing) }),
   });
-  await status("success", "Briefing für diesen Stand liegt vor");
+  await status("success", "Briefing geprüft und Produktionsabgleich bereit");
 } catch (fehler) {
-  const hinweis = {
+  const hinweis = fehler instanceof ProduktionNichtBereit ? fehler.message : ({
     block_fehlt: "Genau einen team-update-Block in der PR-Beschreibung ergänzen.",
     stand_veraltet: "Briefing prüfen und mit dem aktuellen vollständigen PR-Commit kennzeichnen.",
     stand_geaendert: "Der Pull Request wurde während der Prüfung geändert.",
-  }[fehler?.message] ?? "Briefing-Format oder Verarbeitung ungültig. Pull Request prüfen.";
+  }[fehler?.message] ?? "Briefing-Format oder Verarbeitung ungültig. Pull Request prüfen.");
   console.error(hinweis);
   await status("failure", hinweis);
   process.exitCode = 1;
