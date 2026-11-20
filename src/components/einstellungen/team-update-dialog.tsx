@@ -84,9 +84,9 @@ export function TeamUpdateDialog() {
       <div className="team-update-inhalt"><TeamUpdateListe updates={updates} /></div>
       {fehler && <p role="alert">Der Lesestatus konnte nicht gespeichert werden. Bitte versuche es erneut.</p>}
       <div className="team-update-aktionen">
-        <Link href="/einstellungen/team-updates" onClick={spaeter}>Zum Verlauf</Link>
-        <button className="btn" type="button" disabled={speichert} onClick={spaeter}>Später</button>
-        <button className="btn btn-primary" type="button" disabled={speichert} onClick={gelesen}>
+        <Link className="knopf leise" href="/einstellungen/team-updates" onClick={spaeter}>Zum Verlauf</Link>
+        <button className="knopf neben" type="button" disabled={speichert} onClick={spaeter}>Später</button>
+        <button className="knopf haupt" type="button" disabled={speichert} onClick={gelesen}>
           {speichert ? "Wird gespeichert…" : "Als gelesen markieren"}
         </button>
       </div>

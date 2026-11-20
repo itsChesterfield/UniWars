@@ -19473,6 +19473,10 @@ dialog.dat-workflow-dialog {
   gap: var(--space-4);
 }
 
+.team-update-dialog > h2 {
+  align-self: flex-start;
+}
+
 .team-update-inhalt {
   min-block-size: 0;
   overflow: auto;
