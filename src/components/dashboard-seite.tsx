@@ -54,9 +54,11 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         .abortSignal(signal)
         .maybeSingle(),
       // Fällige Karteikarten für „Überblick“ und „Wiederholen“. Immer laden: Die Notch wechselt ohne neuen Server-Aufruf.
-      supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name)").lte("naechste_abfrage", new Date().toISOString()).limit(1000).abortSignal(signal),
+      supabase.from("kk_karte").select("stapel_id, stapel:stapel_id(name, fach_id)").lte("naechste_abfrage", new Date().toISOString()).limit(1000).abortSignal(signal),
       // Szene „Zuletzt geöffnet“ der Hub-Bühne
       supabase.from("datei").select("id, name, mime_typ, geaendert_am, fach_id").order("geaendert_am", { ascending: false }).limit(6).abortSignal(signal),
+      // Klausurphase im Hub: Wissensstand pro Thema (von Studio), für „Stand“ und Tagesplan. Fehlt er, bleibt die Phase ohne Themen.
+      supabase.from("ki_thema_stand").select("fach_id, thema, beherrschung, fehlerbild").limit(500).abortSignal(signal),
     ]);
   // Direkt nach dem Erneuern der Anmeldung lehnt Supabase einzelne Abfragen mit 401 ab.
   // Ein zweiter Versuch klappt; ohne ihn fiel der ganze Hub mit einer Fehlerseite aus.
@@ -73,6 +75,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: kalenderVerbindung },
     { data: faelligeKarten },
     { data: zuletztDateien },
+    { data: themen },
   ] = await nochmalBei401(laden);
 
   const error =
@@ -109,9 +112,10 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     abgleichNachLadenPlanen(session.access_token, user.id, kalenderVerbindung.zuletzt_abgeglichen);
   }
 
-  const proStapel = new Map<string, { id: string; name: string; anzahl: number }>();
+  const proStapel = new Map<string, { id: string; name: string; anzahl: number; fachId: string | null }>();
   for (const k of faelligeKarten ?? []) {
-    const s = proStapel.get(k.stapel_id) ?? { id: k.stapel_id, name: (k.stapel as { name?: string } | null)?.name ?? "Karteikarten", anzahl: 0 };
+    const st = k.stapel as { name?: string; fach_id?: string | null } | null;
+    const s = proStapel.get(k.stapel_id) ?? { id: k.stapel_id, name: st?.name ?? "Karteikarten", anzahl: 0, fachId: st?.fach_id ?? null };
     s.anzahl++;
     proStapel.set(k.stapel_id, s);
   }
@@ -150,6 +154,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         mensa={mensa}
         semester={semesterText}
         dateien={zuletztDateien ?? []}
+        themen={themen ?? []}
       />
     </Suspense>
   );

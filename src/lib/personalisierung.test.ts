@@ -36,6 +36,7 @@ test("Darstellung lesen: Standard bei Unbrauchbarem, unbekannte Werte fallen auf
     bewegung: "reduziert",
     leiste: "auto",
     design_schalter: false,
+    klausurphase: null,
   });
   assert.equal(darstellungLesen({ design_schalter: true }).design_schalter, true);
   assert.equal(darstellungLesen({ leiste: "offen" }).leiste, "offen");
@@ -43,6 +44,8 @@ test("Darstellung lesen: Standard bei Unbrauchbarem, unbekannte Werte fallen auf
   // Wer „Beim Drüberfahren“ ausdrücklich gewählt hat, behält es; neu ist nur der Standard
   assert.equal(darstellungLesen({ leiste: "hover" }).leiste, "hover");
   assert.equal(STANDARD_DARSTELLUNG.leiste, "auto");
+  assert.deepEqual(darstellungLesen({ klausurphase: { bis: "2026-12-18" } }).klausurphase, { bis: "2026-12-18" });
+  assert.equal(darstellungLesen({ klausurphase: "an" }).klausurphase, null);
 });
 
 test("Symbolleiste lesen: Standard, Gruppen bleiben fest, Neues hängt am Gruppenende", () => {

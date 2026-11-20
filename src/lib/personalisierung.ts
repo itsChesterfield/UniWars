@@ -4,9 +4,11 @@
  *
  * Gespeichert in `settings`:
  * - `symbolleiste`: {"reihe": ["hub", "work-station", …], "aus": ["mindmap"]}
- * - `darstellung`: {"schrift": "normal", "dichte": "normal", "bewegung": "system", "leiste": "auto", "design_schalter": false}
+ * - `darstellung`: {"schrift": "normal", "dichte": "normal", "bewegung": "system", "leiste": "auto", "design_schalter": false, "klausurphase": {"bis": "2026-12-18"}}
  * Das Design selbst steht in `settings.theme` (HELL, DUNKEL, SYSTEM).
  */
+
+import { zustandLesen, type KlausurZustand } from "./klausurphase.ts";
 
 // ---------------------------------------------------------------------------
 // Design
@@ -49,9 +51,11 @@ export type Darstellung = {
   leiste: "auto" | "hover" | "offen" | "zu";
   /** Design-Schalter in der Kopfleiste (Standard aus) */
   design_schalter: boolean;
+  /** Klausurphase im Hub: angenommen bis zum Tag der letzten Klausur oder für eine erste Klausur abgelehnt (lib/klausurphase.ts) */
+  klausurphase: KlausurZustand;
 };
 
-export const STANDARD_DARSTELLUNG: Darstellung = { schrift: "normal", dichte: "normal", bewegung: "system", leiste: "auto", design_schalter: false };
+export const STANDARD_DARSTELLUNG: Darstellung = { schrift: "normal", dichte: "normal", bewegung: "system", leiste: "auto", design_schalter: false, klausurphase: null };
 
 const WERTE = {
   schrift: ["normal", "gross"],
@@ -72,6 +76,7 @@ export function darstellungLesen(roh: unknown): Darstellung {
     bewegung: o.bewegung === "ruhig" ? "reduziert" : wahl("bewegung"),
     leiste: wahl("leiste"),
     design_schalter: o.design_schalter === true,
+    klausurphase: zustandLesen(o.klausurphase),
   };
 }
 

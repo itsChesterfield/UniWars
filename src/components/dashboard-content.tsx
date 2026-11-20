@@ -37,7 +37,8 @@ import { HubBuehne, type BuehneDaten } from "@/components/hub/hub-buehne";
 import { HauptNotch } from "@/components/haupt-notch";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 import { kopfAufgaben, kopfFortschritt, kopfNoten, kopfTermine, minutenDieseWoche } from "@/lib/bereichskopf";
-import type { FaelligeKarten } from "@/components/hub/hub-daten";
+import type { FaelligeKarten, ThemaStand } from "@/components/hub/hub-daten";
+import { darstellungLesen } from "@/lib/personalisierung";
 
 type Fach = Tables<"fach">;
 type Deadline = Tables<"deadline">;
@@ -75,6 +76,7 @@ export function DashboardContent({
   mensa = null,
   semester = null,
   dateien = [],
+  themen = [],
 }: {
   faecher: Fach[];
   deadlines: Deadline[];
@@ -100,6 +102,8 @@ export function DashboardContent({
   semester?: string | null;
   /** zuletzt geänderte Dateien (Szene „Zuletzt geöffnet“ der Hub-Bühne) */
   dateien?: BuehneDaten["dateien"];
+  /** Wissensstand pro Thema (Klausurphase im Hub) */
+  themen?: ThemaStand[];
 }) {
   const searchParams = useSearchParams();
   const fachId = searchParams.get("fachId");
@@ -310,6 +314,8 @@ export function DashboardContent({
               lernSessions,
               streak: settings.streak_count,
               karten,
+              themen,
+              darstellung: darstellungLesen(settings.darstellung),
               serverJetzt,
               mensa,
               mensaGewaehlt: Boolean(settings.mensa_id),
