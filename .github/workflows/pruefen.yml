@@ -35,5 +35,7 @@ jobs:
         run: npm run lint
       - name: Tests
         run: npm test
+      - name: Team-Updates testen
+        run: node --test scripts/team-update*.test.mjs
       - name: Build
         run: npm run build

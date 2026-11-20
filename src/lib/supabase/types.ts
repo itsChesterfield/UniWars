@@ -30,6 +30,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      team_update: {
+        Row: { pr: number; merge_sha: string; titel: string; punkte: string[]; aktualisiert_am: string; aktiv: boolean };
+        Insert: { pr: number; merge_sha: string; titel: string; punkte: string[]; aktualisiert_am: string; aktiv?: boolean };
+        Update: { pr?: number; titel?: string; punkte?: string[]; aktualisiert_am?: string; aktiv?: boolean };
+        Relationships: [];
+      };
+      team_update_gelesen: {
+        Row: { user_id: string; pr: number };
+        Insert: { user_id?: string; pr: number };
+        Update: { user_id?: string; pr?: number };
+        Relationships: [{
+          foreignKeyName: "team_update_gelesen_pr_fkey";
+          columns: ["pr"];
+          isOneToOne: false;
+          referencedRelation: "team_update";
+          referencedColumns: ["pr"];
+        }];
+      };
       anhang: {
         Row: {
           datei_id: string | null
@@ -2313,6 +2331,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      team_updates_abgleichen: { Args: { eintraege: Json; aktive_prs: number[] }; Returns: undefined };
       material_paket_erstellen: { Args: { p_chat_id: string; p_titel: string; p_material: Json }; Returns: string }
       material_thema_vorschlag: { Args: { p_fach: string; p_name: string; p_material: Json }; Returns: undefined }
       material_themen_sortieren: { Args: { p_fach: string; p_reihenfolge: string[] }; Returns: undefined };

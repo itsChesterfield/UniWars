@@ -1,0 +1,46 @@
+name: Team-Updates mit Produktion abgleichen
+
+on:
+  status:
+  deployment_status:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: team-update-produktion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  abgleichen:
+    if: >-
+      vars.TEAM_UPDATES_AKTIV == 'true' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/team-update-live.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_TOKEN: ${{ secrets.TEAM_UPDATE_VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.TEAM_UPDATE_VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.TEAM_UPDATE_VERCEL_PROJECT_ID }}
+          TEAM_UPDATE_PRODUKTIONSHOST: ${{ vars.TEAM_UPDATE_PRODUKTIONSHOST }}
+          TEAM_UPDATE_START_SHA: ${{ vars.TEAM_UPDATE_START_SHA }}
+          SUPABASE_URL: ${{ vars.TEAM_UPDATE_SUPABASE_URL }}
+          SUPABASE_TEAM_UPDATES_KEY: ${{ secrets.TEAM_UPDATE_SUPABASE_KEY }}

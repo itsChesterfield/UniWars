@@ -20,6 +20,11 @@ const SEITEN: { href: string; name: string; icon: string; nurMitKi?: boolean }[]
     icon: "M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8Z",
     nurMitKi: true,
   },
+  {
+    href: "/einstellungen/team-updates",
+    name: "Team-Updates",
+    icon: "M5 4h14v16H5z|M8 8h8|M8 12h8|M8 16h5",
+  },
 ];
 
 function Symbol({ d }: { d: string }) {
