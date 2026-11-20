@@ -44,7 +44,7 @@ export function alsNaechstes(d: { deadlines: Deadline[]; todos: Todo[]; pruefung
   return [...mitZeit, ...ohneZeit].map((e) => ({ ...e, dringend: e.wann !== null && new Date(e.wann).getTime() - jetzt.getTime() < 2 * tag }));
 }
 
-/** Kurzer Text für die Spalte rechts: „heute 23:59“, „morgen 09:00“, „Fr“, „25.11.“, „überfällig“ */
+/** Kurzer Text für die Spalte rechts: „heute 23:59“, „morgen 09:00“, „Fr 11:00“, „25.11.“, „überfällig“ */
 export function wannKurz(iso: string | null, jetzt: Date): string {
   if (!iso) return "offen";
   const wann = new Date(iso);
@@ -54,7 +54,7 @@ export function wannKurz(iso: string | null, jetzt: Date): string {
   if (wann.getTime() < jetzt.getTime()) return "überfällig";
   if (tage === 0) return `heute${zeit}`;
   if (tage === 1) return `morgen${zeit}`;
-  if (tage < 7) return new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "Europe/Berlin" }).format(wann).replace(".", "");
+  if (tage < 7) return `${new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "Europe/Berlin" }).format(wann).replace(".", "")}${zeit}`;
   const [, m, t] = berlinDatum(wann).split("-");
   return `${t}.${m}.`;
 }

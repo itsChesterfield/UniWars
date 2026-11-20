@@ -29,7 +29,9 @@ test("alsNaechstes: nach Zeit, erledigte und Unterpunkte weg, To-dos ohne Datum 
 test("wannKurz", () => {
   assert.equal(wannKurz("2026-11-18T22:59:00Z", jetzt), "heute 23:59");
   assert.equal(wannKurz("2026-11-19T08:00:00Z", jetzt), "morgen 09:00");
-  assert.equal(wannKurz("2026-11-21T10:00:00Z", jetzt), "Sa");
+  assert.equal(wannKurz("2026-11-21T10:00:00Z", jetzt), "Sa 11:00");
+  assert.equal(wannKurz("2026-11-21T22:59:00Z", jetzt), "Sa 23:59");
+  assert.equal(wannKurz("2026-11-21T23:00:00Z", jetzt), "So");
   assert.equal(wannKurz("2026-11-25T10:00:00Z", jetzt), "25.11.");
   assert.equal(wannKurz("2026-11-17T10:00:00Z", jetzt), "überfällig");
   assert.equal(wannKurz(null, jetzt), "offen");

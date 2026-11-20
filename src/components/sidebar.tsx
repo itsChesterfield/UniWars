@@ -5,12 +5,14 @@ import { Fragment, Suspense, useEffect, useId, useRef, useState, useTransition, 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { AssistentStarter } from "@/components/assistent/assistent-starter";
-import { Befehlspalette, befehleOeffnen } from "@/components/befehlspalette";
+import { Befehlspalette } from "@/components/befehlspalette";
+import { AllesRaster, allesOeffnen } from "@/components/alles-raster";
+import { SCHNELL_ERFASSEN } from "@/components/quick-add";
 import { InaktivitaetsWaechter } from "@/components/inaktivitaet-waechter";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
-import { NavIcon } from "@/components/nav-icon";
+import { Icon, NavIcon } from "@/components/nav-icon";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { useTimerZustand } from "@/lib/work-station/timer-store";
 import { KURZNAMEN, hubVonId, hubsInGruppen } from "@/lib/hubs/navigation";
@@ -88,6 +90,9 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
         }}
       >
         <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
+        <span className="rprofil-name" aria-hidden>
+          {name}
+        </span>
       </button>
       <dialog
         ref={dialog}
@@ -180,6 +185,18 @@ export function Sidebar({
   const aktuell = reihe.findIndex((href) => istAktiv(href));
   // Ziel unter dem aktuellen Bereich → neue Ansicht kommt von unten, sonst von oben
   const richtung = (href: string) => [reihe.indexOf(href) > aktuell ? NACH_UNTEN : NACH_OBEN];
+  const tab = (m: (typeof tabs)[number]) => (
+    <Link
+      key={m.href}
+      href={m.href}
+      aria-current={istAktiv(m.href) ? "page" : undefined}
+      transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
+    >
+      <LadeMelder />
+      {m.hub && <NavIcon path={m.hub.icon} groesse={20} />}
+      {KURZNAMEN[m.id] ?? m.hub?.name}
+    </Link>
+  );
 
   return (
     <>
@@ -264,26 +281,24 @@ export function Sidebar({
       </nav>
 
       <nav className="mobilnav" aria-label="Bereiche">
-        {tabs.map((m) => (
-          <Link
-            key={m.href}
-            href={m.href}
-            aria-current={istAktiv(m.href) ? "page" : undefined}
-            transitionTypes={istAktiv(m.href) ? undefined : richtung(m.href)}
-          >
-            <LadeMelder />
-            {m.hub && <NavIcon path={m.hub.icon} groesse={20} />}
-            {KURZNAMEN[m.id] ?? m.hub?.name}
-          </Link>
-        ))}
-        <button type="button" onClick={() => befehleOeffnen()} aria-current={mobilAktiv ? undefined : "page"}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden>
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m20 20-4.2-4.2" />
-          </svg>
+        {tabs.slice(0, 2).map(tab)}
+        <button
+          type="button"
+          className="mobilnav-plus"
+          onClick={() => window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN, { detail: { quelle: "tableiste" } }))}
+        >
+          <span className="mobilnav-plus-flaeche" aria-hidden>
+            <Icon name="plus" groesse={20} />
+          </span>
+          Erfassen
+        </button>
+        {tabs.slice(2).map(tab)}
+        <button type="button" aria-haspopup="dialog" onClick={() => allesOeffnen()} aria-current={mobilAktiv ? undefined : "page"}>
+          <Icon name="menue" groesse={20} />
           Alles
         </button>
       </nav>
+      <AllesRaster leiste={leiste} kiVerfuegbar={kiVerfuegbar} />
 
       {kiVerfuegbar && (
         <Suspense fallback={null}>

@@ -905,21 +905,21 @@ export function QuickAdd({
   );
 }
 
-/** Knopf „Schnell erfassen“: öffnet das Formular aus dem gemeinsamen Rahmen (genau ein QuickAdd für die ganze App). */
+/**
+ * Knopf „Schnell erfassen“ im Bereichskopf: öffnet das Formular aus dem gemeinsamen Rahmen (genau ein QuickAdd für die ganze App).
+ * Am Handy steht dafür der Plus-Knopf in der Tab-Leiste, deshalb ist dieser Knopf dort ausgeblendet.
+ */
 export function SchnellErfassenKnopf() {
   return (
     <button
       type="button"
-      className="btnp"
+      className="knopf haupt schnell-erfassen-knopf"
       onClick={() => {
         window.dispatchEvent(new CustomEvent(SCHNELL_ERFASSEN, { detail: { quelle: "button" } }));
       }}
-      title="Schnell erfassen"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-      Schnell erfassen
+      <Icon name="plus" groesse={16} />
+      Schnell erfassen <kbd>Q</kbd>
     </button>
   );
 }

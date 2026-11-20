@@ -53,14 +53,8 @@ export function NaechsterTermin({
       </div>
       <div className="naechster-termin-text">
         <p className="naechster-termin-art">
-          Als Nächstes: {naechster.typ}
-          {fach && (
-            <>
-              {", "}
-              <span className="dot" style={{ background: fach.farbe ?? "var(--text-3)" }} aria-hidden />
-              {fach.name}
-            </>
-          )}
+          Nächste {naechster.typ}
+          {fach && <> in {fach.name}</>}
         </p>
         <p className="naechster-termin-titel">{naechster.titel}</p>
         <p className="naechster-termin-zeit">{absolutesDatum(naechster.zeitpunkt)}</p>
