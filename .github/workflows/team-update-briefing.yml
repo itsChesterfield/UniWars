@@ -1,4 +1,4 @@
-name: Team-Update erstellen
+name: Team-Update prüfen
 
 on:
   pull_request_target:
@@ -23,11 +23,11 @@ permissions:
 
 jobs:
   briefing:
-    if: vars.TEAM_UPDATES_AKTIV == 'true' && (github.event_name == 'pull_request_target' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'pull_request_target' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Nur der vertrauenswürdige Basisstand wird mit Secrets ausgeführt.
+      # Nur der vertrauenswürdige Basisstand wird ausgeführt.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
@@ -38,5 +38,3 @@ jobs:
       - run: node scripts/team-update-pr.mjs
         env:
           GH_TOKEN: ${{ github.token }}
-          MISTRAL_API_KEY: ${{ secrets.TEAM_UPDATE_MISTRAL_API_KEY }}
-          TEAM_UPDATE_MODELL: ${{ vars.TEAM_UPDATE_MODELL }}
