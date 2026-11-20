@@ -11,6 +11,7 @@ import {
 import { absolutesDatum } from "@/lib/countdown";
 import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import type { Tables } from "@/lib/supabase/types";
 
 type Todo = Tables<"todo">;
@@ -103,9 +104,10 @@ export function TodoUnterpunkte({
               <span>{t.titel}</span>
               {details && <span className="unteraufgabe-meta">{details}</span>}
             </div>
-            <button type="button" className="unteraufgabe-weg" onClick={() => handleDelete(t.id)} aria-label="Unterpunkt löschen">
-              <Icon name="schliessen" groesse={16} />
-            </button>
+            <DreiPunkteMenue
+              label={`Aktionen für „${t.titel}“`}
+              punkte={[{ label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(t.id) }]}
+            />
           </div>
         );
       })}

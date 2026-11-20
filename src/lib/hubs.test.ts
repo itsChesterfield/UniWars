@@ -264,6 +264,15 @@ test("APA: Zitat im Text und Verzeichnis", () => {
   assert.equal(zitatImText({ autoren: "Müller, Anna", jahr: 2023, seiten: "45–60" }, true), "(Müller, 2023, S. 45–60)");
   assert.equal(zitatImText({ autoren: "A, B; C, D; E, F", jahr: 2020 }), "(A et al., 2020)");
   assert.deepEqual(autorenLesen("Anna Müller"), [{ nachname: "Müller", vornamen: "Anna" }]);
+  // „&“ und „und“ trennen wie das Semikolon, wenn die Namen als „Nachname, Vorname“ stehen
+  const zwei = [{ nachname: "Margraf", vornamen: "J." }, { nachname: "Schneider", vornamen: "S." }];
+  assert.deepEqual(autorenLesen("Margraf, J. & Schneider, S."), zwei);
+  assert.deepEqual(autorenLesen("Margraf, J., & Schneider, S."), zwei);
+  assert.deepEqual(autorenLesen("Margraf, J. und Schneider, S."), zwei);
+  assert.equal(zitatImText({ autoren: "Margraf, J. & Schneider, S.", jahr: 2018 }), "(Margraf & Schneider, 2018)");
+  // Namen ohne Komma bleiben ganz (Organisationen)
+  assert.equal(autorenLesen("Johnson & Johnson").length, 1);
+  assert.equal(autorenLesen("Bundesamt für Umwelt und Naturschutz").length, 1);
   const web = { typ: "WEBSEITE" as const, autoren: "Meier, Karl-Heinz", titel: "Was ist ein Automat?", jahr: 2024, url: "https://example.org/a", abgerufen_am: "2026-11-13" };
   assert.equal(verzeichnisEintrag(web), "Meier, K.-H. (2024). Was ist ein Automat? Abgerufen am 13. November 2026, von https://example.org/a");
   const artikel = { typ: "ARTIKEL" as const, autoren: "Zander, Lea", titel: "Neue Ansätze", jahr: 2021, verlag: "Informatik Spektrum, 44(2)", seiten: "10–20" };

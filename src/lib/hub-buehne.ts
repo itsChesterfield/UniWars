@@ -185,6 +185,12 @@ export function woche(d: { stundenplan: Stunde[]; deadlines: Deadline[]; pruefun
   });
 }
 
+/** Zeile über dem Zeitband: „Freitag, 20. November, 2 Einträge“ (Datum als JJJJ-MM-TT, Berliner Kalendertag) */
+export function tagZeile(datum: string, anzahl: number): string {
+  const tag = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${datum}T12:00:00Z`));
+  return `${tag}, ${anzahl === 0 ? "frei" : anzahl === 1 ? "1 Eintrag" : `${anzahl} Einträge`}`;
+}
+
 /** Lage im Zeitband 8 bis 23 Uhr in Prozent (links, Breite) */
 export const BAND = { von: 8, bis: 23 };
 export function bandLage(von: number, bis: number): { links: number; breite: number } {
