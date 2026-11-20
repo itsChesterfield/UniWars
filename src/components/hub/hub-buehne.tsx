@@ -14,9 +14,10 @@ import { briefingHolen } from "@/components/ki/tages-briefing";
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { SCHNELL_ERFASSEN } from "@/components/quick-add";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
-import { berlinDatum } from "@/lib/zeit";
-import { bewegungReduziert } from "@/lib/personalisierung-store";
+import { berlinDatum, berlinTageZwischen } from "@/lib/zeit";
 import { fehlerMelden } from "@/lib/analytics";
+import { klausurCluster, phaseAktiv, tagesplan, standFuer, vorschlagZeigen } from "@/lib/klausurphase";
+import { bewegungReduziert, darstellungWaehlen, usePersoenlich } from "@/lib/personalisierung-store";
 
 export type BuehneDaten = HubDaten & {
   notenschnitt: number | null;
@@ -55,7 +56,9 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   const [sz, setSz] = useState(0);
   const [alt, setAlt] = useState(-1);
   const [richtung, setRichtung] = useState<1 | -1>(1);
-  const [besuch, setBesuch] = useState<number[]>(() => SZENEN.map((_, i) => (i === 0 ? 1 : 0)));
+  const [besuch, setBesuch] = useState<number[]>(() => [...SZENEN, null].map((_, i) => (i === 0 ? 1 : 0)));
+  /** Zahl der Kapitel (mit Klausurphase eins mehr), für den Scroll-Lauscher */
+  const anzahl = useRef<number>(SZENEN.length);
   const strecke = useRef<HTMLDivElement>(null);
   const hoehe = useRef(0);
   const aufraeumen = useRef(0);
@@ -108,7 +111,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
         const el = strecke.current;
         if (!el || !hoehe.current) return;
         const oben = Number.parseFloat(el.style.getPropertyValue("--buehne-oben")) || 0;
-        zu(szeneBeiScroll(-(el.getBoundingClientRect().top - oben), hoehe.current, SZENEN.length));
+        zu(szeneBeiScroll(-(el.getBoundingClientRect().top - oben), hoehe.current, anzahl.current));
       });
     };
     window.addEventListener("scroll", lauschen, { passive: true });
@@ -131,6 +134,42 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   };
 
   const fach = useCallback((id: string | null) => d.faecher.find((f) => f.id === id) ?? null, [d.faecher]);
+
+  // ---- Klausurphase (lib/klausurphase.ts): eigenes erstes Kapitel, Vorschlag im Kapitel Heute
+  const darstellung = usePersoenlich("darstellung", d.darstellung);
+  const cluster = useMemo(() => klausurCluster(d.pruefungen, jetzt), [d.pruefungen, jetzt]);
+  const klausurAn = Boolean(cluster) && phaseAktiv(darstellung.klausurphase, jetzt);
+  const vorschlag = vorschlagZeigen(cluster, darstellung.klausurphase, jetzt);
+  const plan = useMemo(() => (cluster ? tagesplan(cluster, d.themen, d.karten.stapel, (id) => fach(id)?.name ?? null) : []), [cluster, d.themen, d.karten.stapel, fach]);
+  const phaseSetzen = (an: boolean) => {
+    if (!cluster) return;
+    // Beenden merkt sich die erste Klausur, damit der Vorschlag nicht gleich wiederkommt
+    darstellungWaehlen({ ...darstellung, klausurphase: an ? { bis: cluster.bis } : { abgelehnt: cluster.erste.id } });
+    // Das neue Kapitel steht vorn: beim Starten dorthin, beim Beenden rückt alles eins nach vorn
+    if (an) {
+      zu(0);
+      requestAnimationFrame(() => springen(0));
+    }
+    else if (klausurAn) setSz((i) => Math.max(0, i - 1));
+  };
+  const liste = useMemo(() => (klausurAn ? [{ id: "klausur", name: "Klausuren" }, ...SZENEN] : [...SZENEN]), [klausurAn]);
+  useLayoutEffect(() => {
+    anzahl.current = liste.length;
+  }, [liste]);
+  const I = Object.fromEntries(liste.map((x, i) => [x.id, i])) as Record<"klausur" | "heute" | "woche" | "mensa" | "zuletzt", number>;
+  const nr = (i: number) => String(i + 1).padStart(2, "0");
+  const tageText = (t: number) => (t === 0 ? "heute" : t === 1 ? "morgen" : `in ${t} Tagen`);
+  const kurzDatum = (iso: string) => new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short", timeZone: "Europe/Berlin" }).format(new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso));
+  const kopf = (() => {
+    const erst = plan[0];
+    const dann = plan[1] ? ` Danach: ${plan[1].titel}.` : "";
+    if (erst?.frage) {
+      const thema = erst.titel.replace(/ wiederholen$/, "");
+      return { text: `Heute zuerst: ${thema} wiederholen.`, betont: thema.split(" "), unter: `Das Thema wackelt am meisten.${dann}` };
+    }
+    if (erst) return { text: `Heute zuerst: ${erst.titel}.`, betont: [] as string[], unter: `Sie sind heute fällig.${dann}` };
+    return { text: "Noch kein Stand für deine Klausuren.", betont: [] as string[], unter: "Lern mit Karteikarten oder lass dich von Studio abfragen, dann steht hier, was wackelt." };
+  })();
 
   // ---- 01 Heute: Fristen, Prüfungen, To-dos und Vorschläge von Studio
   const [erledigt, setErledigt] = useState<Record<string, boolean>>({});
@@ -219,8 +258,125 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   const aktiv = (i: number) => modus === "fluss" || i === sz;
 
   const szenen = [
+    // Klausurphase: eigenes erstes Kapitel
+    ...(klausurAn && cluster
+      ? [
+          <section key={`klausur-${besuch[I.klausur]}`} className={klasse(I.klausur)} aria-label="Klausuren" aria-hidden={!aktiv(I.klausur)} inert={!aktiv(I.klausur)}>
+            <div className="bue-oben">
+              <div className="bue-datum">
+                <p className="bue-tag">
+                  <SteigText text={String(cluster.tageBisErste)} schritt={90} />
+                </p>
+                <p className="bue-dz bue-blende" style={verz(420)}>
+                  <b>{cluster.tageBisErste === 1 ? "Tag" : "Tage"}</b>
+                  <span>bis zur ersten Klausur</span>
+                </p>
+              </div>
+              <div className="bue-text">
+                <h1 className="bue-lage">
+                  <SteigText text={kopf.text} start={260} akzent={kopf.betont} />
+                </h1>
+                <p className="bue-unter bue-blende" style={verz(760)}>
+                  {kopf.unter}
+                </p>
+              </div>
+            </div>
+            <div className="bue-liste">
+              <div className="bue-links bue-blende" style={verz(820)}>
+                <b>Deine Klausuren</b>
+                <span>
+                  <span className="zahl">{cluster.klausuren.length}</span> bis <span className="zahl">{kurzDatum(cluster.bis)}</span>
+                </span>
+                <button type="button" className="knopf leise klein" onClick={() => phaseSetzen(false)}>
+                  Klausurphase beenden
+                </button>
+              </div>
+              <ol className="bue-reihen">
+                {cluster.klausuren.map((k, i) => {
+                  const f = fach(k.fach_id);
+                  const st = standFuer(k.fach_id, d.themen, d.karten.stapel);
+                  const t = Math.max(0, berlinTageZwischen(jetzt, new Date(k.datum)));
+                  return (
+                    <li key={k.id} className="bue-zeile">
+                      <span className="bue-innen" style={verz(860 + i * 70)}>
+                        <div className="bue-reihe kp-reihe">
+                          <span className="bue-marke" aria-hidden="true">
+                            <Icon name="ziel" groesse={14} />
+                          </span>
+                          <button type="button" className="bue-auf" onClick={() => oeffne("pruefung", k.id)}>
+                            <span className="bue-t">
+                              <span className="bue-strich">{k.titel}</span>
+                              <small>
+                                <span>
+                                  {f ? `${f.name}, ` : ""}
+                                  <span className="zahl">{kurzDatum(k.datum)}</span>
+                                </span>
+                                <span className="kp-stand" style={{ "--c": f?.farbe ?? "var(--akzent)" } as CSSProperties}>
+                                  {st.anteil !== null && (
+                                    <span className="kp-balken" aria-hidden="true">
+                                      <i style={{ transform: `scaleX(${st.anteil})` }} />
+                                    </span>
+                                  )}
+                                  {st.text}
+                                </span>
+                              </small>
+                            </span>
+                            <span className="bue-w">{tageText(t).split(/(\d+)/).map((teil, j) => (/^\d/.test(teil) ? <span key={j} className="zahl">{teil}</span> : teil))}</span>
+                            <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
+                          </button>
+                        </div>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+            {plan.length > 0 && (
+              <div className="bue-liste kp-plan">
+                <div className="bue-links bue-blende" style={verz(1000)}>
+                  <b>Heute lernen</b>
+                  <span>aus Wissensstand und fälligen Karten</span>
+                </div>
+                <ol className="bue-reihen">
+                  {plan.slice(0, 3).map((x, i) => {
+                    const inhalt = (
+                      <>
+                        <span className="bue-t">
+                          <span className="bue-strich">{x.titel}</span>
+                          <small>{x.unter}</small>
+                        </span>
+                        <Icon name="pfeil-rechts" groesse={18} className="bue-p" />
+                      </>
+                    );
+                    return (
+                      <li key={x.id} className="bue-zeile">
+                        <span className="bue-innen" style={verz(1040 + i * 70)}>
+                          <div className="bue-reihe">
+                            <span className="bue-marke" aria-hidden="true">
+                              <Icon name={x.frage ? "studio" : "karteikarten"} groesse={14} />
+                            </span>
+                            {x.href ? (
+                              <Link className="bue-auf" href={x.href}>
+                                {inhalt}
+                              </Link>
+                            ) : (
+                              <button type="button" className="bue-auf" onClick={() => x.frage && studioOeffnen(x.frage)}>
+                                {inhalt}
+                              </button>
+                            )}
+                          </div>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
+          </section>,
+        ]
+      : []),
     // 01 Heute
-    <section key={`s0-${besuch[0]}`} className={klasse(0)} aria-label="Heute" aria-hidden={!aktiv(0)} inert={!aktiv(0)}>
+    <section key={`heute-${besuch[I.heute]}`} className={klasse(I.heute)} aria-label="Heute" aria-hidden={!aktiv(I.heute)} inert={!aktiv(I.heute)}>
       <div className="bue-oben">
         <div className="bue-datum">
           <p className="bue-tag">
@@ -240,13 +396,32 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
           <p className="bue-unter bue-blende" style={verz(760)}>
             {lage.unter}
           </p>
+          {vorschlag && cluster && (
+            <div className="kp-vorschlag bue-blende" style={verz(900)}>
+              <p>
+                <b>
+                  {tageText(cluster.tageBisErste).replace(/^./, (c) => c.toUpperCase())} schreibst du {cluster.erste.titel}
+                  {cluster.klausuren.length > 1 ? `, danach ${cluster.klausuren.length - 1} weitere` : ""}.
+                </b>{" "}
+                In der Klausurphase zeigt der Hub zuerst deine Klausuren und was heute dran ist.
+              </p>
+              <div className="kp-knoepfe">
+                <button type="button" className="knopf neben klein" onClick={() => phaseSetzen(true)}>
+                  Klausurphase starten
+                </button>
+                <button type="button" className="knopf leise klein" onClick={() => phaseSetzen(false)}>
+                  Nicht jetzt
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="bue-liste">
         <div className="bue-links bue-blende" style={verz(820)}>
           <b>Als Nächstes</b>
           <span>
-            {aktiv(0) ? <RollText wert={String(offen)} start="0" className="zahl" /> : offen} offen
+            {aktiv(I.heute) ? <RollText wert={String(offen)} start="0" className="zahl" /> : offen} offen
             {vorschlaege.length ? `, ${vorschlaege.length === 1 ? "ein Vorschlag" : `${vorschlaege.length} Vorschläge`} von Studio` : ""}
           </span>
           <Link className="bue-zum" href="/aufgaben">
@@ -277,8 +452,8 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
     </section>,
 
     // 02 Diese Woche
-    <section key={`s1-${besuch[1]}`} className={klasse(1)} aria-label="Diese Woche" aria-hidden={!aktiv(1)} inert={!aktiv(1)}>
-      <Kapitel nr="02" titel="Diese Woche" unter="Vorlesungen, Prüfungen und Fristen" />
+    <section key={`woche-${besuch[I.woche]}`} className={klasse(I.woche)} aria-label="Diese Woche" aria-hidden={!aktiv(I.woche)} inert={!aktiv(I.woche)}>
+      <Kapitel nr={nr(I.woche)} titel="Diese Woche" unter="Vorlesungen, Prüfungen und Fristen" />
       <div className="bue-woche" role="group" aria-label="Tag wählen">
         {tage.map((t, i) => (
           <span key={t.datum} className="bue-zeile">
@@ -380,8 +555,8 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
     </section>,
 
     // 03 Mensa
-    <section key={`s2-${besuch[2]}`} className={klasse(2)} aria-label="Mensa heute" aria-hidden={!aktiv(2)} inert={!aktiv(2)}>
-      <Kapitel nr="03" titel="Mensa heute" unter={d.mensa ? d.mensa.mensa : "Noch keine Mensa gewählt"} />
+    <section key={`mensa-${besuch[I.mensa]}`} className={klasse(I.mensa)} aria-label="Mensa heute" aria-hidden={!aktiv(I.mensa)} inert={!aktiv(I.mensa)}>
+      <Kapitel nr={nr(I.mensa)} titel="Mensa heute" unter={d.mensa ? d.mensa.mensa : "Noch keine Mensa gewählt"} />
       <div className="bue-raster bue-abstand">
         <p className="bue-links bue-blende" style={verz(600)}>
           <b>{d.mensa?.heute ? "Heute" : d.mensa?.datum ? "Nächster Tag" : "Speiseplan"}</b>
@@ -419,8 +594,8 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
     </section>,
 
     // 04 Zuletzt geöffnet
-    <section key={`s3-${besuch[3]}`} className={klasse(3)} aria-label="Zuletzt geöffnet" aria-hidden={!aktiv(3)} inert={!aktiv(3)}>
-      <Kapitel nr="04" titel="Zuletzt geöffnet" unter="Weiter, wo du aufgehört hast" />
+    <section key={`zuletzt-${besuch[I.zuletzt]}`} className={klasse(I.zuletzt)} aria-label="Zuletzt geöffnet" aria-hidden={!aktiv(I.zuletzt)} inert={!aktiv(I.zuletzt)}>
+      <Kapitel nr={nr(I.zuletzt)} titel="Zuletzt geöffnet" unter="Weiter, wo du aufgehört hast" />
       {d.dateien.length ? (
         <div className="bue-dateien">
           {d.dateien.map((f, i) => {
@@ -446,35 +621,35 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   ];
 
   return (
-    <div ref={strecke} className={`buehne-strecke ${modus}`} data-richtung={richtung < 0 ? "zurueck" : "vor"} style={{ "--n": SZENEN.length } as CSSProperties}>
-      {modus === "buehne" && SZENEN.map((s, i) => <span key={s.id} className="buehne-rast" style={{ top: `calc(${i} * var(--buehne-h, 600px))` }} aria-hidden="true" />)}
+    <div ref={strecke} className={`buehne-strecke ${modus}`} data-richtung={richtung < 0 ? "zurueck" : "vor"} style={{ "--n": liste.length } as CSSProperties}>
+      {modus === "buehne" && liste.map((s, i) => <span key={s.id} className="buehne-rast" style={{ top: `calc(${i} * var(--buehne-h, 600px))` }} aria-hidden="true" />)}
       <div className="buehne">
         {modus === "buehne" && (
           <>
             <span className="buehne-zaehler zahl" aria-hidden="true">
               <span className="buehne-roll">
                 <span style={{ transform: `translateY(-${sz * 1.2}em)` }}>
-                  {SZENEN.map((_, i) => (
-                    <i key={i}>0{i + 1}</i>
+                  {liste.map((_, i) => (
+                    <i key={i}>{nr(i)}</i>
                   ))}
                 </span>
               </span>
-              <span> / 0{SZENEN.length}</span>
+              <span> / {nr(liste.length - 1)}</span>
             </span>
             <nav className="buehne-nav" aria-label="Kapitel der Übersicht">
-              {SZENEN.map((s, i) => (
+              {liste.map((s, i) => (
                 <button key={s.id} type="button" aria-current={i === sz ? "step" : undefined} onClick={() => springen(i)}>
                   <span className="name">{s.name}</span>
-                  <span className="zahl">0{i + 1}</span>
+                  <span className="zahl">{nr(i)}</span>
                   <span className="strich" />
                 </button>
               ))}
             </nav>
-            <p className={`buehne-weiter${sz === SZENEN.length - 1 ? " weg" : ""}`} aria-hidden="true">
+            <p className={`buehne-weiter${sz === liste.length - 1 ? " weg" : ""}`} aria-hidden="true">
               <span className="pf">
                 <Icon name="runter" groesse={16} />
               </span>
-              Weiter: {SZENEN[Math.min(SZENEN.length - 1, sz + 1)].name}
+              Weiter: {liste[Math.min(liste.length - 1, sz + 1)].name}
             </p>
           </>
         )}

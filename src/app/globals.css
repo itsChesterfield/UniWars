@@ -18606,6 +18606,63 @@ html[data-bewegung="reduziert"] .bk-unter {
   color: var(--text-2);
 }
 
+/* Klausurphase (lib/klausurphase.ts): Vorschlag im Kapitel Heute, Stand pro Klausur, Tagesplan */
+.kp-vorschlag {
+  max-width: 560px;
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--linie);
+}
+
+.kp-vorschlag p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.kp-vorschlag b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.kp-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.bue-links .knopf {
+  margin-top: var(--space-3);
+}
+
+.kp-stand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.kp-balken {
+  flex: none;
+  width: 64px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.kp-balken i {
+  display: block;
+  height: 100%;
+  background: var(--c);
+  transform-origin: left;
+}
+
+.bue-liste.kp-plan {
+  margin-top: var(--space-8);
+}
+
 .bue-liste {
   align-items: start;
   margin-top: var(--space-12);
