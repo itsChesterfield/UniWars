@@ -6,7 +6,7 @@ import { abmelden } from "@/lib/analytics";
 export function AbmeldenButton() {
   return (
     <form action={logout}>
-      <button type="submit" className="sidebar-logout" onClick={() => abmelden()}>
+      <button type="submit" className="knopf leise" onClick={() => abmelden()}>
         Abmelden
       </button>
     </form>

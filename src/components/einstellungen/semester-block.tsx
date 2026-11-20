@@ -64,9 +64,9 @@ export function SemesterBlock({
   return (
     <div className="hs-verif">
       <h3>
-        {semesterName(termine.semester, land)}<span className="faint">, {standText}</span>
+        {semesterName(termine.semester, land)}<span className="einst-klein">, {standText}</span>
       </h3>
-      <p className="muted">
+      <p className="einst-klein">
         {gepflegt
           ? `Von Studierenden deiner Hochschule eingetragen${geaendertAm ? ` (zuletzt ${new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(geaendertAm))})` : ""}. Stimmt etwas nicht? Korrigiere es für alle.`
           : "Das sind Richtwerte für deine Hochschulart. Trag die echten Termine ein, sie gelten dann für alle an deiner Hochschule."}
@@ -88,7 +88,7 @@ export function SemesterBlock({
                 Rückmeldung als Frist eintragen
               </button>
             )}
-            <button type="button" className={gepflegt ? "knopf leise klein" : "knopf haupt klein"} disabled={laeuft} onClick={() => setBearbeiten(true)}>
+            <button type="button" className={gepflegt ? "knopf leise klein" : "knopf neben klein"} disabled={laeuft} onClick={() => setBearbeiten(true)}>
               {gepflegt ? "Termine korrigieren" : "Echte Termine eintragen"}
             </button>
           </div>
@@ -105,7 +105,6 @@ export function SemesterBlock({
             <label key={feld}>
               <span>{name}</span>
               <input
-                className="field"
                 type="date"
                 required={pflicht}
                 value={werte[feld] ?? ""}
@@ -123,7 +122,7 @@ export function SemesterBlock({
           </div>
         </form>
       )}
-      {ergebnis && (ergebnis.ok ? <p className="einst-ok">{ergebnis.hinweis}</p> : <p className="auth-error">{ergebnis.fehler}</p>)}
+      {ergebnis && (ergebnis.ok ? <p className="einst-ok">{ergebnis.hinweis}</p> : <p className="formular-fehler" role="alert">{ergebnis.fehler}</p>)}
     </div>
   );
 }

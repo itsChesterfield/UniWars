@@ -52,7 +52,7 @@ export default async function SignupPage({
             {feld === "nutzername" && fehler ? (
               <FeldFehler id="fehler-nutzername">{fehler}</FeldFehler>
             ) : (
-              <p className="anm-feld-hilfe">3 bis 20 Zeichen: Buchstaben, Zahlen, Unterstrich</p>
+              <p className="anm-feld-hilfe">3 bis 20 Zeichen: a bis z, Ziffern und Unterstrich. Großbuchstaben werden klein geschrieben.</p>
             )}
           </div>
 

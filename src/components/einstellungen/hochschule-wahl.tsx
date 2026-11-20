@@ -37,7 +37,7 @@ export type Verifizierung = {
 
 function Meldung({ e }: { e: Ergebnis | null }) {
   if (!e) return null;
-  if (!e.ok) return <p className="auth-error">{e.fehler}</p>;
+  if (!e.ok) return <p className="formular-fehler" role="alert">{e.fehler}</p>;
   return <p className="einst-ok">{e.hinweis ?? "Gespeichert."}</p>;
 }
 
@@ -72,7 +72,6 @@ export function Suche({
         }}
       >
         <input
-          className="field"
           autoFocus
           value={eingabe}
           maxLength={160}
@@ -93,7 +92,6 @@ export function Suche({
     <div className="hs-suche">
       <input
         ref={feld}
-        className="field"
         role="combobox"
         aria-expanded={treffer.length > 0}
         aria-controls={listeId}
@@ -154,7 +152,7 @@ export function Suche({
         </ul>
       )}
       {alle && eingabe.trim().length >= 2 && treffer.length === 0 && (
-        <p className="muted">Nichts gefunden.</p>
+        <p className="einst-klein">Nichts gefunden.</p>
       )}
       <button
         type="button"
@@ -261,7 +259,7 @@ export function HochschuleWahl({
 
       <div className="hs-verif">
         <h3>Uni-Mail bestätigen</h3>
-        <p className="muted">
+        <p className="einst-klein">
           Damit ist klar, dass du wirklich an deiner Hochschule studierst, zum
           Beispiel für Kommilitonen und Studentenpreise. Die Bestätigung gilt ein
           Jahr.
@@ -292,7 +290,7 @@ export function HochschuleWahl({
             </button>
           </div>
         ) : !verifizierbar ? (
-          <p className="faint">
+          <p className="einst-klein">
             Die Bestätigung per Code wird gerade eingerichtet und ist bald
             verfügbar.
           </p>
@@ -322,7 +320,7 @@ export function HochschuleWahl({
             )}
             {!mailMoeglich ? (
               !vorschlag && (
-                <p className="faint">
+                <p className="einst-klein">
                   Die Bestätigung per Code wird gerade eingerichtet und ist bald
                   verfügbar.
                 </p>
@@ -342,7 +340,6 @@ export function HochschuleWahl({
                   }}
                 >
                   <input
-                    className="field"
                     type="email"
                     autoComplete="email"
                     placeholder="name@stud.uni-xyz.de"
@@ -372,7 +369,7 @@ export function HochschuleWahl({
                     }}
                   >
                     <input
-                      className="field hs-code"
+                      className="hs-code"
                       inputMode="numeric"
                       autoComplete="one-time-code"
                       maxLength={7}

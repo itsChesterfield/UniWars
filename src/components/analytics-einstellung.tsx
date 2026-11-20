@@ -21,9 +21,12 @@ export function AnalyticsEinstellung() {
   }
 
   return (
-    <button type="button" className="sidebar-theme-toggle" onClick={umschalten}>
-      <span>Nutzungsanalyse</span>
-      <span style={{ color: "var(--accent-strong)" }}>{erlaubt ? "An" : "Aus"}</span>
-    </button>
+    <div className="einst-zeile">
+      <span>
+        Nutzungsanalyse
+        <small>Anonyme Zahlen, welche Funktionen genutzt werden.</small>
+      </span>
+      <button type="button" className="schalter" role="switch" aria-checked={erlaubt} aria-label="Nutzungsanalyse" onClick={umschalten} />
+    </div>
   );
 }
