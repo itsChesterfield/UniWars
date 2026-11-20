@@ -17,6 +17,7 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { gesamtStatus, MAX_DATEI_SEKUNDEN, zeitText, type TeilInfo, type TeilStatus } from "@/lib/transkription/transkript";
 import { OfflineHinweis } from "@/components/offline-hinweis";
 import { Icon } from "@/components/nav-icon";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 
 export type TranskriptEintrag = {
   id: string;
@@ -185,7 +186,7 @@ export function TranskriptionHub({
   const sichtbar = eintraege.filter((e) => !fachFilter || e.fach_id === fachFilter);
 
   async function loeschen(e: TranskriptEintrag) {
-    if (!window.confirm(`„${e.titel}“ wirklich löschen? Die Audiodateien bleiben in der Dateiablage.`)) return;
+    if (!(await inDenPapierkorb(`Das Transkript „${e.titel}“`))) return;
     const a = await transkriptLoeschen(e.id).catch(() => null);
     if (!a?.ok) {
       window.alert("Löschen hat nicht geklappt.");

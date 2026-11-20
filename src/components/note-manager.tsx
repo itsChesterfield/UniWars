@@ -10,6 +10,7 @@ import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
 import { notenText } from "@/lib/noten";
 import { RollText } from "@/components/bewegung/roll-text";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Note = Tables<"note">;
 
@@ -94,7 +95,9 @@ export function NoteManager({
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    const n = notes.find((x) => x.id === id);
+    if (!(await rueckfrage({ titel: "Note löschen?", text: `„${n?.titel ?? "Note"}“ wird endgültig gelöscht.`, ja: "Löschen", gefahr: true }))) return;
     startTransition(async () => {
       try {
         await deleteNote(id);

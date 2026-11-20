@@ -12,6 +12,7 @@ import type { Database } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { OfflineHinweis } from "@/components/offline-hinweis";
 import { Icon } from "@/components/nav-icon";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Uebersicht = Database["public"]["Functions"]["chat_uebersicht"]["Returns"][number];
 
@@ -80,7 +81,7 @@ export function ChatHub({
   }, [aktivId]);
 
   async function blockieren(userId: string, blockieren: boolean) {
-    if (blockieren && !window.confirm("Diese Person blockieren? Ihr könnt euch dann keine Direktnachrichten mehr schicken.")) return;
+    if (blockieren && !(await rueckfrage({ titel: "Diese Person blockieren?", text: "Ihr könnt euch dann keine Direktnachrichten mehr schicken.", ja: "Blockieren", gefahr: true }))) return;
     const { error } = blockieren
       ? await supabase.from("nutzer_blockiert").insert({ user_id: ich, blockiert_id: userId })
       : await supabase.from("nutzer_blockiert").delete().eq("blockiert_id", userId);
@@ -95,7 +96,7 @@ export function ChatHub({
   }
 
   async function verlassen() {
-    if (!aktivId || !window.confirm("Gruppe verlassen?")) return;
+    if (!aktivId || !(await rueckfrage({ titel: "Gruppe verlassen?", text: "Du siehst die Nachrichten der Gruppe dann nicht mehr.", ja: "Verlassen", gefahr: true }))) return;
     const { error } = await supabase.from("chat_mitglied").delete().eq("chat_id", aktivId).eq("user_id", ich);
     if (error) {
       window.alert("Verlassen hat nicht geklappt.");

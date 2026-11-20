@@ -17,6 +17,7 @@ import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { absolutesDatum } from "@/lib/countdown";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Pruefung = Tables<"pruefung">;
 type Deadline = Tables<"deadline">;
@@ -116,7 +117,9 @@ export function PruefungManager({
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    const p = pruefungen.find((x) => x.id === id);
+    if (!(await rueckfrage({ titel: "Prüfung löschen?", text: `„${p?.titel ?? "Prüfung"}“ wird endgültig gelöscht.`, ja: "Löschen", gefahr: true }))) return;
     startTransition(async () => {
       try {
         await deletePruefung(id);

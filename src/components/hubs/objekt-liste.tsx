@@ -15,6 +15,7 @@ import { fachZuordnungenSpeichern } from "@/app/(hubs)/dateiablage/zuordnung-act
 import type { MaterialArt } from "@/lib/dateiablage/material";
 import { MaterialFaecherDialog } from "@/components/dateiablage/material-faecher";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 import { kopfListe } from "@/lib/bereichskopf";
 
 export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; fach_ids?: string[]; geaendert_am: string; info?: string };
@@ -104,7 +105,7 @@ export function ObjektListe({
   }
 
   async function entfernen(e: ObjektEintrag) {
-    if (!window.confirm(`„${e.titel || ohneTitel}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`„${e.titel || ohneTitel}“`))) return;
     try {
       await loeschen(e.id);
       track(`${eventName}_geloescht`);

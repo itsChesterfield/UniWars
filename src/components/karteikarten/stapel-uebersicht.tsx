@@ -12,6 +12,7 @@ import { Zustand } from "@/components/zustand";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 import { kartenLage } from "@/lib/bereichskopf";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
@@ -42,7 +43,7 @@ export function StapelUebersicht({
 
   async function loeschen(s: StapelKachel) {
     const hinweis = s.anzahl > 0 ? ` mit ${karten(s.anzahl)}` : "";
-    if (!window.confirm(`Stapel „${s.name}“${hinweis} wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Der Stapel „${s.name}“${hinweis}`))) return;
     try {
       await stapelLoeschen(s.id);
       track("kk_stapel_geloescht", { karten: s.anzahl });

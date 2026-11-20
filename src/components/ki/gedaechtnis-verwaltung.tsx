@@ -22,6 +22,7 @@ import {
 import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Thema = {
   id: string;
@@ -158,13 +159,14 @@ export function GedaechtnisVerwaltung({
           <button
             type="button"
             className="knopf gefahr klein"
-            onClick={() => {
-              if (
-                !window.confirm(
-                  "Wirklich alles löschen, was Studio über dich weiß (Gedächtnis und Wissensstand)?",
-                )
-              )
-                return;
+            onClick={async () => {
+              const ja = await rueckfrage({
+                titel: "Alles löschen, was Studio über dich weiß?",
+                text: "Gedächtnis und Wissensstand werden gelöscht. Das lässt sich nicht rückgängig machen.",
+                ja: "Alles löschen",
+                gefahr: true,
+              });
+              if (!ja) return;
               void gedaechtnisAllesLoeschen()
                 .catch(() => ({ ok: false }))
                 .then((r) => {

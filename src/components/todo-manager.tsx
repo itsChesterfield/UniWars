@@ -19,6 +19,7 @@ import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { useFesteFolge } from "@/components/bewegung/feste-folge";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Todo = Tables<"todo">;
 type Deadline = Tables<"deadline">;
@@ -120,7 +121,9 @@ export function TodoManager({
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    const t = todos.find((x) => x.id === id);
+    if (!(await rueckfrage({ titel: "To-Do löschen?", text: `„${t?.titel ?? "To-Do"}“ wird mit seinen Unterpunkten endgültig gelöscht.`, ja: "Löschen", gefahr: true }))) return;
     startTransition(async () => {
       try {
         await deleteTodo(id);

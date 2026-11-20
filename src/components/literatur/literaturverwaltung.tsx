@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { quelleLoeschen, quelleSpeichern, type Quelle, type QuelleEingabe } from "@/app/(hubs)/literaturverwaltung/actions";
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import {
@@ -110,7 +111,7 @@ export function Literaturverwaltung({
   }
 
   async function loeschen(q: Quelle) {
-    if (!window.confirm(`Quelle „${q.titel}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Die Quelle „${q.titel}“`))) return;
     setQuellen((l) => l.filter((x) => x.id !== q.id));
     setAuswahl((a) => {
       const neu = new Set(a);

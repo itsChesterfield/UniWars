@@ -22,6 +22,7 @@ import { materialPapierkorb } from "@/app/(hubs)/dateiablage/workflow-actions";
 import { MaterialPakete, MaterialTeilen } from "./material-teilen";
 import { MaterialFaecherDialog } from "./material-faecher";
 import { PapierkorbDialog, ThemenDialog, TitelDialog, UnterlageEinsortieren } from "./material-ordnen";
+import { rueckfrage } from "@/components/rueckfrage";
 import { MaterialRueckverweise } from "./material-verknuepfungen";
 import { MaterialVorschauFenster, useGedruecktHalten } from "./material-vorschau";
 import { Zustand } from "@/components/zustand";
@@ -494,11 +495,11 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
         anhaenge > 0 ? `an ${anhaenge} ${anhaenge === 1 ? "Eintrag" : "Einträgen"} angehängt` : "",
         quellen > 0 ? `mit ${quellen} ${quellen === 1 ? "Quelle" : "Quellen"} verknüpft` : "",
       ].filter(Boolean);
-      if (teile.length) hinweis = `\n\nDiese Datei ist ${teile.join(" und ")}.`;
+      if (teile.length) hinweis = ` Sie ist ${teile.join(" und ")}.`;
     } catch {
       // Hinweis ist optional
     }
-    if (!window.confirm(`„${d.name}“ endgültig löschen?${hinweis}`)) return;
+    if (!(await rueckfrage({ titel: "Datei endgültig löschen?", text: `„${d.name}“ wird endgültig gelöscht.${hinweis}`, ja: "Endgültig löschen", gefahr: true }))) return;
     // Bewegung: die Zeile tritt zurück, bevor sie verschwindet (nur Deckkraft, kein Weg)
     const zeile = document.querySelector<HTMLElement>(`[data-datei="${d.id}"]`);
     if (zeile && !bewegungReduziert()) {

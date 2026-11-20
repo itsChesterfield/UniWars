@@ -9,6 +9,7 @@ import { AnhangDialog, type AnhangWahl, type Nutzer } from "@/components/chat/ch
 import type { Json, Tables } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Nachricht = Tables<"chat_nachricht">;
 type Anhang = { typ: "datei" | "deadline" | "todo"; id: string; titel: string; mime?: string; faellig_am?: string | null };
@@ -140,7 +141,7 @@ export function ChatVerlauf({
   }
 
   async function loeschen(n: Nachricht) {
-    if (!window.confirm("Nachricht löschen? Sie wird für alle durch „Nachricht gelöscht“ ersetzt.")) return;
+    if (!(await rueckfrage({ titel: "Nachricht löschen?", text: "Sie wird für alle durch „Nachricht gelöscht“ ersetzt.", ja: "Löschen", gefahr: true }))) return;
     const { error } = await supabase.rpc("nachricht_loeschen", { p_id: n.id });
     if (error) {
       setFehler("Löschen hat nicht geklappt.");

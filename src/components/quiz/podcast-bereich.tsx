@@ -8,6 +8,7 @@ import { Icon } from "@/components/nav-icon";
 import { Auswahl } from "@/components/quiz/quiz-bereich";
 import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 import type { PodcastLaenge } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -74,8 +75,8 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
                     className="knopf gefahr klein nur-symbol"
                     aria-label={`Podcast „${p.titel}“ löschen`}
                     title="Löschen"
-                    onClick={() => {
-                      if (!window.confirm(`Podcast „${p.titel}“ löschen?`)) return;
+                    onClick={async () => {
+                      if (!(await inDenPapierkorb(`Der Podcast „${p.titel}“`))) return;
                       setLoeschfehler("");
                       const fehler = `„${p.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
                       void podcastLoeschen(p.id).then((ergebnis) => {

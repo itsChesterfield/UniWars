@@ -22,6 +22,7 @@ import { StundenplanFotoDialog } from "@/components/stundenplan-foto-dialog";
 import { spurenVerteilen } from "@/lib/spuren";
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Eintrag = Tables<"stundenplan_eintrag">;
 type Deadline = Tables<"deadline">;
@@ -229,7 +230,8 @@ export function StundenplanManager({
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    if (!(await rueckfrage({ titel: "Eintrag löschen?", text: "Der Eintrag wird aus deinem Stundenplan gelöscht.", ja: "Löschen", gefahr: true }))) return;
     startTransition(async () => {
       try {
         await deleteStundenplanEintrag(id);

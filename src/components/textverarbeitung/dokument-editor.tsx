@@ -23,6 +23,7 @@ import type { Json } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 
 type Quelle = { id: string; autoren: string; titel: string; jahr: number; seiten: string | null };
 type Aenderung = { titel: string; inhalt: Json; klartext: string; woerter: number };
@@ -114,7 +115,7 @@ export function DokumentEditor({
   }
 
   async function loeschen() {
-    if (!window.confirm(`„${titel || OHNE_TITEL}“ wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Das Dokument „${titel || OHNE_TITEL}“`))) return;
     try {
       await dokumentLoeschen(dokument.id);
       track("dokument_geloescht");
