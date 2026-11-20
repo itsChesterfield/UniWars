@@ -3,6 +3,7 @@ import type { Database, Enums, Tables } from "@/lib/supabase/types";
 import { GoogleFehler, ZEITZONE, googleApi } from "@/lib/kalender/google";
 import { hash } from "@/lib/kalender/krypto";
 import { STANDARD_DAUER } from "@/lib/kalender/dauer";
+import { KALENDER_NAME, titelDeadline, titelPruefung, titelStunde, titelTodo } from "@/lib/kalender/titel";
 import { gueltigerAccessToken, verbindungLaden, type Verbindung } from "@/lib/kalender/verbindung";
 
 type Client = SupabaseClient<Database>;
@@ -50,7 +51,7 @@ function zeit(iso: string) {
 }
 
 function beschreibung(...zeilen: (string | null | undefined)[]): string {
-  return [...zeilen.filter(Boolean), "", "Eingetragen über UniWars"].join("\n");
+  return [...zeilen.filter(Boolean), "", `Eingetragen über ${KALENDER_NAME}`].join("\n");
 }
 
 const WOCHENTAG_INDEX: Record<Enums<"wochentag">, number> = { SO: 0, MO: 1, DI: 2, MI: 3, DO: 4, FR: 5, SA: 6 };
@@ -75,7 +76,7 @@ export function eventFuerPruefung(p: Tables<"pruefung">, faecher: FachName[]): G
   const fach = faecher.find((f) => f.id === p.fach_id)?.name;
   const erledigt = p.status !== "ANSTEHEND";
   return {
-    summary: `${erledigt ? "✓ " : ""}📝 Prüfung: ${p.titel}`,
+    summary: titelPruefung(p.titel, erledigt),
     description: beschreibung(fach ? `Fach: ${fach}` : null),
     location: p.raum ?? undefined,
     colorId: erledigt ? FARBE.erledigt : FARBE.pruefung,
@@ -87,16 +88,11 @@ export function eventFuerPruefung(p: Tables<"pruefung">, faecher: FachName[]): G
 
 export function eventFuerDeadline(d: Tables<"deadline">, faecher: FachName[]): GoogleEvent {
   const fach = faecher.find((f) => f.id === d.fach_id)?.name;
-  const art =
-    d.typ === "TERMIN"
-      ? { praefix: "📅 ", farbe: FARBE.termin }
-      : d.typ === "GRUPPENARBEIT"
-        ? { praefix: "👥 ", farbe: FARBE.gruppenarbeit }
-        : { praefix: "⏰ Abgabe: ", farbe: FARBE.abgabe };
+  const farbe = d.typ === "TERMIN" ? FARBE.termin : d.typ === "GRUPPENARBEIT" ? FARBE.gruppenarbeit : FARBE.abgabe;
   return {
-    summary: `${d.erledigt ? "✓ " : ""}${art.praefix}${d.titel}`,
+    summary: titelDeadline(d.titel, d.typ, d.erledigt),
     description: beschreibung(fach ? `Fach: ${fach}` : null),
-    colorId: d.erledigt ? FARBE.erledigt : art.farbe,
+    colorId: d.erledigt ? FARBE.erledigt : farbe,
     start: zeit(d.faellig_am),
     end: zeit(plusMinuten(d.faellig_am, d.dauer_minuten ?? STANDARD_DAUER[d.typ])),
     status: "confirmed",
@@ -108,7 +104,7 @@ export function eventFuerDeadline(d: Tables<"deadline">, faecher: FachName[]): G
 export function eventFuerTodo(t: Tables<"todo">, faellig: string, faecher: FachName[]): GoogleEvent {
   const fach = faecher.find((f) => f.id === t.fach_id)?.name;
   return {
-    summary: `${t.erledigt ? "✓ " : ""}☑ ${t.titel}`,
+    summary: titelTodo(t.titel, t.erledigt),
     description: beschreibung(fach ? `Fach: ${fach}` : null),
     colorId: t.erledigt ? FARBE.erledigt : FARBE.todo,
     start: zeit(faellig),
@@ -119,9 +115,9 @@ export function eventFuerTodo(t: Tables<"todo">, faellig: string, faecher: FachN
 }
 
 export function eventFuerStundenplan(e: Tables<"stundenplan_eintrag">, faecher: FachName[]): GoogleEvent {
-  const fach = faecher.find((f) => f.id === e.fach_id)?.name ?? "Vorlesung";
+  const fach = faecher.find((f) => f.id === e.fach_id)?.name;
   return {
-    summary: `🎓 ${fach}`,
+    summary: titelStunde(fach),
     description: beschreibung(e.dozent ? `Dozent: ${e.dozent}` : null),
     location: e.raum ?? undefined,
     colorId: FARBE.vorlesung,
@@ -154,8 +150,8 @@ async function sollZustand(supabase: Client): Promise<SollEintrag[]> {
 
 export async function uniwarsKalenderAnlegen(accessToken: string): Promise<string> {
   const kalender = await googleApi<{ id: string }>(accessToken, "POST", "/calendars", {
-    summary: "UniWars",
-    description: "Deadlines, Prüfungen und Termine aus UniWars. Änderungen bitte in UniWars vornehmen.",
+    summary: KALENDER_NAME,
+    description: `Deadlines, Prüfungen und Termine aus ${KALENDER_NAME}. Änderungen bitte in ${KALENDER_NAME} vornehmen.`,
     timeZone: ZEITZONE,
   });
   return kalender.id;
