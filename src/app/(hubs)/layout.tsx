@@ -14,7 +14,8 @@ import { BereichUebergang } from "@/components/bereich-uebergang";
 import { DesignRahmen } from "@/components/design-rahmen";
 import { SegmentMarke } from "@/components/bewegung/segment-marke";
 import { FokusraumPraesenz } from "@/components/work-station/fokusraum-praesenz";
-import { EinstellungenKontextMitTeam, TeamUpdateEinstieg } from "@/components/einstellungen/team-update-zugang";
+import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
+import { TeamUpdateDialog } from "@/components/einstellungen/team-update-dialog";
 import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
 
 // Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
@@ -55,8 +56,8 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   return (
     <DesignRahmen theme={theme} darstellung={darstellung}>
       <Sidebar userId={user.id} name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
-      <Suspense fallback={null}><EinstellungenKontextMitTeam kiVerfuegbar={kiVerfuegbar} /></Suspense>
-      <Suspense fallback={null}><TeamUpdateEinstieg /></Suspense>
+      <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
+      <TeamUpdateDialog />
       <SegmentMarke />
       <Suspense fallback={null}><MaterialBesuch userId={user.id} /></Suspense>
       <div className="arbeitsflaeche">

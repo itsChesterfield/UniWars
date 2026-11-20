@@ -1,7 +1,3 @@
-create table public.team_update_mitglied (
-  user_id uuid primary key references auth.users (id) on delete cascade
-);
-
 create table public.team_update (
   pr integer primary key check (pr > 0),
   merge_sha text not null unique check (merge_sha ~ '^[a-f0-9]{40}$'),
@@ -20,31 +16,23 @@ create table public.team_update_gelesen (
   primary key (user_id, pr)
 );
 
-alter table public.team_update_mitglied enable row level security;
 alter table public.team_update enable row level security;
 alter table public.team_update_gelesen enable row level security;
 
-revoke all on public.team_update_mitglied, public.team_update, public.team_update_gelesen
+revoke all on public.team_update, public.team_update_gelesen
   from public, anon, authenticated;
-grant select on public.team_update_mitglied, public.team_update, public.team_update_gelesen to authenticated;
+grant select (pr, titel, punkte, aktualisiert_am, aktiv) on public.team_update to authenticated;
+grant select on public.team_update_gelesen to authenticated;
 grant insert (pr) on public.team_update_gelesen to authenticated;
 grant select on public.team_update to service_role;
 
-create policy "Eigenen Teamzugriff prüfen" on public.team_update_mitglied
+create policy "Briefings für angemeldete Konten lesen" on public.team_update
+  for select to authenticated using ((select auth.uid()) is not null);
+
+create policy "Eigenen Lesestatus lesen" on public.team_update_gelesen
   for select to authenticated using ((select auth.uid()) = user_id);
 
-create policy "Briefing nur für das Team" on public.team_update
-  for select to authenticated using (
-    exists (select 1 from public.team_update_mitglied where user_id = (select auth.uid()))
-  );
-
-create policy "Eigenen Lesestatus im Team lesen" on public.team_update_gelesen
-  for select to authenticated using (
-    (select auth.uid()) = user_id
-    and exists (select 1 from public.team_update_mitglied where user_id = (select auth.uid()))
-  );
-
-create policy "Eigenen Lesestatus im Team setzen" on public.team_update_gelesen
+create policy "Eigenen Lesestatus setzen" on public.team_update_gelesen
   for insert to authenticated with check (
     (select auth.uid()) = user_id
     and exists (select 1 from public.team_update where team_update.pr = team_update_gelesen.pr)

@@ -112,4 +112,4 @@ Ein Paket ist erst fertig, wenn:
 
 ## 7. Team-Update vor dem Merge
 
-Jeder Pull Request für `main` braucht ein Team-Briefing für den geprüften Änderungsstand. Prüfe den automatisch erzeugten Text im PR auf verständliches Deutsch, belegte Änderungen und die tatsächliche Verfügbarkeit der beschriebenen Funktionen. Bei Korrekturen oder einem KI-Ausfall folgt die manuelle Eingabe dem Format im [Umsetzungsplan](docs/plaene/team-update-briefing.md).
+Jeder Pull Request für `main` braucht ein Team-Briefing für den geprüften Änderungsstand. Prüfe den automatisch erzeugten Text im PR auf verständliches Deutsch, belegte Änderungen und die tatsächliche Verfügbarkeit der beschriebenen Funktionen. Der Text ist für alle angemeldeten Konten sichtbar und enthält keine vertraulichen Details oder internen Verweise. Bei Korrekturen oder einem KI-Ausfall folgt die manuelle Eingabe dem Format im [Umsetzungsplan](docs/plaene/team-update-briefing.md).

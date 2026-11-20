@@ -1,10 +1,10 @@
 # Team-Update-Briefing
 
-Ein Paket für automatische Änderungszusammenfassungen, einen Dialog beim App-Start und den Verlauf unter **Einstellungen → Team-Updates**. Freigeschaltete Teamkonten sehen pro veröffentlichtem PR einen Eintrag in verständlichem Deutsch. Das Briefing beschreibt die Wirkung und kennzeichnet Vorbereitungen als solche.
+Ein Paket für automatische Änderungszusammenfassungen, einen Dialog beim App-Start und den Verlauf unter **Einstellungen → Team-Updates**. Alle angemeldeten Konten sehen pro veröffentlichtem PR einen Eintrag in verständlichem Deutsch. Das Briefing beschreibt die Wirkung und kennzeichnet Vorbereitungen als solche.
 
 ## Pull Request
 
-Der GitHub-Workflow `team-update-briefing.yml` liest PR-Titel, Beschreibung und die Liste der geänderten Dateien. Er führt ausschließlich Skripte aus dem Basis-Commit aus. Mistral erhält keine Roh-Diffs, Umgebungsvariablen oder Zugangsdaten. Die Ausgabe besteht aus einem Titel und ein bis drei Punkten. Fettdruck innerhalb eines Punkts ist erlaubt. Links in der App werden aus der PR-Nummer erzeugt.
+Der GitHub-Workflow `team-update-briefing.yml` liest PR-Titel, Beschreibung und die Liste der geänderten Dateien. Er führt ausschließlich Skripte aus dem Basis-Commit aus. Mistral erhält keine Roh-Diffs, Umgebungsvariablen oder Zugangsdaten. Die Ausgabe besteht aus einem Titel und ein bis drei Punkten. Fettdruck innerhalb eines Punkts ist erlaubt. Interne Verweise und vertrauliche Details bleiben im Pull Request.
 
 Der Bot stellt den Entwurf im PR bereit und bindet ihn an den geprüften Head-Commit. Ein neuer Commit löst einen neuen Check aus. Korrekturen oder ein Ersatz bei einem KI-Ausfall können in der PR-Beschreibung stehen. Der Workflow validiert auch diese Eingabe.
 
@@ -23,15 +23,15 @@ Der Dialog wird im angemeldeten App-Rahmen geöffnet, sobald vorhandene Dialoge 
 ## Aktivierung
 
 1. Den ersten Produktionsstand mit dieser Funktion als `TEAM_UPDATE_START_SHA` hinterlegen. Er dient als Startpunkt und bekommt keinen rückwirkenden Eintrag.
-2. Die Migration `20261120080000_team_updates.sql` nach Review durch den Projektinhaber anwenden. Die UUIDs der gewünschten App-Konten in `public.team_update_mitglied` eintragen. Ein Entfernen aus der Tabelle entzieht den Zugriff. Das Rollback-SQL entfernt die drei Tabellen einschließlich Verlauf und Leseständen.
+2. Die Migration `20261120080000_team_updates.sql` nach Review durch den Projektinhaber anwenden. Alle angemeldeten Konten erhalten automatisch Zugriff. Das Rollback-SQL entfernt beide Tabellen einschließlich Verlauf und Leseständen.
 3. In GitHub die Variablen `TEAM_UPDATE_START_SHA`, `TEAM_UPDATE_PRODUKTIONSHOST` (Hostname ohne Protokoll), `TEAM_UPDATE_VERCEL_TEAM_ID`, `TEAM_UPDATE_VERCEL_PROJECT_ID` und `TEAM_UPDATE_SUPABASE_URL` hinterlegen. Das Modell lässt sich optional über `TEAM_UPDATE_MODELL` setzen. Die Secrets heißen `TEAM_UPDATE_MISTRAL_API_KEY`, `TEAM_UPDATE_VERCEL_TOKEN` und `TEAM_UPDATE_SUPABASE_KEY`. Für den Supabase-Abgleich einen eigenen serverseitigen Schlüssel verwenden.
 4. `TEAM_UPDATES_AKTIV` auf `true` setzen und einen Test-PR durchlaufen lassen. Den Status **Team-Update / Briefing** als Pflichtprüfung für `main` eintragen. Pull Requests voraussetzen und Merge-Commits oder Squash-Merges erlauben. Rebase-Merges und direkte Pushes umgehen die eindeutige Zuordnung und sind für diesen Ablauf zu deaktivieren.
-5. Den Test-PR veröffentlichen. Mit einem zweiten Teamkonto den Dialog, den Lesestatus auf einem weiteren Gerät und den Verlauf prüfen. Mit einem Studierendenkonto prüfen, dass weder Dialog noch Einstellung oder API zugänglich sind.
+5. Den Test-PR veröffentlichen. Den Dialog und Verlauf mit zwei gewöhnlichen Konten prüfen. Ein bestätigter Eintrag soll auf einem weiteren Gerät desselben Kontos als gelesen gelten. Ohne Anmeldung prüfen, dass keine Briefing-Inhalte abgerufen werden können.
 
 ## Regressionen und Abnahme
 
 - Einen PR nach der Generierung ändern. Nur der Kommentar zum finalen Head darf veröffentlicht werden. Einen ungültigen Entwurf, KI-Ausfall und eine deaktivierte Funktion durchspielen.
 - Preview, gescheiterten Build, mehrere Merges in einer Veröffentlichung, doppelte Meldungen, verspätete Meldungen, Rollback und erneutes Deployment prüfen.
-- Mit zwei Konten und zwei Tabs prüfen, dass Lesestatus und Schreibrechte getrennt bleiben. Den Zugriff eines Teamkontos entziehen und dessen nächste API-Anfrage prüfen. Beim Bestätigen eines offenen Dialogs gleichzeitig ein neues Update bereitstellen.
+- Mit zwei Konten und zwei Tabs prüfen, dass Lesestatus und Schreibrechte getrennt bleiben. Nach dem Abmelden prüfen, dass kein Zugriff auf die Inhalte möglich ist. Beim Bestätigen eines offenen Dialogs gleichzeitig ein neues Update bereitstellen.
 - Dialog bei 390 und 1440 Pixeln im hellen und dunklen Design prüfen. Lange Zeilen, vorhandenen Dialog, Tastatur, Fokus nach Schließen und fehlgeschlagenes Speichern abdecken.
 - `node --test scripts/team-update*.test.mjs`, die SQL-Tests unter `supabase/tests` und die Prüfungen in `AGENTS.md` ausführen.

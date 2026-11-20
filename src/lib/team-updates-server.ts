@@ -1,18 +1,14 @@
 import "server-only";
-import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
 export type TeamUpdate = Omit<Database["public"]["Tables"]["team_update"]["Row"], "merge_sha">;
 
-export const teamUpdateZugriff = cache(async () => {
+export async function teamUpdateZugriff() {
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
-  if (!user) return null;
-  const { data } = await client.from("team_update_mitglied")
-    .select("user_id").eq("user_id", user.id).maybeSingle();
-  return data ? client : null;
-});
+  return user ? client : null;
+}
 
 export async function teamUpdatesLaden(client: NonNullable<Awaited<ReturnType<typeof teamUpdateZugriff>>>, nurUngelesen: boolean, vor?: string) {
   let abfrage = client.from("team_update").select("pr, titel, punkte, aktualisiert_am, aktiv, team_update_gelesen(pr)")

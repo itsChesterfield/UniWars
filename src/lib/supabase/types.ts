@@ -48,12 +48,6 @@ export type Database = {
           referencedColumns: ["pr"];
         }];
       };
-      team_update_mitglied: {
-        Row: { user_id: string };
-        Insert: { user_id: string };
-        Update: { user_id?: string };
-        Relationships: [];
-      };
       anhang: {
         Row: {
           datei_id: string | null

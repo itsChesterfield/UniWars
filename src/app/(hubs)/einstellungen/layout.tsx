@@ -1,12 +1,12 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { kiKonfiguriert } from "@/lib/ki/anbieter";
-import { EinstellungenKontextMitTeam } from "@/components/einstellungen/team-update-zugang";
+import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
 
 /** Am Handy und in schmalen Fenstern steht die Kontextspalte der Einstellungen über dem Inhalt. */
 export default function EinstellungenLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Suspense fallback={null}><EinstellungenKontextMitTeam mobil kiVerfuegbar={kiKonfiguriert()} /></Suspense>
+      <EinstellungenKontext mobil kiVerfuegbar={kiKonfiguriert()} />
       {children}
     </>
   );

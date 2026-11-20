@@ -10,7 +10,6 @@ export function TeamUpdateListe({ updates }: { updates: TeamUpdate[] }) {
           <article>
             <h3>{update.titel}</h3>
             <p><time dateTime={update.aktualisiert_am}>{datum.format(new Date(update.aktualisiert_am))}</time>
-              {" · "}<a href={`https://github.com/itsChesterfield/UniWars/pull/${update.pr}`}>PR #{update.pr}</a>
               {!update.aktiv && " · Zurückgerollt"}
             </p>
             <ul>
