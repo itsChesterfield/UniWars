@@ -42,7 +42,8 @@ export function inZweiterAnsichtOeffnen(href: string, seite: Seite = "rechts") {
     window.top?.location.assign(href);
     return;
   }
-  window.dispatchEvent(new CustomEvent(OEFFNEN_EREIGNIS, { detail: { href, seite } }));
+  // Studio kann den Wunsch in der Capture-Phase umleiten, bevor er am Fenster ankommt.
+  document.dispatchEvent(new CustomEvent(OEFFNEN_EREIGNIS, { detail: { href, seite }, bubbles: true, cancelable: true }));
 }
 
 export const MIN_ANTEIL = 0.2;
