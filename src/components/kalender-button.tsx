@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { kalenderJetztAbgleichen, kalenderTrennen } from "@/app/kalender/actions";
 import { track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
+import { rueckfrage } from "@/components/rueckfrage";
 
 const MELDUNG: Record<string, { text: string; fehler: boolean }> = {
   verbunden: { text: "Google Kalender verbunden. Deine Einträge werden übertragen.", fehler: false },
@@ -64,8 +65,8 @@ export function KalenderButton({
     });
   }
 
-  function trennen() {
-    if (!window.confirm("Google Kalender trennen? Der Kalender „UniWars“ wird dabei aus deinem Google-Konto entfernt.")) return;
+  async function trennen() {
+    if (!(await rueckfrage({ titel: "Google Kalender trennen?", text: "Der Kalender „UniWars“ wird dabei aus deinem Google-Konto entfernt.", ja: "Trennen", gefahr: true }))) return;
     startTransition(async () => {
       await kalenderTrennen();
       track("kalender_getrennt", { anbieter: "google" });

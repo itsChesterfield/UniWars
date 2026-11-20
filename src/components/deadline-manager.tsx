@@ -20,6 +20,7 @@ import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
 import { useFesteFolge } from "@/components/bewegung/feste-folge";
+import { rueckfrage } from "@/components/rueckfrage";
 
 type Deadline = Tables<"deadline">;
 
@@ -159,7 +160,9 @@ export function DeadlineManager({
     });
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    const d = deadlines.find((x) => x.id === id);
+    if (!(await rueckfrage({ titel: "Deadline löschen?", text: `„${d?.titel ?? "Deadline"}“ wird endgültig gelöscht.`, ja: "Löschen", gefahr: true }))) return;
     startTransition(async () => {
       try {
         await deleteDeadline(id);
