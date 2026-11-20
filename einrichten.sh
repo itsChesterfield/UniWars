@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prüfwerkzeuge für UniVerse in der Sandbox einrichten. Aufruf aus dem Repo:
-#   git fetch origin werkzeuge/pruefung && git archive origin/werkzeuge/pruefung | tar -x -C /home/claude/wz && bash /home/claude/wz/einrichten.sh
+#   git fetch -q origin werkzeuge/pruefung && git archive FETCH_HEAD | tar -x -C /home/claude/wz && bash /home/claude/wz/einrichten.sh
 set -e
 WZ=$(cd "$(dirname "$0")" && pwd)
 mkdir -p /home/claude/pruefung/bilder /home/claude/ext

@@ -2,7 +2,7 @@
 
 Einrichten in einer neuen Sitzung (Repo liegt in /home/claude/uniwars):
 
-    cd /home/claude/uniwars && git fetch -q origin werkzeuge/pruefung && mkdir -p /home/claude/wz && git archive origin/werkzeuge/pruefung | tar -x -C /home/claude/wz && bash /home/claude/wz/einrichten.sh && bash /home/claude/pruefung/start.sh
+    cd /home/claude/uniwars && git fetch -q origin werkzeuge/pruefung && mkdir -p /home/claude/wz && git archive FETCH_HEAD | tar -x -C /home/claude/wz && bash /home/claude/wz/einrichten.sh && bash /home/claude/pruefung/start.sh
 
 Danach in /home/claude/pruefung:
 - `python3 audit.py`: Rundgang 22 Seiten, beide Designs, 1440 und 390, axe, Querscrollen, Tippziele, abgeschnittene Texte. Ausgabe „keine Befunde“ oder Liste. `BILDER=0` ohne Fotos.
