@@ -115,15 +115,15 @@ export function DokumentEditor({
     dokumentFachSetzen(dokument.id, neu || null).catch((err) => fehlerMelden(err, { ort: "dokument_fach" }));
   }
 
-  async function loeschen() {
-    if (!(await inDenPapierkorb(`Das Dokument „${titel || OHNE_TITEL}“`))) return;
+  async function loeschen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Das Dokument „${titel || OHNE_TITEL}“`))) return;
     try {
       await dokumentLoeschen(dokument.id);
       track("dokument_geloescht");
       router.push("/textverarbeitung");
     } catch (err) {
       fehlerMelden(err, { ort: "dokument_loeschen" });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => loeschen(true));
     }
   }
 

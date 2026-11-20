@@ -259,15 +259,15 @@ export function TabellenEditor({
     }
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die Tabelle „${titel || OHNE_TITEL_TABELLE}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die Tabelle „${titel || OHNE_TITEL_TABELLE}“`))) return;
     try {
       await tabelleLoeschen(id);
       track("tabelle_geloescht");
       router.push("/tabellen");
     } catch (err) {
       fehlerMelden(err, { ort: "tabelle_loeschen" });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 

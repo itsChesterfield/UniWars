@@ -60,20 +60,20 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
   const morgen = karten.filter((k) => k.naechste_abfrage > jetzt && k.naechste_abfrage < bisMorgen).length;
   const woche = karten.filter((k) => k.naechste_abfrage < bisWoche).length;
 
-  async function stapelEntfernen() {
-    if (!(await inDenPapierkorb(`Der Stapel „${stapel.name}“ mit allen Karten`))) return;
+  async function stapelEntfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Der Stapel „${stapel.name}“ mit allen Karten`))) return;
     try {
       await stapelLoeschen(stapel.id);
       track("kk_stapel_geloescht", { karten: karten.length });
       router.push("/karteikarten");
     } catch (err) {
       fehlerMelden(err, { ort: "kk_stapel_loeschen" });
-      meldung("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => stapelEntfernen(true));
     }
   }
 
-  async function karteEntfernen(k: Karte) {
-    if (!(await rueckfrage({ titel: "Karte löschen?", text: "Die Karte wird endgültig gelöscht.", ja: "Löschen", gefahr: true }))) return;
+  async function karteEntfernen(k: Karte, bestaetigt = false) {
+    if (!bestaetigt && !(await rueckfrage({ titel: "Karte löschen?", text: "Die Karte wird endgültig gelöscht.", ja: "Löschen", gefahr: true }))) return;
     setKarten((liste) => liste.filter((x) => x.id !== k.id));
     try {
       await karteLoeschen(k.id);
@@ -81,7 +81,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
     } catch (err) {
       setKarten((liste) => [...liste, k].sort((a, b) => a.erstellt_am.localeCompare(b.erstellt_am)));
       fehlerMelden(err, { ort: "kk_karte_loeschen" });
-      meldung("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => karteEntfernen(k, true));
     }
   }
 

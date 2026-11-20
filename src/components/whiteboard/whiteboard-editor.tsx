@@ -411,15 +411,15 @@ export function WhiteboardEditor({
     whiteboardUmbenennen(id, neu).catch((err) => fehlerMelden(err, { ort: "whiteboard_name" }));
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Das Whiteboard „${name}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Das Whiteboard „${name}“`))) return;
     try {
       await whiteboardLoeschen(id);
       track("whiteboard_geloescht");
       router.push("/whiteboard");
     } catch (err) {
       fehlerMelden(err, { ort: "whiteboard_loeschen" });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 

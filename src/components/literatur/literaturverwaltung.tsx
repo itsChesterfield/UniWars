@@ -109,8 +109,8 @@ export function Literaturverwaltung({
     track("quelle_zitiert", { art });
   }
 
-  async function loeschen(q: Quelle) {
-    if (!(await inDenPapierkorb(`Die Quelle „${q.titel}“`))) return;
+  async function loeschen(q: Quelle, bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die Quelle „${q.titel}“`))) return;
     setQuellen((l) => l.filter((x) => x.id !== q.id));
     setAuswahl((a) => {
       const neu = new Set(a);
@@ -122,7 +122,7 @@ export function Literaturverwaltung({
       track("quelle_geloescht");
     } catch (err) {
       setQuellen((l) => [q, ...l]);
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => loeschen(q, true));
       fehlerMelden(err, { ort: "quelle_loeschen" });
     }
   }

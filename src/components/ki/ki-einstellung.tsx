@@ -40,7 +40,7 @@ export function KiEinstellung({ startEingewilligt, art = "text" }: { startEingew
       kiEinwilligungMelden(art, false);
       track("ki_einwilligung_widerrufen", { art });
     } else {
-      meldung("Das hat nicht geklappt. Bitte versuch es noch einmal.");
+      meldung("Das hat nicht geklappt.", "fehler", () => umschalten());
     }
   }
 

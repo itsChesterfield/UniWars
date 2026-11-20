@@ -105,15 +105,15 @@ export function ObjektListe({
     }
   }
 
-  async function entfernen(e: ObjektEintrag) {
-    if (!(await inDenPapierkorb(`„${e.titel || ohneTitel}“`))) return;
+  async function entfernen(e: ObjektEintrag, bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`„${e.titel || ohneTitel}“`))) return;
     try {
       await loeschen(e.id);
       track(`${eventName}_geloescht`);
       router.refresh();
     } catch (err) {
       fehlerMelden(err, { ort: `${eventName}_loeschen` });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(e, true));
     }
   }
 

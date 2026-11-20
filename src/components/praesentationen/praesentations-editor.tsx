@@ -124,15 +124,15 @@ export function PraesentationsEditor({
     setAktivId(liste[Math.min(index, liste.length - 1)].id);
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die Präsentation „${titel}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die Präsentation „${titel}“`))) return;
     try {
       await praesentationLoeschen(id);
       track("praesentation_geloescht");
       router.push("/praesentationen");
     } catch (err) {
       fehlerMelden(err, { ort: "praesentation_loeschen" });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 

@@ -503,7 +503,7 @@ export function PdfReader({
     );
     markierungAendern(id, aenderung).catch((err) => {
       setMarkierungen(vorher);
-      meldung("Die Änderung konnte nicht gespeichert werden.");
+      meldung("Die Änderung konnte nicht gespeichert werden.", "fehler", () => markierungAktualisieren(id, aenderung));
       fehlerMelden(err, { ort: "pdf_markierung_aendern" });
     });
     track(aenderung.farbe ? "pdf_markierung_farbe" : "pdf_markierung_notiz");
@@ -516,7 +516,7 @@ export function PdfReader({
     setAktiv(null);
     markierungLoeschen(m.id).catch((err) => {
       setMarkierungen(vorher);
-      meldung("Die Markierung konnte nicht gelöscht werden.");
+      meldung("Die Markierung konnte nicht gelöscht werden.", "fehler", () => markierungEntfernen(m));
       fehlerMelden(err, { ort: "pdf_markierung_loeschen" });
     });
     track("pdf_markierung_geloescht");
@@ -554,7 +554,7 @@ export function PdfReader({
       inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts");
     } catch (err) {
       fehlerMelden(err, { ort: "pdf_notiz_anlegen" });
-      meldung("Die Notiz konnte nicht angelegt werden.");
+      meldung("Die Notiz konnte nicht angelegt werden.", "fehler", () => neueNotiz());
     } finally {
       setNotizLaeuft(false);
     }
@@ -565,7 +565,7 @@ export function PdfReader({
     navigator.clipboard
       ?.writeText(text)
       .then(() => track("pdf_markierungen_kopiert", { anzahl: markierungen.length }))
-      .catch(() => meldung("Kopieren hat nicht geklappt."));
+      .catch(() => meldung("Kopieren hat nicht geklappt.", "fehler", () => alleKopieren()));
   }
 
   const aktiveMarkierung = aktiv ? markierungen.find((m) => m.id === aktiv.id) ?? null : null;

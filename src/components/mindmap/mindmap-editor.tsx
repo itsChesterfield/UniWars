@@ -227,19 +227,19 @@ export function MindmapEditor({
       track("mindmap_exportiert");
     } catch (err) {
       fehlerMelden(err, { ort: "mindmap_export" });
-      meldung("Export hat nicht geklappt.");
+      meldung("Export hat nicht geklappt.", "fehler", () => exportieren());
     }
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die MindMap „${name}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die MindMap „${name}“`))) return;
     try {
       await mindmapLoeschen(id);
       track("mindmap_geloescht");
       router.push("/mindmap");
     } catch (err) {
       fehlerMelden(err, { ort: "mindmap_loeschen" });
-      meldung("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 

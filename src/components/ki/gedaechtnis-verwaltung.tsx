@@ -110,6 +110,17 @@ export function GedaechtnisVerwaltung({
     track("gedaechtnis_export");
   }
 
+
+  function allesLoeschen(): Promise<void> {
+    return gedaechtnisAllesLoeschen()
+      .catch(() => ({ ok: false }))
+      .then((r) => {
+        if (!r.ok) return meldung("Das hat nicht geklappt.", "fehler", allesLoeschen);
+        setEintraege([]);
+        router.refresh();
+        track("gedaechtnis_alles_geloescht");
+      });
+  }
   return (
     <div className="gd-seite">
       <section className="gd-abschnitt">
@@ -168,17 +179,7 @@ export function GedaechtnisVerwaltung({
                 gefahr: true,
               });
               if (!ja) return;
-              void gedaechtnisAllesLoeschen()
-                .catch(() => ({ ok: false }))
-                .then((r) => {
-                  if (!r.ok)
-                    return meldung(
-                      "Das hat nicht geklappt. Bitte versuch es noch einmal.",
-                    );
-                  setEintraege([]);
-                  router.refresh();
-                  track("gedaechtnis_alles_geloescht");
-                });
+              void allesLoeschen();
             }}
           >
             Alles löschen
