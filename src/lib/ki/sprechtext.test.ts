@@ -35,3 +35,11 @@ test("Sprechtext: Stücke – erstes kurz, Abkürzungen bleiben zusammen, nichts
   assert.ok(lang.every((x) => x.length <= 500) && lang[0].length <= 180);
   assert.deepEqual(sprechStuecke(""), []);
 });
+
+test("Sprechtext: Abkürzungen ausgeschrieben, Emojis und Gedankenstriche raus, Adressen nicht buchstabiert", () => {
+  assert.equal(
+    sprechtext("Lerne z. B. Kapitel 3, d. h. die Grundlagen – ca. 2 Stunden 🙂 (siehe https://example.org/x)."),
+    "Lerne zum Beispiel Kapitel 3, das heißt die Grundlagen, circa 2 Stunden (siehe Link).",
+  );
+  assert.equal(sprechtext("Raum Nr. 5 bei 21°C & Ruhe"), "Raum Nummer 5 bei 21 Grad Celsius und Ruhe.");
+});
