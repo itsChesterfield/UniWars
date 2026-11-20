@@ -10,6 +10,7 @@ import { istPdfName, zielText } from "@/lib/notizen/wikilinks";
 import { NOTIZ_EINFUEGEN } from "@/lib/ki/studio-kontext";
 import { track } from "@/lib/analytics";
 import { pdfLinkLesen, pdfPfad } from "@/lib/pdf-reader/fundstelle";
+import { eingabe } from "@/components/rueckfrage";
 
 /** Gezogene PDF-Markierung: kursives Zitat + Verlinkung auf die PDF-Seite (bzw. Quelle als Text). */
 function zitatInhalt(z: Zitat) {
@@ -84,15 +85,16 @@ export function NotizEditorFlaeche({
       platzhalter,
       aufloesen: (ziel) => aufloesenRef.current(ziel),
       onFormelKlick: (art, latex, pos) => {
-        const neu = window.prompt("Formel (LaTeX) bearbeiten, leer lassen zum Löschen:", latex);
-        const e = editorRef.current;
-        if (neu === null || !e) return;
-        if (!neu.trim()) {
-          e.chain().focus().setNodeSelection(pos).deleteSelection().run();
-          return;
-        }
-        if (art === "inline") e.chain().focus().updateInlineMath({ latex: neu.trim(), pos }).run();
-        else e.chain().focus().updateBlockMath({ latex: neu.trim(), pos }).run();
+        void eingabe({ titel: "Formel bearbeiten", text: "Leer lassen, um die Formel zu löschen.", label: "Formel (LaTeX)", wert: latex, ja: "Übernehmen", leerErlaubt: true }).then((neu) => {
+          const e = editorRef.current;
+          if (neu === null || !e) return;
+          if (!neu) {
+            e.chain().focus().setNodeSelection(pos).deleteSelection().run();
+            return;
+          }
+          if (art === "inline") e.chain().focus().updateInlineMath({ latex: neu, pos }).run();
+          else e.chain().focus().updateBlockMath({ latex: neu, pos }).run();
+        });
       },
     }),
     content: wert,

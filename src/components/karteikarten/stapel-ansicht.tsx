@@ -24,6 +24,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { intervallText, reife, REIFE_TEXT, type Reife } from "@/lib/karteikarten/wiederholung";
 import { berlinDatum, berlinMitternacht } from "@/lib/zeit";
+import { meldung } from "@/components/meldung";
 
 const TAG_MS = 86_400_000;
 
@@ -67,7 +68,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
       router.push("/karteikarten");
     } catch (err) {
       fehlerMelden(err, { ort: "kk_stapel_loeschen" });
-      window.alert("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
     }
   }
 
@@ -80,7 +81,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
     } catch (err) {
       setKarten((liste) => [...liste, k].sort((a, b) => a.erstellt_am.localeCompare(b.erstellt_am)));
       fehlerMelden(err, { ort: "kk_karte_loeschen" });
-      window.alert("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
     }
   }
 
@@ -120,7 +121,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
             label="Weitere Aktionen für den Stapel"
             punkte={[
               { label: "Stapel bearbeiten", onClick: () => setStapelDialog(true) },
-              { label: "Stapel löschen", onClick: () => void stapelEntfernen(), gefahr: true },
+              { label: "Stapel in den Papierkorb", onClick: () => void stapelEntfernen(), gefahr: true },
             ]}
           />
         </div>

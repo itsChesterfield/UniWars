@@ -18,6 +18,7 @@ import { gesamtStatus, MAX_DATEI_SEKUNDEN, zeitText, type TeilInfo, type TeilSta
 import { OfflineHinweis } from "@/components/offline-hinweis";
 import { Icon } from "@/components/nav-icon";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 export type TranskriptEintrag = {
   id: string;
@@ -189,7 +190,7 @@ export function TranskriptionHub({
     if (!(await inDenPapierkorb(`Das Transkript „${e.titel}“`))) return;
     const a = await transkriptLoeschen(e.id).catch(() => null);
     if (!a?.ok) {
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.");
       return;
     }
     track("transkript_geloescht");
@@ -244,7 +245,7 @@ export function TranskriptionHub({
                     </span>
                     <span className={`tra-status tra-status-${status}`}>{STATUS_TEXT[status]}</span>
                   </Link>
-                  <DreiPunkteMenue label={`Aktionen für „${e.titel}“`} punkte={[{ label: "Löschen", icon: "loeschen", onClick: () => void loeschen(e), gefahr: true }]} />
+                  <DreiPunkteMenue label={`Aktionen für „${e.titel}“`} punkte={[{ label: "In den Papierkorb", icon: "loeschen", onClick: () => void loeschen(e), gefahr: true }]} />
                 </li>
               );
             })}

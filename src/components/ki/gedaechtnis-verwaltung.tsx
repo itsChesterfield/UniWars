@@ -23,6 +23,7 @@ import { studioOeffnen } from "@/lib/ki/studio-kontext";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
 import { rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Thema = {
   id: string;
@@ -171,7 +172,7 @@ export function GedaechtnisVerwaltung({
                 .catch(() => ({ ok: false }))
                 .then((r) => {
                   if (!r.ok)
-                    return window.alert(
+                    return meldung(
                       "Das hat nicht geklappt. Bitte versuch es noch einmal.",
                     );
                   setEintraege([]);

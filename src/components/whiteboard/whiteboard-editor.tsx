@@ -22,7 +22,8 @@ import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
-import { inDenPapierkorb } from "@/components/rueckfrage";
+import { eingabe, inDenPapierkorb } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Werkzeug = "auswahl" | "stift" | "linie" | "pfeil" | "rechteck" | "kreis" | "text" | "radierer";
 
@@ -404,7 +405,7 @@ export function WhiteboardEditor({
   }
 
   async function umbenennen() {
-    const neu = window.prompt("Neuer Name", name)?.trim();
+    const neu = await eingabe({ titel: "Whiteboard umbenennen", label: "Name", wert: name, ja: "Umbenennen" });
     if (!neu || neu === name) return;
     setName(neu);
     whiteboardUmbenennen(id, neu).catch((err) => fehlerMelden(err, { ort: "whiteboard_name" }));
@@ -418,7 +419,7 @@ export function WhiteboardEditor({
       router.push("/whiteboard");
     } catch (err) {
       fehlerMelden(err, { ort: "whiteboard_loeschen" });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.");
     }
   }
 
@@ -458,7 +459,7 @@ export function WhiteboardEditor({
             punkte={[
               { label: "Als PNG exportieren", onClick: () => void exportieren() },
               { label: "Umbenennen", onClick: () => void umbenennen() },
-              { label: "Whiteboard löschen", onClick: () => void entfernen(), gefahr: true },
+              { label: "In den Papierkorb", onClick: () => void entfernen(), gefahr: true },
             ]}
           />
         </div>

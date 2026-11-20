@@ -14,6 +14,7 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 import { inDenPapierkorb } from "@/components/rueckfrage";
 import { kartenLage } from "@/lib/bereichskopf";
+import { meldung } from "@/components/meldung";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
 
@@ -50,7 +51,7 @@ export function StapelUebersicht({
       router.refresh();
     } catch (err) {
       fehlerMelden(err, { ort: "kk_stapel_loeschen" });
-      window.alert("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
     }
   }
 
@@ -151,7 +152,7 @@ export function StapelUebersicht({
                       label={`Weitere Aktionen für ${s.name}`}
                       punkte={[
                         { label: "Bearbeiten", onClick: () => setDialog({ modus: "bearbeiten", stapel: s }) },
-                        { label: "Löschen", onClick: () => void loeschen(s), gefahr: true },
+                        { label: "In den Papierkorb", onClick: () => void loeschen(s), gefahr: true },
                       ]}
                     />
                   </div>

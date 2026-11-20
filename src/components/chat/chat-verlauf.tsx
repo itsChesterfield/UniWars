@@ -9,7 +9,8 @@ import { AnhangDialog, type AnhangWahl, type Nutzer } from "@/components/chat/ch
 import type { Json, Tables } from "@/lib/supabase/types";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Icon } from "@/components/nav-icon";
-import { rueckfrage } from "@/components/rueckfrage";
+import { eingabe, rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Nachricht = Tables<"chat_nachricht">;
 type Anhang = { typ: "datei" | "deadline" | "todo"; id: string; titel: string; mime?: string; faellig_am?: string | null };
@@ -152,10 +153,10 @@ export function ChatVerlauf({
   }
 
   async function melden(userId: string) {
-    const grund = window.prompt("Warum meldest du diese Person? (z. B. Belästigung, Spam)")?.trim();
+    const grund = await eingabe({ titel: "Person melden", text: "Die Meldung geht an das Team von UniVerse.", label: "Grund, z. B. Belästigung oder Spam", ja: "Melden" });
     if (!grund) return;
     const { error } = await supabase.from("chat_meldung").insert({ gemeldet_user_id: userId, chat_id: chat.chat_id, grund: grund.slice(0, 1000), von_user_id: ich });
-    window.alert(error ? "Meldung konnte nicht gesendet werden." : "Danke, die Meldung ist eingegangen.");
+    meldung(error ? "Meldung konnte nicht gesendet werden." : "Danke, die Meldung ist eingegangen.", error ? "fehler" : "hinweis");
     if (!error) track("chat_gemeldet");
   }
 

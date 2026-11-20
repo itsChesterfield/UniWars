@@ -5338,25 +5338,6 @@ dialog.dat-vorschau::backdrop {
   gap: var(--space-2);
 }
 
-/* Rückmeldung nach dem Kopieren (Kopieren selbst ist unsichtbar) */
-.lit-status {
-  position: fixed;
-  left: 50%;
-  bottom: var(--space-8);
-  z-index: 60;
-  margin: 0;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  background: var(--text);
-  color: var(--flaeche);
-  font-size: var(--text-sm);
-  transform: translateX(-50%);
-}
-
-.lit-status:empty {
-  display: none;
-}
-
 .formular-dialog.lit-dialog {
   width: min(640px, calc(100% - var(--space-8)));
 }

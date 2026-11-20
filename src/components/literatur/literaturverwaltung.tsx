@@ -7,6 +7,7 @@ import { quelleLoeschen, quelleSpeichern, type Quelle, type QuelleEingabe } from
 import { FachFilterChips } from "@/components/fach-filter-chips";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import {
@@ -39,6 +40,11 @@ async function kopieren(text: string): Promise<boolean> {
   }
 }
 
+/** Kopieren selbst sieht man nicht, deshalb eine kurze Rückmeldung */
+function kopierMeldung(ok: boolean) {
+  meldung(ok ? "Kopiert" : "Kopieren hat nicht geklappt.", ok ? "hinweis" : "fehler");
+}
+
 export function Literaturverwaltung({
   initialQuellen,
   faecher,
@@ -59,15 +65,8 @@ export function Literaturverwaltung({
   const [formular, setFormular] = useState<{ quelle: Quelle | null } | null>(null);
   const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
   const [verzeichnis, setVerzeichnis] = useState<string[] | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const fachName = (id: string | null) => faecher.find((f) => f.id === id)?.name ?? "";
-
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(null), 2200);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   const sichtbar = useMemo(() => {
     const q = suche.trim().toLocaleLowerCase("de-DE");
@@ -106,7 +105,7 @@ export function Literaturverwaltung({
 
   async function zitieren(q: Quelle, art: "text" | "verzeichnis") {
     const text = art === "text" ? zitatImText(daten(q)) : verzeichnisEintrag(daten(q));
-    setToast((await kopieren(text)) ? "Kopiert" : "Kopieren nicht möglich");
+    kopierMeldung(await kopieren(text));
     track("quelle_zitiert", { art });
   }
 
@@ -123,7 +122,7 @@ export function Literaturverwaltung({
       track("quelle_geloescht");
     } catch (err) {
       setQuellen((l) => [q, ...l]);
-      setToast("Löschen hat nicht geklappt");
+      meldung("Löschen hat nicht geklappt.");
       fehlerMelden(err, { ort: "quelle_loeschen" });
     }
   }
@@ -205,7 +204,7 @@ export function Literaturverwaltung({
                   <button
                     type="button"
                     className="knopf neben klein"
-                    onClick={async () => setToast((await kopieren(verzeichnis.join("\n\n"))) ? "Kopiert" : "Kopieren nicht möglich")}
+                    onClick={async () => kopierMeldung(await kopieren(verzeichnis.join("\n\n")))}
                   >
                     <Icon name="kopieren" groesse={16} />
                     Alles kopieren
@@ -320,7 +319,7 @@ export function Literaturverwaltung({
                             label={`Weitere Aktionen für ${q.titel}`}
                             punkte={[
                               { label: "Bearbeiten", onClick: () => setFormular({ quelle: q }) },
-                              { label: "Löschen", onClick: () => void loeschen(q), gefahr: true },
+                              { label: "In den Papierkorb", onClick: () => void loeschen(q), gefahr: true },
                             ]}
                           />
                         </div>
@@ -333,10 +332,6 @@ export function Literaturverwaltung({
           )}
         </>
       )}
-
-      <p className="lit-status" role="status">
-        {toast}
-      </p>
     </>
   );
 }

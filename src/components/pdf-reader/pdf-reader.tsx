@@ -30,6 +30,7 @@ import { browserWertSchreiben, useBrowserWert } from "@/lib/browser-wert";
 import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { notizZuPdfAnlegen } from "@/app/(hubs)/notizen/actions";
 import { AuswahlMenue, FarbPunkte, MarkierungMenue, MarkierungsListe, type MenuePosition } from "@/components/pdf-reader/markier-menue";
+import { meldung } from "@/components/meldung";
 
 /** auto: Folien (Querformat) ganz sichtbar, Hochformat auf Seitenbreite */
 type Zoom = "auto" | "breite" | "seite" | number;
@@ -389,7 +390,7 @@ export function PdfReader({
           .then((gespeichert) => setMarkierungen((l) => l.map((m) => (m.id === temp.id ? gespeichert : m))))
           .catch((err) => {
             setMarkierungen((l) => l.filter((m) => m.id !== temp.id));
-            window.alert("Die Markierung konnte nicht gespeichert werden.");
+            meldung("Die Markierung konnte nicht gespeichert werden.");
             fehlerMelden(err, { ort: "pdf_markieren" });
           });
       }
@@ -502,7 +503,7 @@ export function PdfReader({
     );
     markierungAendern(id, aenderung).catch((err) => {
       setMarkierungen(vorher);
-      window.alert("Die Änderung konnte nicht gespeichert werden.");
+      meldung("Die Änderung konnte nicht gespeichert werden.");
       fehlerMelden(err, { ort: "pdf_markierung_aendern" });
     });
     track(aenderung.farbe ? "pdf_markierung_farbe" : "pdf_markierung_notiz");
@@ -515,7 +516,7 @@ export function PdfReader({
     setAktiv(null);
     markierungLoeschen(m.id).catch((err) => {
       setMarkierungen(vorher);
-      window.alert("Die Markierung konnte nicht gelöscht werden.");
+      meldung("Die Markierung konnte nicht gelöscht werden.");
       fehlerMelden(err, { ort: "pdf_markierung_loeschen" });
     });
     track("pdf_markierung_geloescht");
@@ -553,7 +554,7 @@ export function PdfReader({
       inZweiterAnsichtOeffnen(`/notizen?id=${n.id}`, "rechts");
     } catch (err) {
       fehlerMelden(err, { ort: "pdf_notiz_anlegen" });
-      window.alert("Die Notiz konnte nicht angelegt werden.");
+      meldung("Die Notiz konnte nicht angelegt werden.");
     } finally {
       setNotizLaeuft(false);
     }
@@ -564,7 +565,7 @@ export function PdfReader({
     navigator.clipboard
       ?.writeText(text)
       .then(() => track("pdf_markierungen_kopiert", { anzahl: markierungen.length }))
-      .catch(() => window.alert("Kopieren hat nicht geklappt."));
+      .catch(() => meldung("Kopieren hat nicht geklappt."));
   }
 
   const aktiveMarkierung = aktiv ? markierungen.find((m) => m.id === aktiv.id) ?? null : null;
@@ -796,7 +797,7 @@ export function PdfReader({
             disabled={anzahl === 0}
             onClick={() => {
               void navigator.clipboard.writeText(pdfMarkdownLink(datei.name, datei.id, seiteRef.current, window.location.origin))
-                .catch(() => window.alert("Kopieren hat nicht geklappt."));
+                .catch(() => meldung("Kopieren hat nicht geklappt."));
             }}
           >
             <Icon name="link" groesse={16} />

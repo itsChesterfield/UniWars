@@ -73,8 +73,8 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
                   <button
                     type="button"
                     className="knopf gefahr klein nur-symbol"
-                    aria-label={`Podcast „${p.titel}“ löschen`}
-                    title="Löschen"
+                    aria-label={`Podcast „${p.titel}“ in den Papierkorb`}
+                    title="In den Papierkorb"
                     onClick={async () => {
                       if (!(await inDenPapierkorb(`Der Podcast „${p.titel}“`))) return;
                       setLoeschfehler("");

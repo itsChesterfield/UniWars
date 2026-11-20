@@ -317,7 +317,7 @@ export function TranskriptAnsicht({
     if (!(await inDenPapierkorb(`Das Transkript „${titel}“`))) return;
     const a = await transkriptLoeschen(transkript.id).catch(() => null);
     if (!a?.ok) {
-      window.alert("Löschen hat nicht geklappt.");
+      setMeldung("Löschen hat nicht geklappt.");
       return;
     }
     router.push("/transkription");
@@ -361,7 +361,7 @@ export function TranskriptAnsicht({
             </option>
           ))}
         </select>
-        <DreiPunkteMenue label="Aktionen für das Transkript" punkte={[{ label: "Löschen", icon: "loeschen", onClick: () => void loeschen(), gefahr: true }]} />
+        <DreiPunkteMenue label="Aktionen für das Transkript" punkte={[{ label: "In den Papierkorb", icon: "loeschen", onClick: () => void loeschen(), gefahr: true }]} />
       </div>
 
       <div className="tra-player">

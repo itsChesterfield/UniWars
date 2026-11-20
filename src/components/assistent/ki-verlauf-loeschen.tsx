@@ -4,6 +4,7 @@ import { useState } from "react";
 import { alleUnterhaltungenLoeschen } from "@/app/(hubs)/assistent/actions";
 import { track } from "@/lib/analytics";
 import { rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 /** Einstellungen (Seitenleiste): „Alle KI-Unterhaltungen löschen“ (8.5). */
 export function KiVerlaufLoeschen() {
@@ -13,9 +14,9 @@ export function KiVerlaufLoeschen() {
     setLaeuft(true);
     const a = await alleUnterhaltungenLoeschen().catch(() => null);
     setLaeuft(false);
-    if (!a?.ok) return window.alert("Löschen hat nicht geklappt.");
+    if (!a?.ok) return meldung("Löschen hat nicht geklappt.");
     track("ki_unterhaltungen_alle_geloescht", { anzahl: a.daten.anzahl });
-    window.alert(a.daten.anzahl ? `${a.daten.anzahl} Unterhaltung${a.daten.anzahl === 1 ? "" : "en"} gelöscht.` : "Es gab keine Unterhaltungen.");
+    meldung(a.daten.anzahl ? `${a.daten.anzahl} Unterhaltung${a.daten.anzahl === 1 ? "" : "en"} gelöscht.` : "Es gab keine Unterhaltungen.", "hinweis");
   }
   return (
     <div className="einst-zeile">
