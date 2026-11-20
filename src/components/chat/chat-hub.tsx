@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
+import { Bereichskopf, kurzTitel } from "@/components/hubs/bereichskopf";
+import { Zustand } from "@/components/zustand";
 import { NeueGruppeDialog, NeuerChatDialog } from "@/components/chat/chat-dialoge";
 import { ChatVerlauf } from "@/components/chat/chat-verlauf";
 import { CHAT_GELESEN_EVENT } from "@/components/chat/chat-punkt";
@@ -109,66 +110,97 @@ export function ChatHub({
   const q = suche.trim().toLowerCase();
   const sichtbar = chats.filter((c) => !q || (c.name ?? "").toLowerCase().includes(q));
 
+  const ungelesen = chats.reduce((summe, c) => summe + (c.ungelesen ?? 0), 0);
+  const zuletzt = chats.length ? [...chats].sort((x, y) => y.letzte_nachricht_am.localeCompare(x.letzte_nachricht_am))[0] : null;
+  const chatName = (c: Uebersicht) => (c.typ === "DIREKT" ? `@${c.name}` : (c.name ?? "Gruppe"));
+
   const knoepfe = (
     <>
-      <button type="button" className="btng" onClick={() => setDialog("gruppe")}>
-        + Neue Gruppe
+      <button type="button" className="knopf neben" onClick={() => setDialog("gruppe")}>
+        <Icon name="gruppe" groesse={16} />
+        Neue Gruppe
       </button>
-      <button type="button" className="btnp" onClick={() => setDialog("chat")}>
-        + Neuer Chat
+      <button type="button" className="knopf haupt" onClick={() => setDialog("chat")}>
+        <Icon name="plus" groesse={16} />
+        Neuer Chat
       </button>
     </>
   );
 
   return (
     <>
-      <HubKopf titel="Chat" untertitel="Absprachen mit Kommilitonen, vor allem für Gruppenarbeiten." aktionen={knoepfe} />
+      <Bereichskopf
+        titel="Chat"
+        untertitel="Absprachen mit Kommilitonen, vor allem für Gruppenarbeiten."
+        {...(zuletzt
+          ? {
+              zahl: ungelesen,
+              einheit: "ungelesen",
+              lage: { text: `Zuletzt: ${kurzTitel(chatName(zuletzt), 36)}.`, betont: kurzTitel(chatName(zuletzt), 36).split(" ") },
+            }
+          : {})}
+        aktionen={chats.length > 0 ? knoepfe : undefined}
+      />
       <OfflineHinweis text="Offline. Neue Nachrichten senden und empfangen geht wieder, sobald du online bist." />
 
       {chats.length === 0 ? (
-        <LeererZustand
+        <Zustand
+          art="leer"
           icon="chat"
-          text="Noch keine Chats. Schreib jemandem aus deinem Kurs oder lege eine Gruppe für eure Gruppenarbeit an."
+          titel="Noch keine Chats."
           aktion={
-            <button type="button" className="btnp hub-leer-knopf" onClick={() => setDialog("chat")}>
-              + Ersten Chat starten
+            <button type="button" className="knopf neben klein" onClick={() => setDialog("chat")}>
+              <Icon name="plus" groesse={16} />
+              Ersten Chat starten
             </button>
           }
-        />
+        >
+          Schreib jemandem aus deinem Kurs oder lege eine Gruppe für eure Gruppenarbeit an.
+        </Zustand>
       ) : (
-        <div className="hub-zweispaltig chat-layout" data-ansicht={aktiv ? "inhalt" : "liste"}>
-          <section className="card hub-liste" aria-label="Chats">
-            <input type="search" className="field" placeholder="Chats durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
-            <ul className="chat-liste">
-              {sichtbar.map((c) => (
-                <li key={c.chat_id}>
-                  <button type="button" className={`chat-listeneintrag ${c.chat_id === aktivId ? "aktiv" : ""}`} onClick={() => oeffnen(c.chat_id)}>
-                    <span className="chat-avatar" aria-hidden>
-                      {c.typ === "GRUPPE" ? <Icon name="gruppe" groesse={18} /> : (c.name ?? "?").slice(0, 1).toUpperCase()}
-                    </span>
-                    <span className="chat-listeneintrag-text">
-                      <span className="rowb">
-                        <strong>{c.typ === "DIREKT" ? `@${c.name}` : c.name}</strong>
-                        <span className="faint chat-listen-zeit">{zeit(c.letzte_nachricht_am)}</span>
-                      </span>
-                      <span className="rowb">
-                        <span className="muted chat-vorschau">
-                          {c.partner_id && blockiert.includes(c.partner_id) ? "blockiert" : c.letzte_nachricht ?? "Noch keine Nachrichten"}
-                        </span>
-                        {c.ungelesen > 0 && (
-                          <span className="chat-ungelesen" aria-label={`${c.ungelesen} ungelesen`}>
-                            {c.ungelesen > 99 ? "99+" : c.ungelesen}
-                          </span>
-                        )}
-                      </span>
-                    </span>
+        <div className="chat-layout" data-ansicht={aktiv ? "inhalt" : "liste"}>
+          <section className="chat-spalte" aria-label="Chats">
+            <input type="search" className="chat-suche" aria-label="Chats durchsuchen" placeholder="Chats durchsuchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+            {sichtbar.length === 0 ? (
+              <Zustand
+                art="leer"
+                icon="suchen"
+                titel="Kein Chat heißt so."
+                region
+                ebene={3}
+                aktion={
+                  <button type="button" className="knopf neben klein" onClick={() => setSuche("")}>
+                    Suche zurücksetzen
                   </button>
-                </li>
-              ))}
-            </ul>
+                }
+              />
+            ) : (
+              <ul className="chat-liste">
+                {sichtbar.map((c) => (
+                  <li key={c.chat_id}>
+                    <button type="button" className="chat-listeneintrag" aria-current={c.chat_id === aktivId ? "true" : undefined} onClick={() => oeffnen(c.chat_id)}>
+                      <span className="chat-avatar" aria-hidden>
+                        {c.typ === "GRUPPE" ? <Icon name="gruppe" groesse={18} /> : (c.name ?? "?").slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="chat-eintrag-name">{chatName(c)}</span>
+                      <span className="chat-eintrag-zeit zahl">{zeit(c.letzte_nachricht_am)}</span>
+                      <span className="chat-vorschau">
+                        {c.partner_id && blockiert.includes(c.partner_id) ? "blockiert" : c.letzte_nachricht ?? "Noch keine Nachrichten"}
+                      </span>
+                      {c.ungelesen > 0 && (
+                        <span className="chat-ungelesen zahl">
+                          {c.ungelesen > 99 ? "99+" : c.ungelesen}
+                          <span className="vh"> ungelesen</span>
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
-          <section className="card hub-inhalt chat-inhalt" aria-label="Unterhaltung">
+          <section className="chat-inhalt" aria-label="Unterhaltung">
             {aktiv ? (
               <ChatVerlauf
                 key={aktiv.chat_id}
@@ -181,7 +213,7 @@ export function ChatHub({
                 onGelesen={gelesen}
               />
             ) : (
-              <p className="empty-state hub-inhalt-leer">Wähle links einen Chat aus.</p>
+              <p className="chat-mitte">Wähle links einen Chat aus.</p>
             )}
           </section>
         </div>

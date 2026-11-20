@@ -174,15 +174,15 @@ export function ChatVerlauf({
   return (
     <div className="chat-verlauf">
       <header className="chat-kopf">
-        <button type="button" className="btng hub-zurueck" onClick={onZurueck}>
-          ←
+        <button type="button" className="knopf leise klein nur-symbol chat-zurueck" aria-label="Zurück zu allen Chats" onClick={onZurueck}>
+          <Icon name="pfeil-links" groesse={18} />
         </button>
         <span className="chat-avatar" aria-hidden>
           {chat.typ === "GRUPPE" ? <Icon name="gruppe" groesse={18} /> : (chat.name ?? "?").slice(0, 1).toUpperCase()}
         </span>
         <div className="chat-kopf-text">
           <strong>{chat.typ === "DIREKT" ? `@${chat.name}` : chat.name}</strong>
-          <span className="muted">
+          <span className="chat-kopf-unter">
             {chat.typ === "GRUPPE" ? mitglieder.map((m) => (m.user_id === ich ? "du" : `@${m.username}`)).join(", ") || `${chat.mitglieder} Mitglieder` : partnerBlockiert ? "blockiert" : "Direktnachricht"}
           </span>
         </div>
@@ -199,8 +199,8 @@ export function ChatVerlauf({
         }}
         aria-live="polite"
       >
-        {nachrichten === null && <p className="empty-state chat-mitte">Lädt …</p>}
-        {nachrichten?.length === 0 && <p className="empty-state chat-mitte">Noch keine Nachrichten. Schreib die erste!</p>}
+        {nachrichten === null && <p className="chat-mitte">Nachrichten werden geladen.</p>}
+        {nachrichten?.length === 0 && <p className="chat-mitte">Noch keine Nachrichten. Schreib die erste.</p>}
         {nachrichten?.map((n, i) => {
           const eigen = n.user_id === ich;
           const absenderBlockiert = !eigen && n.user_id !== null && blockiert.includes(n.user_id);
@@ -234,7 +234,7 @@ export function ChatVerlauf({
                       {n.text && <span className="chat-text">{n.text}</span>}
                     </>
                   )}
-                  <time className="chat-zeit" dateTime={n.erstellt_am}>
+                  <time className="chat-zeit zahl" dateTime={n.erstellt_am}>
                     {uhrzeit(n.erstellt_am)}
                   </time>
                 </div>
@@ -247,12 +247,12 @@ export function ChatVerlauf({
 
       <footer className="chat-eingabe">
         {fehler && (
-          <p className="auth-error" role="alert">
+          <p className="formular-fehler" role="alert">
             {fehler}
           </p>
         )}
         {partnerBlockiert ? (
-          <p className="muted chat-mitte">Du hast diese Person blockiert. Hebe die Blockierung im Menü oben auf, um wieder zu schreiben.</p>
+          <p className="chat-mitte">Du hast diese Person blockiert. Hebe die Blockierung im Menü oben auf, um wieder zu schreiben.</p>
         ) : (
           <>
             {anhang && (
@@ -260,21 +260,22 @@ export function ChatVerlauf({
                 <span>
                   <Icon name={anhang.typ === "datei" ? "anhang" : anhang.typ === "deadline" ? "uhr" : "aufgaben"} groesse={16} /> {anhang.titel}
                 </span>
-                <button type="button" className="icon-knopf" aria-label="Anhang entfernen" onClick={() => setAnhang(null)}>
+                <button type="button" className="knopf leise klein nur-symbol" aria-label="Anhang entfernen" onClick={() => setAnhang(null)}>
                   <Icon name="schliessen" groesse={16} />
                 </button>
               </div>
             )}
             <div className="chat-eingabe-zeile">
-              <button type="button" className="icon-knopf chat-buroklammer" aria-label="Anhängen" title="Datei, Deadline oder To-do anhängen" onClick={() => setAnhangDialog(true)}>
-                <Icon name="anhang" groesse={16} />
+              <button type="button" className="knopf leise nur-symbol" aria-label="Anhängen" title="Datei, Deadline oder To-do anhängen" onClick={() => setAnhangDialog(true)}>
+                <Icon name="anhang" groesse={18} />
               </button>
               <textarea
-                className="field chat-textfeld"
+                className="chat-textfeld"
                 rows={1}
                 value={text}
                 maxLength={MAX_ZEICHEN}
-                placeholder="Nachricht schreiben … (Enter sendet, Shift+Enter neue Zeile)"
+                placeholder="Nachricht schreiben"
+                title="Enter sendet, Umschalt+Enter macht eine neue Zeile"
                 aria-label="Nachricht"
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
@@ -284,12 +285,13 @@ export function ChatVerlauf({
                   }
                 }}
               />
-              <button type="button" className="btnp" onClick={() => void senden()} disabled={sendet || (!text.trim() && !anhang)}>
-                Senden
+              <button type="button" className="knopf haupt chat-senden" onClick={() => void senden()} disabled={sendet || (!text.trim() && !anhang)} aria-busy={sendet}>
+                <Icon name="senden" groesse={16} />
+                <span className="chat-senden-text">Senden</span>
               </button>
             </div>
             {text.length > MAX_ZEICHEN - 200 && (
-              <span className={`chat-zaehler ${text.length >= MAX_ZEICHEN ? "voll" : ""}`}>
+              <span className={`chat-zaehler zahl ${text.length >= MAX_ZEICHEN ? "voll" : ""}`}>
                 {text.length} / {MAX_ZEICHEN}
               </span>
             )}
@@ -314,12 +316,12 @@ function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anh
   const [ablage, setAblage] = useState(false);
   if (anhang.typ === "datei") {
     return (
-      <div>
+      <div className="chat-datei">
       <a className="chat-karte" href={`/chat/anhang/${nachrichtId}`} target="_blank" rel="noopener noreferrer">
         <Icon name={anhang.mime?.startsWith("image/") ? "bild" : anhang.mime === "application/pdf" ? "pdf" : "anhang"} groesse={18} />
         <span>
           <strong>{anhang.titel}</strong>
-          <span className="muted">Datei öffnen</span>
+          <span className="chat-karte-unter">Datei öffnen</span>
         </span>
       </a>
       <button type="button" className="knopf leise klein dat-aktion-einzeilig" onClick={() => setAblage(true)}>In Dateiablage übernehmen</button>
@@ -332,9 +334,9 @@ function AnhangKarte({ nachrichtId, anhang }: { nachrichtId: string; anhang: Anh
       <Icon name={anhang.typ === "deadline" ? "uhr" : "aufgaben"} groesse={18} />
       <span>
         <strong>{anhang.titel}</strong>
-        <span className="muted">
+        <span className="chat-karte-unter">
           {anhang.typ === "deadline" ? "Deadline" : "To-do"}
-          {anhang.faellig_am ? `, fällig ${new Date(anhang.faellig_am).toLocaleDateString("de-DE")}` : ""}
+          {anhang.faellig_am ? `, fällig ${new Date(anhang.faellig_am).toLocaleDateString("de-DE", { day: "numeric", month: "short", timeZone: "Europe/Berlin" })}` : ""}
         </span>
       </span>
     </div>

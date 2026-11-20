@@ -8,6 +8,7 @@ import { inDateiablage } from "@/components/transkription/audio-hilfen";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { aufnahmeFormat, aufnahmeName, MAX_AUFNAHME_SEKUNDEN, TEIL_SEKUNDEN, zeitText } from "@/lib/transkription/transkript";
+import { Icon } from "@/components/nav-icon";
 
 type Phase = "bereit" | "laeuft" | "speichert";
 type Teil = { nr: number; sekunden: number; blob: Blob; status: "laedt" | "fertig" | "fehler"; anteil: number; dateiId?: string };
@@ -232,13 +233,13 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
   const fehlgeschlagen = teile.some((t) => t.status === "fehler");
 
   return (
-    <section className="card tra-aufnahme" aria-label="Aufnahme">
-      <h2 className="ct">Aufnehmen</h2>
+    <section className="tra-feld tra-aufnahme" aria-labelledby="tra-aufnahme-titel">
+      <h2 id="tra-aufnahme-titel">Aufnehmen</h2>
       {phase === "bereit" && (
         <div className="tra-einstellungen">
-          <label className="ki-feld">
+          <label>
             <span>Fach</span>
-            <select className="field" value={fachId} onChange={(e) => setFachId(e.target.value)}>
+            <select value={fachId} onChange={(e) => setFachId(e.target.value)}>
               <option value="">Allgemein</option>
               {faecher.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -247,9 +248,9 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
               ))}
             </select>
           </label>
-          <label className="ki-feld">
+          <label>
             <span>Sprache</span>
-            <select className="field" value={sprache} onChange={(e) => setSprache(e.target.value === "en" ? "en" : "de")}>
+            <select value={sprache} onChange={(e) => setSprache(e.target.value === "en" ? "en" : "de")}>
               <option value="de">Deutsch</option>
               <option value="en">Englisch</option>
             </select>
@@ -267,19 +268,26 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
           <>
             <div className="tra-zeit" aria-live="off">
               <span className={`tra-punkt ${phase === "laeuft" ? "an" : ""}`} aria-hidden />
-              <strong className="mono">{zeitText(sekunden)}</strong>
-              <span className="muted">/ {zeitText(MAX_AUFNAHME_SEKUNDEN)}</span>
-              {teilNr > 1 && <span className="muted">, Teil {teilNr}</span>}
+              <strong className="zahl">{zeitText(sekunden)}</strong>
+              <span className="tra-info">
+                von <span className="zahl">{zeitText(MAX_AUFNAHME_SEKUNDEN)}</span>
+              </span>
+              {teilNr > 1 && (
+                <span className="tra-info">
+                  , Teil <span className="zahl">{teilNr}</span>
+                </span>
+              )}
             </div>
             <div className="tra-pegel" role="meter" aria-label="Lautstärke" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pegel * 100)}>
               <span style={{ width: `${Math.round(pegel * 100)}%` }} />
             </div>
             {phase === "laeuft" ? (
-              <button type="button" className="btnp tra-stopp" onClick={() => void stoppen()}>
-                ■ Stopp
+              <button type="button" className="knopf gefahr tra-stopp" onClick={() => void stoppen()}>
+                <Icon name="stopp" groesse={16} />
+                Stopp
               </button>
             ) : (
-              <p className="muted" aria-live="polite">
+              <p className="tra-info" aria-live="polite">
                 {fehlgeschlagen ? "Speichern unterbrochen." : `Aufnahme wird gespeichert … (${hochgeladen} von ${teile.length} Teilen)`}
               </p>
             )}
@@ -289,15 +297,15 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
 
       {fehler && (
         <div className="tra-fehler">
-          <p className="auth-error">{fehler}</p>
+          <p className="formular-fehler" role="alert">{fehler}</p>
           {fehlgeschlagen && (
-            <button type="button" className="btng" onClick={erneutHochladen}>
+            <button type="button" className="knopf neben klein" onClick={erneutHochladen}>
               Erneut speichern
             </button>
           )}
         </div>
       )}
-      <p className="faint tra-hinweis">
+      <p className="tra-hinweis">
         Die Aufnahme landet in der Dateiablage{fachId ? " im gewählten Fach" : ""}. Höchstens 2 Stunden.
         {!verfuegbar && " Umwandeln in Text ist gerade nicht verfügbar, aufnehmen geht trotzdem."}
       </p>

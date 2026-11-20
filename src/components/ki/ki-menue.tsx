@@ -33,7 +33,7 @@ export function KiMenue({ punkte, verfuegbar, label = "KI" }: { punkte: KiMenueP
     <div className="drei-punkte ki-menue" ref={ref}>
       <button
         type="button"
-        className="btng ki-knopf"
+        className="knopf leise ki-knopf"
         aria-haspopup="menu"
         aria-expanded={offen}
         aria-label={verfuegbar ? "KI-Funktionen" : "KI gerade nicht verfügbar"}

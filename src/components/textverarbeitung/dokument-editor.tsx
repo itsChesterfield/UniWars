@@ -15,7 +15,6 @@ import { Zustand } from "@/components/zustand";
 import type { IconName } from "@/lib/icons";
 import { BildAuswahl, bildUrl } from "@/components/hubs/bild-auswahl";
 import { OHNE_TITEL } from "@/components/textverarbeitung/dokument-liste";
-import { KiFeedbackLeiste } from "@/components/textverarbeitung/ki-feedback-leiste";
 import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
 import { zitatImText } from "@/lib/literatur/apa";
 import { alsDocx, dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
@@ -50,7 +49,6 @@ export function DokumentEditor({
   const [fachId, setFachId] = useState(dokument.fach_id);
   const [bildDialog, setBildDialog] = useState(false);
   const [exportiert, setExportiert] = useState<string | null>(null);
-  const [kiOffen, setKiOffen] = useState(false);
   const { status, aendern } = useAutoSpeichern<Aenderung>((a) => dokumentSpeichern(dokument.id, a));
 
   const editor = useEditor({
@@ -194,7 +192,7 @@ export function DokumentEditor({
 
       {editor && <Werkzeugleiste editor={editor} quellen={quellen} onBild={() => setBildDialog(true)} />}
 
-      <div className={`txt-koerper ${kiOffen && editor ? "mit-ki" : ""}`}>
+      <div className="txt-koerper">
         <nav className="txt-gliederung" aria-labelledby="txt-gliederung-titel">
           <h2 id="txt-gliederung-titel">Gliederung</h2>
           {!gliederung || gliederung.length === 0 ? (
@@ -219,7 +217,6 @@ export function DokumentEditor({
           </article>
         </div>
 
-        {kiOffen && editor && <KiFeedbackLeiste editor={editor} dokumentId={dokument.id} onSchliessen={() => setKiOffen(false)} />}
       </div>
 
       {zaehler && (

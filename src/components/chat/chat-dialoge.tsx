@@ -1,32 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/nav-icon";
 
 export type Nutzer = { user_id: string; username: string };
 
+/** Rahmen der Chat-Dialoge: Formular-Dialog des Designs B3 mit Titel und Schließen-Knopf. */
 function Dialog({ titel, onSchliessen, children }: { titel: string; onSchliessen: () => void; children: React.ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titelId = useId();
   useEffect(() => {
     ref.current?.showModal();
   }, []);
   return (
     <dialog
       ref={ref}
-      className="card chat-dialog"
+      className="formular-dialog chat-dialog"
+      aria-labelledby={titelId}
       onCancel={(e) => {
         e.preventDefault();
         onSchliessen();
       }}
     >
-      <div className="rowb">
-        <h3 className="ct">{titel}</h3>
-        <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
-          <Icon name="schliessen" groesse={16} />
-        </button>
+      <div className="crud-form">
+        <div className="chat-dialog-kopf">
+          <h3 id={titelId}>{titel}</h3>
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Schließen" onClick={onSchliessen}>
+            <Icon name="schliessen" groesse={16} />
+          </button>
+        </div>
+        {children}
       </div>
-      {children}
     </dialog>
   );
 }
@@ -64,15 +69,14 @@ export function NeuerChatDialog({ onWahl, onSchliessen }: { onWahl: (n: Nutzer) 
   return (
     <Dialog titel="Neuer Chat" onSchliessen={onSchliessen}>
       <input
-        className="field"
         autoFocus
         placeholder="Nutzername oder E-Mail-Adresse"
         value={suche}
         onChange={(e) => setSuche(e.target.value)}
         aria-label="Person suchen"
       />
-      <p className="muted chat-dialog-hinweis">Du kannst nur Personen anschreiben, die ein UniVerse-Konto haben. E-Mail-Adressen müssen vollständig sein.</p>
-      {fehler && <p className="auth-error">{fehler}</p>}
+      <p className="chat-dialog-hinweis">Du kannst nur Personen anschreiben, die ein UniVerse-Konto haben. E-Mail-Adressen müssen vollständig sein.</p>
+      {fehler && <p className="formular-fehler" role="alert">{fehler}</p>}
       <ul className="chat-treffer">
         {treffer.map((n) => (
           <li key={n.user_id}>
@@ -94,7 +98,7 @@ export function NeuerChatDialog({ onWahl, onSchliessen }: { onWahl: (n: Nutzer) 
             </button>
           </li>
         ))}
-        {suche.trim().length >= 2 && !sucht && treffer.length === 0 && <li className="empty-state">Niemand gefunden.</li>}
+        {suche.trim().length >= 2 && !sucht && treffer.length === 0 && <li className="chat-treffer-leer">Niemand gefunden.</li>}
       </ul>
     </Dialog>
   );
@@ -136,7 +140,6 @@ export function NeueGruppeDialog({
         <label className="chat-feld">
           <span>Aus einer Gruppenarbeit (alle Mitglieder automatisch)</span>
           <select
-            className="field"
             defaultValue=""
             onChange={async (e) => {
               if (!e.target.value) return;
@@ -159,12 +162,13 @@ export function NeueGruppeDialog({
       )}
       <label className="chat-feld">
         <span>Name der Gruppe</span>
-        <input className="field" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoFocus placeholder="z. B. Lerngruppe Mathe" />
+        <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoFocus placeholder="z. B. Lerngruppe Mathe" />
       </label>
       <label className="chat-feld">
-        <span>Mitglieder ({mitglieder.length + 1}/20 mit dir)</span>
+        <span>
+          Mitglieder (<span className="zahl">{mitglieder.length + 1}</span> von <span className="zahl">20</span>, mit dir)
+        </span>
         <input
-          className="field"
           value={suche}
           disabled={voll}
           placeholder={voll ? "Maximal 20 Mitglieder" : "Nutzername oder E-Mail"}
@@ -174,9 +178,9 @@ export function NeueGruppeDialog({
       {mitglieder.length > 0 && (
         <div className="chat-chips">
           {mitglieder.map((m) => (
-            <span key={m.user_id} className="tag tag-accent">
+            <span key={m.user_id} className="chat-chip">
               @{m.username}
-              <button type="button" aria-label={`${m.username} entfernen`} onClick={() => setMitglieder((l) => l.filter((x) => x.user_id !== m.user_id))}>
+              <button type="button" className="knopf leise klein nur-symbol" aria-label={`${m.username} entfernen`} onClick={() => setMitglieder((l) => l.filter((x) => x.user_id !== m.user_id))}>
                 <Icon name="schliessen" groesse={16} />
               </button>
             </span>
@@ -199,18 +203,18 @@ export function NeueGruppeDialog({
                 <span className="chat-avatar" aria-hidden>
                   {n.username.slice(0, 1).toUpperCase()}
                 </span>
-                @{n.username} <span className="muted">hinzufügen</span>
+                @{n.username} <span className="chat-treffer-info">hinzufügen</span>
               </button>
             </li>
           ))}
       </ul>
-      {fehler && <p className="auth-error">{fehler}</p>}
-      <div className="hub-formular-knoepfe">
-        <button type="button" className="btng" onClick={onSchliessen}>
-          Abbrechen
-        </button>
-        <button type="button" className="btnp" onClick={() => void anlegen()}>
+      {fehler && <p className="formular-fehler" role="alert">{fehler}</p>}
+      <div className="crud-form-actions">
+        <button type="button" className="knopf haupt" onClick={() => void anlegen()}>
           Gruppe anlegen
+        </button>
+        <button type="button" className="knopf leise" onClick={onSchliessen}>
+          Abbrechen
         </button>
       </div>
     </Dialog>
@@ -235,7 +239,7 @@ export function AnhangDialog({ onWahl, onSchliessen }: { onWahl: (a: AnhangWahl)
         liste = (data ?? []).map((d) => ({ id: d.id, titel: d.name }));
       } else if (art === "deadline") {
         const { data } = await supabase.from("deadline").select("id, titel, faellig_am").eq("erledigt", false).order("faellig_am").limit(200);
-        liste = (data ?? []).map((d) => ({ id: d.id, titel: d.titel, info: new Date(d.faellig_am).toLocaleDateString("de-DE") }));
+        liste = (data ?? []).map((d) => ({ id: d.id, titel: d.titel, info: new Date(d.faellig_am).toLocaleDateString("de-DE", { day: "numeric", month: "short", timeZone: "Europe/Berlin" }) }));
       } else {
         const { data } = await supabase.from("todo").select("id, titel").eq("erledigt", false).is("parent_id", null).order("erstellt_am").limit(200);
         liste = (data ?? []).map((d) => ({ id: d.id, titel: d.titel }));
@@ -252,7 +256,7 @@ export function AnhangDialog({ onWahl, onSchliessen }: { onWahl: (a: AnhangWahl)
 
   return (
     <Dialog titel="Anhängen" onSchliessen={onSchliessen}>
-      <div className="segwrap" role="tablist">
+      <div className="segment" role="group" aria-label="Was anhängen">
         {(
           [
             ["datei", "Datei"],
@@ -263,9 +267,7 @@ export function AnhangDialog({ onWahl, onSchliessen }: { onWahl: (a: AnhangWahl)
           <button
             key={wert}
             type="button"
-            role="tab"
-            aria-selected={art === wert}
-            className={`seg ${art === wert ? "on" : ""}`}
+            aria-pressed={art === wert}
             onClick={() => {
               setArt(wert);
               setEintraege(null);
@@ -275,15 +277,15 @@ export function AnhangDialog({ onWahl, onSchliessen }: { onWahl: (a: AnhangWahl)
           </button>
         ))}
       </div>
-      <input className="field" placeholder="Suchen …" value={suche} onChange={(e) => setSuche(e.target.value)} />
+      <input placeholder="Suchen …" aria-label="Suchen" value={suche} onChange={(e) => setSuche(e.target.value)} />
       <ul className="chat-treffer chat-anhang-liste">
-        {eintraege === null && <li className="empty-state">Lädt …</li>}
-        {eintraege !== null && sichtbar.length === 0 && <li className="empty-state">Nichts gefunden.</li>}
+        {eintraege === null && <li className="chat-treffer-leer">Wird geladen.</li>}
+        {eintraege !== null && sichtbar.length === 0 && <li className="chat-treffer-leer">Nichts gefunden.</li>}
         {sichtbar.map((e) => (
           <li key={e.id}>
             <button type="button" onClick={() => onWahl({ typ: art, id: e.id, titel: e.titel })}>
               {e.titel}
-              {e.info && <span className="muted">{e.info}</span>}
+              {e.info && <span className="chat-treffer-info">{e.info}</span>}
             </button>
           </li>
         ))}

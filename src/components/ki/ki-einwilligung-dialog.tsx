@@ -66,9 +66,9 @@ export function KiEinwilligungInhalt({
 
   return (
     <div className="ki-einwilligung">
-      <h3 className="ct">{t.titel}</h3>
+      <h3>{t.titel}</h3>
       <p>{t.absatz}</p>
-      <p className="muted">
+      <p className="ki-einwilligung-klein">
         Du kannst die Einwilligung jederzeit in den Einstellungen (Profilbild anklicken) unter „{t.widerruf}“ widerrufen. Mehr dazu in der{" "}
         <Link href="/datenschutz#ki" target="_blank">
           Datenschutzerklärung
@@ -76,12 +76,12 @@ export function KiEinwilligungInhalt({
         .
       </p>
       <KiFehlerMeldung meldung={fehler} />
-      <div className="hub-formular-knoepfe">
-        <button type="button" className="btng" onClick={onAbbrechen} disabled={laeuft}>
-          Abbrechen
-        </button>
-        <button type="button" className="btnp" onClick={() => void zustimmen()} disabled={laeuft}>
+      <div className="crud-form-actions">
+        <button type="button" className="knopf haupt" onClick={() => void zustimmen()} disabled={laeuft} aria-busy={laeuft}>
           {laeuft ? "Speichert …" : "Einverstanden"}
+        </button>
+        <button type="button" className="knopf leise" onClick={onAbbrechen} disabled={laeuft}>
+          Abbrechen
         </button>
       </div>
     </div>
@@ -105,7 +105,8 @@ export function KiEinwilligungDialog({
   return (
     <dialog
       ref={ref}
-      className="card ki-dialog ki-dialog-klein"
+      className="formular-dialog ki-dialog ki-dialog-klein"
+      aria-label="Einwilligung"
       onCancel={(e) => {
         e.preventDefault();
         onSchliessen();
