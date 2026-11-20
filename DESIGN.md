@@ -10,6 +10,7 @@ Diese Datei ist die Quelle für Menschen und für KI-Werkzeuge: Wer UI baut, hä
 - Moderner, besser und einfacher als die Konkurrenz, bei mehr Funktionen.
 - Eigenständig, nicht nach Vorlage oder „KI-Look“. Bewährte Muster anerkannter Apps (Linear, Raycast, Notion, iOS) statt Experimente.
 - Normale Groß- und Kleinschreibung überall, auch in der Wortmarke „UniVerse“ („Uni“ in Akzentfarbe).
+- Texte ohne Gedankenstriche, Mittelpunkt-Ketten und Emojis, auch außerhalb der App (Google-Kalender-Einträge: „Prüfung: …“, „Abgabe: …“). Einzige Ausnahme ist der Browser-Tab-Titel „Bereich · UniVerse“: ein einzelner Trenner, keine Kette.
 - Jede Prüfung mit Hallmark (`sloplint --scope app`): 0 FAIL, 0 WARN.
 
 ## 2. Designs (Themes)
@@ -45,7 +46,7 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
   - Studium: PDF Reader, Lernraum, Dateiablage, Literatur, Transkription, Chat
   - Werkzeuge: Textverarbeitung, Tabellen, Präsentationen, MindMap, Whiteboard
   - Darunter: UniVerse Studio, Einstellungen, Avatar mit Profil-Menü. Die gleitende Markierung zeigt den aktiven Bereich.
-  - Ein Knopf unten in der Leiste klappt sie auf 216 px auf und zeigt die Namen neben den Symbolen. Der Zustand bleibt im Browser gespeichert. **Die Breite wird nicht animiert**, der Wechsel gilt sofort (Abschnitt 7).
+  - Ausgeklappt ist sie 216 px breit und zeigt die Namen neben den Symbolen. Standard „Automatisch“: ab 1440 px ausgeklappt, darunter schmal und beim Drüberfahren ausgeklappt (legt sich über den Inhalt). In der Personalisierung auch „Beim Drüberfahren“, „Ausgeklappt“, „Eingeklappt“. **Die Breite wird nicht animiert**, der Wechsel gilt sofort (Abschnitt 7).
 - **Kontextspalte** 272 px je Bereich (Navigation innerhalb des Bereichs, zum Beispiel Notizenliste, Fächer im Lernraum). **Ausnahme Zentraler Hub:** dessen Unterseiten stehen als Segment oben in der Arbeitsfläche, nicht in einer Spalte (Abschnitt 5).
 - **Kopfleiste** in der Arbeitsfläche: Pfad, Fokus-Timer, Sync-Status (Synchron, Wird abgeglichen, Offline), Benachrichtigungen, Uhrzeit. **Kein Design-Schalter** (Standard aus, in der Personalisierung einschaltbar).
 - **UniVerse Studio** (⌘J): eine Leiste rechts, der Inhalt rückt zur Seite. Zeigt „Sieht gerade …“, nimmt markierten Text mit, Neuer Chat, Privater Chat, Groß/Klein. Am Handy als Vollbild.
@@ -65,7 +66,7 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - Design: Sternenhimmel, Hochschule, Wie das System (mit echter Vorschau). Design-Schalter in der Kopfleiste optional.
 - Zentraler Hub: Voreinstellung und „Hub anordnen“.
 - Symbolleiste: Reihenfolge innerhalb der Gruppen (ziehen oder Pfeile), Bereiche ausblenden (Hub immer sichtbar, Ausgeblendete bleiben über die Suche erreichbar).
-- Darstellung, nur persönlich: Schriftgröße (Normal, Groß), Dichte (Normal, Kompakt), Bewegung (Wie das System, Reduziert).
+- Darstellung, nur persönlich: Schriftgröße (Normal, Groß), Seitenleiste (Automatisch, Beim Drüberfahren, Ausgeklappt, Eingeklappt), Dichte (Normal, Kompakt), Bewegung (Wie das System, Reduziert).
 - Später mit dem Baukasten: eigene Farben, Hintergrund, Sticker, Teilen. Designs werden als Daten (JSON-Rezept) gespeichert, nie als CSS.
 - Weitere Einstellungen: Profil, Konto, Datenschutz und KI, Studio und Gedächtnis (Persönlichkeit Lernbuddy, Coach, Sachlich; „Was Studio über dich weiß“ mit Vergessen).
 
