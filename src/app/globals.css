@@ -7283,10 +7283,6 @@ a.chat-karte:hover {
 
 /* --- KI: Karteikarten aus Notiz (KI-01) + Einwilligung (KI-D1) --- */
 
-.ki-knopf {
-  white-space: nowrap;
-}
-
 dialog.ki-dialog {
   display: flex;
   flex-direction: column;
@@ -7461,10 +7457,6 @@ dialog.ki-dialog-klein {
   .ki-vorschau-seiten {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .ki-knopf-text {
-    display: none;
-  }
 }
 
 /* --- Datenschutz --- */
@@ -7495,29 +7487,7 @@ dialog.ki-dialog-klein {
   color: var(--danger);
 }
 
-/* KI-Menü und gemeinsame KI-Dialog-Teile (Phase 8) */
-.ki-menue-liste {
-  min-width: 250px;
-}
-
-.ki-menue-liste button {
-  display: grid;
-  gap: 2px;
-}
-
-.ki-menue-liste button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.ki-menue-label {
-  font-weight: 600;
-}
-
-.ki-menue-info {
-  font-size: 11px;
-  color: var(--muted);
-}
+/* Gemeinsame KI-Dialog-Teile (Phase 8) */
 
 .ki-liste-bearbeiten,
 .ki-luecken,
@@ -11392,7 +11362,6 @@ html[data-sidebar-eingeklappt] .studio-hinweis {
   }
 }
 
-
 /* ---------------------------------------------------------------------------
    Quiz (Karteikarten) und Lern-Podcast (Transkription), Design B3
    --------------------------------------------------------------------------- */
@@ -12237,7 +12206,6 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   align-items: center;
 }
 
-
 .gd-seite {
   display: flex;
   flex-direction: column;
@@ -12443,25 +12411,6 @@ input.gd-feld {
   gap: 12px;
 }
 
-.tb-gruss {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.5;
-  animation: tb-ein 0.4s ease-out;
-}
-
-/* Studio schreibt den Gruß neu: leiser über die zweite Textfarbe, nicht über Transparenz (Kontrast bleibt über 4,5:1) */
-.tb-schreibt {
-  color: var(--text-2);
-}
-
-@keyframes tb-ein {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-}
-
 .tb-liste {
   list-style: none;
   margin: 0;
@@ -12522,11 +12471,6 @@ input.gd-feld {
   flex: none;
 }
 
-.tb-fuss {
-  margin: 0;
-  font-size: 12px;
-}
-
 /* Hinweis vor der automatischen Abmeldung */
 .inaktiv-hinweis {
   position: fixed;
@@ -12557,10 +12501,6 @@ input.gd-feld {
     flex-direction: column;
     align-items: stretch;
   }
-}
-
-.dashboard-ueberschrift {
-  animation: tb-ein 0.35s ease-out;
 }
 
 /* UniVerse Studio groß */
@@ -14898,12 +14838,6 @@ html[data-eingebettet] .kontext-mobil {
   min-width: 0;
 }
 
-.gruss-zeile {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-md);
-  color: var(--text-2);
-}
-
 /* Überblick */
 
 .fakt {
@@ -15088,90 +15022,6 @@ html[data-eingebettet] .kontext-mobil {
   color: var(--auf-akzent);
 }
 
-/* Dein Tag */
-.tb-gruss {
-  margin: 0;
-  padding: 0 var(--space-8) var(--space-3);
-  font-size: var(--text-lg);
-  color: var(--text);
-  text-wrap: pretty;
-}
-
-.tb-gruss.tb-laedt,
-.tb-gruss.tb-schreibt {
-  color: var(--text-2);
-}
-
-.vliste {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.vliste li > a,
-.vliste li > button {
-  display: grid;
-  grid-template-columns: 3px minmax(0, 1fr);
-  gap: var(--space-4);
-  width: 100%;
-  padding: var(--space-3) var(--space-8);
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color var(--dur-micro) var(--ease-out);
-}
-
-.vliste li > a:hover,
-.vliste li > button:hover {
-  background: var(--hover);
-}
-
-.vliste li > a:active,
-.vliste li > button:active {
-  background: var(--aktiv);
-}
-
-.vliste .balken {
-  align-self: stretch;
-  border-radius: 2px;
-  background: var(--akzent);
-  opacity: 0.55;
-}
-
-.vliste strong {
-  display: block;
-  font-weight: 550;
-}
-
-.vliste .meta {
-  display: block;
-  color: var(--text-3);
-  font-size: var(--text-sm);
-}
-
-.vfuss {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin: 0;
-  padding: var(--space-2) var(--space-8) 0;
-}
-
-.vfuss.tb-fuss {
-  color: var(--text-3);
-  font-size: var(--text-sm);
-}
-
-.vleer {
-  margin: 0;
-  padding: var(--space-2) var(--space-8) var(--space-4);
-  color: var(--text-2);
-}
-
 /* Diese Woche */
 
 /* Wiederholen */
@@ -15201,12 +15051,7 @@ html[data-eingebettet] .kontext-mobil {
   }
 
   .kopfzeile,
-  .vfuss,
-  .vleer,
-  .tb-gruss,
-  .plan li,
-  .vliste li > a,
-  .vliste li > button {
+  .plan li {
     padding-left: var(--space-6);
     padding-right: var(--space-6);
   }
