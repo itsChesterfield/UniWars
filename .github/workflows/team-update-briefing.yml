@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -38,3 +39,11 @@ jobs:
       - run: node scripts/team-update-pr.mjs
         env:
           GH_TOKEN: ${{ github.token }}
+          TEAM_UPDATES_AKTIV: ${{ vars.TEAM_UPDATES_AKTIV }}
+          VERCEL_TOKEN: ${{ secrets.TEAM_UPDATE_VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.TEAM_UPDATE_VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.TEAM_UPDATE_VERCEL_PROJECT_ID }}
+          TEAM_UPDATE_PRODUKTIONSHOST: ${{ vars.TEAM_UPDATE_PRODUKTIONSHOST }}
+          TEAM_UPDATE_START_SHA: ${{ vars.TEAM_UPDATE_START_SHA }}
+          SUPABASE_URL: ${{ vars.TEAM_UPDATE_SUPABASE_URL }}
+          SUPABASE_TEAM_UPDATES_KEY: ${{ secrets.TEAM_UPDATE_SUPABASE_KEY }}
