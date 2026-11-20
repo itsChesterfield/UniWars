@@ -2200,6 +2200,7 @@ dialog.card {
 
 .unteraufgabe-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1) 0;
@@ -2356,6 +2357,51 @@ dialog.card {
   box-shadow:
     0 0 0 1px var(--linie-2),
     0 16px 32px -12px var(--schatten);
+}
+
+/* Aus dem Drei-Punkte-Menü geöffnet: steht in der Zeile statt darüber */
+.deadline-teilen.in-zeile {
+  flex-basis: 100%;
+}
+
+.deadline-teilen.in-zeile .deadline-teilen-panel {
+  position: static;
+  width: min(360px, calc(100% - var(--space-8)));
+  margin-left: var(--space-8);
+}
+
+/* Handy: Haken, Titel und Menü in einer Zeile, die Restzeit darunter; Titel brechen um statt abgeschnitten zu werden */
+@media (max-width: 760px) {
+  .entry-row-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .entry-row-main:has(> input[type="checkbox"]) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .entry-row-main > .entry-actions {
+    grid-row: 1;
+    grid-column: -2;
+  }
+
+  .entry-row-main > .entry-countdown {
+    grid-row: 2;
+    grid-column: -3 / -2;
+    justify-self: start;
+  }
+
+  .entry-row-main .entry-title,
+  .entry-row-main .entry-meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+.deadline-teilen-fertig {
+  align-self: flex-start;
 }
 
 .deadline-teilen-input {

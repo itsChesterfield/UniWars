@@ -17,6 +17,7 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { useFesteFolge } from "@/components/bewegung/feste-folge";
 
 type Todo = Tables<"todo">;
@@ -192,12 +193,13 @@ export function TodoManager({
                   </span>
                 </div>
                 <div className="entry-actions">
-                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(t)}>
-                    Bearbeiten
-                  </button>
-                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(t.id)}>
-                    Löschen
-                  </button>
+                  <DreiPunkteMenue
+                    label={`Aktionen für „${t.titel}“`}
+                    punkte={[
+                      { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(t) },
+                      { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(t.id) },
+                    ]}
+                  />
                 </div>
               </div>
               <div className="entry-row-unteraufgaben">

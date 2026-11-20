@@ -13,6 +13,7 @@ import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
 import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
+import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
 import { Unteraufgaben } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
@@ -84,6 +85,7 @@ export function DeadlineManager({
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DeadlineInput>(LEERES_FORMULAR);
   const [error, setError] = useState<string | null>(null);
+  const [teilenId, setTeilenId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const sortiert = [...deadlines].sort((a, b) => {
@@ -238,28 +240,28 @@ export function DeadlineManager({
                   </span>
                 </div>
                 {!d.erledigt && (() => {
-                  const { wert, einheit } = restzeitGross(d.faellig_am);
-                  const ueberfaellig = einheit === "überfällig";
+                  const { wert, einheit, ueberfaellig } = restzeitGross(d.faellig_am);
                   return (
-                    <div className={`entry-countdown ${dringend ? "entry-countdown-dringend" : ""}`}>
+                    <div className={`entry-countdown ${dringend || ueberfaellig ? "entry-countdown-dringend" : ""}`}>
                       <span className="entry-countdown-wert">{wert}</span>
                       <span className="entry-countdown-einheit">
-                        {einheit}
-                        {!ueberfaellig && " übrig"}
+                        {einheit} {ueberfaellig ? "überfällig" : "übrig"}
                       </span>
                     </div>
                   );
                 })()}
                 <div className="entry-actions">
-                  {userId && d.user_id === userId && <DeadlineTeilen deadlineId={d.id} />}
-                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(d)}>
-                    Bearbeiten
-                  </button>
-                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(d.id)}>
-                    Löschen
-                  </button>
+                  <DreiPunkteMenue
+                    label={`Aktionen für „${d.titel}“`}
+                    punkte={[
+                      ...(userId && d.user_id === userId ? [{ label: "Teilen", icon: "gruppe", onClick: () => setTeilenId(d.id) } satisfies MenuePunkt] : []),
+                      { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(d) },
+                      { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(d.id) },
+                    ]}
+                  />
                 </div>
               </div>
+              {teilenId === d.id && <DeadlineTeilen deadlineId={d.id} onSchliessen={() => setTeilenId(null)} />}
               <div className="entry-row-unteraufgaben">
                 <Unteraufgaben
                   parentTyp="deadline"

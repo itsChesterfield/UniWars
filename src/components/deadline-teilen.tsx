@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { benutzerSuchen, deadlineEinladen, deadlineMitgliederLaden } from "@/app/einladung/actions";
 import { track } from "@/lib/analytics";
 
@@ -17,8 +17,15 @@ const STATUS_LABEL: Record<Mitglied["status"], string> = {
   ABGELEHNT: "abgelehnt",
 };
 
-export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Mitglieder einer Deadline einladen. Ohne `onSchliessen` mit eigenem Knopf „Teilen“ (Feld legt sich darüber).
+ * Mit `onSchliessen` kommt es aus einem Menü: ohne Knopf, gleich offen, in der Zeile, mit „Fertig“.
+ */
+export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: string; onSchliessen?: () => void }) {
+  const ausMenue = onSchliessen !== undefined;
+  const [eigenOffen, setOpen] = useState(false);
+  const open = ausMenue || eigenOffen;
+  const feld = useRef<HTMLInputElement>(null);
   const [suchtext, setSuchtext] = useState("");
   const [treffer, setTreffer] = useState<{ user_id: string; username: string }[]>([]);
   const [mitglieder, setMitglieder] = useState<Mitglied[] | null>(null);
@@ -36,6 +43,23 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
       }
     });
   }
+
+  // Aus dem Menü geöffnet: Mitglieder laden und gleich ins Suchfeld
+  useEffect(() => {
+    if (!ausMenue) return;
+    feld.current?.focus();
+    let vorbei = false;
+    deadlineMitgliederLaden(deadlineId)
+      .then((data) => {
+        if (!vorbei) setMitglieder(data as Mitglied[]);
+      })
+      .catch((err: unknown) => {
+        if (!vorbei) setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      });
+    return () => {
+      vorbei = true;
+    };
+  }, [ausMenue, deadlineId]);
 
   function toggleOpen() {
     const naechster = !open;
@@ -79,13 +103,22 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
   }
 
   return (
-    <div className="deadline-teilen">
-      <button type="button" onClick={toggleOpen} className="knopf leise klein" aria-expanded={open}>
-        Teilen
-      </button>
+    <div className={`deadline-teilen${ausMenue ? " in-zeile" : ""}`}>
+      {!ausMenue && (
+        <button type="button" onClick={toggleOpen} className="knopf leise klein" aria-expanded={open}>
+          Teilen
+        </button>
+      )}
 
       {open && (
-        <div className="deadline-teilen-panel">
+        <div
+          className="deadline-teilen-panel"
+          role={ausMenue ? "group" : undefined}
+          aria-label={ausMenue ? "Teilen" : undefined}
+          onKeyDown={(e) => {
+            if (ausMenue && e.key === "Escape") onSchliessen?.();
+          }}
+        >
           {mitglieder && mitglieder.length > 0 && (
             <ul className="deadline-teilen-mitglieder">
               {mitglieder.map((m) => (
@@ -98,6 +131,7 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
           )}
 
           <input
+            ref={feld}
             type="text"
             placeholder="Nutzername suchen…"
             aria-label="Nutzername suchen"
@@ -124,6 +158,11 @@ export function DeadlineTeilen({ deadlineId }: { deadlineId: string }) {
             <p className="unteraufgabe-meta" role="status">
               {erfolg}
             </p>
+          )}
+          {ausMenue && (
+            <button type="button" className="knopf leise klein deadline-teilen-fertig" onClick={onSchliessen}>
+              Fertig
+            </button>
           )}
         </div>
       )}

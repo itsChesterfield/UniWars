@@ -15,6 +15,8 @@ import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { Icon } from "@/components/nav-icon";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { absolutesDatum } from "@/lib/countdown";
 
 type Pruefung = Tables<"pruefung">;
 type Deadline = Tables<"deadline">;
@@ -175,10 +177,7 @@ export function PruefungManager({
                   <span className="entry-meta">
                     {[
                       fach?.name,
-                      new Date(p.datum).toLocaleString("de-DE", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }),
+                      absolutesDatum(p.datum),
                       p.raum,
                       STATUS_LABEL[p.status],
                     ]
@@ -187,12 +186,13 @@ export function PruefungManager({
                   </span>
                 </div>
                 <div className="entry-actions">
-                  <button type="button" className="knopf leise klein" onClick={() => openEditForm(p)}>
-                    Bearbeiten
-                  </button>
-                  <button type="button" className="knopf gefahr klein" onClick={() => handleDelete(p.id)}>
-                    Löschen
-                  </button>
+                  <DreiPunkteMenue
+                    label={`Aktionen für „${p.titel}“`}
+                    punkte={[
+                      { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(p) },
+                      { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(p.id) },
+                    ]}
+                  />
                 </div>
               </div>
               <div className="entry-row-unteraufgaben">
