@@ -65,7 +65,7 @@ Diese Regeln gelten für **jede** Aufgabe. Wenn eine Anweisung im Plan diesen Re
 6. **Vor dem Einspielen:** prüfen, ob die Live-Datenbank die Änderung verträgt (bestehende Daten, Namenskonflikte).
 7. **Nach dem Einspielen:** den Supabase-Advisor laufen lassen. Neue Warnungen werden behoben oder im PR begründet.
 8. **Jede neue RLS-Regel bekommt einen Test**, der zeigt, dass ein normaler Nutzer das Verbotene **nicht** kann.
-9. **Migrationen nur als Datei in `supabase/migrations/` anlegen, nie selbst einspielen** (kein `apply_migration`, kein `db push`). Der Projektinhaber spielt sie nach dem Review und dem Merge ein.
+9. **Produktionsmigrationen übernimmt der KI-Agent.** Die Freigabe zur Veröffentlichung umfasst die dazugehörigen geprüften Migrationen. Spiele sie in der für den Rollout richtigen Reihenfolge ein, gleiche die Version mit dem Dateinamen im Repo ab und prüfe die Anwendung nach der Migration.
 
 ---
 
