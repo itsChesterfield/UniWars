@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keine Verbindung · UniVerse</title>
+<meta name="description" content="UniVerse ist gerade ohne Internet. Sobald die Verbindung zurück ist, geht es weiter.">
+<meta name="theme-color" content="#08090b">
+<!--
+  Offline-Hinweis der installierten App (Didi, 20.11.). Liegt im Service Worker und muss ohne Netz funktionieren:
+  darum ohne globals.css und Webschrift, die Werte sind die Token aus DESIGN.md Abschnitt 2 und 3.
+  Design wie zuletzt in der App gewählt (localStorage "universe-design"), sonst wie das System.
+-->
+<script>
+  try {
+    var d = localStorage.getItem("universe-design");
+    if (d !== "nacht" && d !== "hochschule") d = matchMedia("(prefers-color-scheme: light)").matches ? "hochschule" : "nacht";
+    document.documentElement.setAttribute("data-theme", d);
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "nacht");
+  }
+  // Ist das Netz zurück, gleich die gewünschte Seite laden
+  addEventListener("online", function () { location.reload(); });
+</script>
+<style>
+  /* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full */
+  :root, [data-theme="nacht"] {
+    --grund: #08090b; --flaeche: #0e1013; --text: #ededef; --text-2: #a8acb3;
+    --linie-2: rgba(255, 255, 255, 0.13); --akzent: #E8BE6A; --auf-akzent: #17110a;
+    --schatten: rgba(0, 0, 0, 0.55);
+  }
+  [data-theme="hochschule"] {
+    --grund: #ecece9; --flaeche: #ffffff; --text: #111419; --text-2: #4f555e;
+    --linie-2: rgba(12, 18, 28, 0.16); --akzent: #1f4e8c; --auf-akzent: #ffffff;
+    --schatten: rgba(20, 30, 50, 0.14);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow-x: clip; }
+  body {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--grund);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main {
+    width: min(400px, 100%);
+    padding: 32px;
+    border-radius: 12px;
+    background: var(--flaeche);
+    box-shadow: 0 0 0 1px var(--linie-2), 0 24px 48px -20px var(--schatten);
+  }
+  svg { display: block; margin-bottom: 24px; color: var(--akzent); }
+  h1 { margin: 0; font-size: 20px; font-weight: 650; line-height: 1.3; text-wrap: balance; }
+  p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+  button {
+    margin-top: 24px;
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--akzent);
+    color: var(--auf-akzent);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 1; background: var(--linie-2); color: var(--text-2); cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+  <main>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5"/>
+      <path d="M3.5 14.5c2.5 3.5 14.5-1.5 17-6"/>
+    </svg>
+    <h1>Keine Verbindung</h1>
+    <p>UniVerse braucht Internet, damit deine Daten immer aktuell sind. Sobald du wieder online bist, geht es hier weiter.</p>
+    <button type="button" onclick="location.reload()">Erneut versuchen</button>
+  </main>
+</body>
+</html>
