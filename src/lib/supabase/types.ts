@@ -1925,6 +1925,7 @@ export type Database = {
         Row: {
           avatar_pfad: string | null
           darstellung: Json
+          hintergrund: Json
           hochschule_frei: string | null
           hochschule_id: string | null
           mensa_id: number | null
@@ -1947,6 +1948,7 @@ export type Database = {
         Insert: {
           avatar_pfad?: string | null
           darstellung?: Json
+          hintergrund?: Json
           hochschule_frei?: string | null
           hochschule_id?: string | null
           mensa_id?: number | null
@@ -1969,6 +1971,7 @@ export type Database = {
         Update: {
           avatar_pfad?: string | null
           darstellung?: Json
+          hintergrund?: Json
           hochschule_frei?: string | null
           hochschule_id?: string | null
           mensa_id?: number | null

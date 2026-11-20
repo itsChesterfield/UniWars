@@ -75,6 +75,9 @@
 :root,
 [data-theme="hochschule"] {
   --grund: #ecece9;
+  /* Eigene Bilder: 1 im dunklen Design, Farbe des Schleiers über dem Bild */
+  --dunkel: 0;
+  --bild-schleier: #f7f7f5;
   --flaeche: #ffffff;
   --flaeche-2: #f7f7f5;
   --flaeche-3: #efefec;
@@ -109,6 +112,9 @@
    später auf <html> (DESIGN.md Abschnitt 2). */
 [data-theme="nacht"] {
   --grund: #08090b;
+  /* Eigene Bilder: 1 im dunklen Design, Farbe des Schleiers über dem Bild */
+  --dunkel: 1;
+  --bild-schleier: #08090b;
   --flaeche: #0e1013;
   --flaeche-2: #15181c;
   --flaeche-3: #1d2126;
@@ -144,6 +150,9 @@
 @media (prefers-color-scheme: dark) {
   [data-theme="system"] {
     --grund: #08090b;
+    /* Eigene Bilder: 1 im dunklen Design, Farbe des Schleiers über dem Bild */
+    --dunkel: 1;
+    --bild-schleier: #08090b;
     --flaeche: #0e1013;
     --flaeche-2: #15181c;
     --flaeche-3: #1d2126;
@@ -5326,7 +5335,7 @@ dialog.dat-vorschau::backdrop {
 .lit-typ {
   display: inline-block;
   padding: var(--space-half) var(--space-2);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-s);
   background: color-mix(in srgb, var(--text) 7%, transparent);
   color: var(--text-2);
   font-size: var(--text-xs);
@@ -19688,4 +19697,249 @@ dialog.dat-workflow-dialog {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
+}
+
+/* ==========================================================================
+   Eigene Bilder (Personalisierung, lib/hintergrund.ts)
+   Inhalt liegt nie ungeschützt auf einem Bild: Darüber liegt immer ein Schleier in der Farbe
+   --bild-schleier. Seine Deckkraft rechnet der Server je Bild und Design aus (…-a-n dunkel, …-a-h hell),
+   so dass --text-2 auch auf der hellsten bzw. dunkelsten Stelle 4,5:1 erreicht.
+   ========================================================================== */
+.dashboard[data-bild-leiste] {
+  --bild-leiste-a: calc(var(--bild-leiste-a-h) + (var(--bild-leiste-a-n) - var(--bild-leiste-a-h)) * var(--dunkel));
+}
+
+:root[data-bild-studio] {
+  --bild-studio-a: calc(var(--bild-studio-a-h) + (var(--bild-studio-a-n) - var(--bild-studio-a-h)) * var(--dunkel));
+}
+
+.dashboard[data-bild-bereich] {
+  --bild-bereich-a: calc(var(--bild-bereich-a-h) + (var(--bild-bereich-a-n) - var(--bild-bereich-a-h)) * var(--dunkel));
+  --bild-bereich-q: var(--bild-bereich);
+}
+
+/* Symbolleiste: immer die unscharfe Fassung, weil die Namen direkt darauf stehen.
+   [data-leiste] und :not([hidden]) heben die Regel über die ausgeklappte Leiste beim Drüberfahren. */
+.dashboard[data-bild-leiste][data-leiste] .rail:not([hidden]) {
+  background:
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-leiste-a) * 100%), transparent) 0 0),
+    var(--bild-leiste) var(--bild-leiste-pos) / cover no-repeat,
+    var(--bg);
+}
+
+/* Das Studio hängt direkt an <body>: Bild und Attribut liegen deshalb auf <html> (DesignRahmen) */
+:root[data-bild-studio] .studio-panel {
+  color: var(--text);
+  background:
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-studio-a) * 100%), transparent) 0 0),
+    var(--bild-studio) var(--bild-studio-pos) / cover no-repeat,
+    var(--flaeche);
+}
+
+/* Bereiche: hinter dem Kopf (kopf), bis weit in die Seite (gross) oder hinter der ganzen Seite (seite).
+   Nur auf Übersichtsseiten mit Bereichskopf; Editoren, Lernmodus und Reader bleiben ohne Bild. */
+.dashboard[data-bild-bereich] .dashboard-main:has(.bk) {
+  position: relative;
+  isolation: isolate;
+}
+
+.dashboard[data-bild-bereich] .dashboard-main:has(.bk)::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: clamp(240px, 32vh, 320px);
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 45%, var(--flaeche)),
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
+    var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+}
+
+.dashboard[data-bild-bereich="gross"] .dashboard-main:has(.bk)::before {
+  height: min(78vh, 760px);
+  background:
+    linear-gradient(180deg, transparent 55%, var(--flaeche)),
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
+    var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+}
+
+.dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk)::before {
+  inset: 0;
+  height: auto;
+  background:
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
+    var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat fixed;
+}
+
+/* Hub: Bild nur in der ersten Szene, läuft nach rechts und unten in die Fläche aus */
+.dashboard[data-bild-bereich] .buehne .szene:first-of-type {
+  border-radius: var(--radius-m);
+  background:
+    linear-gradient(90deg, transparent 0%, var(--flaeche) 46%),
+    linear-gradient(180deg, transparent 40%, var(--flaeche) 62%),
+    linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
+    var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+}
+
+@media (max-width: 760px) {
+  .dashboard[data-bild-bereich] {
+    --bild-bereich-q: var(--bild-bereich-m);
+  }
+
+  .dashboard[data-bild-bereich] .buehne .szene:first-of-type {
+    background:
+      linear-gradient(180deg, transparent 0%, var(--flaeche) 34%),
+      linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
+      var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+  }
+
+  /* Am Handy scrollt die Seite selbst; ein festes Bild ruckelt dort */
+  .dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk)::before {
+    background-attachment: scroll;
+  }
+}
+
+/* Beim Lernen und in Editoren (Seiten ohne Bereichskopf): keine Bilder, wenn so eingestellt */
+.dashboard[data-bild-lernen][data-bild-leiste][data-leiste]:not(:has(.bk, .buehne)) .rail:not([hidden]) {
+  background: var(--bg);
+}
+
+:root[data-bild-lernen][data-bild-studio]:not(:has(.bk, .buehne)) .studio-panel {
+  color: var(--text);
+  background: var(--flaeche);
+}
+
+/* Mehr Kontrast gewünscht: Bilder ganz weg */
+@media (prefers-contrast: more), (forced-colors: active) {
+  .dashboard[data-bild-leiste][data-leiste] .rail:not([hidden]) {
+    background: var(--bg);
+  }
+
+  :root[data-bild-studio] .studio-panel {
+    color: var(--text);
+    background: var(--flaeche);
+  }
+
+  .dashboard[data-bild-bereich] .dashboard-main:has(.bk)::before {
+    content: none;
+  }
+
+  .dashboard[data-bild-bereich] .buehne .szene:first-of-type {
+    background: none;
+  }
+}
+
+/* Personalisierung › Eigene Bilder */
+.eb-reihe {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.eb-bild,
+.eb-neu {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  border-radius: var(--radius-m);
+  padding: 0;
+  overflow: hidden;
+  background: var(--flaeche-3);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.eb-vorschau {
+  position: absolute;
+  inset: 0;
+  background: var(--vorschau, none) center / cover no-repeat;
+}
+
+.eb-vorschau[data-mitte="oben"] {
+  background-position: top;
+}
+
+.eb-vorschau[data-mitte="unten"] {
+  background-position: bottom;
+}
+
+.eb-bild[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--flaeche),
+    0 0 0 4px var(--akzent);
+}
+
+.eb-marke {
+  position: absolute;
+  left: var(--space-1);
+  bottom: var(--space-1);
+  padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-s);
+  background: var(--flaeche);
+  color: var(--text);
+  font-size: var(--text-xs);
+}
+
+.eb-neu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+}
+
+/* Das Dateifeld liegt unsichtbar über der ganzen Kachel: groß genug zum Tippen, mit Tastatur erreichbar */
+.eb-datei {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.eb-neu:hover {
+  background: color-mix(in srgb, var(--akzent) 20%, transparent);
+}
+
+.eb-neu:has(:focus-visible) {
+  outline: 2px solid var(--fokus);
+  outline-offset: 2px;
+}
+
+.eb-neu.aus {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.eb-hinweis {
+  display: block;
+  padding-block: var(--space-2) var(--space-3);
+}
+
+.eb-regler {
+  border-top: 1px solid var(--linie);
+}
+
+.eb-wahl {
+  min-width: 180px;
+  min-height: 36px;
+}
+
+.eb-einzeln {
+  border-bottom: 1px solid var(--linie);
+}
+
+.eb-einzeln > summary {
+  padding: var(--space-3) 0;
+  cursor: pointer;
+  font-size: var(--text-md);
+  color: var(--text-2);
+}
+
+.eb-einzeln .p-zeile {
+  padding-left: var(--space-4);
 }
