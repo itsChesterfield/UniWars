@@ -18694,6 +18694,7 @@ html[data-bewegung="reduziert"] .bk-unter {
 }
 
 .bue-haken {
+  position: relative;
   padding: 0;
   border: 0;
   background: none;
@@ -18704,6 +18705,13 @@ html[data-bewegung="reduziert"] .bk-unter {
     background-color var(--dur-short) var(--ease-out),
     color var(--dur-short) var(--ease-out),
     box-shadow var(--dur-short) var(--ease-out);
+}
+
+/* Das Kästchen bleibt 24 px, getroffen wird auf 36 px (bequemer am Touchscreen, WCAG 2.5.8 mit Luft) */
+.bue-haken::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--space-1) * -1.5);
 }
 
 .bue-haken:hover {
@@ -18979,11 +18987,14 @@ html[data-bewegung="reduziert"] .bk-unter {
   z-index: 4;
 }
 
+/* Name bis zu zwei Zeilen (mit Silbentrennung), darunter Zeit und Raum; so ist er ohne Darüberfahren lesbar */
 .bue-kurz {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   height: 100%;
   overflow: hidden;
-  padding: var(--space-2) var(--space-3);
+  padding: calc(var(--space-1) * 1.5) var(--space-3);
   border-radius: inherit;
 }
 
@@ -18991,13 +19002,22 @@ html[data-bewegung="reduziert"] .bk-unter {
 .bue-kurz > span {
   display: block;
   overflow: hidden;
+}
+
+.bue-kurz > span {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .bue-kurz > b {
+  display: -webkit-box;
   font-size: var(--text-sm);
   font-weight: 600;
+  line-height: 1.2;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .bue-kurz > span {
