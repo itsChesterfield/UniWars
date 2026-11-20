@@ -10,13 +10,30 @@ USER = {"id": UID, "aud": "authenticated", "role": "authenticated", "email": "di
         "created_at": "2026-10-01T10:00:00Z", "email_confirmed_at": "2026-10-01T10:00:00Z"}
 Z = {"modus": "voll", "theme": "DUNKEL", "ms": 0, "e401": set()}
 WS = {}
+# Eigene Bilder: Dateien im Speicher, Spalte settings.hintergrund (Schalter /__bilder?w=an|aus|leer, /__bildspalte?w=an|aus)
+DATEIEN = {}
+Z["hintergrund"] = {}
+Z["bildspalte"] = True
+
+def probe_bilder():
+    import subprocess, os
+    bilder = []
+    for i, (name, tief, hoch) in enumerate((("dunkel", 0.04, 0.85), ("hell", 0.62, 0.97))):
+        bid = f"0000000{i+1}-0000-4000-8000-00000000000{i+1}"
+        for suffix, opts in (("", []), ("-m", ["-resize", "1280x"]), ("-w", ["-resize", "48x", "-resize", "640x"])):
+            pfad = f"{UID}/{bid}{suffix}.webp"
+            DATEIEN["hintergrund/" + pfad] = subprocess.run(["convert", f"/home/claude/proben/{name}.jpg", *opts, "webp:-"], capture_output=True).stdout
+        bilder.append({"id": bid, "pfad": f"{UID}/{bid}.webp", "mittel": f"{UID}/{bid}-m.webp", "weich": f"{UID}/{bid}-w.webp",
+                       "tief": tief, "hoch": hoch, "mitte": "mitte", "abdunkeln": 0, "unschaerfe": False})
+    return bilder
 
 def settings():
     return {"user_id": UID, "theme": Z["theme"], "username": "didi", "avatar_pfad": None, "darstellung": {**({"leiste": Z["leiste"]} if Z.get("leiste") else {}), **({"klausurphase": Z["klausur"]} if Z.get("klausur") else {})},
             "symbolleiste": None, "hub_layout": None, "hochschule_frei": None, "hochschule_id": None,
             "mensa_id": None, "mensa_name": None, "ki_audio_einwilligung": None, "ki_einwilligung": None,
             "ki_gedaechtnis_an": False, "ki_kennenlernen": {}, "ki_profil": {}, "streak_count": 3,
-            "streak_freezes": 0, "streak_last_active": time.strftime("%Y-%m-%d"), "work_station": WS}
+            "streak_freezes": 0, "streak_last_active": time.strftime("%Y-%m-%d"), "work_station": WS,
+            **({"hintergrund": Z["hintergrund"]} if Z["bildspalte"] else {})}
 
 def karte(i, stapel, v, r, faellig, intervall=1, wdh=0, fehler=0):
     return {"id": f"kk{i}", "user_id": UID, "stapel_id": stapel, "vorderseite": v, "rueckseite": r, "box": 1, "fehler": fehler,
@@ -153,7 +170,13 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/__einmal401": Z["e401"].add(q["t"][0]); return self.antwort(200, {"ok": 1})
         if u.path.startswith("/auth/v1/user"): return self.antwort(200, USER)
         if u.path.startswith("/auth/v1/"): return self.antwort(200, {})
-        if u.path.startswith("/storage/v1/"): return self.antwort(200, [] if methode == "GET" else {})
+        if u.path == "/__bilder":
+            w = q["w"][0]
+            if w == "an": b = probe_bilder(); Z["hintergrund"] = {"bilder": b, "standard": b[0]["id"], "groesse": q.get("g", ["kopf"])[0]}
+            else: Z["hintergrund"] = {}
+            return self.antwort(200, {"ok": 1})
+        if u.path == "/__bildspalte": Z["bildspalte"] = q["w"][0] == "an"; return self.antwort(200, {"ok": 1})
+        if u.path.startswith("/storage/v1/"): return self.speicher(methode, u)
         if u.path.startswith("/realtime"): return self.antwort(404, {})
         m = re.match(r"/rest/v1/(rpc/)?([\w]+)", u.path)
         if not m: return self.antwort(404, {"message": "unbekannt"})
@@ -170,6 +193,13 @@ class H(BaseHTTPRequestHandler):
             return self.antwort(401, {"code": "PGRST301", "message": "JWT expired", "details": None, "hint": None})
         if Z["modus"] == "kaputt" and tabelle != "settings":
             return self.antwort(500, {"code": "XX000", "message": "kaputt (Prüfung)", "details": None, "hint": None})
+        if tabelle == "settings" and not Z["bildspalte"] and "hintergrund" in (q.get("select", [""])[0] + self.koerper.decode("utf-8", "ignore")):
+            return self.antwort(400, {"code": "42703", "message": "column settings.hintergrund does not exist", "details": None, "hint": None})
+        if methode == "PATCH" and tabelle == "settings":
+            try:
+                neu = json.loads(self.koerper or b"{}")
+                if "hintergrund" in neu: Z["hintergrund"] = neu["hintergrund"]
+            except ValueError: pass
         if methode != "GET" and tabelle == "settings":
             return self.antwort(200, settings() if "pgrst.object" in (self.headers.get("Accept") or "") else [settings()])
         if methode != "GET":
@@ -180,12 +210,39 @@ class H(BaseHTTPRequestHandler):
                 return self.antwort(406, {"code": "PGRST116", "message": "keine Zeile", "details": "0 rows", "hint": None})
             return self.antwort(200, zeilen[0])
         return self.antwort(200, zeilen, {"Content-Range": f"0-{max(len(zeilen)-1,0)}/{len(zeilen)}"})
-    def do_GET(self): self.rest("GET")
-    def do_HEAD(self): self.rest("GET")
-    def do_POST(self):
-        n = int(self.headers.get("Content-Length") or 0); self.rfile.read(n); self.rest("POST")
-    def do_PATCH(self):
-        n = int(self.headers.get("Content-Length") or 0); self.rfile.read(n); self.rest("PATCH")
-    def do_DELETE(self): self.rest("DELETE")
+    def speicher(self, methode, u):
+        p = u.path[len("/storage/v1"):]
+        k = json.loads(self.koerper or b"{}") if methode in ("POST", "DELETE") and not p.startswith("/object/hintergrund/") else {}
+        m = re.match(r"/object/sign/([\w-]+)$", p)
+        if m and methode == "POST":
+            return self.antwort(200, [{"path": x, "signedURL": f"/object/sign/{m.group(1)}/{x}?token=t", "error": None if f"{m.group(1)}/{x}" in DATEIEN else "not found"} for x in k.get("paths", [])])
+        m = re.match(r"/object/sign/(.+)$", p)
+        if m and methode == "GET":
+            d = DATEIEN.get(m.group(1))
+            if d is None: return self.antwort(404, {"error": "not found"})
+            self.send_response(200); self.send_header("Content-Type", "image/webp"); self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(d))); self.end_headers(); self.wfile.write(d); return
+        m = re.match(r"/object/list/([\w-]+)$", p)
+        if m:
+            pre = f"{m.group(1)}/{k.get('prefix', '')}/"
+            such = k.get("search", "")
+            return self.antwort(200, [{"name": n[len(pre):], "id": n} for n in DATEIEN if n.startswith(pre) and such in n])
+        m = re.match(r"/object/([\w-]+)/(.+)$", p)
+        if m and methode in ("POST", "PUT"):
+            DATEIEN[f"{m.group(1)}/{m.group(2)}"] = self.koerper
+            return self.antwort(200, {"Key": f"{m.group(1)}/{m.group(2)}", "Id": "x"})
+        m = re.match(r"/object/([\w-]+)$", p)
+        if m and methode == "DELETE":
+            for x in k.get("prefixes", []): DATEIEN.pop(f"{m.group(1)}/{x}", None)
+            return self.antwort(200, [])
+        return self.antwort(200, [] if methode == "GET" else {})
+    def do_GET(self): self.koerper = b""; self.rest("GET")
+    def do_HEAD(self): self.koerper = b""; self.rest("GET")
+    def lesen(self):
+        n = int(self.headers.get("Content-Length") or 0); self.koerper = self.rfile.read(n) if n else b""
+    def do_POST(self): self.lesen(); self.rest("POST")
+    def do_PUT(self): self.lesen(); self.rest("PUT")
+    def do_PATCH(self): self.lesen(); self.rest("PATCH")
+    def do_DELETE(self): self.lesen(); self.rest("DELETE")
 
 ThreadingHTTPServer(("127.0.0.1", 54321), H).serve_forever()
