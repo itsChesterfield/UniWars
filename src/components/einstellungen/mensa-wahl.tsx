@@ -65,25 +65,24 @@ export function MensaWahl({ mensa, vorschlag, ohneKopf = false }: { mensa: strin
       {!ohneKopf && (
         <>
           <h3>Mensa</h3>
-          <p className="muted">Deine Mensa erscheint mit dem Speiseplan von heute in der Übersicht.</p>
+          <p className="einst-klein">Deine Mensa erscheint mit dem Speiseplan von heute in der Übersicht.</p>
         </>
       )}
       {!offen ? (
         <div className="hs-gewaehlt">
-          <span className={mensa ? "hs-name" : "faint"}>{mensa ?? "Keine Mensa gewählt"}</span>
+          <span className={mensa ? "hs-name" : "einst-klein"}>{mensa ?? "Keine Mensa gewählt"}</span>
           {mensa && (
             <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => speichern(null)}>
               Entfernen
             </button>
           )}
-          <button type="button" className={mensa ? "knopf leise klein" : "knopf haupt klein"} disabled={laeuft} onClick={() => setOffen(true)}>
+          <button type="button" className={mensa ? "knopf leise klein" : "knopf neben klein"} disabled={laeuft} onClick={() => setOffen(true)}>
             {mensa ? "Ändern" : "Mensa wählen"}
           </button>
         </div>
       ) : (
         <div className="hs-suche">
           <input
-            className="field"
             autoFocus
             role="combobox"
             aria-expanded={treffer.length > 0}
@@ -110,14 +109,14 @@ export function MensaWahl({ mensa, vorschlag, ohneKopf = false }: { mensa: strin
             </ul>
           )}
           {alle && eingabe.trim().length >= 2 && treffer.length === 0 && (
-            <p className="muted">Keine Mensa gefunden. Nicht jede Mensa ist bei OpenMensa eingetragen, versuch es mit der Stadt.</p>
+            <p className="einst-klein">Keine Mensa gefunden. Nicht jede Mensa ist bei OpenMensa eingetragen, versuch es mit der Stadt.</p>
           )}
           <button type="button" className="link hs-nicht-dabei" onClick={() => setOffen(false)}>
             Abbrechen
           </button>
         </div>
       )}
-      {ergebnis && (ergebnis.ok ? <p className="einst-ok">{ergebnis.hinweis}</p> : <p className="auth-error">{ergebnis.fehler}</p>)}
+      {ergebnis && (ergebnis.ok ? <p className="einst-ok">{ergebnis.hinweis}</p> : <p className="formular-fehler" role="alert">{ergebnis.fehler}</p>)}
     </div>
   );
 }

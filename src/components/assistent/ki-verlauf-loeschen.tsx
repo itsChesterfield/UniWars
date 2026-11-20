@@ -17,9 +17,14 @@ export function KiVerlaufLoeschen() {
     window.alert(a.daten.anzahl ? `${a.daten.anzahl} Unterhaltung${a.daten.anzahl === 1 ? "" : "en"} gelöscht.` : "Es gab keine Unterhaltungen.");
   }
   return (
-    <button type="button" className="sidebar-theme-toggle" onClick={() => void loeschen()} disabled={laeuft}>
-      <span>KI-Verlauf</span>
-      <span style={{ color: "var(--accent-strong)" }}>{laeuft ? "…" : "Löschen"}</span>
-    </button>
+    <div className="einst-zeile">
+      <span>
+        KI-Verlauf
+        <small>Alle Unterhaltungen mit Studio löschen.</small>
+      </span>
+      <button type="button" className="knopf gefahr klein" onClick={() => void loeschen()} disabled={laeuft} aria-busy={laeuft}>
+        Löschen
+      </button>
+    </div>
   );
 }

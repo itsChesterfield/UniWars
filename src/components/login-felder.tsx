@@ -87,7 +87,7 @@ export function LoginFelder({ email: vorgabe, passwortFalsch = false }: { email?
         <input type="checkbox" name="bleiben" checked={bleiben} onChange={(e) => setBleiben(e.target.checked)} />
         <span>
           Angemeldet bleiben
-          <small>Auf diesem Gerät nicht nach 5 Minuten abmelden und E-Mail merken. Nicht auf fremden Geräten nutzen.</small>
+          <small>Ohne Häkchen wirst du nach 5 Minuten ohne Aktivität abgemeldet. Mit Häkchen bleibst du auf diesem Gerät angemeldet und die E-Mail wird gemerkt. Nur auf eigenen Geräten nutzen.</small>
         </span>
       </label>
     </>

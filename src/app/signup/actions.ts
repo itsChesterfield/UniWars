@@ -15,7 +15,7 @@ export async function signup(formData: FormData) {
     adresse("/signup", { fehler, feld, nutzername: username, email });
 
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    redirect(zurueck("Nimm 3 bis 20 Zeichen: Buchstaben, Zahlen und Unterstrich.", "nutzername"));
+    redirect(zurueck("Nimm 3 bis 20 Zeichen: a bis z, Ziffern und Unterstrich.", "nutzername"));
   }
 
   const { data: verfuegbar, error: verfuegbarError } = await supabase.rpc("ist_username_verfuegbar", {

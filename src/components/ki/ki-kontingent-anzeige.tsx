@@ -24,9 +24,9 @@ export function KiKontingentAnzeige() {
     >
       <summary>KI-Kontingent</summary>
       {fehler ? (
-        <p className="muted">Konnte nicht geladen werden.</p>
+        <p>Konnte nicht geladen werden.</p>
       ) : !daten ? (
-        <p className="muted">Lädt …</p>
+        <p>Wird geladen.</p>
       ) : (
         <ul>
           <li>

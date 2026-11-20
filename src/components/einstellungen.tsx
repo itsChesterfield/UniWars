@@ -39,21 +39,22 @@ async function profilbildVorbereiten(datei: File): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.88);
 }
 
+/** Abschnitt der Einstellungen: links Titel und Erklärung, rechts der Inhalt, getrennt durch Linien statt Karten. */
 function Abschnitt({ titel, untertitel, children }: { titel: string; untertitel?: string; children: ReactNode }) {
   return (
-    <section className="card einst-abschnitt">
+    <section className="einst-abschnitt">
       <div className="einst-kopf">
-        <h2 className="ct">{titel}</h2>
-        {untertitel && <p className="muted">{untertitel}</p>}
+        <h2>{titel}</h2>
+        {untertitel && <p>{untertitel}</p>}
       </div>
-      {children}
+      <div className="einst-inhalt">{children}</div>
     </section>
   );
 }
 
 function Meldung({ ergebnis }: { ergebnis: Ergebnis | null }) {
   if (!ergebnis) return null;
-  if (!ergebnis.ok) return <p className="auth-error">{ergebnis.fehler}</p>;
+  if (!ergebnis.ok) return <p className="formular-fehler" role="alert">{ergebnis.fehler}</p>;
   return ergebnis.hinweis ? <p className="einst-ok">{ergebnis.hinweis}</p> : <p className="einst-ok">Gespeichert.</p>;
 }
 
@@ -151,11 +152,11 @@ export function Einstellungen({
                 if (datei) void bildGewaehlt(datei);
               }}
             />
-            <button type="button" className="btng" disabled={laeuft} onClick={() => bildEingabe.current?.click()}>
+            <button type="button" className="knopf neben klein" disabled={laeuft} onClick={() => bildEingabe.current?.click()}>
               {avatarUrl ? "Bild ändern" : "Bild hochladen"}
             </button>
             {avatarUrl && (
-              <button type="button" className="btng" disabled={laeuft} onClick={() => ausfuehren(profilbildEntfernen, setBildErgebnis, "profilbild_entfernt")}>
+              <button type="button" className="knopf leise klein" disabled={laeuft} onClick={() => ausfuehren(profilbildEntfernen, setBildErgebnis, "profilbild_entfernt")}>
                 Entfernen
               </button>
             )}
@@ -171,9 +172,8 @@ export function Einstellungen({
           }}
         >
           <label className="einst-feld">
-            <span>Name</span>
+            <span>Nutzername</span>
             <input
-              className="field"
               value={nameWert}
               maxLength={20}
               autoComplete="username"
@@ -182,9 +182,9 @@ export function Einstellungen({
                 setNameErgebnis(null);
               }}
             />
-            <small className="faint">3–20 Zeichen: Kleinbuchstaben, Ziffern und _</small>
+            <small>3 bis 20 Zeichen: a bis z, Ziffern und Unterstrich</small>
           </label>
-          <button type="submit" className="btnp" disabled={laeuft || nameWert === name || nameWert.length < 3}>
+          <button type="submit" className="knopf neben" disabled={laeuft || nameWert === name || nameWert.length < 3}>
             Speichern
           </button>
         </form>
@@ -207,10 +207,9 @@ export function Einstellungen({
         >
           <label className="einst-feld">
             <span>E-Mail</span>
-            <span className="muted einst-aktuell">Aktuell: {email}</span>
-            {neueEmail && <span className="tag tag-accent">Wartet auf Bestätigung: {neueEmail}</span>}
+            <small>Aktuell: {email}</small>
+            {neueEmail && <span className="einst-wartet">Wartet auf Bestätigung: {neueEmail}</span>}
             <input
-              className="field"
               type="email"
               placeholder="Neue E-Mail-Adresse"
               value={emailWert}
@@ -221,7 +220,7 @@ export function Einstellungen({
               }}
             />
           </label>
-          <button type="submit" className="btnp" disabled={laeuft || !emailWert.trim()}>
+          <button type="submit" className="knopf neben" disabled={laeuft || !emailWert.trim()}>
             Ändern
           </button>
         </form>
@@ -231,7 +230,6 @@ export function Einstellungen({
           <label className="einst-feld">
             <span>Aktuelles Passwort</span>
             <input
-              className="field"
               type="password"
               autoComplete="current-password"
               value={pw.aktuell}
@@ -241,7 +239,6 @@ export function Einstellungen({
           <label className="einst-feld">
             <span>Neues Passwort</span>
             <input
-              className="field"
               type="password"
               autoComplete="new-password"
               minLength={6}
@@ -252,7 +249,6 @@ export function Einstellungen({
           <label className="einst-feld">
             <span>Neues Passwort wiederholen</span>
             <input
-              className="field"
               type="password"
               autoComplete="new-password"
               minLength={6}
@@ -260,14 +256,14 @@ export function Einstellungen({
               onChange={(e) => setPw((p) => ({ ...p, wiederholt: e.target.value }))}
             />
           </label>
-          <button type="submit" className="btnp" disabled={laeuft || !pw.aktuell || pw.neu.length < 6}>
+          <button type="submit" className="knopf neben" disabled={laeuft || !pw.aktuell || pw.neu.length < 6}>
             Passwort ändern
           </button>
         </form>
         <Meldung ergebnis={pwErgebnis} />
       </Abschnitt>
 
-      <Abschnitt titel="Datenschutz & KI" untertitel="Was UniVerse nutzen darf. Du kannst alles jederzeit ändern.">
+      <Abschnitt titel="Datenschutz und KI" untertitel="Was UniVerse nutzen darf. Du kannst alles jederzeit ändern.">
         <div className="einst-schalter">
           <AnalyticsEinstellung />
           <KiEinstellung startEingewilligt={kiEingewilligt} />
@@ -275,21 +271,24 @@ export function Einstellungen({
           {kiEingewilligt && <KiKontingentAnzeige />}
           {kiVerfuegbar && <PersoenlichkeitWahl startProfil={kiProfil} />}
           {kiVerfuegbar && (
-            <Link href="/einstellungen/gedaechtnis" className="sidebar-theme-toggle einst-gedaechtnis-link">
-              <span>Was Studio über dich weiß</span>
-              <span style={{ color: "var(--accent-strong)" }}>
-                <PfeilText>Ansehen</PfeilText>
+            <div className="einst-zeile">
+              <span>
+                Was Studio über dich weiß
+                <small>Gedächtnis und Wissensstand ansehen, ändern oder löschen.</small>
               </span>
-            </Link>
+              <Link href="/einstellungen/gedaechtnis" className="knopf neben klein">
+                <PfeilText>Ansehen</PfeilText>
+              </Link>
+            </div>
           )}
           {/* auch nach einem Widerruf: Löschen muss immer möglich sein */}
           {kiVerfuegbar && <KiVerlaufLoeschen />}
         </div>
       </Abschnitt>
 
-      <section className="card einst-abschnitt einst-abmelden">
+      <Abschnitt titel="Abmelden" untertitel="Auf diesem Gerät abmelden. Deine Daten bleiben gespeichert.">
         <AbmeldenButton />
-      </section>
+      </Abschnitt>
     </div>
   );
 }

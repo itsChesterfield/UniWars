@@ -18,10 +18,10 @@ export function AnalyticsBanner() {
         verbessern. Dafür speichern wir Daten in deinem Browser. Du kannst das jederzeit in den
         Einstellungen ändern.
       </p>
-      <div className="row" style={{ gap: 8 }}>
+      <div className="analytics-banner-knoepfe">
         <button
           type="button"
-          className="btnp"
+          className="knopf neben klein"
           onClick={() => {
             einwilligen();
             setEntschieden(true);
@@ -31,7 +31,7 @@ export function AnalyticsBanner() {
         </button>
         <button
           type="button"
-          className="btng"
+          className="knopf neben klein"
           onClick={() => {
             ablehnen();
             setEntschieden(true);

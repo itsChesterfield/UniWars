@@ -77,7 +77,7 @@ export async function nutzernameAendern(eingabe: string): Promise<Ergebnis> {
   const { supabase, user } = await angemeldet();
   const name = eingabe.trim().toLowerCase();
   if (!/^[a-z0-9_]{3,20}$/.test(name)) {
-    return { ok: false, fehler: "3–20 Zeichen: Kleinbuchstaben, Ziffern und _ (keine Leerzeichen)." };
+    return { ok: false, fehler: "Nimm 3 bis 20 Zeichen: a bis z, Ziffern und Unterstrich." };
   }
   const { data: frei } = await supabase.rpc("ist_username_verfuegbar", { p_username: name });
   const { data: eigene } = await supabase.from("settings").select("username").eq("user_id", user.id).maybeSingle();

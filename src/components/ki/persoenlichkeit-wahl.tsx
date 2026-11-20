@@ -37,16 +37,14 @@ export function PersoenlichkeitWahl({ startProfil }: { startProfil: Lernprofil }
     <div className="einst-zeile einst-persoenlichkeit">
       <span>
         Persönlichkeit von {STUDIO_NAME}
-        <small className="faint einst-klein">{PERSOENLICHKEITEN[profil.persoenlichkeit].beschreibung}</small>
+        <small>{PERSOENLICHKEITEN[profil.persoenlichkeit].beschreibung}</small>
       </span>
-      <span className="segwrap" role="radiogroup" aria-label="Persönlichkeit">
+      <span className="segment" role="group" aria-label="Persönlichkeit">
         {REIHENFOLGE.map((p) => (
           <button
             key={p}
             type="button"
-            role="radio"
-            aria-checked={profil.persoenlichkeit === p}
-            className={`seg ${profil.persoenlichkeit === p ? "on" : ""}`}
+            aria-pressed={profil.persoenlichkeit === p}
             disabled={laeuft}
             onClick={() => waehlen(p)}
           >

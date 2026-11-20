@@ -6,6 +6,10 @@ import { KI_EINWILLIGUNG_EVENT, KiEinwilligungDialog, kiEinwilligungMelden, type
 import { track } from "@/lib/analytics";
 
 const BESCHRIFTUNG: Record<EinwilligungsArt, string> = { text: "KI-Funktionen", audio: "Sprachfunktionen" };
+const ERKLAERUNG: Record<EinwilligungsArt, string> = {
+  text: "Studio, Quiz, Zusammenfassungen und Vorschläge mit KI.",
+  audio: "Diktieren, Vorlesen und Transkription.",
+};
 
 /** KI-D1 / KI-D2: Schalter in den Einstellungen – Einwilligung geben oder widerrufen (getrennt). */
 export function KiEinstellung({ startEingewilligt, art = "text" }: { startEingewilligt: boolean; art?: EinwilligungsArt }) {
@@ -41,10 +45,22 @@ export function KiEinstellung({ startEingewilligt, art = "text" }: { startEingew
 
   return (
     <>
-      <button type="button" className="sidebar-theme-toggle" onClick={() => void umschalten()} disabled={laeuft}>
-        <span>{BESCHRIFTUNG[art]}</span>
-        <span style={{ color: "var(--accent-strong)" }}>{an ? "An" : "Aus"}</span>
-      </button>
+      <div className="einst-zeile">
+        <span>
+          {BESCHRIFTUNG[art]}
+          <small>{ERKLAERUNG[art]}</small>
+        </span>
+        <button
+          type="button"
+          className="schalter"
+          role="switch"
+          aria-checked={an}
+          aria-label={BESCHRIFTUNG[art]}
+          aria-busy={laeuft}
+          onClick={() => void umschalten()}
+          disabled={laeuft}
+        />
+      </div>
       {dialog && (
         <KiEinwilligungDialog
           art={art}
