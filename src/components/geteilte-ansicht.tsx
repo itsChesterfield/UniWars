@@ -128,6 +128,7 @@ export function GeteilteAnsicht({ children, mainKlasse: grundKlasse }: { childre
     };
     // Andere Komponenten (z. B. PDF Reader → Notiz) öffnen etwas als zweite Ansicht
     const oeffnenWunsch = (e: Event) => {
+      if (e.defaultPrevented) return;
       const { href, seite } = (e as CustomEvent<{ href: unknown; seite: unknown }>).detail ?? {};
       if (!istAppPfad(href)) return;
       const aktuell = aufteilungLesen(rohLesen());

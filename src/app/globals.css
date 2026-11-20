@@ -11397,12 +11397,6 @@ html[data-eingebettet] .dashboard-main:has(.notiz-layout[data-ansicht="inhalt"])
 /* ---------------------------------------------------------------------------
    UniVerse Studio – ein Chat überall, per Strg+J als Leiste rechts
    --------------------------------------------------------------------------- */
-@media (min-width: 761px) {
-  html[data-studio-offen] .dashboard {
-    padding-right: 420px;
-  }
-}
-
 kbd {
   display: inline-block;
   padding: 1px 6px;
@@ -12181,12 +12175,6 @@ html[data-eingebettet] .dashboard-main > .pdf-reader {
   border-color: var(--accent);
 }
 
-@media (min-width: 761px) {
-  html[data-studio-offen] .dashboard {
-    padding-right: 460px;
-  }
-}
-
 /* ---------------------------------------------------------------------------
    Persönliches Modell: Gemerkt-Chips, Rückmeldung, Kennenlernen, Gedächtnis-Seite
    --------------------------------------------------------------------------- */
@@ -12592,24 +12580,27 @@ input.gd-feld {
   }
 }
 
-/* UniVerse Studio groß */
-@media (min-width: 761px) {
-  html[data-studio-offen][data-studio-gross] .dashboard {
-    padding-right: min(880px, 62vw);
-  }
+/* Angedocktes Studio und Arbeitsfläche teilen sich dieselbe Breitenangabe. */
+html[data-studio-offen] .dashboard {
+  padding-right: var(--studio-breite);
 }
 
-/* UniVerse Studio, Design B (Entscheidung Didi 18.11.): Leiste als eingelassene Fläche rechts,
-   Studio schreibt als Fließtext, deine Fragen rechts getönt, Lichtspur nur solange Studio arbeitet.
-   Breiten wie bisher (460 px, groß bis 880 px), die Fläche hält 8 px Abstand zum Rand. */
+html[data-studio-vollbild] {
+  overflow: hidden;
+}
+
+/* Studio bleibt beim Wechsel zwischen Seitenleiste und Vollbild im selben Dialog. */
 .studio-panel {
   position: fixed;
-  top: var(--space-2);
-  right: var(--space-2);
-  bottom: var(--space-2);
+  inset: var(--space-2) var(--space-2) var(--space-2) auto;
   z-index: 80;
-  width: calc(460px - var(--space-2) * 2);
-  max-width: 100vw;
+  width: calc(var(--studio-breite) - var(--space-2) * 2);
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-l);
@@ -12622,8 +12613,77 @@ input.gd-feld {
   animation: studio-ein var(--dur-short) var(--ease-out);
 }
 
-.studio-panel.gross {
-  width: calc(min(880px, 62vw) - var(--space-2) * 2);
+.studio-panel:not([open]) {
+  display: none;
+}
+
+.studio-panel[data-vollbild] {
+  inset: 0;
+  width: auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.studio-chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+[data-vollbild] .studio-chat {
+  width: min(100%, 50rem);
+  margin-inline: auto;
+}
+
+.studio-trenner {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--space-3);
+  touch-action: none;
+  cursor: ew-resize;
+}
+
+.studio-trenner::after {
+  content: "";
+  width: var(--space-half);
+  height: var(--space-8);
+  border-radius: var(--radius-pill);
+  background: var(--text-3);
+}
+
+.studio-trenner:is(:hover, :focus-visible, :active)::after {
+  background: var(--akzent-text);
+}
+
+.studio-trenner:focus-visible {
+  outline-offset: calc(-1 * var(--space-half));
+}
+
+.studio-breitenmenue {
+  position: relative;
+}
+
+.studio-breitenmenue summary::-webkit-details-marker {
+  display: none;
+}
+
+.studio-breitenwahl {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 3;
+  display: grid;
+  gap: var(--space-half);
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--flaeche-2);
+  box-shadow: 0 0 0 1px var(--linie-2), 0 var(--space-2) var(--space-4) var(--schatten);
 }
 
 @keyframes studio-ein {
@@ -12775,10 +12835,21 @@ input.gd-feld {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   padding: var(--space-5) var(--space-4);
+}
+
+.studio-panel .ki-chat-verlauf {
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  overflow-anchor: none;
+}
+
+.studio-panel .ki-blase-ki {
+  gap: var(--space-1);
 }
 
 .ki-chat-hinweis {
@@ -13204,20 +13275,6 @@ input.gd-feld {
 }
 
 @media (max-width: 760px) {
-  /* Am Handy Vollbild über Kopfleiste und Tab-Leiste */
-  .studio-panel,
-  .studio-panel.gross {
-    inset: 0;
-    z-index: var(--z-modal);
-    width: auto;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .ki-panel-knoepfe .studio-groesse {
-    display: none;
-  }
-
   .ki-seite-chat {
     border-radius: 0;
     box-shadow: none;
@@ -15290,12 +15347,6 @@ html[data-eingebettet] .kontext-mobil {
     flex-direction: column;
     gap: var(--space-4);
     padding: 0 var(--space-6) var(--space-4);
-  }
-}
-
-@media (min-width: 1001px) and (max-width: 1280px) {
-  html[data-studio-offen] .kontext {
-    display: none;
   }
 }
 
