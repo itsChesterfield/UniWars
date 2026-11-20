@@ -27,9 +27,37 @@ function formelnVereinfachen(t: string): string {
     .replace(/[{}]/g, "");
 }
 
+/** Abkürzungen ausschreiben, damit die Stimme nicht „z Punkt B Punkt“ spricht. */
+const ABKUERZUNGEN: [RegExp, string][] = [
+  [/\bz\.\s?B\./g, "zum Beispiel"],
+  [/\bd\.\s?h\./g, "das heißt"],
+  [/\bu\.\s?a\./g, "unter anderem"],
+  [/\bs\.\s?o\./g, "siehe oben"],
+  [/\bs\.\s?u\./g, "siehe unten"],
+  [/\bbzw\./g, "beziehungsweise"],
+  [/\bggf\./g, "gegebenenfalls"],
+  [/\bevtl\./g, "eventuell"],
+  [/\busw\./g, "und so weiter"],
+  [/\bvgl\./g, "vergleiche"],
+  [/\bca\./g, "circa"],
+  [/\bNr\.\s?(?=\d)/g, "Nummer "],
+  [/\bz\.\s?T\./g, "zum Teil"],
+  [/°C\b/g, " Grad Celsius"],
+  [/\s&\s/g, " und "],
+];
+
+/** Emojis und Zierzeichen, die eine Stimme verschluckt oder falsch ausspricht. */
+const EMOJI = /[\p{Extended_Pictographic}\u200d\ufe0f]/gu;
+
 /** Markdown → gut vorlesbarer Fließtext. */
 export function sprechtext(markdown: string): string {
   let t = markdown.replace(/\r\n/g, "\n");
+  t = t.replace(EMOJI, "");
+  // Gedankenstrich als Sprechpause: „A – B“ wird „A, B“
+  t = t.replace(/\s[–—]\s/g, ", ");
+  // nackte Web-Adressen nicht buchstabieren
+  t = t.replace(/https?:\/\/[^\s)]*[^\s).,;:!?]/g, "Link");
+  for (const [muster, ersatz] of ABKUERZUNGEN) t = t.replace(muster, ersatz);
   t = t.replace(/```[\s\S]*?(```|$)/g, `\n${CODE_HINWEIS}\n`);
   t = t.replace(/`([^`\n]+)`/g, "$1");
   t = t.replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1");
@@ -61,6 +89,7 @@ export function sprechtext(markdown: string): string {
     .replace(/\n{2,}/g, "\n\n")
     .replace(/(?<!\n)\n(?!\n)/g, " ")
     .replace(/[ \t]+/g, " ")
+    .replace(/ +([.,;:!?])/g, "$1")
     .trim();
 }
 
