@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { alleUnterhaltungenLoeschen } from "@/app/(hubs)/assistent/actions";
 import { track } from "@/lib/analytics";
+import { rueckfrage } from "@/components/rueckfrage";
 
 /** Einstellungen (Seitenleiste): „Alle KI-Unterhaltungen löschen“ (8.5). */
 export function KiVerlaufLoeschen() {
   const [laeuft, setLaeuft] = useState(false);
   async function loeschen() {
-    if (!window.confirm("Alle Unterhaltungen mit dem Assistenten löschen? Das lässt sich nicht rückgängig machen.")) return;
+    if (!(await rueckfrage({ titel: "Alle Unterhaltungen löschen?", text: "Alle Unterhaltungen mit UniVerse Studio werden gelöscht. Das lässt sich nicht rückgängig machen.", ja: "Alle löschen", gefahr: true }))) return;
     setLaeuft(true);
     const a = await alleUnterhaltungenLoeschen().catch(() => null);
     setLaeuft(false);
