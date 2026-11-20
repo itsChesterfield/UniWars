@@ -1,0 +1,42 @@
+name: Team-Update erstellen
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Nummer eines bereits gemergten Pull Requests
+        required: true
+        type: number
+
+concurrency:
+  group: team-update-pr-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
+
+jobs:
+  briefing:
+    if: vars.TEAM_UPDATES_AKTIV == 'true' && (github.event_name == 'pull_request_target' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Nur der vertrauenswürdige Basisstand wird mit Secrets ausgeführt.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/team-update-pr.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MISTRAL_API_KEY: ${{ secrets.TEAM_UPDATE_MISTRAL_API_KEY }}
+          TEAM_UPDATE_MODELL: ${{ vars.TEAM_UPDATE_MODELL }}

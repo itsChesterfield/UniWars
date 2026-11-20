@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const SEITEN: { href: string; name: string; icon: string; nurMitKi?: boolean }[] = [
+const SEITEN: { href: string; name: string; icon: string; nurMitKi?: boolean; nurTeam?: boolean }[] = [
   {
     href: "/einstellungen",
     name: "Profil und Konto",
@@ -19,6 +19,12 @@ const SEITEN: { href: string; name: string; icon: string; nurMitKi?: boolean }[]
     name: "Studio und Gedächtnis",
     icon: "M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8Z",
     nurMitKi: true,
+  },
+  {
+    href: "/einstellungen/team-updates",
+    name: "Team-Updates",
+    icon: "M5 4h14v16H5z|M8 8h8|M8 12h8|M8 16h5",
+    nurTeam: true,
   },
 ];
 
@@ -36,10 +42,10 @@ function Symbol({ d }: { d: string }) {
  * Design B3: Kontextspalte der Einstellungen (DESIGN.md Abschnitt 4 und 6).
  * Steht im Rahmen aller Hubs und zeigt sich nur unter /einstellungen. Am Handy klappt sie unter der Kopfleiste auf.
  */
-export function EinstellungenKontext({ mobil = false, kiVerfuegbar = true }: { mobil?: boolean; kiVerfuegbar?: boolean }) {
+export function EinstellungenKontext({ mobil = false, kiVerfuegbar = true, team = false }: { mobil?: boolean; kiVerfuegbar?: boolean; team?: boolean }) {
   const pfad = usePathname();
   if (!pfad.startsWith("/einstellungen")) return null;
-  const seiten = SEITEN.filter((s) => kiVerfuegbar || !s.nurMitKi);
+  const seiten = SEITEN.filter((s) => (kiVerfuegbar || !s.nurMitKi) && (team || !s.nurTeam));
   const aktiv = seiten.find((s) => s.href === pfad) ?? seiten[0];
 
   const liste = (

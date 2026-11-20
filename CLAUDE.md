@@ -18,3 +18,5 @@ Sprache mit Max: Deutsch, kurz und verständlich.
 - Keine Gedankenstriche in Texten, keine Emojis als Icons, Farben/Abstände/Schriften nur über Token (`DESIGN.md`).
 - Datenbank-Migrationen über Supabase einspielen; Dateiname = Version in Supabase. Vorher prüfen, ob die **Live-Version** mit der Änderung klarkommt.
 - Keine Force-Pushes. Keine Modellnamen in Commits oder PRs.
+
+Für das automatische Team-Briefing vor dem Merge gilt außerdem [Abschnitt 7 in AGENTS.md](AGENTS.md#7-team-update-vor-dem-merge).
