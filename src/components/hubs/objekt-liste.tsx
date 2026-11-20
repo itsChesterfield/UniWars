@@ -17,6 +17,7 @@ import { MaterialFaecherDialog } from "@/components/dateiablage/material-faecher
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 import { inDenPapierkorb } from "@/components/rueckfrage";
 import { kopfListe } from "@/lib/bereichskopf";
+import { meldung } from "@/components/meldung";
 
 export type ObjektEintrag = { id: string; titel: string; fach_id: string | null; fach_ids?: string[]; geaendert_am: string; info?: string };
 
@@ -104,15 +105,15 @@ export function ObjektListe({
     }
   }
 
-  async function entfernen(e: ObjektEintrag) {
-    if (!(await inDenPapierkorb(`„${e.titel || ohneTitel}“`))) return;
+  async function entfernen(e: ObjektEintrag, bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`„${e.titel || ohneTitel}“`))) return;
     try {
       await loeschen(e.id);
       track(`${eventName}_geloescht`);
       router.refresh();
     } catch (err) {
       fehlerMelden(err, { ort: `${eventName}_loeschen` });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(e, true));
     }
   }
 
@@ -165,7 +166,7 @@ export function ObjektListe({
                 <div className="entry-actions">
                   <DreiPunkteMenue label={`Weitere Aktionen für ${name}`} punkte={[
                     { label: "Fächer zuordnen", icon: "faecher", onClick: () => setFaecherFuer(d.id) },
-                    { label: "Löschen", onClick: () => void entfernen(d), gefahr: true },
+                    { label: "In den Papierkorb", onClick: () => void entfernen(d), gefahr: true },
                   ]} />
                 </div>
               </li>

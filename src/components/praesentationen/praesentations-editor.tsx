@@ -26,6 +26,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Aenderung = { titel: string; design: Design; folien: Folie[] };
 
@@ -114,7 +115,7 @@ export function PraesentationsEditor({
   async function folieLoeschen(index: number) {
     setKontext(null);
     if (folien.length <= 1) {
-      window.alert("Eine Präsentation braucht mindestens eine Folie.");
+      meldung("Eine Präsentation braucht mindestens eine Folie.", "hinweis");
       return;
     }
     if (!(await rueckfrage({ titel: `Folie ${index + 1} löschen?`, ja: "Löschen", gefahr: true }))) return;
@@ -123,15 +124,15 @@ export function PraesentationsEditor({
     setAktivId(liste[Math.min(index, liste.length - 1)].id);
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die Präsentation „${titel}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die Präsentation „${titel}“`))) return;
     try {
       await praesentationLoeschen(id);
       track("praesentation_geloescht");
       router.push("/praesentationen");
     } catch (err) {
       fehlerMelden(err, { ort: "praesentation_loeschen" });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 
@@ -220,7 +221,7 @@ export function PraesentationsEditor({
                   window.print();
                 },
               },
-              { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
+              { label: "In den Papierkorb", onClick: () => void entfernen(), gefahr: true },
             ]}
           />
         </div>

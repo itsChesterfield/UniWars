@@ -14,6 +14,7 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 import { inDenPapierkorb } from "@/components/rueckfrage";
 import { kartenLage } from "@/lib/bereichskopf";
+import { meldung } from "@/components/meldung";
 
 export type StapelKachel = Stapel & { anzahl: number; faellig: number };
 
@@ -41,16 +42,16 @@ export function StapelUebersicht({
   const faellig = stapel.reduce((n, s) => n + s.faellig, 0);
   const mitFaelligen = stapel.filter((s) => s.faellig > 0).length;
 
-  async function loeschen(s: StapelKachel) {
+  async function loeschen(s: StapelKachel, bestaetigt = false) {
     const hinweis = s.anzahl > 0 ? ` mit ${karten(s.anzahl)}` : "";
-    if (!(await inDenPapierkorb(`Der Stapel „${s.name}“${hinweis}`))) return;
+    if (!bestaetigt && !(await inDenPapierkorb(`Der Stapel „${s.name}“${hinweis}`))) return;
     try {
       await stapelLoeschen(s.id);
       track("kk_stapel_geloescht", { karten: s.anzahl });
       router.refresh();
     } catch (err) {
       fehlerMelden(err, { ort: "kk_stapel_loeschen" });
-      window.alert("Löschen hat nicht geklappt. Bitte versuch es nochmal.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => loeschen(s, true));
     }
   }
 
@@ -151,7 +152,7 @@ export function StapelUebersicht({
                       label={`Weitere Aktionen für ${s.name}`}
                       punkte={[
                         { label: "Bearbeiten", onClick: () => setDialog({ modus: "bearbeiten", stapel: s }) },
-                        { label: "Löschen", onClick: () => void loeschen(s), gefahr: true },
+                        { label: "In den Papierkorb", onClick: () => void loeschen(s), gefahr: true },
                       ]}
                     />
                   </div>

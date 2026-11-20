@@ -13,6 +13,7 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { OfflineHinweis } from "@/components/offline-hinweis";
 import { Icon } from "@/components/nav-icon";
 import { rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Uebersicht = Database["public"]["Functions"]["chat_uebersicht"]["Returns"][number];
 
@@ -80,26 +81,26 @@ export function ChatHub({
     window.dispatchEvent(new Event(CHAT_GELESEN_EVENT));
   }, [aktivId]);
 
-  async function blockieren(userId: string, blockieren: boolean) {
-    if (blockieren && !(await rueckfrage({ titel: "Diese Person blockieren?", text: "Ihr könnt euch dann keine Direktnachrichten mehr schicken.", ja: "Blockieren", gefahr: true }))) return;
-    const { error } = blockieren
+  async function blockieren(userId: string, sperren: boolean, bestaetigt = false) {
+    if (sperren && !bestaetigt && !(await rueckfrage({ titel: "Diese Person blockieren?", text: "Ihr könnt euch dann keine Direktnachrichten mehr schicken.", ja: "Blockieren", gefahr: true }))) return;
+    const { error } = sperren
       ? await supabase.from("nutzer_blockiert").insert({ user_id: ich, blockiert_id: userId })
       : await supabase.from("nutzer_blockiert").delete().eq("blockiert_id", userId);
     if (error) {
-      window.alert("Das hat nicht geklappt.");
+      meldung("Das hat nicht geklappt.", "fehler", () => blockieren(userId, sperren, true));
       fehlerMelden(error, { ort: "chat_blockieren" });
       return;
     }
-    setBlockiert((l) => (blockieren ? [...l, userId] : l.filter((x) => x !== userId)));
-    track(blockieren ? "chat_blockiert" : "chat_entblockt");
+    setBlockiert((l) => (sperren ? [...l, userId] : l.filter((x) => x !== userId)));
+    track(sperren ? "chat_blockiert" : "chat_entblockt");
     void neuLaden();
   }
 
-  async function verlassen() {
-    if (!aktivId || !(await rueckfrage({ titel: "Gruppe verlassen?", text: "Du siehst die Nachrichten der Gruppe dann nicht mehr.", ja: "Verlassen", gefahr: true }))) return;
+  async function verlassen(bestaetigt = false) {
+    if (!aktivId || (!bestaetigt && !(await rueckfrage({ titel: "Gruppe verlassen?", text: "Du siehst die Nachrichten der Gruppe dann nicht mehr.", ja: "Verlassen", gefahr: true })))) return;
     const { error } = await supabase.from("chat_mitglied").delete().eq("chat_id", aktivId).eq("user_id", ich);
     if (error) {
-      window.alert("Verlassen hat nicht geklappt.");
+      meldung("Verlassen hat nicht geklappt.", "fehler", () => verlassen(true));
       return;
     }
     track("chat_gruppe_verlassen");

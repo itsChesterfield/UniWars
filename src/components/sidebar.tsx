@@ -10,6 +10,7 @@ import { AllesRaster, allesOeffnen } from "@/components/alles-raster";
 import { SCHNELL_ERFASSEN } from "@/components/quick-add";
 import { InaktivitaetsWaechter } from "@/components/inaktivitaet-waechter";
 import { Rueckfrage } from "@/components/rueckfrage";
+import { Meldung } from "@/components/meldung";
 import { TimerWaechter } from "@/components/work-station/timer-waechter";
 import { ChatPunkt } from "@/components/chat/chat-punkt";
 import { ProfilAvatar, avatarName } from "@/components/profil-avatar";
@@ -309,6 +310,7 @@ export function Sidebar({
       <Befehlspalette userId={userId} kiVerfuegbar={kiVerfuegbar} theme={theme} />
       <InaktivitaetsWaechter />
       <Rueckfrage />
+      <Meldung />
     </>
   );
 }

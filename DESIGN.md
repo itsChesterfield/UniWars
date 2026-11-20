@@ -83,5 +83,12 @@ Zwei Basis-Designs, beide ohne Fotos. Farben nur über semantische Token, nie fe
 - Offline: Kopfleiste „Offline“, KI-Bereiche (Studio, Transkription, Chat) sagen, was später passiert.
 - Automatisch abmelden nach 5 Minuten: 30 Sekunden vorher Hinweis mit „Angemeldet bleiben“.
 
+### Rückfragen, Eingaben, Meldungen
+- **Nie Browser-Dialoge** (`alert`, `confirm`, `prompt`). Dafür gibt es `rueckfrage()`, `eingabe()` und `meldung()` (`src/components/rueckfrage.tsx`, `meldung.tsx`), beide einmal im Gerüst eingebunden.
+- **Rückfrage** vor allem, was sich nicht in einem Schritt zurücknehmen lässt: Löschen, Trennen, Blockieren, Verlassen. Der Titel ist die Frage („Deadline löschen?“), der Text nennt Namen und Folge, der Knopf nennt die Handlung („Löschen“, nie „Ja“ oder „OK“). Zerstörende Handlungen in der Fehlerfarbe getönt. Der Fokus startet auf „Abbrechen“, Escape und Klick daneben brechen ab, danach steht der Fokus wieder dort, wo er vorher war.
+- **Papierkorb:** Was in den Papierkorb der Dateiablage geht, heißt im Menü „In den Papierkorb“ und fragt „In den Papierkorb legen?“ mit dem Hinweis, dass man es dort wiederherstellen kann (`inDenPapierkorb()`). „Löschen“ steht nur da, wo etwas endgültig weg ist. Kleine Unterpunkte und Unteraufgaben löschen ohne Rückfrage.
+- **Eingabe:** ein Feld im selben Dialog. Fokus im Feld, der Text ist markiert, Enter bestätigt, ein leeres Feld ist gesperrt, außer leer hat eine Bedeutung (dann sagt der Text, welche).
+- **Meldung:** unten in der Mitte, am Handy über der Tab-Leiste. Nur für Fehler, für Regeln („Der Startknoten kann nicht gelöscht werden.“) und für Ergebnisse, die man sonst nicht sieht („Kopiert“); nie für sichtbare Erfolge. Fehler mit Warnsymbol, 10 Sekunden; Hinweise 4 Sekunden. Bei Maus oder Fokus darauf und während „Erneut versuchen“ läuft, wartet sie; das Kreuz schließt. Lässt sich der fehlgeschlagene Schritt wiederholen, trägt der Fehler „Erneut versuchen“, der Knopf zeigt das Laden. Hat eine Region eine eigene Fehlerzeile, gehört der Fehler dorthin statt in die Meldung.
+
 ## 9. Verboten, außer begründet (Hallmark)
 Lila-Blau-Verläufe, Glas oder Leuchten ohne Zweck, Eyebrows, Labels in Großbuchstaben oder Mono, Punkte als Deko, einseitige Farbkante an Karten, Karte in Karte, Icon im Kästchen als Reflex, drei gleiche Karten unter einem Hero, Emojis als Icons, Erfolgs-Toasts bei sichtbaren Aktionen, Bedienung nur bei Hover, Fokusrahmen unter 2 px, Farben oder Schriften außerhalb der Token.

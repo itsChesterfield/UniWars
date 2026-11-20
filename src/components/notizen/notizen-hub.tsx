@@ -33,6 +33,7 @@ import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
 import { kopfListe } from "@/lib/bereichskopf";
+import { meldung } from "@/components/meldung";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
 export type PdfOption = { id: string; name: string };
@@ -232,7 +233,7 @@ export function NotizenHub({
       if (istPdfName(name)) {
         const pdf = pdfNachName(name);
         if (!pdf) {
-          window.alert(`Die PDF „${name}“ gibt es (noch) nicht in deiner Dateiablage.`);
+          meldung(`Die PDF „${name}“ gibt es noch nicht in deiner Dateiablage.`, "hinweis");
           return;
         }
         track("notiz_link_geoeffnet", { art: "pdf", mit_seite: Boolean(seite) });
@@ -681,7 +682,7 @@ function NotizEditor({
           label="Weitere Aktionen für diese Notiz"
           punkte={[
             { label: "Daneben öffnen", onClick: () => inZweiterAnsichtOeffnen(`/notizen?id=${notiz.id}`, "rechts") },
-            { label: "Löschen", onClick: onLoeschen, gefahr: true },
+            { label: "In den Papierkorb", onClick: onLoeschen, gefahr: true },
           ]}
         />
       </div>

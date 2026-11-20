@@ -29,6 +29,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Pos = { s: number; z: number };
 type Bearbeitung = { s: number; z: number; wert: string; quelle: "zelle" | "leiste" };
@@ -258,15 +259,15 @@ export function TabellenEditor({
     }
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die Tabelle „${titel || OHNE_TITEL_TABELLE}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die Tabelle „${titel || OHNE_TITEL_TABELLE}“`))) return;
     try {
       await tabelleLoeschen(id);
       track("tabelle_geloescht");
       router.push("/tabellen");
     } catch (err) {
       fehlerMelden(err, { ort: "tabelle_loeschen" });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 
@@ -339,7 +340,7 @@ export function TabellenEditor({
             punkte={[
               { label: "Als CSV exportieren", onClick: () => void exportieren("csv") },
               { label: "Als Excel (.xlsx) exportieren", onClick: () => void exportieren("xlsx") },
-              { label: "Löschen", onClick: () => void entfernen(), gefahr: true },
+              { label: "In den Papierkorb", onClick: () => void entfernen(), gefahr: true },
             ]}
           />
         </div>

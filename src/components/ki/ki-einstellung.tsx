@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { kiEinwilligungWiderrufen, type EinwilligungsArt } from "@/app/(hubs)/ki/einwilligung-actions";
 import { KI_EINWILLIGUNG_EVENT, KiEinwilligungDialog, kiEinwilligungMelden, type EinwilligungsEreignis } from "@/components/ki/ki-einwilligung-dialog";
 import { track } from "@/lib/analytics";
+import { meldung } from "@/components/meldung";
 
 const BESCHRIFTUNG: Record<EinwilligungsArt, string> = { text: "KI-Funktionen", audio: "Sprachfunktionen" };
 const ERKLAERUNG: Record<EinwilligungsArt, string> = {
@@ -39,7 +40,7 @@ export function KiEinstellung({ startEingewilligt, art = "text" }: { startEingew
       kiEinwilligungMelden(art, false);
       track("ki_einwilligung_widerrufen", { art });
     } else {
-      window.alert("Das hat nicht geklappt. Bitte versuch es noch einmal.");
+      meldung("Das hat nicht geklappt.", "fehler", () => umschalten());
     }
   }
 

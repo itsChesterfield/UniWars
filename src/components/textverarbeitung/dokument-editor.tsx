@@ -24,6 +24,7 @@ import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { PfeilText } from "@/components/bewegung/pfeil-text";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 type Quelle = { id: string; autoren: string; titel: string; jahr: number; seiten: string | null };
 type Aenderung = { titel: string; inhalt: Json; klartext: string; woerter: number };
@@ -114,15 +115,15 @@ export function DokumentEditor({
     dokumentFachSetzen(dokument.id, neu || null).catch((err) => fehlerMelden(err, { ort: "dokument_fach" }));
   }
 
-  async function loeschen() {
-    if (!(await inDenPapierkorb(`Das Dokument „${titel || OHNE_TITEL}“`))) return;
+  async function loeschen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Das Dokument „${titel || OHNE_TITEL}“`))) return;
     try {
       await dokumentLoeschen(dokument.id);
       track("dokument_geloescht");
       router.push("/textverarbeitung");
     } catch (err) {
       fehlerMelden(err, { ort: "dokument_loeschen" });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => loeschen(true));
     }
   }
 
@@ -187,7 +188,7 @@ export function DokumentEditor({
               { label: "Als Word (.docx)", onClick: () => void exportieren("docx") },
             ]}
           />
-          <DreiPunkteMenue label="Weitere Aktionen für dieses Dokument" punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
+          <DreiPunkteMenue label="Weitere Aktionen für dieses Dokument" punkte={[{ label: "In den Papierkorb", onClick: () => void loeschen(), gefahr: true }]} />
         </div>
       </div>
 

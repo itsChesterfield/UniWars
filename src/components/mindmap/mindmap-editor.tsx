@@ -14,6 +14,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
+import { meldung } from "@/components/meldung";
 
 const SCHRIFT = "600 15px";
 const SCHRIFT_WURZEL = "700 18px";
@@ -155,7 +156,7 @@ export function MindmapEditor({
     const k = daten.knoten.find((x) => x.id === kid);
     if (!k) return;
     if (k.parent_id === null) {
-      window.alert("Der Startknoten kann nicht gelöscht werden.");
+      meldung("Der Startknoten kann nicht gelöscht werden.", "hinweis");
       return;
     }
     const anzahl = mm.nachkommen(daten, kid).size;
@@ -226,19 +227,19 @@ export function MindmapEditor({
       track("mindmap_exportiert");
     } catch (err) {
       fehlerMelden(err, { ort: "mindmap_export" });
-      window.alert("Export hat nicht geklappt.");
+      meldung("Export hat nicht geklappt.", "fehler", () => exportieren());
     }
   }
 
-  async function entfernen() {
-    if (!(await inDenPapierkorb(`Die MindMap „${name}“`))) return;
+  async function entfernen(bestaetigt = false) {
+    if (!bestaetigt && !(await inDenPapierkorb(`Die MindMap „${name}“`))) return;
     try {
       await mindmapLoeschen(id);
       track("mindmap_geloescht");
       router.push("/mindmap");
     } catch (err) {
       fehlerMelden(err, { ort: "mindmap_loeschen" });
-      window.alert("Löschen hat nicht geklappt.");
+      meldung("Löschen hat nicht geklappt.", "fehler", () => entfernen(true));
     }
   }
 
@@ -282,7 +283,7 @@ export function MindmapEditor({
             label="Exportieren und mehr"
             punkte={[
               { label: "Als PNG exportieren", onClick: () => void exportieren() },
-              { label: "MindMap löschen", onClick: () => void entfernen(), gefahr: true },
+              { label: "In den Papierkorb", onClick: () => void entfernen(), gefahr: true },
             ]}
           />
         </div>

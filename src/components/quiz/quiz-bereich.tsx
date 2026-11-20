@@ -91,8 +91,8 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
                   <button
                     type="button"
                     className="knopf gefahr klein nur-symbol"
-                    aria-label={`Quiz „${q.titel}“ löschen`}
-                    title="Löschen"
+                    aria-label={`Quiz „${q.titel}“ in den Papierkorb`}
+                    title="In den Papierkorb"
                     onClick={async () => {
                       if (!(await inDenPapierkorb(`Das Quiz „${q.titel}“`))) return;
                       setLoeschfehler("");
