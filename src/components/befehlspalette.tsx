@@ -30,8 +30,9 @@ export const BEFEHLE_OEFFNEN = "uniwars-befehle-oeffnen";
 const NACHRICHT = "uniwars-befehle-umschalten";
 const ZULETZT_SCHLUESSEL = "uniwars-befehle-zuletzt-v1-v2";
 
-export function befehleOeffnen() {
-  window.dispatchEvent(new CustomEvent(BEFEHLE_OEFFNEN));
+/** Öffnet die Befehlspalette, auf Wunsch gleich mit Suchtext (zum Beispiel aus „Alles“ am Handy). */
+export function befehleOeffnen(suche?: string) {
+  window.dispatchEvent(new CustomEvent(BEFEHLE_OEFFNEN, { detail: { suche } }));
 }
 
 type Eintrag = {
@@ -132,11 +133,16 @@ export function Befehlspalette({ userId, kiVerfuegbar, theme = "HELL" }: { userI
       if (e.origin === window.location.origin && (e.data as { typ?: string })?.typ === NACHRICHT) oeffnen();
     };
     window.addEventListener("keydown", taste);
-    window.addEventListener(BEFEHLE_OEFFNEN, oeffnen);
+    const ausEreignis = (e: Event) => {
+      oeffnen();
+      const suche = (e as CustomEvent<{ suche?: string }>).detail?.suche;
+      if (suche) setQ(suche);
+    };
+    window.addEventListener(BEFEHLE_OEFFNEN, ausEreignis);
     window.addEventListener("message", nachricht);
     return () => {
       window.removeEventListener("keydown", taste);
-      window.removeEventListener(BEFEHLE_OEFFNEN, oeffnen);
+      window.removeEventListener(BEFEHLE_OEFFNEN, ausEreignis);
       window.removeEventListener("message", nachricht);
     };
   }, [eingebettet, offen, oeffnen, schliessen]);

@@ -283,9 +283,10 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
         {tage.map((t, i) => (
           <span key={t.datum} className="bue-zeile">
             <span className="bue-innen" style={verz(300 + i * 45)}>
-              <button type="button" className={`bue-wt${t.heute ? " heute" : ""}`} aria-pressed={gewaehlt.datum === t.datum} onClick={() => setTag(i)} aria-label={`${t.kurz} ${t.zahl}., ${t.ereignisse.length ? `${t.ereignisse.length} Einträge` : "frei"}`}>
-                <b>{t.zahl}</b>
+              <button type="button" className={`bue-wt${t.heute ? " heute" : ""}`} aria-pressed={gewaehlt.datum === t.datum} onClick={() => setTag(i)}>
+                <b>{t.zahl}</b>{" "}
                 <small>{t.kurz}</small>
+                <span className="vh">, {t.ereignisse.length === 0 ? "frei" : t.ereignisse.length === 1 ? "1 Eintrag" : `${t.ereignisse.length} Einträge`}</span>
               </button>
             </span>
           </span>

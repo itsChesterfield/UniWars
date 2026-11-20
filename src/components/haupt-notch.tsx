@@ -103,6 +103,27 @@ export function HauptNotch({ aktiv }: { aktiv: Bereich }) {
     return () => ro.disconnect();
   }, [aktiv]);
 
+  // Am Handy scrollt die Notch waagerecht: Auslaufkante an der Seite, auf der noch Bereiche liegen (Wisch-Hinweis)
+  useEffect(() => {
+    const nav = leiste.current;
+    if (!nav) return;
+    const setzen = () => {
+      const links = nav.scrollLeft > 2;
+      const rechts = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 2;
+      const rand = links && rechts ? "beide" : links ? "links" : rechts ? "rechts" : "";
+      if (rand) nav.dataset.rand = rand;
+      else delete nav.dataset.rand;
+    };
+    setzen();
+    nav.addEventListener("scroll", setzen, { passive: true });
+    const ro = new ResizeObserver(setzen);
+    ro.observe(nav);
+    return () => {
+      nav.removeEventListener("scroll", setzen);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
     <nav ref={leiste} className="haupt-notch" aria-label="Bereiche" title="Bereiche wechseln mit ← und →">
       <span ref={marke} className="haupt-notch-marke" aria-hidden="true" />
