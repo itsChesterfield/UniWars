@@ -17,9 +17,6 @@ import {
   type QuellenTyp,
 } from "@/lib/literatur/apa";
 import type { FachOption } from "@/lib/fach-option";
-import { KiQuelleDialog } from "@/components/literatur/ki-quelle-dialog";
-import type { QuellenErkennung } from "@/lib/ki/quelle";
-import { kiVorschauUebernommen } from "@/lib/ki/tracking";
 import { berlinDatum } from "@/lib/zeit";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
@@ -375,51 +372,14 @@ function QuellenFormular({
   }));
   const [fehler, setFehler] = useState<string | null>(null);
   const [laeuft, setLaeuft] = useState(false);
-  // KI-09: von der KI gefüllte Felder bleiben gelb, bis man sie anfasst oder bestätigt
-  const [kiDialog, setKiDialog] = useState(false);
-  const [kiFelder, setKiFelder] = useState<Set<keyof QuelleEingabe>>(new Set());
-  const [kiVerworfen, setKiVerworfen] = useState<string[]>([]);
-  const [kiGenutzt, setKiGenutzt] = useState(false);
   const web = werte.typ === "WEBSEITE";
-  const setze = <K extends keyof QuelleEingabe>(k: K, v: QuelleEingabe[K]) => {
-    setWerte((w) => ({ ...w, [k]: v }));
-    angefasst(k);
-  };
-  const angefasst = (k: keyof QuelleEingabe) =>
-    setKiFelder((s) => {
-      if (!s.has(k)) return s;
-      const neu = new Set(s);
-      neu.delete(k);
-      return neu;
-    });
-  const ki = (k: keyof QuelleEingabe) => (kiFelder.has(k) ? "ki-gefuellt" : "");
-  const FELD_NAMEN: Record<string, string> = { titel: "Titel", autoren: "Autor(en)", jahr: "Jahr", verlag: "Verlag", url: "URL", abgerufenAm: "Abrufdatum", seiten: "Seiten" };
-
-  function kiUebernehmen({ felder, verworfen }: QuellenErkennung) {
-    setWerte((w) => ({
-      ...w,
-      ...(felder.typ ? { typ: felder.typ } : {}),
-      ...(felder.autoren ? { autoren: felder.autoren } : {}),
-      ...(felder.titel ? { titel: felder.titel } : {}),
-      ...(felder.jahr ? { jahr: felder.jahr } : {}),
-      ...(felder.verlag ? { verlag: felder.verlag } : {}),
-      ...(felder.url ? { url: felder.url } : {}),
-      ...(felder.abgerufenAm ? { abgerufenAm: felder.abgerufenAm } : {}),
-      ...(felder.seiten ? { seiten: felder.seiten } : {}),
-    }));
-    setKiFelder(new Set(Object.keys(felder) as (keyof QuelleEingabe)[]));
-    setKiVerworfen(verworfen.map((v) => FELD_NAMEN[v] ?? v));
-    setKiGenutzt(true);
-    setKiDialog(false);
-  }
-
+  const setze = <K extends keyof QuelleEingabe>(k: K, v: QuelleEingabe[K]) => setWerte((w) => ({ ...w, [k]: v }));
   async function absenden(e: React.FormEvent) {
     e.preventDefault();
     setLaeuft(true);
     setFehler(null);
     try {
-      const gespeichert = await quelleSpeichern(quelle?.id ?? null, { ...werte, kiErzeugt: kiGenutzt });
-      if (kiGenutzt) kiVorschauUebernommen("ki09", 1, kiFelder.size === 0 ? 1 : 0);
+      const gespeichert = await quelleSpeichern(quelle?.id ?? null, { ...werte, kiErzeugt: false });
       onGespeichert(gespeichert, !quelle);
     } catch (err) {
       setFehler(err instanceof Error ? err.message : "Speichern hat nicht geklappt.");
@@ -436,8 +396,6 @@ function QuellenFormular({
 
   return (
     <>
-      {/* außerhalb des <form>: der Dialog hat ein eigenes Formular (verschachtelte Formulare sind ungültig) */}
-      {kiDialog && <KiQuelleDialog onErkannt={kiUebernehmen} onSchliessen={() => setKiDialog(false)} />}
       <dialog
         ref={dialog}
         className="formular-dialog lit-dialog"
@@ -449,22 +407,11 @@ function QuellenFormular({
       >
         <form className="crud-form" onSubmit={absenden}>
           <h3 id="lit-formular-titel">{quelle ? "Quelle bearbeiten" : "Neue Quelle"}</h3>
-          {kiFelder.size > 0 && (
-            <p className="ki-hinweis lit-ki-hinweis">
-              Markierte Felder hat die KI ausgefüllt, bitte prüfen.{" "}
-              <button type="button" className="link-knopf" onClick={() => setKiFelder(new Set())}>
-                Alles geprüft
-              </button>
-              {kiVerworfen.length > 0 && <span> Nicht im Text gefunden, daher leer: {kiVerworfen.join(", ")}.</span>}
-            </p>
-          )}
           <div className="crud-form-reihe lit-felder">
             <label>
               <span>Typ *</span>
               <select
-                className={`${ki("typ")}`}
                 value={werte.typ}
-                onFocus={() => angefasst("typ")}
                 onChange={(e) => {
                   const typ = e.target.value as QuellenTyp;
                   setWerte((w) => ({ ...w, typ, abgerufenAm: typ === "WEBSEITE" && !w.abgerufenAm ? berlinDatum() : w.abgerufenAm }));
@@ -478,8 +425,6 @@ function QuellenFormular({
             <label className="lit-breit">
               <span>Autor(en) *</span>
               <input
-                className={`${ki("autoren")}`}
-                onFocus={() => angefasst("autoren")}
                 required
                 value={werte.autoren}
                 placeholder="Müller, Anna; Schmidt, Ben"
@@ -489,13 +434,11 @@ function QuellenFormular({
             </label>
             <label className="lit-breit">
               <span>Titel *</span>
-              <input className={`${ki("titel")}`} onFocus={() => angefasst("titel")} required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
+              <input required value={werte.titel} placeholder="Grundlagen der Informatik" onChange={(e) => setze("titel", e.target.value)} />
             </label>
             <label>
               <span>Jahr *</span>
               <input
-                className={`${ki("jahr")}`}
-                onFocus={() => angefasst("jahr")}
                 type="number"
                 required
                 min={1000}
@@ -506,19 +449,19 @@ function QuellenFormular({
             </label>
             <label>
               <span>{werte.typ === "ARTIKEL" ? "Zeitschrift" : web ? "Website-Name" : "Verlag"}</span>
-              <input className={`${ki("verlag")}`} onFocus={() => angefasst("verlag")} value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
+              <input value={werte.verlag} placeholder={werte.typ === "ARTIKEL" ? "Informatik Spektrum, 44(2)" : "Springer"} onChange={(e) => setze("verlag", e.target.value)} />
             </label>
             <label className={web ? "lit-breit" : ""}>
               <span>URL{web ? " *" : ""}</span>
-              <input className={`${ki("url")}`} onFocus={() => angefasst("url")} type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
+              <input type="url" required={web} value={werte.url} placeholder="https://…" onChange={(e) => setze("url", e.target.value)} />
             </label>
             <label>
               <span>Abgerufen am{web ? " *" : ""}</span>
-              <input className={`${ki("abgerufenAm")}`} onFocus={() => angefasst("abgerufenAm")} type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
+              <input type="date" required={web} value={werte.abgerufenAm} onChange={(e) => setze("abgerufenAm", e.target.value)} />
             </label>
             <label>
               <span>Seiten</span>
-              <input className={`${ki("seiten")}`} onFocus={() => angefasst("seiten")} value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
+              <input value={werte.seiten} placeholder="45–60" onChange={(e) => setze("seiten", e.target.value)} />
             </label>
             <label>
               <span>Fach</span>

@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { Einrichtung } from "@/components/zustand";
 import { ChatHub } from "@/components/chat/chat-hub";
 
 export const metadata = { title: "Chat · UniVerse" };
@@ -20,8 +21,8 @@ export default async function ChatSeite() {
   if (tabelleFehlt(error) || error?.code === "PGRST202") {
     return (
       <>
-        <HubKopf titel="Chat" />
-        <EinrichtungHinweis hub="Der Chat" />
+        <Bereichskopf titel="Chat" />
+        <Einrichtung bereich="Der Chat" />
       </>
     );
   }

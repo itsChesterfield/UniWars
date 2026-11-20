@@ -147,7 +147,7 @@ export function VorlesenKnopf({
     <span className="ki-vorlesen">
       <button
         type="button"
-        className={`icon-knopf ki-vorlesen-knopf ${phase !== "bereit" ? "an" : ""}`}
+        className={`knopf leise klein nur-symbol ki-vorlesen-knopf ${phase !== "bereit" ? "an" : ""}`}
         aria-label={phase === "bereit" ? label : "Vorlesen stoppen"}
         title={phase === "bereit" ? label : "Stoppen"}
         aria-pressed={phase !== "bereit"}

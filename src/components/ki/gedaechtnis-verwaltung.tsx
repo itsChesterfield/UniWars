@@ -110,11 +110,11 @@ export function GedaechtnisVerwaltung({
 
   return (
     <div className="gd-seite">
-      <section className="card gd-abschnitt">
+      <section className="gd-abschnitt">
         <div className="gd-zeile">
           <span>
             <strong>Studio lernt über mich</strong>
-            <small className="faint gd-klein">
+            <small className="gd-klein">
               Aus Gesprächen, Rückmeldungen, Quiz und Karteikarten.
               Ausgeschaltet nutzt Studio weiter, was es weiß, lernt aber nichts
               Neues.
@@ -122,22 +122,22 @@ export function GedaechtnisVerwaltung({
           </span>
           <button
             type="button"
-            className={`btng gd-schalter ${an ? "an" : ""}`}
-            aria-pressed={an}
+            className="schalter"
+            role="switch"
+            aria-checked={an}
+            aria-label="Studio lernt über mich"
             onClick={() => {
               const neuAn = !an;
               setAn(neuAn);
               void gedaechtnisLernenSetzen(neuAn).catch(() => undefined);
               track("gedaechtnis_lernen", { an: neuAn });
             }}
-          >
-            {an ? "An" : "Aus"}
-          </button>
+          />
         </div>
         <div className="gd-knoepfe">
           <button
             type="button"
-            className="btng"
+            className="knopf neben klein"
             onClick={() =>
               void kennenlernenZuruecksetzen()
                 .catch(() => undefined)
@@ -151,12 +151,13 @@ export function GedaechtnisVerwaltung({
               ? "Kennenlernen starten"
               : "Kennenlernen wiederholen"}
           </button>
-          <button type="button" className="btng" onClick={exportieren}>
-            ⬇ Exportieren
+          <button type="button" className="knopf leise klein" onClick={exportieren}>
+            <Icon name="herunterladen" groesse={16} />
+            Exportieren
           </button>
           <button
             type="button"
-            className="btng gd-gefahr"
+            className="knopf gefahr klein"
             onClick={() => {
               if (
                 !window.confirm(
@@ -183,7 +184,7 @@ export function GedaechtnisVerwaltung({
       </section>
 
       {neuGelernt.length > 0 && (
-        <section className="card gd-abschnitt gd-rueckblick">
+        <section className="gd-abschnitt gd-rueckblick">
           <h2 className="gd-titel">In den letzten 30 Tagen gelernt</h2>
           <ul className="gd-liste-kurz">
             {neuGelernt.map((e) => (
@@ -196,7 +197,7 @@ export function GedaechtnisVerwaltung({
       )}
 
       {vorschlaege.length > 0 && (
-        <section className="card gd-abschnitt">
+        <section className="gd-abschnitt">
           <h2 className="gd-titel">Soll ich mir das merken?</h2>
           <ul className="gd-liste">
             {vorschlaege.map((e) => (
@@ -207,7 +208,7 @@ export function GedaechtnisVerwaltung({
                 <span className="gd-aktionen">
                   <button
                     type="button"
-                    className="btnp"
+                    className="knopf neben klein"
                     onClick={() => {
                       setEintraege((l) =>
                         l.map((x) =>
@@ -223,7 +224,7 @@ export function GedaechtnisVerwaltung({
                   </button>
                   <button
                     type="button"
-                    className="btng"
+                    className="knopf leise klein"
                     onClick={() => {
                       entfernen(e.id);
                       void gedaechtnisStatusSetzen(e.id, "verworfen").catch(
@@ -240,10 +241,12 @@ export function GedaechtnisVerwaltung({
         </section>
       )}
 
-      <section className="card gd-abschnitt">
-        <h2 className="gd-titel">Was Studio über dich weiß ({aktiv.length})</h2>
+      <section className="gd-abschnitt">
+        <h2 className="gd-titel">
+          Was Studio über dich weiß <span className="gd-anzahl zahl">{aktiv.length}</span>
+        </h2>
         {aktiv.length === 0 && (
-          <p className="faint">
+          <p className="gd-klein">
             Noch nichts. Erzähl Studio von dir (Strg+J) oder starte das
             Kennenlernen.
           </p>
@@ -284,7 +287,8 @@ export function GedaechtnisVerwaltung({
                         }}
                       >
                         <input
-                          className="field"
+                          className="gd-feld"
+                          aria-label="Eintrag bearbeiten"
                           autoFocus
                           maxLength={300}
                           value={bearbeiten.text}
@@ -292,12 +296,12 @@ export function GedaechtnisVerwaltung({
                             setBearbeiten({ id: e.id, text: ev.target.value })
                           }
                         />
-                        <button type="submit" className="btnp">
+                        <button type="submit" className="knopf neben klein">
                           Speichern
                         </button>
                         <button
                           type="button"
-                          className="btng"
+                          className="knopf leise klein"
                           onClick={() => setBearbeiten(null)}
                         >
                           Abbrechen
@@ -307,7 +311,7 @@ export function GedaechtnisVerwaltung({
                       <>
                         <span className="gd-inhalt">
                           {e.inhalt}
-                          <small className="faint">
+                          <small>
                             {QUELLE_NAME[e.quelle]}, {datum(e.erstellt_am)}
                             {e.fest ? ", dauerhaft" : ""}
                           </small>
@@ -315,7 +319,7 @@ export function GedaechtnisVerwaltung({
                         <span className="gd-aktionen">
                           <button
                             type="button"
-                            className="icon-knopf"
+                            className="knopf leise klein nur-symbol"
                             title="Bearbeiten"
                             aria-label="Bearbeiten"
                             onClick={() =>
@@ -326,7 +330,7 @@ export function GedaechtnisVerwaltung({
                           </button>
                           <button
                             type="button"
-                            className="icon-knopf"
+                            className="knopf leise klein nur-symbol"
                             title="Löschen"
                             aria-label="Löschen"
                             onClick={() => {
@@ -379,7 +383,7 @@ export function GedaechtnisVerwaltung({
           }}
         >
           <select
-            className="field"
+            className="gd-feld"
             value={neu.bereich}
             aria-label="Bereich"
             onChange={(e) =>
@@ -393,24 +397,25 @@ export function GedaechtnisVerwaltung({
             ))}
           </select>
           <input
-            className="field"
+            className="gd-feld"
+            aria-label="Neuer Eintrag"
             maxLength={300}
             placeholder="Selbst etwas hinzufügen, z. B. „lerne am besten morgens“"
             value={neu.text}
             onChange={(e) => setNeu({ ...neu, text: e.target.value })}
           />
-          <button type="submit" className="btnp" disabled={!neu.text.trim()}>
+          <button type="submit" className="knopf neben" disabled={!neu.text.trim()}>
             Hinzufügen
           </button>
         </form>
-        {fehler && <p className="auth-error">{fehler}</p>}
+        {fehler && <p className="formular-fehler" role="alert">{fehler}</p>}
       </section>
 
-      <section className="card gd-abschnitt">
+      <section className="gd-abschnitt">
         <h2 className="gd-titel">Wissensstand</h2>
-        {rhythmus && <p className="faint">Rhythmus: {rhythmus}</p>}
+        {rhythmus && <p className="gd-klein">Rhythmus: {rhythmus}</p>}
         {nachFach.length === 0 ? (
-          <p className="faint">
+          <p className="gd-klein">
             Entsteht aus Quiz und Karteikarten, je mehr du übst, desto genauer.
           </p>
         ) : (
@@ -428,8 +433,8 @@ export function GedaechtnisVerwaltung({
                     >
                       <span className="gd-ampel" aria-hidden />
                       <span className="gd-thema-name">{t.thema}</span>
-                      <span className="faint gd-thema-info">
-                        {AMPEL_TEXT[a]}, {Math.round(t.beherrschung * 100)} %
+                      <span className="gd-thema-info">
+                        {AMPEL_TEXT[a]}, <span className="zahl">{Math.round(t.beherrschung * 100)} %</span>
                       </span>
                     </li>
                   );

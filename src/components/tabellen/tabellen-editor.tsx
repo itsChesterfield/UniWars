@@ -8,7 +8,6 @@ import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Icon } from "@/components/nav-icon";
 import { OHNE_TITEL_TABELLE } from "@/components/tabellen/tabellen-liste";
 import { useAutoSpeichern } from "@/lib/hubs/auto-speichern";
-import { KiFormelDialog } from "@/components/tabellen/ki-formel-dialog";
 import {
   FEHLER,
   MAX_SPALTEN,
@@ -24,7 +23,6 @@ import {
   type TabellenDaten,
   type Zahlenformat,
   type Zelle,
-  zerlegen,
 } from "@/lib/tabellen/formeln";
 import { dateiname, dateiSpeichern } from "@/lib/textverarbeitung/docx-export";
 import type { FachOption } from "@/lib/fach-option";
@@ -75,8 +73,7 @@ export function TabellenEditor({
   const [kontext, setKontext] = useState<Kontext | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const rasterRef = useRef<HTMLTableElement>(null);
-  const { status, aendern, jetztSpeichern } = useAutoSpeichern<{ titel: string; daten: TabellenDaten }>((a) => tabelleSpeichern(id, a));
-  const [kiFormel, setKiFormel] = useState<string | null>(null);
+  const { status, aendern } = useAutoSpeichern<{ titel: string; daten: TabellenDaten }>((a) => tabelleSpeichern(id, a));
 
   const werte = useMemo(() => auswerten(daten), [daten]);
   const sel = bereich(anker, ende);
@@ -400,24 +397,6 @@ export function TabellenEditor({
           )}
         </div>
       </div>
-
-      {kiFormel && (
-        <KiFormelDialog
-          tabelleId={id}
-          zielZelle={kiFormel}
-          vorher={jetztSpeichern}
-          onSchliessen={() => setKiFormel(null)}
-          onEinfuegen={(formel) => {
-            const ziel = zerlegen(kiFormel);
-            setKiFormel(null);
-            if (!ziel) return;
-            const zellen = { ...daten.zellen, [kiFormel]: { ...(daten.zellen[kiFormel] ?? {}), w: formel } };
-            datenAendern({ ...daten, zellen });
-            track("tabelle_formel", { gueltig: true, ki: true });
-            rasterRef.current?.focus({ preventScroll: true });
-          }}
-        />
-      )}
 
       {/* TAB-04: Formelzeile */}
       <div className="tab-formelzeile">

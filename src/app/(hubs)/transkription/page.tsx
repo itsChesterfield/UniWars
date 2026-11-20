@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { audioVerfuegbar } from "@/lib/ki/audio";
-import { EinrichtungHinweis, HubKopf } from "@/components/hubs/hub-bausteine";
+import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { Einrichtung } from "@/components/zustand";
 import {
   TranskriptionHub,
   type TranskriptEintrag,
@@ -65,8 +66,8 @@ export default async function TranskriptionSeite({
   if (tabelleFehlt(error)) {
     return (
       <>
-        <HubKopf titel="Transkription" />
-        <EinrichtungHinweis hub="Die Transkription" />
+        <Bereichskopf titel="Transkription" />
+        <Einrichtung bereich="Die Transkription" />
       </>
     );
   }

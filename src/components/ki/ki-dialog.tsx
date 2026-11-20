@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { kiTextStatus } from "@/app/(hubs)/notizen/ki-actions";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
 import { KiFehlerMeldung } from "@/components/ki/ki-fehler-meldung";
@@ -25,23 +25,24 @@ export function KiDialog({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titelId = useId();
   useEffect(() => {
     ref.current?.showModal();
   }, []);
   return (
     <dialog
       ref={ref}
-      className={`card ki-dialog ${gross ? "ki-dialog-gross" : ""}`}
-      aria-label={titel}
+      className={`formular-dialog ki-dialog ${gross ? "ki-dialog-gross" : ""}`}
+      aria-labelledby={titelId}
       onCancel={(e) => {
         e.preventDefault();
         if (schliessbar) onSchliessen();
       }}
     >
-      <div className="rowb ki-dialog-kopf">
-        <h3 className="ct">{titel}</h3>
+      <div className="ki-dialog-kopf">
+        <h3 id={titelId}>{titel}</h3>
         {schliessbar && (
-          <button type="button" className="icon-knopf" aria-label="Schließen" onClick={onSchliessen}>
+          <button type="button" className="knopf leise klein nur-symbol" aria-label="Schließen" onClick={onSchliessen}>
             <Icon name="schliessen" groesse={16} />
           </button>
         )}
@@ -102,13 +103,13 @@ export function KiVorstufe({
   ort: string;
   onSchliessen: () => void;
 }) {
-  if (ki.phase === "laden") return <KiLadeZustand text="Lädt …" />;
+  if (ki.phase === "laden") return <KiLadeZustand text="Wird geladen." />;
   if (ki.phase === "nicht_verfuegbar") {
     return (
       <>
         <p>{ki.fehler ?? "KI ist gerade nicht verfügbar."}</p>
-        <div className="hub-formular-knoepfe">
-          <button type="button" className="btnp" onClick={onSchliessen}>
+        <div className="crud-form-actions">
+          <button type="button" className="knopf neben" onClick={onSchliessen}>
             Schließen
           </button>
         </div>

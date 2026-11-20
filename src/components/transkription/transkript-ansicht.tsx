@@ -11,7 +11,6 @@ import {
   audioKiStatus,
   transkriptAbschliessen,
   transkriptAendern,
-  transkriptKartenVorschlagen,
   transkriptLoeschen,
   transkriptStand,
   type TranskriptStand,
@@ -21,11 +20,10 @@ import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { KiEinwilligungDialog } from "@/components/ki/ki-einwilligung-dialog";
 import { KiLimitHinweis } from "@/components/ki/ki-limit-hinweis";
 import { KiMarkierung } from "@/components/ki/ki-markierung";
-import { KiKartenDialog } from "@/components/notizen/ki-karten-dialog";
-import { KiMitschriftDialog } from "@/components/transkription/ki-mitschrift-dialog";
+import { Zustand } from "@/components/zustand";
 import type { AudioStatus } from "@/lib/ki/server";
 import type { FachOption } from "@/lib/fach-option";
-import { fehlerMelden, track } from "@/lib/analytics";
+import { track } from "@/lib/analytics";
 import {
   gesamtStatus,
   naechsterTeil,
@@ -74,7 +72,6 @@ export function TranskriptAnsicht({
   const [speicher, setSpeicher] = useState<Speicherstand>("gespeichert");
   const [aktiv, setAktiv] = useState(-1);
   const [playerTeil, setPlayerTeil] = useState(1);
-  const [dialog, setDialog] = useState<"mitschrift" | "karten" | null>(null);
   const [notiz, setNotiz] = useState<{ id: string } | null>(null);
   const [notizSpeichert, setNotizSpeichert] = useState(false);
 
@@ -334,11 +331,11 @@ export function TranskriptAnsicht({
   return (
     <div className="tra-ansicht">
       <div className="tra-kopf">
-        <Link href="/transkription" className="btng" title="Alle Transkripte">
-          ←
+        <Link href="/transkription" className="knopf leise klein nur-symbol" aria-label="Alle Transkripte" title="Alle Transkripte">
+          <Icon name="pfeil-links" groesse={18} />
         </Link>
         <input
-          className="field tra-titel"
+          className="tra-titel"
           aria-label="Titel"
           value={titel}
           maxLength={200}
@@ -348,7 +345,7 @@ export function TranskriptAnsicht({
           }}
         />
         <select
-          className="field tra-fach"
+          className="tra-fach"
           aria-label="Fach"
           value={fachId}
           onChange={(e) => {
@@ -363,10 +360,10 @@ export function TranskriptAnsicht({
             </option>
           ))}
         </select>
-        <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void loeschen(), gefahr: true }]} />
+        <DreiPunkteMenue label="Aktionen für das Transkript" punkte={[{ label: "Löschen", icon: "loeschen", onClick: () => void loeschen(), gefahr: true }]} />
       </div>
 
-      <div className="card tra-player">
+      <div className="tra-player">
         <audio
           ref={player}
           controls
@@ -378,9 +375,9 @@ export function TranskriptAnsicht({
           onError={() => urls.current.delete(playerTeil)}
         />
         {stand.teile.length > 1 && (
-          <div className="tra-teile-wahl" role="group" aria-label="Teil der Aufnahme">
+          <div className="segment tra-teile-wahl" role="group" aria-label="Teil der Aufnahme">
             {stand.teile.map((t) => (
-              <button key={t.id} type="button" className={`seg ${playerTeil === t.nr ? "on" : ""}`} onClick={() => void springen(t.nr, 0, false)}>
+              <button key={t.id} type="button" aria-pressed={playerTeil === t.nr} onClick={() => void springen(t.nr, 0, false)}>
                 Teil {t.nr}
               </button>
             ))}
@@ -388,12 +385,12 @@ export function TranskriptAnsicht({
         )}
       </div>
 
-      {meldung && <p className="auth-error" role="alert">{meldung}</p>}
+      {meldung && <p className="formular-fehler" role="alert">{meldung}</p>}
 
       {!fertig && (
-        <section className="card tra-umwandeln" aria-live="polite">
-          <h2 className="ct">In Text umwandeln</h2>
-          <p className="muted">
+        <section className="tra-feld tra-umwandeln" aria-live="polite" aria-labelledby="tra-umwandeln-titel">
+          <h2 id="tra-umwandeln-titel">In Text umwandeln</h2>
+          <p className="tra-info">
             {stand.teile.length > 1 ? `${stand.teile.length} Teile, ` : ""}
             {zeitText(gesamt)} Aufnahme
           </p>
@@ -411,21 +408,20 @@ export function TranskriptAnsicht({
             </ul>
           )}
           {stand.teile.length === 1 && fehlerTeil && (
-            <p className="auth-error">{fehlerTeil.fehler ?? "Die Umwandlung wurde abgebrochen. Bitte versuch es noch einmal."}</p>
+            <p className="formular-fehler">{fehlerTeil.fehler ?? "Die Umwandlung wurde abgebrochen. Bitte versuch es noch einmal."}</p>
           )}
 
           {laufenderTeil || weiter ? (
             <p className="tra-fortschritt">
               <Umlauf groesse={16} />
               {stand.teile.length > 1 ? `Teil ${laufenderTeil?.nr ?? naechster?.nr ?? ""} von ${stand.teile.length} wird umgewandelt …` : "Wird umgewandelt …"}
-              <span className="muted"> Das dauert etwa eine Minute pro 10 Minuten Aufnahme. Du kannst die Seite verlassen.</span>
+              <span className="tra-info"> Das dauert etwa eine Minute pro 10 Minuten Aufnahme. Du kannst die Seite verlassen.</span>
             </p>
           ) : (
             <>
-              <label className="ki-feld tra-sprache">
+              <label className="tra-sprache">
                 <span>Sprache der Aufnahme</span>
                 <select
-                  className="field"
                   value={sprache}
                   onChange={(e) => {
                     const neu = e.target.value === "en" ? "en" : "de";
@@ -438,12 +434,12 @@ export function TranskriptAnsicht({
                 </select>
               </label>
               {audio && (
-                <p className="muted">
+                <p className="tra-info">
                   Verbraucht etwa {Math.ceil(offen / 60)} von deinen Audio-Minuten.{" "}
                   {!reicht && restSekunden > 0 && "Dein Kontingent reicht nicht für alles, es wird umgewandelt, so weit es reicht."}
                 </p>
               )}
-              <div className="ki-fuss">
+              <div className="tra-fuss">
                 {audio ? (
                   <KiLimitHinweis
                     verbleibend={Math.floor(restSekunden / 60)}
@@ -454,11 +450,11 @@ export function TranskriptAnsicht({
                 ) : (
                   <span />
                 )}
-                <button type="button" className="btnp" onClick={starten} disabled={!audio || restSekunden <= 0 || !naechster}>
+                <button type="button" className="knopf haupt" onClick={starten} disabled={!audio || restSekunden <= 0 || !naechster}>
                   <Icon name="mikrofon" groesse={16} /> {fehlerTeil ? "Erneut versuchen" : stand.teile.some((t) => t.status === "fertig") ? "Fortsetzen" : "Transkribieren"}
                 </button>
               </div>
-              {audio && !audio.verfuegbar && <p className="muted">Die Umwandlung ist gerade nicht verfügbar.</p>}
+              {audio && !audio.verfuegbar && <p className="tra-info">Die Umwandlung ist gerade nicht verfügbar.</p>}
             </>
           )}
         </section>
@@ -467,17 +463,17 @@ export function TranskriptAnsicht({
       {fertig && (
         <>
           <div className="tra-aktionen">
-            <span className="muted tra-speicher" aria-live="polite">
+            <span className="tra-speicher" aria-live="polite">
               <KiMarkierung /> Von der KI umgewandelt, Fehler beim Hören sind möglich.{" "}
               {speicher === "speichert" ? "Speichert …" : speicher === "ungespeichert" ? "Ungespeicherte Änderungen" : speicher === "fehler" ? "Nicht gespeichert" : "Gespeichert"}
             </span>
             <span className="tra-knoepfe">
               {notiz ? (
-                <Link href={`/notizen?id=${notiz.id}`} className="btng">
+                <Link href={`/notizen?id=${notiz.id}`} className="knopf neben">
                   <Icon name="notizen" groesse={16} /> Notiz öffnen
                 </Link>
               ) : (
-                <button type="button" className="btng" onClick={() => void notizSpeichern()} disabled={notizSpeichert || leer}>
+                <button type="button" className="knopf neben" onClick={() => void notizSpeichern()} disabled={notizSpeichert || leer} aria-busy={notizSpeichert}>
                   {notizSpeichert ? "Speichert …" : "In Notizen speichern"}
                 </button>
               )}
@@ -485,23 +481,24 @@ export function TranskriptAnsicht({
           </div>
 
           {leer ? (
-            <p className="empty-state">In der Aufnahme wurde keine Sprache erkannt.</p>
+            <Zustand art="leer" icon="mikrofon" titel="In der Aufnahme wurde keine Sprache erkannt." region ebene={2} />
           ) : absaetze.length === 0 ? (
-            <p className="muted">Text wird zusammengesetzt …</p>
+            <p className="tra-info">Text wird zusammengesetzt.</p>
           ) : (
-            <section className="card tra-text" aria-label="Transkript">
+            <section className="tra-text" aria-label="Transkript">
               {absaetze.map((a, i) => (
                 <div key={i} className={`tra-absatz ${aktiv === i ? "aktiv" : ""}`}>
                   {a.start !== null ? (
                     <button
                       type="button"
-                      className="tra-zeitstempel mono"
+                      className="tra-zeitstempel"
                       title="Ab hier abspielen"
                       aria-label={`Ab ${zeitText(a.start)} abspielen${stand.teile.length > 1 ? ` (Teil ${a.teil})` : ""}`}
                       onClick={() => void springen(a.teil, a.start, true)}
                     >
-                      ▶ {stand.teile.length > 1 ? `T${a.teil} ` : ""}
-                      {zeitText(a.start)}
+                      <Icon name="abspielen" groesse={12} />
+                      {stand.teile.length > 1 && <span>Teil {a.teil}</span>}
+                      <span className="zahl">{zeitText(a.start)}</span>
                     </button>
                   ) : (
                     <span className="tra-zeitstempel" />
@@ -543,23 +540,6 @@ export function TranskriptAnsicht({
               setLaufend(true);
             }
           }}
-        />
-      )}
-      {dialog === "mitschrift" && <KiMitschriftDialog transkriptId={transkript.id} onSchliessen={() => setDialog(null)} />}
-      {dialog === "karten" && (
-        <KiKartenDialog
-          funktion="ki04"
-          notiz={{ titel, fach_id: fachId || null }}
-          faecher={faecher}
-          vorschlagen={(n) =>
-            transkriptKartenVorschlagen(transkript.id, n).catch((err) => {
-              fehlerMelden(err, { ort: "transkript_karten" });
-              throw err;
-            })
-          }
-          ladeText="Die KI liest dein Transkript …"
-          kuerzungsText="Nur der Anfang des Transkripts wurde verwendet."
-          onSchliessen={() => setDialog(null)}
         />
       )}
     </div>

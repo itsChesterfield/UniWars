@@ -178,7 +178,7 @@ export function DiktatKnopf({ onText, disabled = false, klasse = "" }: { onText:
     <span className={`ki-diktat ${klasse}`}>
       <button
         type="button"
-        className={`icon-knopf ki-diktat-knopf ${phase === "aufnahme" ? "an" : ""}`}
+        className={`knopf leise klein nur-symbol ki-diktat-knopf ${phase === "aufnahme" ? "an" : ""}`}
         aria-label={phase === "aufnahme" ? "Diktat beenden (Enter)" : "Diktieren"}
         title={phase === "aufnahme" ? "Diktat beenden (Enter)" : "Diktieren"}
         aria-pressed={phase === "aufnahme"}
@@ -190,13 +190,13 @@ export function DiktatKnopf({ onText, disabled = false, klasse = "" }: { onText:
       </button>
       {phase === "aufnahme" && (
         <span className="ki-diktat-info" aria-live="off">
-          <span className="mono">{zeitText(sekunden)}</span>
+          <span className="zahl">{zeitText(sekunden)}</span>
           <span className="ki-diktat-pegel" aria-hidden>
             <span style={{ width: `${Math.round(pegel * 100)}%` }} />
           </span>
         </span>
       )}
-      {phase === "umwandeln" && <span className="ki-diktat-info muted">Wird erkannt …</span>}
+      {phase === "umwandeln" && <span className="ki-diktat-info">Wird erkannt …</span>}
       {fehler && (
         <span className="ki-diktat-fehler" role="alert">
           {fehler}

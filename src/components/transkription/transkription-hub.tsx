@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { transkriptAnlegen, transkriptLoeschen } from "@/app/(hubs)/transkription/actions";
 import { dateiLink } from "@/app/(hubs)/dateiablage/actions";
 import { FachFilterChips } from "@/components/fach-filter-chips";
-import { HubKopf, LeererZustand } from "@/components/hubs/hub-bausteine";
+import { Bereichskopf, kurzTitel } from "@/components/hubs/bereichskopf";
+import { Zustand } from "@/components/zustand";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { Aufnahme } from "@/components/transkription/aufnahme";
 import { audioDauer, inDateiablage } from "@/components/transkription/audio-hilfen";
@@ -30,7 +31,7 @@ type AudioDatei = { id: string; name: string; fach_id: string | null; groesse: n
 
 const STATUS_TEXT: Record<TeilStatus, string> = {
   ausstehend: "Noch nicht umgewandelt",
-  in_bearbeitung: "In Bearbeitung …",
+  in_bearbeitung: "Wird umgewandelt",
   fertig: "Fertig",
   fehler: "Fehler",
 };
@@ -38,7 +39,7 @@ const STATUS_TEXT: Record<TeilStatus, string> = {
 const AUDIO_ENDUNGEN = ".mp3,.m4a,.wav,.webm,.ogg";
 
 function datum(iso: string) {
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(iso).toLocaleDateString("de-DE", { day: "numeric", month: "short", timeZone: "Europe/Berlin" });
 }
 
 /** TRA-02: Audio aus der Dateiablage wählen oder neu hochladen (MP3, M4A, WAV …). */
@@ -112,13 +113,13 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
   }
 
   return (
-    <section className="card tra-datei" id="tra-datei" aria-label="Datei transkribieren">
-      <h2 className="ct">Datei transkribieren</h2>
-      <p className="muted">Audio aus der Dateiablage wählen oder neu hochladen (MP3, M4A, WAV, WebM, Ogg, bis 25 MB und 60 Minuten).</p>
+    <section className="tra-feld tra-datei" id="tra-datei" aria-labelledby="tra-datei-titel">
+      <h2 id="tra-datei-titel">Datei transkribieren</h2>
+      <p className="tra-info">Audio aus der Dateiablage wählen oder neu hochladen (MP3, M4A, WAV, WebM, Ogg, bis 25 MB und 60 Minuten).</p>
       <div className="tra-einstellungen">
-        <label className="ki-feld tra-breit">
+        <label>
           <span>Aus der Dateiablage</span>
-          <select className="field" value={auswahl} onChange={(e) => setAuswahl(e.target.value)} disabled={Boolean(laeuft)}>
+          <select value={auswahl} onChange={(e) => setAuswahl(e.target.value)} disabled={Boolean(laeuft)}>
             <option value="">{audioDateien.length ? "Datei wählen …" : "Noch keine Audiodateien"}</option>
             {audioDateien.map((d) => (
               <option key={d.id} value={d.id}>
@@ -128,20 +129,21 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
             ))}
           </select>
         </label>
-        <label className="ki-feld">
+        <label>
           <span>Sprache</span>
-          <select className="field" value={sprache} onChange={(e) => setSprache(e.target.value === "en" ? "en" : "de")} disabled={Boolean(laeuft)}>
+          <select value={sprache} onChange={(e) => setSprache(e.target.value === "en" ? "en" : "de")} disabled={Boolean(laeuft)}>
             <option value="de">Deutsch</option>
             <option value="en">Englisch</option>
           </select>
         </label>
       </div>
       <div className="tra-knoepfe">
-        <button type="button" className="btng" onClick={() => eingabe.current?.click()} disabled={Boolean(laeuft)}>
-          ⤒ Neue Datei hochladen
+        <button type="button" className="knopf neben" onClick={() => void vorhandeneNehmen()} disabled={!auswahl || Boolean(laeuft)}>
+          Transkribieren
         </button>
-        <button type="button" className="btnp" onClick={() => void vorhandeneNehmen()} disabled={!auswahl || Boolean(laeuft)}>
-          Weiter
+        <button type="button" className="knopf leise" onClick={() => eingabe.current?.click()} disabled={Boolean(laeuft)}>
+          <Icon name="hochladen" groesse={16} />
+          Neue Datei hochladen
         </button>
         <input
           ref={eingabe}
@@ -156,11 +158,11 @@ function DateiAuswahl({ audioDateien, faecher, startDateiId }: { audioDateien: A
         />
       </div>
       {laeuft && (
-        <p className="muted" aria-live="polite">
+        <p className="tra-info" aria-live="polite">
           {laeuft}
         </p>
       )}
-      {fehler && <p className="auth-error">{fehler}</p>}
+      {fehler && <p className="formular-fehler" role="alert">{fehler}</p>}
     </section>
   );
 }
@@ -195,20 +197,36 @@ export function TranskriptionHub({
 
   return (
     <>
-      <HubKopf titel="Transkription" untertitel="Vorlesungen aufnehmen und in Text umwandeln, mit Zeitstempeln zum Nachhören." />
+      <Bereichskopf
+        titel="Transkription"
+        untertitel="Vorlesungen aufnehmen und in Text umwandeln, mit Zeitstempeln zum Nachhören."
+        {...(eintraege.length
+          ? {
+              zahl: eintraege.length,
+              einheit: eintraege.length === 1 ? "Transkript" : "Transkripte",
+              lage: { text: `Zuletzt: ${kurzTitel(eintraege[0].titel)}.`, betont: kurzTitel(eintraege[0].titel).split(" ") },
+            }
+          : {})}
+      />
       <OfflineHinweis text="Offline. Hochladen und Umwandeln in Text geht wieder, sobald du online bist." />
-      {!verfuegbar && <p className="ki-hinweis">Die Umwandlung in Text ist gerade nicht verfügbar. Aufnehmen und Hochladen funktioniert trotzdem.</p>}
+      {!verfuegbar && <p className="tra-hinweisband">Die Umwandlung in Text ist gerade nicht verfügbar. Aufnehmen und Hochladen funktioniert trotzdem.</p>}
       <div className="tra-start-raster">
         <Aufnahme faecher={faecher} verfuegbar={verfuegbar} />
         <DateiAuswahl audioDateien={audioDateien} faecher={faecher} startDateiId={startDateiId} />
       </div>
 
-      <h2 className="tra-liste-titel">Deine Transkripte</h2>
+      <section className="kk-abschnitt" aria-labelledby="tra-liste-titel">
+      <div className="abschnitt-kopf">
+        <h2 id="tra-liste-titel" className="abschnitt-titel">
+          Deine Transkripte
+        </h2>
+      </div>
       <FachFilterChips faecher={faecher} />
       {sichtbar.length === 0 ? (
-        <LeererZustand icon="mikrofon" text={eintraege.length ? "In diesem Fach gibt es noch keine Transkripte." : "Noch keine Transkripte. Starte eine Aufnahme oder wähle eine Audiodatei."} />
+        <Zustand art="leer" icon="mikrofon" titel={eintraege.length ? "In diesem Fach gibt es noch keine Transkripte." : "Noch keine Transkripte."} region ebene={3}>
+          {eintraege.length ? undefined : "Starte oben eine Aufnahme oder wähle eine Audiodatei."}
+        </Zustand>
       ) : (
-        <section className="card">
           <ul className="tra-liste">
             {sichtbar.map((e) => {
               const status = gesamtStatus(e.teile);
@@ -217,26 +235,21 @@ export function TranskriptionHub({
               return (
                 <li key={e.id}>
                   <Link href={`/transkription/${e.id}`} className="tra-eintrag">
-                    <span className="tra-eintrag-titel">
-                      <Icon name={e.quelle === "aufnahme" ? "mikrofon" : "dateiablage"} groesse={16} /> {e.titel}
-                    </span>
-                    <span className="muted tra-eintrag-info">
-                      {fach && (
-                        <>
-                          <span className="dot" style={{ background: fach.farbe ?? "var(--text-3)" }} aria-hidden /> {fach.name},{" "}
-                        </>
-                      )}
-                      {datum(e.erstellt_am)}, {zeitText(dauer)}
+                    <Icon name={e.quelle === "aufnahme" ? "mikrofon" : "dateiablage"} groesse={18} />
+                    <span className="tra-eintrag-titel">{e.titel}</span>
+                    <span className="tra-eintrag-info">
+                      {fach && <>{fach.name}, </>}
+                      {datum(e.erstellt_am)}, <span className="zahl">{zeitText(dauer)}</span>
                     </span>
                     <span className={`tra-status tra-status-${status}`}>{STATUS_TEXT[status]}</span>
                   </Link>
-                  <DreiPunkteMenue punkte={[{ label: "Löschen", onClick: () => void loeschen(e), gefahr: true }]} />
+                  <DreiPunkteMenue label={`Aktionen für „${e.titel}“`} punkte={[{ label: "Löschen", icon: "loeschen", onClick: () => void loeschen(e), gefahr: true }]} />
                 </li>
               );
             })}
           </ul>
-        </section>
       )}
+      </section>
     </>
   );
 }
