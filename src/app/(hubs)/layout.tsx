@@ -17,6 +17,7 @@ import { FokusraumPraesenz } from "@/components/work-station/fokusraum-praesenz"
 import { EinstellungenKontext } from "@/components/einstellungen/einstellungen-kontext";
 import { TeamUpdateDialog } from "@/components/einstellungen/team-update-dialog";
 import { darstellungLesen, symbolleisteLesen } from "@/lib/personalisierung";
+import { bilderAnsicht } from "@/lib/hintergrund-server";
 
 // Gemeinsamer Rahmen aller Hubs (Design B3): Symbolleiste, Kopfleiste, eingelassene Arbeitsfläche (ALL-01: nur eingeloggt).
 export default async function HubLayout({ children }: { children: ReactNode }) {
@@ -42,9 +43,10 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
     supabase.from("einladung").select("*").eq("an_user_id", user.id).eq("status", "OFFEN").order("erstellt_am", { ascending: false }),
   ]);
   // Streak und Profilbild-Link gleichzeitig statt nacheinander
-  const [settings, avatarUrl] = await Promise.all([
+  const [settings, avatarUrl, bilder] = await Promise.all([
     settingsRoh ? pruefeUndAktualisiereStreak(supabase, user.id, settingsRoh) : null,
     profilbildUrl(supabase, settingsRoh?.avatar_pfad),
+    bilderAnsicht(supabase, settingsRoh, user.id),
   ]);
 
   const name = anzeigeName(settings, user);
@@ -54,7 +56,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
   const symbolleiste = symbolleisteLesen(settings?.symbolleiste);
 
   return (
-    <DesignRahmen theme={theme} darstellung={darstellung}>
+    <DesignRahmen theme={theme} darstellung={darstellung} bilder={bilder}>
       <Sidebar userId={user.id} name={name} email={user.email ?? ""} avatarUrl={avatarUrl} theme={theme} symbolleiste={symbolleiste} kiVerfuegbar={kiVerfuegbar} />
       <EinstellungenKontext kiVerfuegbar={kiVerfuegbar} />
       <TeamUpdateDialog />

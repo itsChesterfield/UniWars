@@ -50,7 +50,7 @@ const GRIFF = (
   </svg>
 );
 
-function Abschnitt({ id, titel, text, children }: { id: string; titel: string; text: string; children: ReactNode }) {
+export function Abschnitt({ id, titel, text, children }: { id: string; titel: string; text: string; children: ReactNode }) {
   return (
     <section className="p-sek" aria-labelledby={`ps-${id}`}>
       <div className="p-kopf">
@@ -62,7 +62,7 @@ function Abschnitt({ id, titel, text, children }: { id: string; titel: string; t
   );
 }
 
-function Zeile({ label, info, children }: { label: string; info?: string; children: ReactNode }) {
+export function Zeile({ label, info, children }: { label: string; info?: string; children: ReactNode }) {
   return (
     <div className="p-zeile">
       <div>
@@ -74,7 +74,7 @@ function Zeile({ label, info, children }: { label: string; info?: string; childr
   );
 }
 
-function Segment<T extends string>({ label, wert, optionen, onWahl }: { label: string; wert: T | null; optionen: [T, string][]; onWahl: (w: T) => void }) {
+export function Segment<T extends string>({ label, wert, optionen, onWahl }: { label: string; wert: T | null; optionen: [T, string][]; onWahl: (w: T) => void }) {
   return (
     <div className="segment" role="group" aria-label={label}>
       {optionen.map(([w, n]) => (
@@ -250,10 +250,13 @@ export function Personalisierung({
   theme,
   darstellung,
   symbolleiste,
+  bilder,
 }: {
   theme: Theme;
   darstellung: Darstellung;
   symbolleiste: Symbolleiste;
+  /** Abschnitt „Eigene Bilder“, nur wenn die Migration eingespielt ist */
+  bilder?: ReactNode;
 }) {
   const design = usePersoenlich("theme", theme);
   const d = usePersoenlich("darstellung", darstellung);
@@ -338,6 +341,8 @@ export function Personalisierung({
           />
         </Zeile>
       </Abschnitt>
+
+      {bilder}
 
       <Abschnitt
         id="leiste"
