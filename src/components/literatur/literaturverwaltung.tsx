@@ -428,9 +428,13 @@ function QuellenFormular({
                 required
                 value={werte.autoren}
                 placeholder="Müller, Anna; Schmidt, Ben"
+                aria-describedby="lit-autoren-hilfe"
                 onChange={(e) => setze("autoren", e.target.value)}
                 autoFocus
               />
+              <small id="lit-autoren-hilfe" className="lit-hilfe">
+                Mehrere Autoren mit Semikolon oder „&amp;“ trennen.
+              </small>
             </label>
             <label className="lit-breit">
               <span>Titel *</span>

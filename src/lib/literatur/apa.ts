@@ -15,11 +15,16 @@ export type QuelleDaten = {
 
 export type Autor = { nachname: string; vornamen: string };
 
-/** "Müller, Anna; Schmidt, Ben" -> [{Müller, Anna}, {Schmidt, Ben}] */
+/**
+ * "Müller, Anna; Schmidt, Ben" -> [{Müller, Anna}, {Schmidt, Ben}].
+ * Stehen die Namen als „Nachname, Vorname“, trennen auch „&“ und „und“ ("Müller, A. & Schmidt, B.").
+ * Ohne Komma bleibt der Name ganz, damit Organisationen wie „Johnson & Johnson“ nicht zerfallen.
+ */
 export function autorenLesen(eingabe: string): Autor[] {
   return eingabe
     .split(";")
-    .map((a) => a.trim())
+    .flatMap((a) => (a.includes(",") ? a.split(/\s*,?\s*(?:&|\bund\b)\s*/) : [a]))
+    .map((a) => a.trim().replace(/,$/, "").trim())
     .filter(Boolean)
     .map((a) => {
       const [nachname, ...rest] = a.split(",");
