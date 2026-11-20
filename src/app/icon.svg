@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24">
-  <rect width="24" height="24" rx="6" fill="#1f4e8c"/>
-  <g fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="4.5"/>
-    <path d="M3.5 14.5c2.5 3.5 14.5-1.5 17-6"/>
+  <!-- Browser-Tab (Design Sternenhimmel, gleiche Marke wie public/app/icon.svg): Marke groß, Linie kräftig für 16 und 32 px -->
+  <rect width="24" height="24" rx="5.5" fill="#08090b"/>
+  <g fill="none" stroke="#E8BE6A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4.6"/>
+    <path d="M3.2 14.8c2.6 3.7 15-1.6 17.6-6.4"/>
   </g>
 </svg>
