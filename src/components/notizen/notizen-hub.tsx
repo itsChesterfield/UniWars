@@ -31,6 +31,7 @@ import type { LinkZiel } from "@/components/notizen/werkzeugleiste";
 import type { LinkAufloesung } from "@/components/notizen/editor-erweiterungen";
 import { SpeicherStatusAnzeige } from "@/components/bewegung/speicher-status";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
+import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
 import { kopfListe } from "@/lib/bereichskopf";
 
 export type LaufendeVorlesung = { stundenplanEintragId: string; fachName: string; vorhandeneNotizId: string | null };
@@ -188,8 +189,8 @@ export function NotizenHub({
     notizAnpinnen(n.id, !n.angepinnt).catch(() => aktualisieren(n.id, { angepinnt: n.angepinnt }));
   }
 
-  function loeschen(n: Notiz) {
-    if (!window.confirm(`„${n.titel || OHNE_TITEL}“ wirklich löschen?`)) return;
+  async function loeschen(n: Notiz) {
+    if (!(await inDenPapierkorb(`Die Notiz „${n.titel || OHNE_TITEL}“`))) return;
     setNotizen((liste) => liste.filter((x) => x.id !== n.id));
     tabSchliessen(n.id);
     oeffnen(null);
@@ -242,7 +243,7 @@ export function NotizenHub({
       const notiz = notizNachTitel(name);
       track("notiz_link_geoeffnet", { art: "notiz", daneben, neu: !notiz });
       if (!notiz) {
-        if (window.confirm(`Die Notiz „${name}“ gibt es noch nicht. Jetzt anlegen?`)) neu("leer", name);
+        void rueckfrage({ titel: "Notiz anlegen?", text: `Die Notiz „${name}“ gibt es noch nicht.`, ja: "Anlegen" }).then((ja) => ja && neu("leer", name));
         return;
       }
       if (daneben) inZweiterAnsichtOeffnen(`/notizen?id=${notiz.id}`, "rechts");

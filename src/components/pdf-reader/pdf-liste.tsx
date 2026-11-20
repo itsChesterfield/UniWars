@@ -20,6 +20,7 @@ import { groesseText } from "@/lib/dateiablage/dateien";
 import { hochladenMitFortschritt } from "@/lib/dateiablage/upload";
 import { mitteVon, punktFlug, ziehbildSetzen } from "@/lib/bewegung/punkt";
 import { UploadMarke } from "@/components/bewegung/upload-marke";
+import { rueckfrage } from "@/components/rueckfrage";
 import { fehlerMelden, track } from "@/lib/analytics";
 
 export type PdfEintrag = {
@@ -184,10 +185,10 @@ export function PdfListe({ startPdfs, startOrdner, faecher }: { startPdfs: PdfEi
     track("pdf_ordner_umbenannt");
   }
 
-  function loeschen(o: Ordner) {
+  async function loeschen(o: Ordner) {
     const n = anzahl(o.schluessel);
     const hinweis = n > 0 ? ` ${n === 1 ? "Die PDF darin bleibt" : `Die ${n} PDFs darin bleiben`} erhalten.` : "";
-    if (!window.confirm(`Ordner „${o.name}“ löschen?${hinweis}`)) return;
+    if (!(await rueckfrage({ titel: "Ordner löschen?", text: `Der Ordner „${o.name}“ wird gelöscht.${hinweis}`, ja: "Löschen", gefahr: true }))) return;
     const vorher = { eigene, pdfs };
     setEigene((l) => l.filter((x) => x.id !== o.id));
     setPdfs((l) => l.map((p) => (p.ordnerId === o.id ? { ...p, ordnerId: null } : p)));

@@ -35,6 +35,7 @@ import {
 } from "@/lib/transkription/transkript";
 import { Umlauf } from "@/components/bewegung/umlauf";
 import { Icon } from "@/components/nav-icon";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 
 type Transkript = { id: string; titel: string; fach_id: string | null; sprache: "de" | "en"; erstellt_am: string };
 type Speicherstand = "gespeichert" | "ungespeichert" | "speichert" | "fehler";
@@ -313,7 +314,7 @@ export function TranskriptAnsicht({
   }
 
   async function loeschen() {
-    if (!window.confirm(`„${titel}“ wirklich löschen? Die Audiodateien bleiben in der Dateiablage.`)) return;
+    if (!(await inDenPapierkorb(`Das Transkript „${titel}“`))) return;
     const a = await transkriptLoeschen(transkript.id).catch(() => null);
     if (!a?.ok) {
       window.alert("Löschen hat nicht geklappt.");

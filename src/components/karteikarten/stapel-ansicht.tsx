@@ -19,6 +19,7 @@ import { StapelDialog } from "@/components/karteikarten/stapel-dialog";
 import { KiMarkierung } from "@/components/ki/ki-markierung";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
+import { inDenPapierkorb, rueckfrage } from "@/components/rueckfrage";
 import type { FachOption } from "@/lib/fach-option";
 import { fehlerMelden, track } from "@/lib/analytics";
 import { intervallText, reife, REIFE_TEXT, type Reife } from "@/lib/karteikarten/wiederholung";
@@ -59,7 +60,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
   const woche = karten.filter((k) => k.naechste_abfrage < bisWoche).length;
 
   async function stapelEntfernen() {
-    if (!window.confirm(`Stapel „${stapel.name}“ mit allen Karten wirklich löschen?`)) return;
+    if (!(await inDenPapierkorb(`Der Stapel „${stapel.name}“ mit allen Karten`))) return;
     try {
       await stapelLoeschen(stapel.id);
       track("kk_stapel_geloescht", { karten: karten.length });
@@ -71,7 +72,7 @@ export function StapelAnsicht({ stapel, karten: start, faecher }: { stapel: Stap
   }
 
   async function karteEntfernen(k: Karte) {
-    if (!window.confirm("Karte wirklich löschen?")) return;
+    if (!(await rueckfrage({ titel: "Karte löschen?", text: "Die Karte wird endgültig gelöscht.", ja: "Löschen", gefahr: true }))) return;
     setKarten((liste) => liste.filter((x) => x.id !== k.id));
     try {
       await karteLoeschen(k.id);

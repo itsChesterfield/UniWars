@@ -7,6 +7,7 @@ import { quizErstellen, quizLoeschen } from "@/app/(hubs)/karteikarten/quiz-acti
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
+import { inDenPapierkorb } from "@/components/rueckfrage";
 import { EINSTELLUNGEN_STANDARD, FRAGE_TYPEN, TYP_NAME, type FrageTyp, type QuizEinstellungen } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -92,8 +93,8 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
                     className="knopf gefahr klein nur-symbol"
                     aria-label={`Quiz „${q.titel}“ löschen`}
                     title="Löschen"
-                    onClick={() => {
-                      if (!window.confirm(`Quiz „${q.titel}“ löschen?`)) return;
+                    onClick={async () => {
+                      if (!(await inDenPapierkorb(`Das Quiz „${q.titel}“`))) return;
                       setLoeschfehler("");
                       const fehler = `„${q.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
                       void quizLoeschen(q.id).then((ergebnis) => {
