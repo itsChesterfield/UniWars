@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24">
+  <!-- Quelle der App-Symbole (Design Sternenhimmel, Didi 20.11.): volle Fläche, Marke in der sicheren Mitte -->
+  <rect width="24" height="24" fill="#08090b"/>
+  <g transform="translate(12 12) scale(0.62) translate(-12 -12)" fill="none" stroke="#E8BE6A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4.5"/>
+    <path d="M3.5 14.5c2.5 3.5 14.5-1.5 17-6"/>
+  </g>
+</svg>

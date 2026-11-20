@@ -32,6 +32,14 @@ export function DesignRahmen({ theme, darstellung, children }: { theme: Theme; d
       if (gesetzt[a]) html.setAttribute(a, gesetzt[a]);
       else html.removeAttribute(a);
     }
+    // Installierte App: Statusleiste in der Farbe des Grunds; die Offline-Seite übernimmt das zuletzt gewählte Design
+    const grund = getComputedStyle(document.querySelector(".dashboard") ?? html).getPropertyValue("--grund").trim();
+    if (grund) document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", grund));
+    try {
+      if (gesetzt["data-theme"]) localStorage.setItem("universe-design", gesetzt["data-theme"]);
+    } catch {
+      // ohne Speicher folgt die Offline-Seite dem System
+    }
     return () => ATTRIBUTE.forEach((a) => html.removeAttribute(a));
   }, [schluessel]);
 

@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AnalyticsBanner } from "@/components/analytics-banner";
+import { ServiceWorkerAnmelden } from "@/components/service-worker-anmelden";
 import { FRAME_NAME } from "@/lib/geteilte-ansicht";
 
 // Design B3 (DESIGN.md Abschnitt 3): Bricolage Grotesque für alles,
@@ -21,6 +22,16 @@ const zahlen = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "UniVerse",
   description: "UniVerse: dein Studium an einem Ort. Aufgaben, Unterlagen und Lernen, ruhig geordnet.",
+  // Installierbare App: auf dem iPhone ohne Browserleiste starten (Manifest in app/manifest.ts, Symbol in app/apple-icon.png)
+  appleWebApp: { capable: true, title: "UniVerse", statusBarStyle: "default" },
+};
+
+// Farbe der Statusleiste vor dem ersten Zeichnen: `--grund` beider Designs (DESIGN.md Abschnitt 2); danach setzt DesignRahmen das gewählte Design
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ecece9" },
+    { media: "(prefers-color-scheme: dark)", color: "#08090b" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -41,6 +52,7 @@ setTimeout(function () { if (document.documentElement.getAttribute("data-erschei
         </Script>
         {children}
         <AnalyticsBanner />
+        <ServiceWorkerAnmelden />
       </body>
     </html>
   );
