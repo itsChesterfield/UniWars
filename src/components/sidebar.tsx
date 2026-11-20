@@ -84,14 +84,15 @@ function ProfilMenue({ name, email, avatarUrl, theme }: { name: string; email: s
         aria-haspopup="dialog"
         aria-expanded={offen}
         aria-controls={menueId}
-        aria-label={avatarName(name, avatarUrl, `Profil, ${name}`)}
+        aria-label={avatarName(name, avatarUrl, `${name}, Profil`)}
         onClick={() => {
           if (dialog.current?.open) return;
           dialog.current?.showModal();
           setOffen(true);
         }}
       >
-        <ProfilAvatar name={name} url={avatarUrl} groesse={28} />
+        <ProfilAvatar name={name} url={avatarUrl} groesse={28} />{" "}
+        {/* Leerzeichen: Kürzel und Name sind zwei Wörter, sonst passt der sichtbare Text nicht zur Beschriftung (WCAG 2.5.3) */}
         <span className="rprofil-name" aria-hidden>
           {name}
         </span>

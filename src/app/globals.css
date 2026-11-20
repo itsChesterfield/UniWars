@@ -13486,6 +13486,19 @@ dialog.menue::backdrop {
   }
 }
 
+/* „auto“ (Standard): ab 1440 px wie „offen“, darunter wie „hover“ */
+@media (min-width: 1440px) {
+  [data-leiste="auto"] .rail dialog.menue {
+    left: calc(216px + var(--space-2));
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1439px) {
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) dialog.menue {
+    left: calc(216px + var(--space-2));
+  }
+}
+
 .menue-kopf {
   display: flex;
   align-items: center;
@@ -15556,6 +15569,16 @@ html[data-eingebettet] .kontext-mobil {
   border-bottom: 0;
 }
 
+/* Auswahl mit vier Optionen (Seitenleiste) passt am Handy nicht in eine Zeile: zwei mal zwei */
+@media (max-width: 760px) {
+  .p-zeile .segment:has(> button:nth-child(4)) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    border-radius: var(--radius-l);
+  }
+}
+
 .p-label {
   display: block;
   font-weight: 500;
@@ -15966,7 +15989,7 @@ html[data-bewegung="reduziert"] .lade-skelett {
     align-items: center;
     justify-content: flex-start;
     gap: var(--space-3);
-    padding: 0 11px;
+    padding: 0 calc(var(--space-3) - 1px);
   }
 
   [data-leiste="offen"] .rail .rpunkt .tip,
@@ -15990,7 +16013,7 @@ html[data-bewegung="reduziert"] .lade-skelett {
   [data-leiste="offen"] .rail .rtrenn,
   [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rtrenn {
     width: auto;
-    margin-inline: 11px;
+    margin-inline: calc(var(--space-3) - 1px);
   }
 
   [data-leiste="offen"] .rail .rfuss,
@@ -16027,6 +16050,151 @@ html[data-bewegung="reduziert"] .lade-skelett {
   }
 
   [data-leiste="hover"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
+    margin-right: -152px;
+    background: var(--bg);
+    box-shadow: 1px 0 0 var(--linie), 12px 0 32px var(--schatten);
+    transition-delay: 40ms;
+  }
+}
+
+/* „auto“ (Standard): ab 1440 px wie „offen“, darunter wie „hover“ */
+@media (min-width: 1440px) {
+  [data-leiste="auto"] .rail {
+    width: 216px;
+    align-items: stretch;
+    padding-inline: var(--space-3);
+  }
+
+  [data-leiste="auto"] .rail .rmarke {
+    margin-left: 0;
+  }
+
+  [data-leiste="auto"] .rail .rpunkt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: 0 calc(var(--space-3) - 1px);
+  }
+
+  [data-leiste="auto"] .rail .rpunkt .tip {
+    position: static;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: var(--text-sm);
+    opacity: 1;
+    visibility: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [data-leiste="auto"] .rail .rpunkt .tip kbd {
+    display: none;
+  }
+
+  [data-leiste="auto"] .rail .rtrenn {
+    width: auto;
+    margin-inline: calc(var(--space-3) - 1px);
+  }
+
+  [data-leiste="auto"] .rail .rfuss {
+    align-items: stretch;
+  }
+
+  [data-leiste="auto"] .rail .rprofil {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-m);
+    color: var(--text-2);
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  [data-leiste="auto"] .rail .rprofil-name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1439px) {
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
+    width: 216px;
+    align-items: stretch;
+    padding-inline: var(--space-3);
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rmarke {
+    margin-left: 0;
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    padding: 0 calc(var(--space-3) - 1px);
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip {
+    position: static;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font-size: var(--text-sm);
+    opacity: 1;
+    visibility: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rpunkt .tip kbd {
+    display: none;
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rtrenn {
+    width: auto;
+    margin-inline: calc(var(--space-3) - 1px);
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rfuss {
+    align-items: stretch;
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rprofil {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-m);
+    color: var(--text-2);
+    font: inherit;
+    font-size: var(--text-sm);
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) .rprofil-name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-leiste="auto"] .rail {
+    z-index: calc(var(--z-sticky) + 10);
+    transition: none;
+  }
+
+  [data-leiste="auto"] .rail:not([data-zu]):is(:hover, :has(:focus-visible)) {
     margin-right: -152px;
     background: var(--bg);
     box-shadow: 1px 0 0 var(--linie), 12px 0 32px var(--schatten);

@@ -372,11 +372,11 @@ export function Personalisierung({
         <Zeile label="Schriftgröße">
           <Segment label="Schriftgröße" wert={d.schrift} optionen={[["normal", "Normal"], ["gross", "Groß"]]} onWahl={(w) => darstellungSetzen("schrift", w)} />
         </Zeile>
-        <Zeile label="Seitenleiste" info="Wie sich die Leiste links mit den Bereichen verhält.">
+        <Zeile label="Seitenleiste" info="Wie sich die Leiste links mit den Bereichen verhält. Automatisch: auf großen Bildschirmen ausgeklappt, sonst beim Drüberfahren.">
           <Segment
             label="Seitenleiste"
             wert={d.leiste}
-            optionen={[["hover", "Beim Drüberfahren"], ["offen", "Ausgeklappt"], ["zu", "Eingeklappt"]]}
+            optionen={[["auto", "Automatisch"], ["hover", "Beim Drüberfahren"], ["offen", "Ausgeklappt"], ["zu", "Eingeklappt"]]}
             onWahl={(w) => darstellungSetzen("leiste", w)}
           />
         </Zeile>
