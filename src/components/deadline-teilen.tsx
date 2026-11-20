@@ -26,6 +26,8 @@ export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: strin
   const [eigenOffen, setOpen] = useState(false);
   const open = ausMenue || eigenOffen;
   const feld = useRef<HTMLInputElement>(null);
+  // Aus dem Menü: der Menüknopf hat beim Öffnen den Fokus, dorthin geht er beim Schließen zurück
+  const zurueck = useRef<HTMLElement | null>(null);
   const [suchtext, setSuchtext] = useState("");
   const [treffer, setTreffer] = useState<{ user_id: string; username: string }[]>([]);
   const [mitglieder, setMitglieder] = useState<Mitglied[] | null>(null);
@@ -47,6 +49,7 @@ export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: strin
   // Aus dem Menü geöffnet: Mitglieder laden und gleich ins Suchfeld
   useEffect(() => {
     if (!ausMenue) return;
+    if (document.activeElement instanceof HTMLElement && document.activeElement !== feld.current) zurueck.current = document.activeElement;
     feld.current?.focus();
     let vorbei = false;
     deadlineMitgliederLaden(deadlineId)
@@ -60,6 +63,12 @@ export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: strin
       vorbei = true;
     };
   }, [ausMenue, deadlineId]);
+
+  function schliessen() {
+    const ziel = zurueck.current;
+    onSchliessen?.();
+    if (ziel?.isConnected) ziel.focus();
+  }
 
   function toggleOpen() {
     const naechster = !open;
@@ -116,7 +125,7 @@ export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: strin
           role={ausMenue ? "group" : undefined}
           aria-label={ausMenue ? "Teilen" : undefined}
           onKeyDown={(e) => {
-            if (ausMenue && e.key === "Escape") onSchliessen?.();
+            if (ausMenue && e.key === "Escape") schliessen();
           }}
         >
           {mitglieder && mitglieder.length > 0 && (
@@ -160,7 +169,7 @@ export function DeadlineTeilen({ deadlineId, onSchliessen }: { deadlineId: strin
             </p>
           )}
           {ausMenue && (
-            <button type="button" className="knopf leise klein deadline-teilen-fertig" onClick={onSchliessen}>
+            <button type="button" className="knopf leise klein deadline-teilen-fertig" onClick={schliessen}>
               Fertig
             </button>
           )}

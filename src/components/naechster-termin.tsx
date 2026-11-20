@@ -38,7 +38,7 @@ export function NaechsterTermin({
   const naechster = kandidaten[0];
 
   if (!naechster) {
-    return <p className="naechster-termin-leer">Kein anstehender Termin. Neue Termine legst du über „Schnell erfassen“ an.</p>;
+    return <p className="naechster-termin-leer">Kein anstehender Termin.</p>;
   }
 
   const fach = faecher.find((f) => f.id === naechster.fach_id);
