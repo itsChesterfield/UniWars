@@ -1378,6 +1378,34 @@ input[type="checkbox"]:disabled {
   background: color-mix(in srgb, var(--grund) 70%, transparent);
 }
 
+/* Rückfrage vor Löschen und anderen Schritten, die sich nicht zurücknehmen lassen (ersetzt window.confirm) */
+.formular-dialog.rueckfrage {
+  width: min(400px, calc(100% - var(--space-8)));
+}
+
+.rueckfrage-titel {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.rueckfrage-text {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.rueckfrage-knoepfe {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
 .formular-dialog .crud-form {
   margin: 0;
   padding: 0;
