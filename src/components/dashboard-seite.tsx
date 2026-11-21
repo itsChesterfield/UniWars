@@ -44,7 +44,8 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
       supabase.from("note").select("*").order("datum", { ascending: false }).abortSignal(signal),
       supabase.from("pruefung").select("*").order("datum", { ascending: true }).abortSignal(signal),
       supabase.from("stundenplan_eintrag").select("*").abortSignal(signal),
-      supabase.rpc("notenschnitt").abortSignal(signal),
+      // ECTS aller Fächer, auch archivierter: Die Gesamtnote rechnet mit den ECTS jedes Moduls (lib/noten.ts)
+      supabase.from("fach").select("id, ects").abortSignal(signal),
       supabase.from("lern_session").select("*").abortSignal(signal),
       supabase.from("settings").select("*").eq("user_id", user.id).abortSignal(signal).single(),
       supabase
@@ -69,7 +70,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     { data: notes, error: notesError },
     { data: pruefungen, error: pruefungenError },
     { data: stundenplanEintraege, error: stundenplanError },
-    { data: notenschnitt, error: notenschnittError },
+    { data: alleFaecherEcts, error: ectsError },
     { data: lernSessions, error: lernSessionError },
     { data: settingsRoh, error: settingsError },
     { data: kalenderVerbindung },
@@ -85,7 +86,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
     notesError ||
     pruefungenError ||
     stundenplanError ||
-    notenschnittError ||
+    ectsError ||
     lernSessionError ||
     settingsError;
   if (error) throw new Error(error.message);
@@ -138,7 +139,7 @@ export async function DashboardSeite({ bereich }: { bereich: Bereich }) {
         notes={notes ?? []}
         pruefungen={pruefungen ?? []}
         stundenplanEintraege={stundenplanEintraege ?? []}
-        notenschnitt={notenschnitt}
+        ectsJeFach={Object.fromEntries((alleFaecherEcts ?? []).map((f) => [f.id, f.ects]))}
         lernSessions={lernSessions ?? []}
         settings={settings}
         username={username}

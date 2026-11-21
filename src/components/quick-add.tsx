@@ -376,7 +376,7 @@ export function QuickAdd({
             throw new Error("Bitte eine Note zwischen 1,0 und 5,0 angeben.");
           }
           if (!Number.isFinite(gewicht) || gewicht <= 0) {
-            throw new Error("Bitte ein Gewicht größer als 0 angeben.");
+            throw new Error("Bitte einen Anteil größer als 0 angeben.");
           }
           await createNote({
             titel,
@@ -614,9 +614,10 @@ export function QuickAdd({
                     />
                   </label>
                   <label>
-                    <span>Gewicht</span>
+                    <span>Anteil im Modul</span>
                     <input
                       className="field"
+                      title="Nur wichtig, wenn ein Fach mehrere Noten hat, zum Beispiel Klausur 70 und Hausarbeit 30."
                       type="number"
                       inputMode="decimal"
                       min="0.1"

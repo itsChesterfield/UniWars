@@ -10,6 +10,8 @@ import type { FachOption } from "@/lib/fach-option";
 import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
+import { berlinDatum, berlinUhrzeit } from "@/lib/zeit";
+import { oberaufgabe } from "@/lib/hub-buehne";
 
 type Deadline = Tables<"deadline">;
 type Todo = Tables<"todo">;
@@ -30,6 +32,8 @@ type TimelineEintrag = {
   typ: "Unterricht" | "Deadline" | "To-Do";
   zeit: string | null;
   titel: string;
+  /** Unteraufgabe: Titel der Aufgabe, zu der sie gehört */
+  teilVon?: string | null;
   erledigt: boolean;
   onToggle: (() => void) | null;
   ziel: { zielTyp: "deadline" | "todo"; zielId: string } | null;
@@ -39,15 +43,18 @@ export function HeuteView({
   stundenplanEintraege,
   deadlines,
   todos,
+  pruefungen = [],
   faecher,
 }: {
   stundenplanEintraege: Eintrag[];
   deadlines: Deadline[];
   todos: Todo[];
+  pruefungen?: { id: string; titel: string }[];
   faecher: FachOption[];
 }) {
   const heutigerTag = JS_TAG_ZU_WOCHENTAG[new Date().getDay()];
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = berlinDatum(new Date());
+  const teilVon = (f: Deadline) => oberaufgabe(f, { deadlines, todos, pruefungen });
 
   const [erledigteDeadlines, setErledigteDeadlines] = useState<Set<string>>(
     () => new Set(deadlines.filter((d) => d.erledigt).map((d) => d.id)),
@@ -91,24 +98,27 @@ export function HeuteView({
     }));
 
   const deadlinesHeute: TimelineEintrag[] = deadlines
-    .filter((d) => d.faellig_am.slice(0, 10) === heute)
+    .filter((d) => berlinDatum(new Date(d.faellig_am)) === heute)
     .map((d) => ({
       key: `d-${d.id}`,
       typ: "Deadline",
-      zeit: new Date(d.faellig_am).toTimeString().slice(0, 5),
+      zeit: berlinUhrzeit(new Date(d.faellig_am)),
       titel: d.titel,
+      teilVon: teilVon(d),
       erledigt: erledigteDeadlines.has(d.id),
       onToggle: () => deadlineUmschalten(d.id),
       ziel: { zielTyp: "deadline" as const, zielId: d.id },
     }));
 
+  // Nur To-dos, die heute oder schon früher fällig sind: ohne Datum ist ein To-do nicht „heute“ dran
   const offeneTodosHeute: TimelineEintrag[] = todos
-    .filter((t) => !t.erledigt && !erledigteTodos.has(t.id))
+    .filter((t) => !t.erledigt && !erledigteTodos.has(t.id) && t.faellig_am !== null && berlinDatum(new Date(t.faellig_am)) <= heute)
     .map((t) => ({
       key: `t-${t.id}`,
       typ: "To-Do",
       zeit: null,
       titel: t.titel,
+      teilVon: t.parent_id ? (todos.find((x) => x.id === t.parent_id)?.titel ?? "einem To-do") : null,
       erledigt: false,
       onToggle: () => todoAbhaken(t.id),
       ziel: { zielTyp: "todo" as const, zielId: t.id },
@@ -125,7 +135,7 @@ export function HeuteView({
     <>
       {timeline.length === 0 ? (
         <Zustand art="leer" region ebene={3} titel="Heute ist nichts geplant." aktion={<ErfassenKnopf modus="TERMIN">Termin erfassen</ErfassenKnopf>}>
-          Unterricht aus dem Stundenplan, Deadlines von heute und offene To-Dos erscheinen hier nach Uhrzeit.
+          Unterricht aus dem Stundenplan, Deadlines von heute und To-Dos, die heute fällig sind, erscheinen hier nach Uhrzeit.
         </Zustand>
       ) : (
         <ul className="heute-liste">
@@ -156,6 +166,7 @@ export function HeuteView({
                     onClick={() => item.ziel && oeffne(item.ziel.zielTyp, item.ziel.zielId)}
                   >
                     {item.titel}
+                    {item.teilVon && <small className="heute-teil">Teil von „{item.teilVon}“</small>}
                   </button>
                 ) : (
                   <span className="entry-title heute-titel">

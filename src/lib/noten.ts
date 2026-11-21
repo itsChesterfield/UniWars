@@ -63,3 +63,110 @@ export function zahlLesen(text: string): number {
   const t = text.trim().replace(",", ".");
   return t === "" ? Number.NaN : Number(t);
 }
+
+// ---------------------------------------------------------------------------
+// Noten wie an der Uni (Entscheidung Didi 21.11.)
+// Fach = Modul. Teilnoten eines Moduls zählen nach ihrem Anteil (Feld `gewicht`, z. B. 70 und 30 oder gleich).
+// Die Modulnote zählt mit den ECTS des Fachs. Auch ein Modul über zwei Semester ist ein Fach mit mehreren Noten.
+// Wie in den meisten Prüfungsordnungen: Modul- und Gesamtnote nach der ersten Stelle abgeschnitten, nicht gerundet;
+// nicht bestandene Module (über 4,0) und unbenotete zählen nicht.
+// ---------------------------------------------------------------------------
+
+/** Nach `stellen` Nachkommastellen abschneiden, nicht runden (1,98 → 1,9). */
+export function abschneiden(x: number, stellen = 1): number {
+  const f = 10 ** stellen;
+  return Math.floor(x * f + 1e-9) / f;
+}
+
+export type ModulStand = {
+  fachId: string;
+  /** Modulnote, abgeschnitten; null ohne eingetragene Note */
+  note: number | null;
+  /** Gewicht in der Gesamtnote: ECTS, ohne ECTS-Angaben die Summe der Anteile */
+  ects: number | null;
+  /** Noten mit Wert */
+  teile: number;
+  /** Es fehlt noch mindestens eine Teilnote (ausstehend) */
+  vorlaeufig: boolean;
+};
+
+export type Gesamtnote = {
+  wert: number | null;
+  module: ModulStand[];
+  /** Summe der Gewichte, die gerade zählen */
+  ects: number;
+  /** Summe aus Modulnote mal Gewicht (für den Rechner) */
+  summe: number;
+  /** Fächer mit Note, aber ohne ECTS (zählen nicht, solange andere Fächer ECTS haben) */
+  ohneEcts: string[];
+  /** Fächer mit Modulnote über 4,0 */
+  nichtBestanden: string[];
+  /** false: kein Fach hat ECTS, gewichtet wird nach den Anteilen der Noten wie bisher */
+  nachEcts: boolean;
+};
+
+/** Modulnote aus den Teilnoten eines Fachs: nach Anteil gewichtet, abgeschnitten. */
+export function modulnote(noten: readonly NotenEintrag[]): { note: number | null; teile: number; vorlaeufig: boolean; anteile: number } {
+  const mitWert = eingetragen(noten);
+  const anteil = (n: NotenEintrag) => (n.gewicht > 0 ? n.gewicht : 1);
+  const anteile = mitWert.reduce((s, n) => s + anteil(n), 0);
+  const note = anteile > 0 ? abschneiden(mitWert.reduce((s, n) => s + n.wert * anteil(n), 0) / anteile) : null;
+  return { note, teile: mitWert.length, vorlaeufig: mitWert.length < noten.length, anteile };
+}
+
+/** Gesamtnote nach ECTS. `ectsVon` liefert die ECTS eines Fachs (auch archivierter Fächer). */
+export function gesamtnote(noten: readonly NotenEintrag[], ectsVon: (fachId: string) => number | null | undefined): Gesamtnote {
+  const gruppen = new Map<string, NotenEintrag[]>();
+  for (const n of noten) gruppen.set(n.fach_id, [...(gruppen.get(n.fach_id) ?? []), n]);
+  const roh = [...gruppen.entries()].map(([fachId, liste]) => ({ fachId, ...modulnote(liste), echteEcts: ectsVon(fachId) ?? null }));
+  const nachEcts = roh.some((m) => m.note !== null && (m.echteEcts ?? 0) > 0);
+  const stand: ModulStand[] = roh.map((m) => ({
+    fachId: m.fachId,
+    note: m.note,
+    ects: nachEcts ? (m.echteEcts && m.echteEcts > 0 ? m.echteEcts : null) : m.anteile || null,
+    teile: m.teile,
+    vorlaeufig: m.vorlaeufig,
+  }));
+  let summe = 0;
+  let ects = 0;
+  const ohneEcts: string[] = [];
+  const nichtBestanden: string[] = [];
+  for (const m of stand) {
+    if (m.note === null) continue;
+    if (m.note > 4) {
+      nichtBestanden.push(m.fachId);
+      continue;
+    }
+    if (!m.ects) {
+      ohneEcts.push(m.fachId);
+      continue;
+    }
+    summe += m.note * m.ects;
+    ects += m.ects;
+  }
+  return { wert: ects > 0 ? abschneiden(summe / ects) : null, module: stand, ects, summe, ohneEcts, nichtBestanden, nachEcts };
+}
+
+/** Gesamtnote, wenn ein weiteres Modul mit `note` und `ects` dazukommt; null bei ungültiger Eingabe. */
+export function gesamtMitModul(g: Gesamtnote, note: number, ects: number): number | null {
+  if (!Number.isFinite(note) || !Number.isFinite(ects) || ects <= 0 || note < 1 || note > 4) return null;
+  return abschneiden((g.summe + note * ects) / (g.ects + ects));
+}
+
+/**
+ * Welche Note braucht es im Schnitt auf die restlichen ECTS, damit die abgeschnittene Gesamtnote das Ziel erreicht?
+ * Abgeschnitten heißt: 2,0 steht da, solange der genaue Schnitt unter 2,1 bleibt.
+ */
+export function zielnoteNachEcts(
+  g: Gesamtnote,
+  ziel: number,
+  restEcts: number,
+): { art: "ungueltig" } | { art: "sicher" } | { art: "unmoeglich" } | { art: "note"; wert: number } {
+  if (!Number.isFinite(ziel) || !Number.isFinite(restEcts) || restEcts <= 0 || ziel < 1 || ziel > 4) return { art: "ungueltig" };
+  const grenze = ((abschneiden(ziel) + 0.1) * (g.ects + restEcts) - g.summe) / restEcts;
+  // größte Note mit einer Stelle, die noch knapp unter der Grenze bleibt
+  const wert = Math.ceil(grenze * 10 - 1e-9) / 10 - 0.1;
+  if (wert >= 4) return { art: "sicher" };
+  if (wert < 1) return { art: "unmoeglich" };
+  return { art: "note", wert: Math.round(wert * 10) / 10 };
+}

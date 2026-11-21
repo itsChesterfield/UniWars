@@ -122,3 +122,25 @@ test("tagZeile: ausgeschriebener Tag und Zahl der Einträge über dem Zeitband",
   assert.equal(tagZeile("2026-11-16", 1), "Montag, 16. November, 1 Eintrag");
   assert.equal(tagZeile("2026-11-22", 0), "Sonntag, 22. November, frei");
 });
+
+test("Unteraufgaben nennen ihre Aufgabe (Hub, Lage-Satz, Woche)", () => {
+  const jetzt = new Date("2026-11-21T10:00:00Z");
+  const d = {
+    deadlines: [
+      { id: "h", titel: "Hausarbeit", faellig_am: "2026-11-30T10:00:00Z", erledigt: false, fach_id: null },
+      { id: "u", titel: "Gliederung schicken", faellig_am: "2026-11-21T15:00:00Z", erledigt: false, fach_id: null, parent_deadline_id: "h" },
+      { id: "t", titel: "Folien", faellig_am: "2026-11-22T15:00:00Z", erledigt: false, fach_id: null, todo_id: "td" },
+      { id: "p", titel: "Lernzettel", faellig_am: "2026-11-23T15:00:00Z", erledigt: false, fach_id: null, pruefung_id: "pr" },
+    ],
+    todos: [{ id: "td", titel: "Referat", erledigt: false, parent_id: null, fach_id: null, faellig_am: null }],
+    pruefungen: [{ id: "pr", titel: "Klausur Statistik", datum: "2026-12-10T09:00:00Z", fach_id: null }],
+  };
+  const e = alsNaechstes(d, jetzt);
+  assert.equal(e.find((x) => x.id === "u")?.teilVon, "Hausarbeit");
+  assert.equal(e.find((x) => x.id === "t")?.teilVon, "Referat");
+  assert.equal(e.find((x) => x.id === "p")?.teilVon, "Klausur Statistik");
+  assert.equal(e.find((x) => x.id === "h")?.teilVon, null);
+  assert.match(lageSatz(e, jetzt).unter, /^Teil von „Hausarbeit“\./);
+  const tag = woche({ stundenplan: [], deadlines: d.deadlines, pruefungen: d.pruefungen, todos: d.todos, fachName: () => null }, jetzt).find((t) => t.heute);
+  assert.equal(tag?.ereignisse.find((x) => x.id === "u")?.ort, "Teil von Hausarbeit");
+});

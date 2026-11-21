@@ -217,11 +217,12 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
   const meta = (z: Posten) => {
     if (!("quelle" in z)) return z.grund;
     const f = fach(z.fachId);
-    return `${f ? `${f.name}, ` : ""}${z.art}`;
+    // Unteraufgaben sagen, wozu sie gehören, statt wie eine eigene Aufgabe auszusehen
+    return `${f ? `${f.name}, ` : ""}${z.teilVon ? `Teil von „${z.teilVon}“` : z.art}`;
   };
 
   // ---- 02 Woche
-  const tage = useMemo(() => woche({ stundenplan: d.stundenplan, deadlines: d.deadlines, pruefungen: d.pruefungen, fachName: (id) => fach(id)?.name ?? null }, jetzt), [d, jetzt, fach]);
+  const tage = useMemo(() => woche({ stundenplan: d.stundenplan, deadlines: d.deadlines, pruefungen: d.pruefungen, todos: d.todos, fachName: (id) => fach(id)?.name ?? null }, jetzt), [d, jetzt, fach]);
   const heuteIndex = Math.max(0, tage.findIndex((t) => t.heute));
   const [tag, setTag] = useState<number | null>(null);
   const gewaehlt = tage[tag ?? heuteIndex];

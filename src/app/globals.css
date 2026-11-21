@@ -19994,3 +19994,19 @@ dialog.dat-workflow-dialog {
 .eb-einzeln .p-zeile {
   padding-left: var(--space-4);
 }
+
+/* Erklärung unter einem Formularfeld (Notenformular: Anteil im Modul) */
+.feld-info {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+/* Termine › Heute: Unteraufgaben nennen ihre Aufgabe */
+.heute-teil {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-2);
+}
