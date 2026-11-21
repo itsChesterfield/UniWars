@@ -57,8 +57,6 @@ export default async function PdfReaderSeite() {
     <>
       <Bereichskopf
         titel="PDF Reader"
-        zahl={eintraege.length || undefined}
-        einheit={eintraege.length === 1 ? "PDF" : "PDFs"}
         lage={pdfLage(eintraege[0])}
         untertitel="Skripte und Folien lesen und in Ordnern sortieren. PDFs einfach vom Computer hierher ziehen."
         aktionen={

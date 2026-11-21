@@ -8,6 +8,7 @@ import { Icon } from "@/components/nav-icon";
 import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import { EINSTELLUNGEN_STANDARD, FRAGE_TYPEN, TYP_NAME, type FrageTyp, type QuizEinstellungen } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -88,23 +89,26 @@ export function QuizBereich({ quizze, faecher, optionen, kiVerfuegbar }: { quizz
                   <Link href={`/karteikarten/quiz/${q.id}`} className="knopf neben klein">
                     {q.versuche ? "Nochmal" : "Starten"}
                   </Link>
-                  <button
-                    type="button"
-                    className="knopf gefahr klein nur-symbol"
-                    aria-label={`Quiz „${q.titel}“ in den Papierkorb`}
-                    title="In den Papierkorb"
-                    onClick={async () => {
-                      if (!(await inDenPapierkorb(`Das Quiz „${q.titel}“`))) return;
-                      setLoeschfehler("");
-                      const fehler = `„${q.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
-                      void quizLoeschen(q.id).then((ergebnis) => {
-                        if (ergebnis.ok) router.refresh();
-                        else setLoeschfehler(fehler);
-                      }).catch(() => setLoeschfehler(fehler));
-                    }}
-                  >
-                    <Icon name="loeschen" groesse={16} />
-                  </button>
+                  {/* Papierkorb im Menü statt als roter Knopf in jeder Zeile (Aufgabe 4, B3/B4) */}
+                  <DreiPunkteMenue
+                    label={`Weitere Aktionen für Quiz „${q.titel}“`}
+                    punkte={[
+                      {
+                        label: "In den Papierkorb",
+                        icon: "loeschen",
+                        gefahr: true,
+                        onClick: async () => {
+                        if (!(await inDenPapierkorb(`Das Quiz „${q.titel}“`))) return;
+                        setLoeschfehler("");
+                        const fehler = `„${q.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
+                        void quizLoeschen(q.id).then((ergebnis) => {
+                          if (ergebnis.ok) router.refresh();
+                          else setLoeschfehler(fehler);
+                        }).catch(() => setLoeschfehler(fehler));
+                        },
+                      },
+                    ]}
+                  />
                 </div>
               </li>
             );

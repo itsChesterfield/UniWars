@@ -46,16 +46,12 @@ export function NotenKopf({
     return z;
   }, [pruefungen]);
   const modul = fachName ? gesamt.module[0] : null;
-  const schnitt = modul ? modul.note : gesamt.wert;
   const anzahlModule = gesamt.module.filter((m) => m.note !== null).length;
   const liste = (ids: string[]) => ids.map(fachNamen).join(", ");
 
   return (
     <div className="noten-kopf">
-      <p className="noten-schnitt zahl">
-        <span className="vh">{fachName ? `Modulnote in ${fachName}: ` : "Gesamtnote: "}</span>
-        {schnitt != null ? <RollText wert={notenText(schnitt)} start={notenText(0)} /> : "–"}
-      </p>
+      {/* Die Note selbst steht schon groß im Bereichskopf (Aufgabe 4, B2) */}
       <div className="noten-kopf-text">
         {modul ? (
           <p>
@@ -146,10 +142,14 @@ export function NotenRechner({ gesamt, offeneEcts }: { gesamt: Gesamtnote; offen
   const bedarf = zielnoteNachEcts(gesamt, zahlLesen(ziel), zahlLesen(restEcts));
 
   return (
-    <section className="rechner" aria-labelledby="abschnitt-rechner">
-      <h2 id="abschnitt-rechner" className="abschnitt-titel">
-        Rechner
-      </h2>
+    // Zugeklappt, damit die Notenseite mit den Noten beginnt (Aufgabe 4, B2)
+    <details className="rechner">
+      <summary>
+        <h2 id="abschnitt-rechner" className="abschnitt-titel">
+          Rechner
+        </h2>
+        <span className="abschnitt-info">Was wäre, wenn und Zielnote</span>
+      </summary>
       <div className="rechner-teile">
         <form className="rechner-teil" aria-labelledby="rechner-wenn" onSubmit={(e) => e.preventDefault()}>
           <h3 id="rechner-wenn">Was wäre, wenn</h3>
@@ -235,6 +235,6 @@ export function NotenRechner({ gesamt, offeneEcts }: { gesamt: Gesamtnote; offen
           </p>
         </form>
       </div>
-    </section>
+    </details>
   );
 }

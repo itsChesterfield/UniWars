@@ -72,8 +72,9 @@ export function kopfFortschritt(streak: number, minutenWoche: number): Kopf {
 /** Listen-Bereiche (Notizen, Dokumente, Tabellen …): Anzahl und das zuletzt Bearbeitete */
 export function kopfListe(eintraege: { titel: string | null; geaendert: string | null }[], ohneTitel: string, einheit: [string, string]): Kopf {
   const neuester = [...eintraege].filter((e) => e.geaendert).sort((a, b) => (b.geaendert as string).localeCompare(a.geaendert as string))[0];
+  // Keine große Zahl: „1 Tabelle“ sagt nichts (Aufgabe 4, A1). Groß steht dann der Name des Bereichs.
   return {
-    zahl: eintraege.length,
+    zahl: null,
     einheit: eintraege.length === 1 ? einheit[0] : einheit[1],
     lage: neuester ? mitName("Zuletzt bearbeitet:", neuester.titel?.trim() || ohneTitel) : null,
   };

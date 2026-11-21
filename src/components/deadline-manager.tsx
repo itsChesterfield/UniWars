@@ -14,7 +14,7 @@ import type { FachOption } from "@/lib/fach-option";
 import { restMillisekunden, restzeitGross, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
 import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
-import { Unteraufgaben } from "@/components/unteraufgaben";
+import { Unteraufgaben, unteraufgabeAnlegen } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
@@ -259,6 +259,7 @@ export function DeadlineManager({
                     punkte={[
                       ...(userId && d.user_id === userId ? [{ label: "Teilen", icon: "gruppe", onClick: () => setTeilenId(d.id) } satisfies MenuePunkt] : []),
                       { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(d) },
+                      { label: "Unteraufgabe hinzufügen", icon: "plus", onClick: () => unteraufgabeAnlegen("frist", d.id) },
                       { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(d.id) },
                     ]}
                   />

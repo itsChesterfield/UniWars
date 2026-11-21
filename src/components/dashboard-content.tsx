@@ -22,11 +22,10 @@ import {
   NotenRechner,
 } from "@/components/rechner-section";
 import { Zustand } from "@/components/zustand";
-import { ErfassenKnopf } from "@/components/erfassen-knopf";
 import { gesamtnote } from "@/lib/noten";
 import { FortschrittSeite } from "@/components/fortschritt-views";
 import { SegmentedCard } from "@/components/segmented-card";
-import { SchnellErfassenKnopf } from "@/components/quick-add";
+import { ErfassenKnopf, FachNeuKnopf, HauptErfassenKnopf } from "@/components/erfassen-knopf";
 import type { Speiseplan } from "@/lib/mensa";
 import { DetailAnsicht } from "@/components/detail-ansicht";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
@@ -299,10 +298,22 @@ export function DashboardContent({
       : bereich === "aufgaben"
         ? kopfAufgaben({ deadlines, todos, pruefungen }, kopfJetzt)
         : bereich === "noten"
-          ? kopfNoten(gesamt.wert, notes.filter((n) => n.wert !== null).length)
+          ? kopfNoten(fachId ? (gefiltertGesamt.module[0]?.note ?? null) : gesamt.wert, gefilterteNotes.filter((n) => n.wert !== null).length)
           : bereich === "fortschritt"
             ? kopfFortschritt(settings.streak_count, minutenDieseWoche(lernSessions, kopfJetzt))
-            : { zahl: faecher.length || null, einheit: "aktiv", lage: null };
+            : { zahl: null, einheit: "", lage: null };
+
+  // Hauptknopf passend zur Seite (Aufgabe 4, A4)
+  const hauptAktion =
+    bereich === "termine" ? (
+      <HauptErfassenKnopf modus="TERMIN">Termin</HauptErfassenKnopf>
+    ) : bereich === "aufgaben" ? (
+      <HauptErfassenKnopf>Aufgabe</HauptErfassenKnopf>
+    ) : bereich === "noten" ? (
+      <HauptErfassenKnopf modus="NOTE">Note</HauptErfassenKnopf>
+    ) : bereich === "faecher" && faecher.length > 0 ? (
+      <FachNeuKnopf />
+    ) : undefined;
 
   return (
     <>
@@ -336,7 +347,7 @@ export function DashboardContent({
         </div>
       ) : (
         <div key={bereich} className="hubseite bereich-ein">
-          <Bereichskopf titel={info.name} untertitel={info.untertitel} {...kopf} aktionen={<SchnellErfassenKnopf />} />
+          <Bereichskopf titel={info.name} untertitel={bereich === "faecher" && faecher.length ? undefined : info.untertitel} {...kopf} aktionen={hauptAktion} />
 
           {(bereich === "termine" || bereich === "aufgaben" || bereich === "noten") && <FachFilterChips faecher={faecher} />}
 

@@ -150,7 +150,7 @@ export function Literaturverwaltung({
     <>
       <Bereichskopf
         titel="Literatur"
-        untertitel="Quellen sammeln und nach APA zitieren."
+        untertitel={quellen.length ? undefined : "Quellen sammeln und nach APA zitieren."}
         {...(quellen.length ? { ...kopfListe(quellen.map((q) => ({ titel: q.titel, geaendert: q.erstellt_am })), "Quelle ohne Titel", ["Quelle", "Quellen"]), lage: null } : {})}
         aktionen={quellen.length > 0 ? neuKnopf("haupt", "Quelle") : undefined}
       />

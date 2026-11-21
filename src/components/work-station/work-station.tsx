@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useFokusraum } from "@/lib/fokusraum-store";
@@ -85,6 +85,19 @@ function BisherGearbeitet({ aufgabe }: { aufgabe: FokusAufgabe }) {
   );
 }
 
+const HILFE_GESEHEN = "universe-ws-hilfe";
+const hilfeAbonnieren = (h: () => void) => {
+  window.addEventListener("storage", h);
+  return () => window.removeEventListener("storage", h);
+};
+const hilfeLesen = () => {
+  try {
+    return localStorage.getItem(HILFE_GESEHEN) === "1";
+  } catch {
+    return false;
+  }
+};
+
 const RADIUS = 108;
 const UMFANG = 2 * Math.PI * RADIUS;
 
@@ -149,7 +162,20 @@ export function WorkStation({
     return () => window.removeEventListener(SITZUNG_GESPEICHERT_EVENT, neuLaden);
   }, [router]);
 
+  // Die Bedienungshilfe unter dem Timer nur, bis der Timer einmal lief (Aufgabe 4, B10)
+  const hilfeGespeichert = useSyncExternalStore(hilfeAbonnieren, hilfeLesen, () => false);
+  const [hilfeJetzt, setHilfeJetzt] = useState(false);
+  const hilfeGesehen = hilfeGespeichert || hilfeJetzt;
+
   function startPause() {
+    if (!zustand.laeuft && !hilfeGesehen) {
+      setHilfeJetzt(true);
+      try {
+        localStorage.setItem(HILFE_GESEHEN, "1");
+      } catch {
+        // ohne Speicher erscheint die Hilfe beim nächsten Besuch wieder
+      }
+    }
     if (zustand.laeuft) {
       timerSchreiben(pausieren(zustand, Date.now()));
       track("work_station_pausiert", { modus: zustand.modus });
@@ -436,7 +462,7 @@ export function WorkStation({
           </div>
           <p className="ws-hinweis">
             {flow ? "Flow: Die Zeit zählt hoch, bis du beendest. Ab 5 Minuten zählt sie für deine Lernzeit. " : ""}
-            {stellbar ? `Zieh den Punkt am Kreis, um die Dauer einzustellen. Eine Runde sind ${bereich.runde} Minuten${bereich.max > bereich.runde ? ", weiterziehen gibt mehr Zeit" : ""}. ` : ""}Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst.
+            {stellbar && !hilfeGesehen ? `Zieh den Punkt am Kreis, um die Dauer einzustellen. Eine Runde sind ${bereich.runde} Minuten${bereich.max > bereich.runde ? ", weiterziehen gibt mehr Zeit" : ""}. ` : ""}{hilfeGesehen ? "" : "Der Timer läuft weiter, wenn du in einen anderen Bereich wechselst."}
           </p>
         </section>
 

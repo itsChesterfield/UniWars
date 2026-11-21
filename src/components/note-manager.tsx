@@ -11,6 +11,7 @@ import { Icon } from "@/components/nav-icon";
 import { notenText } from "@/lib/noten";
 import { RollText } from "@/components/bewegung/roll-text";
 import { rueckfrage } from "@/components/rueckfrage";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 
 type Note = Tables<"note">;
 
@@ -167,17 +168,14 @@ export function NoteManager({
                 {n.wert === null ? "ausstehend" : <RollText wert={notenText(n.wert)} />}
               </span>
               <div className="entry-actions">
-                <button type="button" className="knopf leise klein" onClick={() => openEditForm(n)}>
-                  Bearbeiten
-                </button>
-                <button
-                  type="button"
-                  className="knopf gefahr klein"
-                  onClick={() => handleDelete(n.id)}
-                  disabled={isPending}
-                >
-                  Löschen
-                </button>
+                {/* Bearbeiten und Löschen im Menü statt zwei Knöpfe in jeder Zeile (Aufgabe 4, B2) */}
+                <DreiPunkteMenue
+                  label={`Weitere Aktionen für ${n.titel}`}
+                  punkte={[
+                    { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(n) },
+                    { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => !isPending && void handleDelete(n.id) },
+                  ]}
+                />
               </div>
             </li>
           );

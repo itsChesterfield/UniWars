@@ -274,14 +274,15 @@ export function NotizenHub({
         {...(notizen.length ? kopfListe(notizen.map((n) => ({ titel: n.titel, geaendert: n.geaendert_am })), "Unbenannte Notiz", ["Notiz", "Notizen"]) : {})}
         aktionen={notizen.length > 0 && (
           <>
-            <button type="button" className="knopf leise" onClick={() => setSchnellsuche(true)} title="Notiz suchen und öffnen (alles andere: Strg+O)">
-              <Icon name="suchen" groesse={16} />
-              Öffnen
-            </button>
-            <button type="button" className="knopf neben" onClick={() => setVorlagenOffen(true)} disabled={isPending}>
-              Aus Vorlage
-            </button>
+            {/* Ein Knopf statt drei: Vorlage und Suche im Menü daneben (Aufgabe 4, B7) */}
             {neuKnopf("haupt", "Neue Notiz")}
+            <DreiPunkteMenue
+              label="Weitere Wege zu einer Notiz"
+              punkte={[
+                { label: "Aus Vorlage", icon: "kopieren", onClick: () => !isPending && setVorlagenOffen(true) },
+                { label: "Notiz suchen und öffnen", icon: "suchen", onClick: () => setSchnellsuche(true) },
+              ]}
+            />
           </>
         )}
       />
@@ -367,16 +368,19 @@ export function NotizenHub({
                         <span className="notiz-vorschau">{vorschau || "Kein Text"}</span>
                         <span className="notiz-datum">{kurzDatum(n.geaendert_am)}</span>
                       </button>
-                      <button
-                        type="button"
-                        className="knopf leise klein nur-symbol"
-                        aria-pressed={n.angepinnt}
-                        aria-label={`${n.titel || OHNE_TITEL} anpinnen`}
-                        title={n.angepinnt ? "Nicht mehr anpinnen" : "Anpinnen"}
-                        onClick={() => anpinnen(n)}
-                      >
-                        <Icon name="anheften" groesse={16} />
-                      </button>
+                      {/* Die Nadel nur an angepinnten Notizen; anpinnen geht im Kopf der geöffneten Notiz (Aufgabe 4, B7) */}
+                      {n.angepinnt && (
+                        <button
+                          type="button"
+                          className="knopf leise klein nur-symbol"
+                          aria-pressed
+                          aria-label={`${n.titel || OHNE_TITEL} nicht mehr anpinnen`}
+                          title="Nicht mehr anpinnen"
+                          onClick={() => anpinnen(n)}
+                        >
+                          <Icon name="anheften" groesse={16} />
+                        </button>
+                      )}
                     </li>
                   );
                 })}
@@ -435,7 +439,7 @@ export function NotizenHub({
               />
             ) : (
               <Zustand art="leer" icon="notizen" titel="Keine Notiz geöffnet." region ebene={2}>
-                Wähle links eine Notiz, öffne eine über „Öffnen“ oder lege eine neue an.
+                Wähle links eine Notiz oder lege eine neue an.
               </Zustand>
             )}
           </section>

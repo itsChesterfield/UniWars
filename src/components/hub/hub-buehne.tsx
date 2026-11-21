@@ -627,16 +627,7 @@ export function HubBuehne({ d }: { d: BuehneDaten }) {
       <div className="buehne">
         {modus === "buehne" && (
           <>
-            <span className="buehne-zaehler zahl" aria-hidden="true">
-              <span className="buehne-roll">
-                <span style={{ transform: `translateY(-${sz * 1.2}em)` }}>
-                  {liste.map((_, i) => (
-                    <i key={i}>{nr(i)}</i>
-                  ))}
-                </span>
-              </span>
-              <span> / {nr(liste.length - 1)}</span>
-            </span>
+            {/* Keine Zählung „01 / 04“ mehr oben links: die Kapitel-Leiste rechts zeigt die Stelle schon (Aufgabe 4, B8) */}
             <nav className="buehne-nav" aria-label="Kapitel der Übersicht">
               {liste.map((s, i) => (
                 <button key={s.id} type="button" aria-current={i === sz ? "step" : undefined} onClick={() => springen(i)}>

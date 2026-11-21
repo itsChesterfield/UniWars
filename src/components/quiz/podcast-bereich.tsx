@@ -9,6 +9,7 @@ import { Auswahl } from "@/components/quiz/quiz-bereich";
 import { Zustand } from "@/components/zustand";
 import { QuellenWahl, type Fach, type QuellOption, type QuellWahl } from "@/components/quiz/quellen-wahl";
 import { inDenPapierkorb } from "@/components/rueckfrage";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
 import type { PodcastLaenge } from "@/lib/ki/quiz";
 import { fehlerMelden, track } from "@/lib/analytics";
 
@@ -70,23 +71,26 @@ export function PodcastBereich({ podcasts, faecher, optionen, kiVerfuegbar }: { 
                     <Icon name="abspielen" groesse={16} />
                     Anhören
                   </Link>
-                  <button
-                    type="button"
-                    className="knopf gefahr klein nur-symbol"
-                    aria-label={`Podcast „${p.titel}“ in den Papierkorb`}
-                    title="In den Papierkorb"
-                    onClick={async () => {
-                      if (!(await inDenPapierkorb(`Der Podcast „${p.titel}“`))) return;
-                      setLoeschfehler("");
-                      const fehler = `„${p.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
-                      void podcastLoeschen(p.id).then((ergebnis) => {
-                        if (ergebnis.ok) router.refresh();
-                        else setLoeschfehler(fehler);
-                      }).catch(() => setLoeschfehler(fehler));
-                    }}
-                  >
-                    <Icon name="loeschen" groesse={16} />
-                  </button>
+                  {/* Papierkorb im Menü statt als roter Knopf in jeder Zeile (Aufgabe 4, B3/B4) */}
+                  <DreiPunkteMenue
+                    label={`Weitere Aktionen für Podcast „${p.titel}“`}
+                    punkte={[
+                      {
+                        label: "In den Papierkorb",
+                        icon: "loeschen",
+                        gefahr: true,
+                        onClick: async () => {
+                        if (!(await inDenPapierkorb(`Der Podcast „${p.titel}“`))) return;
+                        setLoeschfehler("");
+                        const fehler = `„${p.titel}“ konnte nicht in den Papierkorb verschoben werden.`;
+                        void podcastLoeschen(p.id).then((ergebnis) => {
+                          if (ergebnis.ok) router.refresh();
+                          else setLoeschfehler(fehler);
+                        }).catch(() => setLoeschfehler(fehler));
+                        },
+                      },
+                    ]}
+                  />
                 </div>
               </li>
             );

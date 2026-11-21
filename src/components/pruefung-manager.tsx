@@ -10,7 +10,7 @@ import {
 } from "@/app/pruefung/actions";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
-import { Unteraufgaben } from "@/components/unteraufgaben";
+import { Unteraufgaben, unteraufgabeAnlegen } from "@/components/unteraufgaben";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
@@ -193,6 +193,7 @@ export function PruefungManager({
                     label={`Aktionen für „${p.titel}“`}
                     punkte={[
                       { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(p) },
+                      { label: "Unteraufgabe hinzufügen", icon: "plus", onClick: () => unteraufgabeAnlegen("frist", p.id) },
                       { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(p.id) },
                     ]}
                   />
