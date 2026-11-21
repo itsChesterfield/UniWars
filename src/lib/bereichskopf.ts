@@ -53,7 +53,7 @@ export function kopfNoten(schnitt: number | null, anzahl: number): Kopf {
   if (schnitt === null || !Number.isFinite(schnitt)) return { zahl: anzahl || null, einheit: anzahl === 1 ? "Note eingetragen" : "Noten eingetragen", lage: null };
   return {
     zahl: schnitt.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-    einheit: `Schnitt aus ${anzahl} ${anzahl === 1 ? "Note" : "Noten"}`,
+    einheit: `Gesamtnote aus ${anzahl} ${anzahl === 1 ? "Note" : "Noten"}`,
     lage: null,
   };
 }

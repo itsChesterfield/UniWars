@@ -4,10 +4,9 @@ import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { track } from "@/lib/analytics";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
-import { benoetigteNote, notenText, schnittMit, schnittProFach, zahlLesen } from "@/lib/noten";
+import { gesamtMitModul, notenText, zahlLesen, zielnoteNachEcts, type Gesamtnote } from "@/lib/noten";
 import { RollText } from "@/components/bewegung/roll-text";
 
-type Note = Tables<"note">;
 type Pruefung = Tables<"pruefung">;
 
 const STATUS_LABEL: Record<Enums<"pruefung_status">, string> = {
@@ -25,17 +24,20 @@ function useEinmalMelden(rechner: string) {
   };
 }
 
-/** Kopf der Notenseite: Schnitt groß in Mono, darunter worauf er beruht und der Stand der Prüfungen. */
+/** Wie die Noten verrechnet werden, in einem Satz für unter den Schnitt. */
+const REGEL = "Wie in den meisten Prüfungsordnungen nach der ersten Stelle abgeschnitten, nicht gerundet. Maßgeblich ist deine Prüfungsordnung.";
+
+/** Kopf der Notenseite: Gesamtnote (oder Modulnote im Fach-Filter) groß, darunter worauf sie beruht. */
 export function NotenKopf({
-  schnitt,
-  notes,
+  gesamt,
   fachName,
+  fachNamen,
   pruefungen,
 }: {
-  schnitt: number | null;
-  notes: Note[];
+  gesamt: Gesamtnote;
   /** gesetzt, wenn nach einem Fach gefiltert ist */
   fachName?: string | null;
+  fachNamen: (id: string) => string;
   pruefungen: Pruefung[];
 }) {
   const zaehler = useMemo(() => {
@@ -43,19 +45,34 @@ export function NotenKopf({
     pruefungen.forEach((p) => z[p.status]++);
     return z;
   }, [pruefungen]);
-  const gewicht = notes.reduce((s, n) => s + n.gewicht, 0);
+  const modul = fachName ? gesamt.module[0] : null;
+  const schnitt = modul ? modul.note : gesamt.wert;
+  const anzahlModule = gesamt.module.filter((m) => m.note !== null).length;
+  const liste = (ids: string[]) => ids.map(fachNamen).join(", ");
 
   return (
     <div className="noten-kopf">
       <p className="noten-schnitt zahl">
-        <span className="vh">{fachName ? `Schnitt in ${fachName}: ` : "Notenschnitt: "}</span>
+        <span className="vh">{fachName ? `Modulnote in ${fachName}: ` : "Gesamtnote: "}</span>
         {schnitt != null ? <RollText wert={notenText(schnitt)} start={notenText(0)} /> : "–"}
       </p>
       <div className="noten-kopf-text">
-        <p>
-          {fachName ? `Schnitt in ${fachName}` : "Notenschnitt"} aus {notes.length}{" "}
-          {notes.length === 1 ? "Note" : "Noten"}, gewichtet (Gewicht gesamt {gewicht.toLocaleString("de-DE")}).
-        </p>
+        {modul ? (
+          <p>
+            Modulnote in {fachName} aus {modul.teile} {modul.teile === 1 ? "Note" : "Noten"}
+            {modul.vorlaeufig ? ", vorläufig" : ""}
+            {modul.ects ? `, zählt mit ${modul.ects.toLocaleString("de-DE")} ECTS` : ""}.
+          </p>
+        ) : gesamt.nachEcts ? (
+          <p>
+            Gesamtnote aus {anzahlModule} {anzahlModule === 1 ? "Modul" : "Modulen"}, nach ECTS gewichtet ({gesamt.ects.toLocaleString("de-DE")} ECTS).
+          </p>
+        ) : (
+          <p>Schnitt nach dem Anteil deiner Noten. Trag bei deinen Fächern ECTS ein, dann rechnet UniVerse wie deine Uni.</p>
+        )}
+        <p className="noten-status">{REGEL}</p>
+        {!modul && gesamt.ohneEcts.length > 0 && <p className="noten-status">Zählt noch nicht, weil ECTS fehlen: {liste(gesamt.ohneEcts)}.</p>}
+        {!modul && gesamt.nichtBestanden.length > 0 && <p className="noten-status">Nicht bestanden, zählt nicht: {liste(gesamt.nichtBestanden)}.</p>}
         {pruefungen.length > 0 && (
           <p className="noten-status">
             Prüfungen:{" "}
@@ -70,19 +87,16 @@ export function NotenKopf({
   );
 }
 
-export function NotenDurchschnittProFach({
-  notes,
-  faecher,
-}: {
-  notes: Note[];
-  faecher: FachOption[];
-}) {
+/** Modulnote je Fach: Teilnoten nach Anteil, dazu die ECTS, mit denen das Modul zählt. */
+export function NotenDurchschnittProFach({ gesamt, faecher }: { gesamt: Gesamtnote; faecher: FachOption[] }) {
   const proFach = useMemo(
     () =>
-      schnittProFach(notes)
-        .map((x) => ({ ...x, fach: faecher.find((f) => f.id === x.fachId) }))
-        .filter((x): x is typeof x & { fach: FachOption } => x.fach != null),
-    [notes, faecher],
+      gesamt.module
+        .filter((m): m is typeof m & { note: number } => m.note !== null)
+        .map((m) => ({ ...m, fach: faecher.find((f) => f.id === m.fachId) }))
+        .filter((x): x is typeof x & { fach: FachOption } => x.fach != null)
+        .sort((a, b) => a.note - b.note),
+    [gesamt, faecher],
   );
 
   if (proFach.length === 0) return null;
@@ -90,20 +104,27 @@ export function NotenDurchschnittProFach({
   return (
     <section aria-labelledby="abschnitt-schnitt-fach">
       <h2 id="abschnitt-schnitt-fach" className="abschnitt-titel">
-        Schnitt pro Fach
+        Modulnoten
       </h2>
       <ul className="entry-list">
-        {proFach.map(({ fach, schnitt, anzahl }) => (
+        {proFach.map(({ fach, note, teile, ects, vorlaeufig }) => (
           <li key={fach.id} className="entry-row fach-zeile">
             <span className="fach-farbe" style={{ "--c": fach.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
             <div className="entry-info">
               <span className="entry-title">{fach.name}</span>
               <span className="entry-meta">
-                {anzahl} {anzahl === 1 ? "Note" : "Noten"}
+                {[
+                  `${teile} ${teile === 1 ? "Note" : "Noten"}`,
+                  gesamt.nachEcts ? (ects ? `${ects.toLocaleString("de-DE")} ECTS` : "ohne ECTS") : null,
+                  vorlaeufig ? "vorläufig" : null,
+                  note > 4 ? "nicht bestanden" : null,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
               </span>
             </div>
             <span className="note-wert zahl">
-              <RollText wert={notenText(schnitt)} />
+              <RollText wert={notenText(note)} />
             </span>
           </li>
         ))}
@@ -112,17 +133,17 @@ export function NotenDurchschnittProFach({
   );
 }
 
-/** Design B3: ein Abschnitt „Rechner“ mit zwei Fragen nebeneinander, Ergebnis wird vorgelesen. */
-export function NotenRechner({ notes }: { notes: Note[] }) {
+/** Design B3: ein Abschnitt „Rechner“ mit zwei Fragen nebeneinander, Ergebnis wird vorgelesen. Rechnet mit ECTS. */
+export function NotenRechner({ gesamt, offeneEcts }: { gesamt: Gesamtnote; offeneEcts: { naechstes: number | null; summe: number } }) {
   const [wennNote, setWennNote] = useState("2,0");
-  const [wennGewicht, setWennGewicht] = useState("1");
-  const [ziel, setZiel] = useState("2,0");
-  const [restGewicht, setRestGewicht] = useState("1");
+  const [wennEcts, setWennEcts] = useState(String(offeneEcts.naechstes ?? 5));
+  const [ziel, setZiel] = useState(gesamt.wert ? notenText(gesamt.wert) : "2,0");
+  const [restEcts, setRestEcts] = useState(String(offeneEcts.summe || 30));
   const meldenWenn = useEinmalMelden("was_waere_wenn");
   const meldenZiel = useEinmalMelden("zielnote");
 
-  const neu = schnittMit(notes, zahlLesen(wennNote), zahlLesen(wennGewicht));
-  const bedarf = benoetigteNote(notes, zahlLesen(ziel), zahlLesen(restGewicht));
+  const neu = gesamtMitModul(gesamt, zahlLesen(wennNote), zahlLesen(wennEcts));
+  const bedarf = zielnoteNachEcts(gesamt, zahlLesen(ziel), zahlLesen(restEcts));
 
   return (
     <section className="rechner" aria-labelledby="abschnitt-rechner">
@@ -132,10 +153,10 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
       <div className="rechner-teile">
         <form className="rechner-teil" aria-labelledby="rechner-wenn" onSubmit={(e) => e.preventDefault()}>
           <h3 id="rechner-wenn">Was wäre, wenn</h3>
-          <p className="rechner-frage">Wie ändert sich der Schnitt mit der nächsten Note?</p>
+          <p className="rechner-frage">Wie ändert sich die Gesamtnote mit dem nächsten Modul?</p>
           <div className="rechner-feld">
             <label>
-              Note
+              Modulnote
               <input
                 inputMode="decimal"
                 value={wennNote}
@@ -147,14 +168,14 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
               />
             </label>
             <label>
-              Gewicht
+              ECTS
               <input
                 inputMode="decimal"
-                value={wennGewicht}
+                value={wennEcts}
                 aria-describedby="rechner-wenn-erg"
                 onChange={(e) => {
                   meldenWenn();
-                  setWennGewicht(e.target.value);
+                  setWennEcts(e.target.value);
                 }}
               />
             </label>
@@ -162,17 +183,17 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
           <p id="rechner-wenn-erg" className="rechner-erg" aria-live="polite">
             {neu != null ? (
               <>
-                Neuer Schnitt <b className="zahl">{notenText(neu, 2)}</b>
+                Neue Gesamtnote <b className="zahl">{notenText(neu)}</b>
               </>
             ) : (
-              "Note zwischen 1,0 und 5,0 und ein Gewicht über 0 eingeben."
+              "Note zwischen 1,0 und 4,0 und ECTS über 0 eingeben."
             )}
           </p>
         </form>
 
         <form className="rechner-teil" aria-labelledby="rechner-ziel" onSubmit={(e) => e.preventDefault()}>
-          <h3 id="rechner-ziel">Zielschnitt</h3>
-          <p className="rechner-frage">Was brauchst du auf die restlichen Prüfungen?</p>
+          <h3 id="rechner-ziel">Zielnote</h3>
+          <p className="rechner-frage">Was brauchst du in den Modulen, die noch fehlen?</p>
           <div className="rechner-feld">
             <label>
               Ziel
@@ -187,14 +208,14 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
               />
             </label>
             <label>
-              Restliches Gewicht
+              Restliche ECTS
               <input
                 inputMode="decimal"
-                value={restGewicht}
+                value={restEcts}
                 aria-describedby="rechner-ziel-erg"
                 onChange={(e) => {
                   meldenZiel();
-                  setRestGewicht(e.target.value);
+                  setRestEcts(e.target.value);
                 }}
               />
             </label>
@@ -202,14 +223,14 @@ export function NotenRechner({ notes }: { notes: Note[] }) {
           <p id="rechner-ziel-erg" className="rechner-erg" aria-live="polite">
             {bedarf.art === "note" ? (
               <>
-                Du brauchst im Schnitt <b className="zahl">{notenText(bedarf.wert, 2)}</b> oder besser.
+                Du brauchst im Schnitt <b className="zahl">{notenText(bedarf.wert)}</b> oder besser.
               </>
             ) : bedarf.art === "sicher" ? (
-              "Das Ziel erreichst du mit jeder Note."
+              "Das Ziel erreichst du mit jeder bestandenen Note."
             ) : bedarf.art === "unmoeglich" ? (
-              "Mit dem restlichen Gewicht ist das Ziel nicht mehr erreichbar."
+              "Mit den restlichen ECTS ist das Ziel nicht mehr erreichbar."
             ) : (
-              "Ziel zwischen 1,0 und 5,0 und ein Gewicht über 0 eingeben."
+              "Ziel zwischen 1,0 und 4,0 und ECTS über 0 eingeben."
             )}
           </p>
         </form>

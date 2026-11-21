@@ -53,6 +53,10 @@ export function NoteManager({
   const sortiert = [...notes].sort(
     (a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime(),
   );
+  // Der Anteil steht nur da, wo ein Fach mehrere Noten hat; bei einer Note ist er bedeutungslos
+  const proFach = new Map<string, number>();
+  for (const n of notes) proFach.set(n.fach_id, (proFach.get(n.fach_id) ?? 0) + 1);
+  const mehrereImFach = new Set([...proFach].filter(([, k]) => k > 1).map(([id]) => id));
 
   function openCreateForm() {
     if (faecher.length === 0) {
@@ -156,7 +160,7 @@ export function NoteManager({
               <div className="entry-info">
                 <span className="entry-title">{n.titel}</span>
                 <span className="entry-meta">
-                  {[fach?.name, `Gewicht ${n.gewicht.toLocaleString("de-DE")}`, datumText(n.datum)].filter(Boolean).join(", ")}
+                  {[fach?.name, mehrereImFach.has(n.fach_id) ? `Anteil ${n.gewicht.toLocaleString("de-DE")}` : null, datumText(n.datum)].filter(Boolean).join(", ")}
                 </span>
               </div>
               <span className={`note-wert zahl${n.wert === null ? " ausstehend" : ""}`}>
@@ -227,9 +231,10 @@ export function NoteManager({
               />
             </div>
             <div>
-              <label htmlFor="note-gewicht">Gewicht</label>
+              <label htmlFor="note-gewicht">Anteil im Modul</label>
               <input
                 id="note-gewicht"
+                aria-describedby="note-gewicht-info"
                 type="number"
                 inputMode="decimal"
                 step="0.1"
@@ -238,6 +243,9 @@ export function NoteManager({
                 onChange={(e) => setForm((f) => ({ ...f, gewicht: Number(e.target.value) }))}
                 required
               />
+              <small id="note-gewicht-info" className="feld-info">
+                Nur wichtig, wenn ein Fach mehrere Noten hat, zum Beispiel Klausur 70 und Hausarbeit 30. Läuft ein Modul über zwei Semester, trag alle Noten beim selben Fach ein.
+              </small>
             </div>
             <div>
               <label htmlFor="note-datum">Datum</label>

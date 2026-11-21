@@ -23,7 +23,7 @@ import {
 } from "@/components/rechner-section";
 import { Zustand } from "@/components/zustand";
 import { ErfassenKnopf } from "@/components/erfassen-knopf";
-import { gewichteterSchnitt } from "@/lib/noten";
+import { gesamtnote } from "@/lib/noten";
 import { FortschrittSeite } from "@/components/fortschritt-views";
 import { SegmentedCard } from "@/components/segmented-card";
 import { SchnellErfassenKnopf } from "@/components/quick-add";
@@ -64,7 +64,7 @@ export function DashboardContent({
   notes,
   pruefungen,
   stundenplanEintraege,
-  notenschnitt,
+  ectsJeFach,
   lernSessions,
   settings,
   username,
@@ -84,7 +84,8 @@ export function DashboardContent({
   notes: Note[];
   pruefungen: Pruefung[];
   stundenplanEintraege: Eintrag[];
-  notenschnitt: number | null;
+  /** ECTS je Fach, auch archivierter Fächer, für die Gesamtnote */
+  ectsJeFach: Record<string, number | null>;
   lernSessions: LernSession[];
   settings: Settings;
   username: string;
@@ -169,6 +170,7 @@ export function DashboardContent({
                   stundenplanEintraege={stundenplanEintraege}
                   deadlines={deadlines}
                   todos={todos}
+                  pruefungen={pruefungen}
                   faecher={faecher}
                 />
               ),
@@ -237,6 +239,13 @@ export function DashboardContent({
 
   // Design B3, Noten: Schnitt groß, darunter Noten, Schnitt pro Fach und Rechner als Abschnitte (kein Segment, keine Karte)
   const gefilterteNotes = fachId ? notes.filter((n) => n.fach_id === fachId) : notes;
+  // Gesamtnote wie an der Uni: Module nach ECTS, Teilnoten nach Anteil, abgeschnitten (lib/noten.ts)
+  const ectsVon = (id: string) => ectsJeFach[id] ?? null;
+  const gesamt = gesamtnote(notes, ectsVon);
+  const gefiltertGesamt = fachId ? gesamtnote(gefilterteNotes, ectsVon) : gesamt;
+  const mitNote = new Set(notes.filter((n) => n.wert !== null).map((n) => n.fach_id));
+  const offeneEctsListe = faecher.filter((f) => !mitNote.has(f.id) && (f.ects ?? 0) > 0).map((f) => f.ects as number);
+  const offeneEcts = { naechstes: offeneEctsListe[0] ?? null, summe: offeneEctsListe.reduce((a, b) => a + b, 0) };
   const filterFach = fachId ? faecher.find((f) => f.id === fachId) : undefined;
   const notenBlock = (klasse: string) =>
     notes.length === 0 ? (
@@ -247,16 +256,16 @@ export function DashboardContent({
           titel="Noch keine Noten."
           aktion={<ErfassenKnopf modus="NOTE">Note erfassen</ErfassenKnopf>}
         >
-          Trag Noten mit Gewicht ein. Dann siehst du hier deinen Schnitt, den Schnitt pro Fach und was du für dein Ziel brauchst.
+          Trag deine Noten ein und bei den Fächern die ECTS. Dann siehst du hier deine Gesamtnote, die Modulnoten und was du für dein Ziel brauchst.
         </Zustand>
       </div>
     ) : (
       <div className={`noten-seite ${klasse}`}>
         {gefilterteNotes.length > 0 && (
           <NotenKopf
-            schnitt={fachId ? gewichteterSchnitt(gefilterteNotes) : notenschnitt ?? gewichteterSchnitt(notes)}
-            notes={gefilterteNotes}
+            gesamt={gefiltertGesamt}
             fachName={filterFach?.name}
+            fachNamen={(id) => faecher.find((f) => f.id === id)?.name ?? "ein archiviertes Fach"}
             pruefungen={gefiltertePruefungen}
           />
         )}
@@ -273,8 +282,8 @@ export function DashboardContent({
             versteckeErstellen
           />
         </section>
-        {!fachId && <NotenDurchschnittProFach notes={notes} faecher={faecher} />}
-        <NotenRechner notes={gefilterteNotes} />
+        {!fachId && <NotenDurchschnittProFach gesamt={gesamt} faecher={faecher} />}
+        {!fachId && <NotenRechner key={`${gesamt.wert}-${offeneEcts.summe}`} gesamt={gesamt} offeneEcts={offeneEcts} />}
       </div>
     );
 
@@ -290,7 +299,7 @@ export function DashboardContent({
       : bereich === "aufgaben"
         ? kopfAufgaben({ deadlines, todos, pruefungen }, kopfJetzt)
         : bereich === "noten"
-          ? kopfNoten(notenschnitt ?? gewichteterSchnitt(notes), notes.length)
+          ? kopfNoten(gesamt.wert, notes.filter((n) => n.wert !== null).length)
           : bereich === "fortschritt"
             ? kopfFortschritt(settings.streak_count, minutenDieseWoche(lernSessions, kopfJetzt))
             : { zahl: faecher.length || null, einheit: "aktiv", lage: null };
@@ -320,7 +329,7 @@ export function DashboardContent({
               mensa,
               mensaGewaehlt: Boolean(settings.mensa_id),
               semester,
-              notenschnitt,
+              notenschnitt: gesamt.wert,
               dateien,
             }}
           />

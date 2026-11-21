@@ -31,7 +31,7 @@ test("Termine: nächste Veranstaltung heute mit Uhrzeit, laufende als „Gerade�
 });
 
 test("Noten: Schnitt mit Komma, ohne Schnitt die Anzahl", () => {
-  assert.deepEqual(kopfNoten(1.66, 3), { zahl: "1,7", einheit: "Schnitt aus 3 Noten", lage: null });
+  assert.deepEqual(kopfNoten(1.66, 3), { zahl: "1,7", einheit: "Gesamtnote aus 3 Noten", lage: null });
   assert.equal(kopfNoten(null, 0).einheit, "Noten eingetragen");
 });
 

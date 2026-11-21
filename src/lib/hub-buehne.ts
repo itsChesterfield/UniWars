@@ -19,11 +19,43 @@ export function szeneBeiScroll(scrollTop: number, hoehe: number, anzahl: number)
   return Math.max(0, Math.min(anzahl - 1, Math.round(scrollTop / hoehe)));
 }
 
-type Deadline = { id: string; titel: string; faellig_am: string; erledigt: boolean; fach_id: string | null; typ?: string | null };
+type Deadline = {
+  id: string;
+  titel: string;
+  faellig_am: string;
+  erledigt: boolean;
+  fach_id: string | null;
+  typ?: string | null;
+  /** Unteraufgaben sind Fristen mit Verweis auf ihre Aufgabe */
+  todo_id?: string | null;
+  pruefung_id?: string | null;
+  parent_deadline_id?: string | null;
+};
 type Todo = { id: string; titel: string; erledigt: boolean; parent_id: string | null; fach_id: string | null; faellig_am: string | null; prioritaet?: string | null };
 type Pruefung = { id: string; titel: string; datum: string; fach_id: string | null; status?: string | null; raum?: string | null };
 
-export type Eintrag = { id: string; quelle: "deadline" | "todo" | "pruefung"; art: string; titel: string; fachId: string | null; wann: string | null; dringend: boolean };
+export type Eintrag = {
+  id: string;
+  quelle: "deadline" | "todo" | "pruefung";
+  art: string;
+  titel: string;
+  fachId: string | null;
+  wann: string | null;
+  dringend: boolean;
+  /** Titel der Aufgabe, Prüfung oder Frist, zu der diese Unteraufgabe gehört */
+  teilVon: string | null;
+};
+
+/** Zu welcher Aufgabe gehört eine Frist? null, wenn sie selbst eine Aufgabe ist. */
+export function oberaufgabe(
+  f: Pick<Deadline, "todo_id" | "pruefung_id" | "parent_deadline_id">,
+  d: { deadlines: { id: string; titel: string }[]; todos: { id: string; titel: string }[]; pruefungen: { id: string; titel: string }[] },
+): string | null {
+  if (f.parent_deadline_id) return d.deadlines.find((x) => x.id === f.parent_deadline_id)?.titel ?? "einer Frist";
+  if (f.todo_id) return d.todos.find((x) => x.id === f.todo_id)?.titel ?? "einem To-do";
+  if (f.pruefung_id) return d.pruefungen.find((x) => x.id === f.pruefung_id)?.titel ?? "einer Prüfung";
+  return null;
+}
 
 const PRIO: Record<string, number> = { HOCH: 0, MITTEL: 1, NIEDRIG: 2 };
 
@@ -31,16 +63,16 @@ const PRIO: Record<string, number> = { HOCH: 0, MITTEL: 1, NIEDRIG: 2 };
 export function alsNaechstes(d: { deadlines: Deadline[]; todos: Todo[]; pruefungen: Pruefung[] }, jetzt: Date): Eintrag[] {
   const tag = 86_400_000;
   const mitZeit: Eintrag[] = [
-    ...d.deadlines.filter((x) => !x.erledigt).map((x) => ({ id: x.id, quelle: "deadline" as const, art: x.typ === "ABGABE" ? "Abgabe" : "Frist", titel: x.titel, fachId: x.fach_id, wann: x.faellig_am, dringend: false })),
+    ...d.deadlines.filter((x) => !x.erledigt).map((x) => ({ id: x.id, quelle: "deadline" as const, art: x.typ === "ABGABE" ? "Abgabe" : "Frist", titel: x.titel, fachId: x.fach_id, wann: x.faellig_am, dringend: false, teilVon: oberaufgabe(x, d) })),
     ...d.pruefungen
       .filter((x) => (x.status ?? "ANSTEHEND") === "ANSTEHEND" && new Date(x.datum).getTime() >= jetzt.getTime() - tag)
-      .map((x) => ({ id: x.id, quelle: "pruefung" as const, art: "Prüfung", titel: x.titel, fachId: x.fach_id, wann: x.datum, dringend: false })),
-    ...d.todos.filter((x) => !x.erledigt && !x.parent_id && x.faellig_am).map((x) => ({ id: x.id, quelle: "todo" as const, art: "To-do", titel: x.titel, fachId: x.fach_id, wann: x.faellig_am, dringend: false })),
+      .map((x) => ({ id: x.id, quelle: "pruefung" as const, art: "Prüfung", titel: x.titel, fachId: x.fach_id, wann: x.datum, dringend: false, teilVon: null })),
+    ...d.todos.filter((x) => !x.erledigt && !x.parent_id && x.faellig_am).map((x) => ({ id: x.id, quelle: "todo" as const, art: "To-do", titel: x.titel, fachId: x.fach_id, wann: x.faellig_am, dringend: false, teilVon: null })),
   ].sort((a, b) => new Date(a.wann as string).getTime() - new Date(b.wann as string).getTime());
   const ohneZeit: Eintrag[] = d.todos
     .filter((x) => !x.erledigt && !x.parent_id && !x.faellig_am)
     .sort((a, b) => (PRIO[a.prioritaet ?? "MITTEL"] ?? 1) - (PRIO[b.prioritaet ?? "MITTEL"] ?? 1))
-    .map((x) => ({ id: x.id, quelle: "todo" as const, art: "To-do", titel: x.titel, fachId: x.fach_id, wann: null, dringend: false }));
+    .map((x) => ({ id: x.id, quelle: "todo" as const, art: "To-do", titel: x.titel, fachId: x.fach_id, wann: null, dringend: false, teilVon: null }));
   return [...mitZeit, ...ohneZeit].map((e) => ({ ...e, dringend: e.wann !== null && new Date(e.wann).getTime() - jetzt.getTime() < 2 * tag }));
 }
 
@@ -78,10 +110,11 @@ export function lageSatz(eintraege: Eintrag[], jetzt: Date): { text: string; bet
   const woerter = kurz.split(/\s+/);
   const mitPunkt = woerter.map((w, i) => (i === woerter.length - 1 ? `${w}.` : w));
   const uhr = berlinUhrzeit(wann);
-  if (wann.getTime() < jetzt.getTime()) return { text: `${kurz} ist überfällig.`, betont: woerter, unter: `Das zuerst. ${rest}` };
-  if (tage === 0) return { text: `Heute zählt ${kurz}.`, betont: mitPunkt, unter: `Fällig um ${uhr}. ${rest}` };
-  if (tage === 1) return { text: `Morgen ist ${kurz} dran.`, betont: woerter, unter: `Heute ist Zeit zum Vorbereiten. ${rest}` };
-  return { text: `Als Nächstes: ${kurz}.`, betont: mitPunkt, unter: `Bis dahin ist Luft. ${rest}` };
+  const teil = erster.teilVon ? `Teil von „${kuerzen(erster.teilVon, 40)}“. ` : "";
+  if (wann.getTime() < jetzt.getTime()) return { text: `${kurz} ist überfällig.`, betont: woerter, unter: `${teil}Das zuerst. ${rest}` };
+  if (tage === 0) return { text: `Heute zählt ${kurz}.`, betont: mitPunkt, unter: `${teil}Fällig um ${uhr}. ${rest}` };
+  if (tage === 1) return { text: `Morgen ist ${kurz} dran.`, betont: woerter, unter: `${teil}Heute ist Zeit zum Vorbereiten. ${rest}` };
+  return { text: `Als Nächstes: ${kurz}.`, betont: mitPunkt, unter: `${teil}Bis dahin ist Luft. ${rest}` };
 }
 
 /** Führt eine Aufgabe zum Lernen? Dann direkt zum passenden Stapel oder zu den Karteikarten. */
@@ -160,7 +193,10 @@ const stundeVon = (hhmm: string) => {
 };
 
 /** Die laufende Woche mit Stundenplan, Fristen und Prüfungen je Tag (Stunden als Kommazahl, Berlin) */
-export function woche(d: { stundenplan: Stunde[]; deadlines: Deadline[]; pruefungen: Pruefung[]; fachName: (id: string | null) => string | null }, jetzt: Date): Wochentag[] {
+export function woche(
+  d: { stundenplan: Stunde[]; deadlines: Deadline[]; pruefungen: Pruefung[]; todos?: { id: string; titel: string }[]; fachName: (id: string | null) => string | null },
+  jetzt: Date,
+): Wochentag[] {
   const heute = berlinDatum(jetzt);
   return wochenTage(jetzt).map((datum, i) => {
     const ereignisse: Ereignis[] = [
@@ -178,7 +214,8 @@ export function woche(d: { stundenplan: Stunde[]; deadlines: Deadline[]; pruefun
         .map((f) => {
           const uhr = berlinUhrzeit(new Date(f.faellig_am));
           const v = Math.min(stundeVon(uhr), 22.5);
-          return { id: f.id, von: v, bis: v + 0.5, titel: f.titel, ort: "", fachId: f.fach_id, art: "frist" as const, uhr };
+          const teil = oberaufgabe(f, { deadlines: d.deadlines, todos: d.todos ?? [], pruefungen: d.pruefungen });
+          return { id: f.id, von: v, bis: v + 0.5, titel: f.titel, ort: teil ? `Teil von ${teil}` : "", fachId: f.fach_id, art: "frist" as const, uhr };
         }),
     ].sort((a, b) => a.von - b.von);
     return { datum, kurz: TAG_NAME[i], zahl: Number(datum.slice(8, 10)), heute: datum === heute, ereignisse };
