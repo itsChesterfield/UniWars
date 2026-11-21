@@ -8,7 +8,7 @@
  *   "standard": "<id>" | null,
  *   "flaechen": { "leiste": "standard" | "aus" | "<id>", "studio": …, "bereiche": … },
  *   "bereich": { "karteikarten": "standard" | "aus" | "<id>", … },
- *   "groesse": "kopf" | "gross" | "seite",
+ *   "groesse": "kopf" | "gross" | "seite" | "alles",
  *   "lernen_aus": true
  * }
  * Dieselben Bilder gelten in beiden Designs; der Schleier passt sich an (hell aufhellen, dunkel abdunkeln).
@@ -45,7 +45,8 @@ export type Bild = {
 export type Wahl = "standard" | "aus" | string;
 export const FLAECHEN = ["leiste", "studio", "bereiche"] as const;
 export type Flaeche = (typeof FLAECHEN)[number];
-export type Groesse = "kopf" | "gross" | "seite";
+/** Kopf: oben; gross: weit in die Seite; seite: hinter der Seite; alles: Vollbild hinter der ganzen App */
+export type Groesse = "kopf" | "gross" | "seite" | "alles";
 
 export type Hintergrund = {
   bilder: Bild[];
@@ -127,7 +128,7 @@ export function hintergrundLesen(roh: unknown, userId?: string): Hintergrund {
     standard: typeof o.standard === "string" && ids.has(o.standard) ? o.standard : (bilder[0]?.id ?? null),
     flaechen: { leiste: wahl(fl.leiste), studio: wahl(fl.studio), bereiche: wahl(fl.bereiche) },
     bereich,
-    groesse: o.groesse === "gross" || o.groesse === "seite" ? o.groesse : "kopf",
+    groesse: o.groesse === "gross" || o.groesse === "seite" || o.groesse === "alles" ? o.groesse : "kopf",
     lernen_aus: o.lernen_aus !== false,
   };
 }

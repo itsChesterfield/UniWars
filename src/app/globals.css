@@ -19789,12 +19789,12 @@ dialog.dat-workflow-dialog {
 
 /* Bereiche: hinter dem Kopf (kopf), bis weit in die Seite (gross) oder hinter der ganzen Seite (seite).
    Nur auf Übersichtsseiten mit Bereichskopf; Editoren, Lernmodus und Reader bleiben ohne Bild. */
-.dashboard[data-bild-bereich] .dashboard-main:has(.bk) {
+.dashboard[data-bild-bereich] .dashboard-main:has(.bk, .buehne) {
   position: relative;
   isolation: isolate;
 }
 
-.dashboard[data-bild-bereich] .dashboard-main:has(.bk)::before {
+.dashboard[data-bild-bereich] .dashboard-main:has(.bk, .buehne)::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
@@ -19807,7 +19807,7 @@ dialog.dat-workflow-dialog {
     var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
 }
 
-.dashboard[data-bild-bereich="gross"] .dashboard-main:has(.bk)::before {
+.dashboard[data-bild-bereich="gross"] .dashboard-main:has(.bk, .buehne)::before {
   height: min(78vh, 760px);
   background:
     linear-gradient(180deg, transparent 55%, var(--flaeche)),
@@ -19815,7 +19815,7 @@ dialog.dat-workflow-dialog {
     var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
 }
 
-.dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk)::before {
+.dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk, .buehne)::before {
   inset: 0;
   height: auto;
   background:
@@ -19823,14 +19823,33 @@ dialog.dat-workflow-dialog {
     var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat fixed;
 }
 
-/* Hub: Bild nur in der ersten Szene, läuft nach rechts und unten in die Fläche aus */
-.dashboard[data-bild-bereich] .buehne .szene:first-of-type {
-  border-radius: var(--radius-m);
+/* Hub: Das Bild reicht über die ganze Breite der ersten Szene, auch hinter die Kapitelzählung links,
+   und läuft nach unten in die Fläche aus (Kopf und Groß gleich; Seite und Vollbild wie überall) */
+.dashboard[data-bild-bereich="kopf"] .dashboard-main:has(.buehne)::before,
+.dashboard[data-bild-bereich="gross"] .dashboard-main:has(.buehne)::before {
+  height: min(92vh, 900px);
   background:
-    linear-gradient(90deg, transparent 0%, var(--flaeche) 46%),
-    linear-gradient(180deg, transparent 40%, var(--flaeche) 62%),
+    linear-gradient(180deg, transparent 55%, var(--flaeche)),
     linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
     var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+}
+
+/* Vollbild: ein Bild hinter der ganzen App. Symbolleiste und Arbeitsfläche werden zum Schleier darüber,
+   so ist das Bild überall zu sehen und die Schrift trotzdem lesbar. */
+.dashboard[data-bild-bereich="alles"] {
+  background: var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat fixed, var(--bg);
+}
+
+.dashboard[data-bild-bereich="alles"][data-leiste] .rail:not([hidden]) {
+  background: linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0);
+}
+
+.dashboard[data-bild-bereich="alles"] .arbeitsflaeche {
+  background: color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent);
+}
+
+.dashboard[data-bild-bereich="alles"] .dashboard-main:has(.bk, .buehne)::before {
+  content: none;
 }
 
 @media (max-width: 760px) {
@@ -19838,15 +19857,17 @@ dialog.dat-workflow-dialog {
     --bild-bereich-q: var(--bild-bereich-m);
   }
 
-  .dashboard[data-bild-bereich] .buehne .szene:first-of-type {
-    background:
-      linear-gradient(180deg, transparent 0%, var(--flaeche) 34%),
-      linear-gradient(color-mix(in srgb, var(--bild-schleier) calc(var(--bild-bereich-a) * 100%), transparent) 0 0),
-      var(--bild-bereich-q) var(--bild-bereich-pos) / cover no-repeat;
+  .dashboard[data-bild-bereich="kopf"] .dashboard-main:has(.buehne)::before,
+  .dashboard[data-bild-bereich="gross"] .dashboard-main:has(.buehne)::before {
+    height: min(70vh, 560px);
+  }
+
+  .dashboard[data-bild-bereich="alles"] {
+    background-attachment: scroll;
   }
 
   /* Am Handy scrollt die Seite selbst; ein festes Bild ruckelt dort */
-  .dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk)::before {
+  .dashboard[data-bild-bereich="seite"] .dashboard-main:has(.bk, .buehne)::before {
     background-attachment: scroll;
   }
 }
@@ -19861,6 +19882,14 @@ dialog.dat-workflow-dialog {
   background: var(--flaeche);
 }
 
+.dashboard[data-bild-lernen][data-bild-bereich="alles"]:not(:has(.bk, .buehne)) {
+  background: var(--bg);
+}
+
+.dashboard[data-bild-lernen][data-bild-bereich="alles"]:not(:has(.bk, .buehne)) .arbeitsflaeche {
+  background: var(--flaeche);
+}
+
 /* Mehr Kontrast gewünscht: Bilder ganz weg */
 @media (prefers-contrast: more), (forced-colors: active) {
   .dashboard[data-bild-leiste][data-leiste] .rail:not([hidden]) {
@@ -19872,12 +19901,16 @@ dialog.dat-workflow-dialog {
     background: var(--flaeche);
   }
 
-  .dashboard[data-bild-bereich] .dashboard-main:has(.bk)::before {
+  .dashboard[data-bild-bereich] .dashboard-main:has(.bk, .buehne)::before {
     content: none;
   }
 
-  .dashboard[data-bild-bereich] .buehne .szene:first-of-type {
-    background: none;
+  .dashboard[data-bild-bereich="alles"] {
+    background: var(--bg);
+  }
+
+  .dashboard[data-bild-bereich="alles"] .arbeitsflaeche {
+    background: var(--flaeche);
   }
 }
 

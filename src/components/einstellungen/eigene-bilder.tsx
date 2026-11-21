@@ -216,8 +216,8 @@ export function EigeneBilder({ hintergrund, vorschau, userId }: { hintergrund: H
               </select>
             </Zeile>
           ))}
-          <Zeile label="Größe in den Bereichen" info="Kopf: nur oben. Groß: bis weit in die Seite. Ganze Seite: hinter allem, ruhig abgedunkelt.">
-            <Segment label="Größe in den Bereichen" wert={h.groesse} optionen={[["kopf", "Kopf"], ["gross", "Groß"], ["seite", "Ganze Seite"]]} onWahl={(w: Groesse) => speichern({ ...h, groesse: w }, "groesse")} />
+          <Zeile label="Größe in den Bereichen" info="Kopf: nur oben. Groß: bis weit in die Seite. Seite: hinter der ganzen Seite. Vollbild: ein Bild hinter der ganzen App, auch hinter der Symbolleiste.">
+            <Segment label="Größe in den Bereichen" wert={h.groesse} optionen={[["kopf", "Kopf"], ["gross", "Groß"], ["seite", "Seite"], ["alles", "Vollbild"]]} onWahl={(w: Groesse) => speichern({ ...h, groesse: w }, "groesse")} />
           </Zeile>
           <details className="eb-einzeln">
             <summary>Einzelne Bereiche anders</summary>
