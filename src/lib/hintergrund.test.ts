@@ -45,14 +45,14 @@ test("Lesen: Standard fällt auf das erste Bild, unbekannte Wahl wird Standard, 
     standard: "weg",
     flaechen: { leiste: id(2), studio: "aus", bereiche: "unbekannt" },
     bereich: { karteikarten: id(1), notizen: "standard", erfunden: id(1) },
-    groesse: "seite",
+    groesse: "alles",
     lernen_aus: false,
   });
   assert.equal(h.bilder.length, 2);
   assert.equal(h.standard, id(1));
   assert.deepEqual(h.flaechen, { leiste: id(2), studio: "aus", bereiche: "standard" });
   assert.deepEqual(h.bereich, { karteikarten: id(1) });
-  assert.equal(h.groesse, "seite");
+  assert.equal(h.groesse, "alles");
   assert.equal(h.lernen_aus, false);
 });
 
