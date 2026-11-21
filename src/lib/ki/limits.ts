@@ -30,7 +30,7 @@ function zahl(env: Umgebung, namen: string[], standard: number, max: number): nu
 export function kiLimits(env: Umgebung = process.env): Record<Kontingent, KontingentRegel> {
   // KI_TAGESLIMIT gab es schon vor dem Vollausbau – bleibt als Alias gültig
   const text = zahl(env, ["KI_LIMIT_TEXT_TAG", "KI_TAGESLIMIT"], 20, 1000);
-  const chat = zahl(env, ["KI_LIMIT_CHAT_TAG"], 40, 1000);
+  const chat = zahl(env, ["KI_LIMIT_CHAT_TAG"], 200, 1000);
   const audioMin = zahl(env, ["KI_LIMIT_AUDIO_MINUTEN_MONAT"], 120, 10_000);
   const ttsZeichen = zahl(env, ["KI_LIMIT_TTS_ZEICHEN_MONAT"], 50_000, 10_000_000);
   const gespraechMin = zahl(env, ["KI_LIMIT_GESPRAECH_MINUTEN_MONAT"], 30, 10_000);
