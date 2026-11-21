@@ -18,7 +18,7 @@
 | Kontingent | Limit | Variable |
 |---|---|---|
 | Text-Funktionen inkl. Tagesvorschläge | 20 Anfragen / Tag | `KI_LIMIT_TEXT_TAG` |
-| Assistent | 40 Nachrichten / Tag | `KI_LIMIT_CHAT_TAG` |
+| Assistent | 200 Nachrichten / Tag | `KI_LIMIT_CHAT_TAG` |
 | Diktieren + Transkription | 120 Minuten / Monat | `KI_LIMIT_AUDIO_MINUTEN_MONAT` |
 | Vorlesen | 50.000 Zeichen / Monat | `KI_LIMIT_TTS_ZEICHEN_MONAT` |
 
@@ -27,24 +27,24 @@
 | Kontingent | Rechnung | pro Monat |
 |---|---|---|
 | Text | 600 Anfragen × (8.000 Ein × 0,10 $ + 1.500 Aus × 0,30 $) / 1 Mio. | 0,75 $ |
-| Assistent | 1.200 Nachrichten × (25.000 Ein × 0,10 $ + 800 Aus × 0,30 $) / 1 Mio. ¹ | 3,29 $ |
+| Assistent | 6.000 Nachrichten × (25.000 Ein × 0,10 $ + 800 Aus × 0,30 $) / 1 Mio. ¹ | 16,44 $ |
 | Audio | 120 Min × 0,0035 $ | 0,42 $ |
 | Vorlesen | 50.000 Zeichen × 13 $ / 1 Mio. | 0,65 $ |
-| **Summe** | | **≈ 5,10 $** (mit EU-Aufschlag ≈ 5,60 $) |
+| **Summe** | | **≈ 18,26 $** (mit EU-Aufschlag ≈ 20,00 $) |
 
 ¹ Pro Nachricht bis zu 5 Werkzeug-Runden; jedes Ergebnis ist auf 12.000 Zeichen begrenzt,
 der Verlauf auf 12 Nachrichten plus Zusammenfassung. 25.000 Eingabe-Tokens sind ein hoher Wert.
 
 ## Realistischer Fall
 
-Erfahrungsgemäß nutzen die meisten Nutzer 10–15 % ihrer Limits: **≈ 0,50–0,80 $ pro aktivem
+Erfahrungsgemäß nutzen die meisten Nutzer 10–15 % ihrer Limits: **≈ 1,80–2,70 $ pro aktivem
 Nutzer und Monat.** Der Assistent macht den größten Anteil aus; der wichtigste Hebel ist
 `KI_LIMIT_CHAT_TAG`.
 
 ## Budget-Alarm im Mistral-Konto
 
-- **Alarm:** aktive Nutzer × 1 $ pro Monat (deutlich über dem realistischen Fall).
-- **Harte Grenze:** aktive Nutzer × 5,60 $ (schlimmster Fall) – darüber kann es nicht gehen,
+- **Alarm:** aktive Nutzer × 3 $ pro Monat (über dem realistischen Fall).
+- **Harte Grenze:** aktive Nutzer × 20,00 $ (schlimmster Fall) – darüber kann es nicht gehen,
   solange die Limits nicht erhöht werden.
 - Beispiel 200 aktive Nutzer: Alarm bei 200 $, harte Grenze 1.120 $.
 
