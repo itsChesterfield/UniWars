@@ -42,7 +42,7 @@ test("Fortschritt: Serie und Lernzeit der Woche", () => {
   assert.equal(kopfFortschritt(1, 0).einheit, "Tag in Folge");
 });
 
-test("Liste: Anzahl und zuletzt Bearbeitetes, ohne Titel mit Ersatz", () => {
+test("Liste: keine Anzahl, zuletzt Bearbeitetes, ohne Titel mit Ersatz", () => {
   const k = kopfListe(
     [
       { titel: "Alt", geaendert: "2026-11-01T10:00:00Z" },
@@ -51,7 +51,7 @@ test("Liste: Anzahl und zuletzt Bearbeitetes, ohne Titel mit Ersatz", () => {
     "Unbenannt",
     ["Dokument", "Dokumente"],
   );
-  assert.equal(k.zahl, 2);
+  assert.equal(k.zahl, null);
   assert.equal(k.einheit, "Dokumente");
   assert.equal(k.lage?.text, "Zuletzt bearbeitet: Unbenannt.");
   assert.equal(kopfListe([], "x", ["Dokument", "Dokumente"]).lage, null);

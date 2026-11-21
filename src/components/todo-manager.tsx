@@ -11,7 +11,7 @@ import {
 } from "@/app/todo/actions";
 import type { Tables, Enums } from "@/lib/supabase/types";
 import type { FachOption } from "@/lib/fach-option";
-import { Unteraufgaben } from "@/components/unteraufgaben";
+import { Unteraufgaben, unteraufgabeAnlegen } from "@/components/unteraufgaben";
 import { TodoUnterpunkte } from "@/components/todo-unterpunkte";
 import { useAufgabenDetail } from "@/lib/use-aufgaben-detail";
 import { Zustand } from "@/components/zustand";
@@ -200,6 +200,8 @@ export function TodoManager({
                     label={`Aktionen für „${t.titel}“`}
                     punkte={[
                       { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(t) },
+                      { label: "Unterpunkt hinzufügen", icon: "aufzaehlung", onClick: () => unteraufgabeAnlegen("punkt", t.id) },
+                      { label: "Unteraufgabe mit Frist", icon: "termine", onClick: () => unteraufgabeAnlegen("frist", t.id) },
                       { label: "Löschen", icon: "loeschen", gefahr: true, onClick: () => handleDelete(t.id) },
                     ]}
                   />

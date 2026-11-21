@@ -21,7 +21,6 @@ import { restzeitText, absolutesDatum } from "@/lib/countdown";
 import { DeadlineTeilen } from "@/components/deadline-teilen";
 import { DreiPunkteMenue, type MenuePunkt } from "@/components/hubs/drei-punkte-menue";
 import { track } from "@/lib/analytics";
-import { Icon } from "@/components/nav-icon";
 
 type Deadline = Tables<"deadline">;
 type ParentTyp = "todo" | "deadline" | "pruefung";
@@ -35,6 +34,28 @@ const MITGLIEDER_LADEN: Record<ParentTyp, (id: string) => Promise<EditorMitglied
 function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * Unteraufgaben und Unterpunkte legt man über das ⋯-Menü der Aufgabe an, nicht über einen Link unter jeder Zeile
+ * (Aufgabe 4, B1). Das Menü schickt dieses Ereignis, die passende Liste öffnet ihren Editor.
+ */
+export const UNTERAUFGABE_NEU = "universe-unteraufgabe-neu";
+export type UnteraufgabeNeu = { art: "frist" | "punkt"; parentId: string };
+export function unteraufgabeAnlegen(art: UnteraufgabeNeu["art"], parentId: string) {
+  window.dispatchEvent(new CustomEvent<UnteraufgabeNeu>(UNTERAUFGABE_NEU, { detail: { art, parentId } }));
+}
+
+/** Öffnet den Editor, wenn das Menü der eigenen Aufgabe es verlangt. */
+export function useUnteraufgabeNeu(art: UnteraufgabeNeu["art"], parentId: string, setOffen: (offen: boolean) => void) {
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent<UnteraufgabeNeu>).detail;
+      if (d?.art === art && d.parentId === parentId) setOffen(true);
+    };
+    window.addEventListener(UNTERAUFGABE_NEU, h);
+    return () => window.removeEventListener(UNTERAUFGABE_NEU, h);
+  }, [art, parentId, setOffen]);
 }
 
 export function Unteraufgaben({
@@ -55,6 +76,7 @@ export function Unteraufgaben({
   const [, startTransition] = useTransition();
 
   const hatZuweisungen = aufgaben.some((a) => a.zugewiesen_an);
+  useUnteraufgabeNeu("frist", parentId, setFormOpen);
 
   useEffect(() => {
     if (!formOpen && !hatZuweisungen) return;
@@ -106,14 +128,7 @@ export function Unteraufgaben({
     return mitglieder.find((m) => m.user_id === id)?.username ?? null;
   }
 
-  if (aufgaben.length === 0 && !formOpen) {
-    return (
-      <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
-        <Icon name="plus" groesse={16} />
-        Unteraufgabe
-      </button>
-    );
-  }
+  if (aufgaben.length === 0 && !formOpen) return null;
 
   return (
     <div className="unteraufgaben">
@@ -146,7 +161,7 @@ export function Unteraufgaben({
         );
       })}
 
-      {formOpen ? (
+      {formOpen && (
         <UnteraufgabenEditor
           elternTyp={parentTyp}
           ort="liste"
@@ -156,11 +171,6 @@ export function Unteraufgaben({
           onSpeichern={speichern}
           onAbbrechen={() => setFormOpen(false)}
         />
-      ) : (
-        <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
-          <Icon name="plus" groesse={16} />
-          Unteraufgabe
-        </button>
       )}
     </div>
   );

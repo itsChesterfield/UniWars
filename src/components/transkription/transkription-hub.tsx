@@ -204,8 +204,6 @@ export function TranskriptionHub({
         untertitel="Vorlesungen aufnehmen und in Text umwandeln, mit Zeitstempeln zum Nachhören."
         {...(eintraege.length
           ? {
-              zahl: eintraege.length,
-              einheit: eintraege.length === 1 ? "Transkript" : "Transkripte",
               lage: { text: `Zuletzt: ${kurzTitel(eintraege[0].titel)}.`, betont: kurzTitel(eintraege[0].titel).split(" ") },
             }
           : {})}

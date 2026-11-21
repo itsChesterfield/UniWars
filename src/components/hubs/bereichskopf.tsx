@@ -11,6 +11,7 @@ export type Lage = {
 /**
  * Kopf aller Bereiche in der Sprache des Hubs: eine große Zahl mit Beschriftung,
  * daneben ein Satz, was hier gerade zählt. Ohne Zahl steht der Titel groß.
+ * Eine Zahl nur, wenn sie etwas aussagt (fällig, offen, Minuten), nicht als bloße Anzahl.
  * Die Überschrift (h1) bleibt immer der Name des Bereichs.
  */
 export function Bereichskopf({
@@ -39,7 +40,8 @@ export function Bereichskopf({
             <SteigText text={String(zahl)} schritt={60} />
           </p>
           <div className="bk-name">
-            <h1>{titel}</h1>
+            {/* Der Name steht schon in der Kopfleiste: hier nur für Screenreader (Aufgabe 4, A1) */}
+            <h1 className={einheit ? "vh" : undefined}>{titel}</h1>
             {einheit && (
               <span>
                 <span className="sr-only">{String(zahl)} </span>
@@ -59,7 +61,8 @@ export function Bereichskopf({
             <SteigText text={lage.text} start={mitZahl ? 220 : 160} schritt={12} akzent={lage.betont} />
           </p>
         )}
-        {untertitel && <p className="bk-unter">{untertitel}</p>}
+        {/* Der erklärende Satz nur, solange der Bereich noch nichts zu sagen hat (Aufgabe 4, A2) */}
+        {untertitel && !lage && !mitZahl && <p className="bk-unter">{untertitel}</p>}
       </div>
       {aktionen && <div className="bk-aktionen">{aktionen}</div>}
     </header>

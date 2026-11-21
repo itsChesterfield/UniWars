@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import posthog from "posthog-js";
 import { createFach, updateFach, archiveFach, type FachInput } from "@/app/fach/actions";
 import type { Tables } from "@/lib/supabase/types";
 import { naechsteFarbe } from "@/lib/fach-farben";
 import { Zustand } from "@/components/zustand";
 import { Icon } from "@/components/nav-icon";
+import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { FACH_NEU } from "@/components/erfassen-knopf";
 
 type Fach = Tables<"fach">;
 
@@ -96,16 +98,15 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
     });
   }
 
+  // Der Hauptknopf „Fach“ im Bereichskopf öffnet dieses Formular (Aufgabe 4, B5)
+  useEffect(() => {
+    const oeffnen = () => openCreateForm();
+    window.addEventListener(FACH_NEU, oeffnen);
+    return () => window.removeEventListener(FACH_NEU, oeffnen);
+  });
+
   return (
     <div className="faecher-seite" id="faecher">
-      {faecher.length > 0 && (
-        <div className="liste-kopf">
-          <button type="button" onClick={openCreateForm} className="knopf neben klein">
-            <Icon name="plus" groesse={16} />
-            Fach hinzufügen
-          </button>
-        </div>
-      )}
 
       {error && !formOpen && (
         <p className="formular-fehler" role="alert">
@@ -159,17 +160,14 @@ export function FachManager({ initialFaecher }: { initialFaecher: Fach[] }) {
                 </span>
               )}
               <div className="entry-actions">
-                <button type="button" className="knopf leise klein" onClick={() => openEditForm(fach)}>
-                  Bearbeiten
-                </button>
-                <button
-                  type="button"
-                  className="knopf leise klein"
-                  onClick={() => handleArchive(fach.id)}
-                  disabled={isPending}
-                >
-                  Archivieren
-                </button>
+                {/* Bearbeiten und Archivieren im Menü (Aufgabe 4, B5) */}
+                <DreiPunkteMenue
+                  label={`Weitere Aktionen für ${fach.name}`}
+                  punkte={[
+                    { label: "Bearbeiten", icon: "stift", onClick: () => openEditForm(fach) },
+                    { label: "Archivieren", onClick: () => !isPending && void handleArchive(fach.id) },
+                  ]}
+                />
               </div>
             </li>
           );

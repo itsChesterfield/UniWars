@@ -22,7 +22,7 @@ function datumUhrzeit(d: Date) {
  * der sofort im Hintergrund in die Dateiablage hochgeladen wird. Nach "Stopp" entsteht
  * das Transkript; umgewandelt wird erst auf Knopfdruck (mit Anzeige der Kosten).
  */
-export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfuegbar: boolean }) {
+export function Aufnahme({ faecher }: { faecher: FachOption[]; verfuegbar: boolean }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("bereit");
   // Laufende Aufnahme hält die Sitzung wach (keine automatische Abmeldung)
@@ -307,7 +307,6 @@ export function Aufnahme({ faecher, verfuegbar }: { faecher: FachOption[]; verfu
       )}
       <p className="tra-hinweis">
         Die Aufnahme landet in der Dateiablage{fachId ? " im gewählten Fach" : ""}. Höchstens 2 Stunden.
-        {!verfuegbar && " Umwandeln in Text ist gerade nicht verfügbar, aufnehmen geht trotzdem."}
       </p>
     </section>
   );

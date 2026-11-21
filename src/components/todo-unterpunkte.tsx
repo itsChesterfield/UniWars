@@ -10,8 +10,8 @@ import {
 } from "@/components/unteraufgaben-editor";
 import { absolutesDatum } from "@/lib/countdown";
 import { track } from "@/lib/analytics";
-import { Icon } from "@/components/nav-icon";
 import { DreiPunkteMenue } from "@/components/hubs/drei-punkte-menue";
+import { useUnteraufgabeNeu } from "@/components/unteraufgaben";
 import type { Tables } from "@/lib/supabase/types";
 
 type Todo = Tables<"todo">;
@@ -27,6 +27,7 @@ export function TodoUnterpunkte({
 }) {
   const [unterpunkte, setUnterpunkte] = useState(initial);
   const [formOpen, setFormOpen] = useState(false);
+  useUnteraufgabeNeu("punkt", parentId, setFormOpen);
   const [mitglieder, setMitglieder] = useState<EditorMitglied[]>([]);
   const [, startTransition] = useTransition();
 
@@ -76,14 +77,7 @@ export function TodoUnterpunkte({
     return mitglieder.find((m) => m.user_id === userId)?.username ?? null;
   }
 
-  if (unterpunkte.length === 0 && !formOpen) {
-    return (
-      <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
-        <Icon name="plus" groesse={16} />
-        Unterpunkte
-      </button>
-    );
-  }
+  if (unterpunkte.length === 0 && !formOpen) return null;
 
   return (
     <div className="unteraufgaben">
@@ -112,7 +106,7 @@ export function TodoUnterpunkte({
         );
       })}
 
-      {formOpen ? (
+      {formOpen && (
         <UnteraufgabenEditor
           elternTyp="todo"
           ort="liste"
@@ -121,11 +115,6 @@ export function TodoUnterpunkte({
           onSpeichern={speichern}
           onAbbrechen={() => setFormOpen(false)}
         />
-      ) : (
-        <button type="button" className="link unteraufgabe-add" onClick={() => setFormOpen(true)}>
-          <Icon name="plus" groesse={16} />
-          Unterpunkte
-        </button>
       )}
     </div>
   );

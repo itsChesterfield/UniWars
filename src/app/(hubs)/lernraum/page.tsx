@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { tabelleFehlt } from "@/lib/hubs/datenbank";
 import { Icon } from "@/components/nav-icon";
 import { Einrichtung, Zustand } from "@/components/zustand";
-import { PfeilText } from "@/components/bewegung/pfeil-text";
 import { Bereichskopf } from "@/components/hubs/bereichskopf";
 
 export const metadata = { title: "Lernraum · UniVerse" };
@@ -27,9 +26,7 @@ export default async function LernraumUebersicht() {
     <>
       <Bereichskopf
         titel="Lernraum"
-        zahl={(faecher ?? []).length || undefined}
-        einheit={(faecher ?? []).length === 1 ? "Raum, einer pro Fach" : "Räume, einer pro Fach"}
-        untertitel="Studio antwortet aus deinen Skripten und Notizen, belegt jede Aussage und baut dir Lernzettel, Quiz und Karteikarten."
+        untertitel={(faecher ?? []).length ? undefined : "Studio antwortet aus deinen Skripten und Notizen, belegt jede Aussage und baut dir Lernzettel, Quiz und Karteikarten."}
       />
       {(faecher ?? []).length === 0 ? (
         <Zustand
@@ -50,7 +47,7 @@ export default async function LernraumUebersicht() {
           {(faecher ?? []).map((f) => {
             const zuletzt = (raeume ?? []).find((r) => r.fach_id === f.id)?.geaendert_am;
             return (
-              <li key={f.id} className="entry-row fach-zeile">
+              <li key={f.id} className="entry-row fach-zeile zeile-ganz">
                 <span className="fach-farbe" style={{ "--c": f.farbe ?? "var(--text-3)" } as CSSProperties} aria-hidden />
                 <div className="entry-info">
                   <Link href={`/lernraum/${f.id}`} className="entry-title kk-name">
@@ -61,9 +58,8 @@ export default async function LernraumUebersicht() {
                     {zuletzt ? `zuletzt am ${new Date(zuletzt).toLocaleDateString("de-DE")}` : "noch nicht geöffnet"}
                   </span>
                 </div>
-                <Link href={`/lernraum/${f.id}`} className="knopf neben klein">
-                  <PfeilText>Öffnen</PfeilText>
-                </Link>
+                {/* Die ganze Zeile öffnet den Raum (Aufgabe 4, B6) */}
+                <Icon name="pfeil-rechts" groesse={18} className="zeile-pfeil" />
               </li>
             );
           })}

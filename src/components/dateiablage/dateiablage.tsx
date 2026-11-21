@@ -647,20 +647,38 @@ export function Dateiablage({ userId, initialDateien, material, ordner, speicher
             ))}
           </ul>
 
-          <button
-            type="button"
-            className="knopf leise klein"
-            aria-pressed={leselisteOffen}
-            onClick={() => { setSonderansicht(null); setLeselisteOffen(!leselisteOffen); setAuswahl([]); }}
-          >
-            <Icon name="lesezeichen" groesse={14} />
-            Leseliste
-          </button>
-
-          {freigaben && <button type="button" className="knopf leise klein" aria-pressed={sonderansicht === "pakete"}
-            onClick={() => { setSonderansicht("pakete"); setLeselisteOffen(false); setAuswahl([]); }}>Mit mir geteilt</button>}
-          {workflow && <button type="button" className="knopf leise klein" aria-pressed={sonderansicht === "papierkorb"}
-            onClick={() => { setSonderansicht("papierkorb"); setLeselisteOffen(false); setAuswahl([]); }}>Papierkorb</button>}
+          {/* Leseliste, Geteiltes und Papierkorb als Einträge wie die Ordner, nicht als drei Knöpfe (Aufgabe 4, B9) */}
+          <ul className="kliste dat-sonder" aria-label="Weitere Ansichten">
+            <li>
+              <button
+                type="button"
+                className="keintrag dat-ordner-knopf"
+                aria-pressed={leselisteOffen}
+                onClick={() => { setSonderansicht(null); setLeselisteOffen(!leselisteOffen); setAuswahl([]); }}
+              >
+                <Icon name="lesezeichen" groesse={16} />
+                <span className="n">Leseliste</span>
+              </button>
+            </li>
+            {freigaben && (
+              <li>
+                <button type="button" className="keintrag dat-ordner-knopf" aria-pressed={sonderansicht === "pakete"}
+                  onClick={() => { setSonderansicht("pakete"); setLeselisteOffen(false); setAuswahl([]); }}>
+                  <Icon name="gruppe" groesse={16} />
+                  <span className="n">Mit mir geteilt</span>
+                </button>
+              </li>
+            )}
+            {workflow && (
+              <li>
+                <button type="button" className="keintrag dat-ordner-knopf" aria-pressed={sonderansicht === "papierkorb"}
+                  onClick={() => { setSonderansicht("papierkorb"); setLeselisteOffen(false); setAuswahl([]); }}>
+                  <Icon name="loeschen" groesse={16} />
+                  <span className="n">Papierkorb</span>
+                </button>
+              </li>
+            )}
+          </ul>
 
           {/* DAT-09 */}
           <div className="dat-speicher">
