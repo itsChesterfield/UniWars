@@ -7,6 +7,10 @@ const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth/", "/daten
 const NUR_GAESTE = ["/login", "/signup", "/forgot-password"];
 
 export async function updateSession(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  const pageRequest = request.method === "GET" || request.method === "HEAD";
+  if (pathname === "/landing" && pageRequest) return NextResponse.next();
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -36,6 +40,18 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims?.sub ? data.claims : null;
 
+  // Bestehende Hub-Links sollen auch ohne Sitzung zur Anmeldung führen.
+  const opensHub = ["detail", "anordnen", "kalender"].some((key) => searchParams.has(key));
+  if (!user && pathname === "/" && pageRequest && !opensHub) {
+    const landingUrl = request.nextUrl.clone();
+    landingUrl.pathname = "/landing";
+    const response = NextResponse.rewrite(landingUrl, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    return response;
+  }
+
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path),
   );
@@ -47,10 +63,15 @@ export async function updateSession(request: NextRequest) {
   }
 
   // E-Mail-Links (/auth/…) und /datenschutz bleiben auch mit Sitzung erreichbar.
-  if (user && NUR_GAESTE.some((path) => request.nextUrl.pathname.startsWith(path))) {
+  const opensDashboard = pathname === "/dashboard" && pageRequest;
+  if (user && (opensDashboard || NUR_GAESTE.some((path) => pathname.startsWith(path)))) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/";
-    return NextResponse.redirect(dashboardUrl);
+    const response = NextResponse.redirect(dashboardUrl, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    return response;
   }
 
   return supabaseResponse;
