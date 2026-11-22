@@ -5,9 +5,9 @@ export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
-// Manifest, Service Worker und Offline-Seite der installierbaren App sind auch ohne Anmeldung erreichbar (statisch, ohne Daten)
+// Statische Dateien der installierbaren App und der Landingpage sind öffentlich.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|universe-landing/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

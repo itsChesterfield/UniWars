@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "UniVerse",
     description: "Dein Studium an einem Ort. Aufgaben, Unterlagen und Lernen, ruhig geordnet.",
     lang: "de",
-    start_url: "/",
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     background_color: "#08090b",
