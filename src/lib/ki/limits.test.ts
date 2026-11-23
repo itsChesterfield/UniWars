@@ -5,7 +5,7 @@ import { inAnzeigeEinheit, kiLimits, restText } from "./limits.ts";
 test("Limits: Standardwerte aus dem Plan", () => {
   const l = kiLimits({});
   assert.equal(l.text.limit, 20);
-  assert.equal(l.chat.limit, 40);
+  assert.equal(l.chat.limit, 200);
   assert.equal(l.audio.limit, 120 * 60);
   assert.equal(l.audio.einheit, "audio_sekunden");
   assert.equal(l.tts.limit, 50_000);
@@ -18,7 +18,7 @@ test("Limits: per .env überschreibbar, alter Name KI_TAGESLIMIT gilt weiter, Un
   assert.equal(kiLimits({ KI_TAGESLIMIT: "7", KI_LIMIT_TEXT_TAG: "9" }).text.limit, 9);
   assert.equal(kiLimits({ KI_LIMIT_AUDIO_MINUTEN_MONAT: "10" }).audio.limit, 600);
   for (const kaputt of ["", " ", "abc", "-5", "0", "2.5", "99999999"]) {
-    assert.equal(kiLimits({ KI_LIMIT_CHAT_TAG: kaputt }).chat.limit, 40, `Wert ${JSON.stringify(kaputt)}`);
+    assert.equal(kiLimits({ KI_LIMIT_CHAT_TAG: kaputt }).chat.limit, 200, `Wert ${JSON.stringify(kaputt)}`);
   }
 });
 
