@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ZeilenPuffer, ereignisseAusStream, mockStream } from "./stream-leser.ts";
+import { JsonObjektPuffer, ZeilenPuffer, ereignisseAusStream, mockStream } from "./stream-leser.ts";
 import { BEISPIEL_EREIGNISSE, BEISPIEL_NDJSON } from "./beispiel.ts";
-import type { WbEreignis } from "./protokoll.ts";
+import { ereignisLesen, type WbEreignis } from "./protokoll.ts";
 
 test("ZeilenPuffer: haelt die unfertige letzte Zeile zurueck", () => {
   const p = new ZeilenPuffer();
@@ -54,4 +54,47 @@ test("Stream: abgebrochenes Signal stoppt ohne Fehler", async () => {
   steuerung.abort();
   await ereignisseAusStream(mockStream(BEISPIEL_NDJSON), { aufEreignis: (e) => ereignisse.push(e) }, steuerung.signal);
   assert.equal(ereignisse.length, 0);
+});
+
+/** Text (optional in Stuecken) durch den Objekt-Puffer schicken und als Ereignisse lesen. */
+function objekteAlsEreignisse(text: string, stueck = 7): (WbEreignis | null)[] {
+  const p = new JsonObjektPuffer();
+  const roh: string[] = [];
+  for (let i = 0; i < text.length; i += stueck) roh.push(...p.schlucken(text.slice(i, i + stueck)));
+  return roh.map((o) => ereignisLesen(o));
+}
+
+test("JsonObjektPuffer: NDJSON (ein Objekt pro Zeile) wird vollstaendig gelesen", () => {
+  assert.deepEqual(objekteAlsEreignisse(BEISPIEL_NDJSON), BEISPIEL_EREIGNISSE);
+});
+
+test("JsonObjektPuffer: ein einzeiliges JSON-Array liefert dieselben Objekte", () => {
+  const array = JSON.stringify(BEISPIEL_EREIGNISSE);
+  assert.deepEqual(objekteAlsEreignisse(array), BEISPIEL_EREIGNISSE);
+});
+
+test("JsonObjektPuffer: mehrzeilig eingerueckt (pretty-printed) wird zusammengesetzt", () => {
+  const pretty = JSON.stringify(BEISPIEL_EREIGNISSE, null, 2);
+  assert.deepEqual(objekteAlsEreignisse(pretty, 11), BEISPIEL_EREIGNISSE);
+});
+
+test("JsonObjektPuffer: in einem Markdown-Codeblock verpackt", () => {
+  const umhuellt = "```json\n" + BEISPIEL_NDJSON + "\n```\n";
+  assert.deepEqual(objekteAlsEreignisse(umhuellt), BEISPIEL_EREIGNISSE);
+});
+
+test("JsonObjektPuffer: Klammern und Anfuehrungszeichen im Text spalten nicht", () => {
+  const knifflig = '{"typ":"sagen","text":"a } { \\" b"}\n{"typ":"fertig"}';
+  assert.deepEqual(objekteAlsEreignisse(knifflig, 3), [{ typ: "sagen", text: 'a } { " b' }, { typ: "fertig" }]);
+});
+
+test("JsonObjektPuffer: Strich mit Punkt-Array bleibt ein Objekt", () => {
+  const text = '[{"typ":"strich","punkte":[1,2,3,4]},{"typ":"fertig"}]';
+  assert.deepEqual(objekteAlsEreignisse(text, 4), [{ typ: "strich", punkte: [1, 2, 3, 4] }, { typ: "fertig" }]);
+});
+
+test("JsonObjektPuffer: ein noch offenes Objekt wird erst spaeter geliefert", () => {
+  const p = new JsonObjektPuffer();
+  assert.deepEqual(p.schlucken('{"typ":"sagen",'), []);
+  assert.deepEqual(p.schlucken('"text":"ok"}'), ['{"typ":"sagen","text":"ok"}']);
 });

@@ -26,6 +26,57 @@ export class ZeilenPuffer {
   }
 }
 
+/**
+ * Zieht vollstaendige JSON-Objekte `{...}` aus einem Textstrom, egal wie sie
+ * verpackt sind: ein Objekt pro Zeile (NDJSON), ein JSON-Array, mehrzeilig
+ * eingerueckt oder in einem Markdown-Codeblock. Alles ausserhalb der Objekte
+ * (Klammern, Kommata, ```json, Leerzeilen) wird uebersprungen. So bleibt die
+ * Zeichnung auch dann heil, wenn das Modell das strenge NDJSON-Format nicht
+ * exakt trifft. Klammern und Anfuehrungszeichen innerhalb von Strings zaehlen
+ * nicht mit (String-bewusst, inkl. Escapes).
+ */
+export class JsonObjektPuffer {
+  private puffer = "";
+
+  /** Nimmt ein Stueck Text und liefert die darin abgeschlossenen JSON-Objekte (roh). */
+  schlucken(text: string): string[] {
+    this.puffer += text;
+    const objekte: string[] = [];
+    let start = -1;
+    let tiefe = 0;
+    let imString = false;
+    let escape = false;
+    for (let i = 0; i < this.puffer.length; i++) {
+      const c = this.puffer[i];
+      if (imString) {
+        if (escape) escape = false;
+        else if (c === "\\") escape = true;
+        else if (c === '"') imString = false;
+        continue;
+      }
+      if (c === '"') imString = true;
+      else if (c === "{") {
+        if (tiefe === 0) start = i;
+        tiefe += 1;
+      } else if (c === "}" && tiefe > 0) {
+        tiefe -= 1;
+        if (tiefe === 0 && start >= 0) {
+          objekte.push(this.puffer.slice(start, i + 1));
+          start = -1;
+        }
+      }
+    }
+    // Nur ein noch offenes Objekt behalten; fertige Objekte und Text dazwischen fallen weg.
+    this.puffer = tiefe > 0 && start >= 0 ? this.puffer.slice(start) : "";
+    return objekte;
+  }
+
+  /** Objekte werden beim Schlucken vollstaendig geliefert; es bleibt kein verwertbarer Rest. */
+  rest(): string {
+    return "";
+  }
+}
+
 export type StreamRueckmeldung = {
   /** Ein gueltiges Ereignis ist angekommen. */
   aufEreignis: (e: WbEreignis) => void;

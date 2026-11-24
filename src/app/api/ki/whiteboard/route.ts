@@ -3,7 +3,7 @@ import { kiNutzer, nutzungAbschliessen, pflichttext, textBuchen, textHeuteGenutz
 import { kiFehlerAntwort } from "@/lib/ki/stream-antwort";
 import { ereignisLesen } from "@/lib/ki/whiteboard/protokoll";
 import { MAX_FRAGE_ZEICHEN, whiteboardPromptBauen } from "@/lib/ki/whiteboard/prompt";
-import { ZeilenPuffer } from "@/lib/ki/whiteboard/stream-leser";
+import { JsonObjektPuffer } from "@/lib/ki/whiteboard/stream-leser";
 
 /**
  * KI-16.3: Whiteboard-Modus. Baut den Prompt (Katalog, Koordinaten), bucht eine
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     if (!erstes.done && erstes.value.typ === "fehler") throw erstes.value.fehler;
 
     const encoder = new TextEncoder();
-    const puffer = new ZeilenPuffer();
+    const puffer = new JsonObjektPuffer();
     let tokens = { tokensEin: 0, tokensAus: 0 };
     let erfolgreich = false;
     let kaputt = 0;
