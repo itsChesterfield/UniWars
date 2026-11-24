@@ -1,29 +1,27 @@
 /**
- * KI-16.5: Fest verdrahtete Beispiel-Ereignisse fuer Schritt 2 (Aufbau ohne KI)
- * und als Mock-Stream in Schritt 3. Ein Reflexbogen, verschraenkt aus Erklaer-
- * text (`sagen`) und Zeichnung (`knoten`, `kante`, `titel`).
+ * KI-16.5: Fest verdrahtete Beispiel-Ereignisse fuer den Aufbau ohne KI und als
+ * Mock-Stream. Ein kleines Tafelbild zur Fotosynthese: Sinnbilder frei platziert
+ * (Sonne oben links, Wolke oben rechts, Baum in der Mitte, Wasser unten), dazu
+ * Pfeile und Beschriftungen, verschraenkt mit Erklaertext (`sagen`).
  */
 import type { WbEreignis } from "./protokoll.ts";
 
 export const BEISPIEL_EREIGNISSE: WbEreignis[] = [
-  { typ: "sagen", text: "Ein Reflex schuetzt den Koerper, noch bevor das Gehirn davon weiss." },
-  { typ: "titel", text: "Der Reflexbogen" },
-  { typ: "sagen", text: "Alles beginnt mit einem Reiz, zum Beispiel Hitze an der Hand." },
-  { typ: "knoten", id: "reiz", label: "Reiz (Hitze)", form: "kasten" },
-  { typ: "sagen", text: "Der Reiz trifft auf einen Rezeptor in der Haut." },
-  { typ: "knoten", id: "rezeptor", label: "Rezeptor", form: "kasten" },
-  { typ: "kante", von: "reiz", nach: "rezeptor" },
-  { typ: "sagen", text: "Von dort laeuft das Signal ueber eine sensible Nervenbahn zum Rueckenmark." },
-  { typ: "knoten", id: "sensibel", label: "sensible Bahn", form: "ellipse" },
-  { typ: "kante", von: "rezeptor", nach: "sensibel" },
-  { typ: "knoten", id: "rueckenmark", label: "Rueckenmark", form: "kasten" },
-  { typ: "kante", von: "sensibel", nach: "rueckenmark" },
-  { typ: "sagen", text: "Im Rueckenmark wird es direkt auf eine motorische Bahn umgeschaltet." },
-  { typ: "knoten", id: "motorisch", label: "motorische Bahn", form: "ellipse" },
-  { typ: "kante", von: "rueckenmark", nach: "motorisch" },
-  { typ: "sagen", text: "Die steuert den Muskel, der die Hand sofort wegzieht." },
-  { typ: "knoten", id: "muskel", label: "Muskel", form: "kasten" },
-  { typ: "kante", von: "motorisch", nach: "muskel" },
+  { typ: "titel", text: "Fotosynthese" },
+  { typ: "sagen", text: "Ein Baum macht sich seine Nahrung selbst, aus Licht, Wasser und Luft." },
+  { typ: "bild", symbol: "sonne", x: 150, y: 140, groesse: 130 },
+  { typ: "sagen", text: "Die Sonne liefert die Energie." },
+  { typ: "bild", symbol: "baum", x: 500, y: 330, groesse: 240 },
+  { typ: "pfeil", x1: 220, y1: 180, x2: 410, y2: 290, label: "Licht" },
+  { typ: "sagen", text: "Aus der Luft nimmt der Baum Kohlendioxid auf." },
+  { typ: "bild", symbol: "wolke", x: 840, y: 150, groesse: 170 },
+  { typ: "pfeil", x1: 770, y1: 190, x2: 600, y2: 300, label: "CO2" },
+  { typ: "sagen", text: "Aus dem Boden zieht er Wasser." },
+  { typ: "bild", symbol: "wasser", x: 500, y: 560, groesse: 80 },
+  { typ: "pfeil", x1: 500, y1: 520, x2: 500, y2: 450, label: "Wasser" },
+  { typ: "sagen", text: "Daraus entstehen Zucker und Sauerstoff." },
+  { typ: "pfeil", x1: 615, y1: 320, x2: 760, y2: 320 },
+  { typ: "text", text: "Zucker + O2", x: 850, y: 320, groesse: 26 },
   { typ: "fertig" },
 ];
 

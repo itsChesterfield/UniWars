@@ -99,10 +99,65 @@ export function linieStrich(x1: number, y1: number, x2: number, y2: number, rnd:
 }
 
 /** Pfeilspitze am Ende (x2,y2) als ein Strich: eine Seite, Spitze, andere Seite. */
-export function pfeilStrich(x1: number, y1: number, x2: number, y2: number): number[] {
+export function pfeilStrich(x1: number, y1: number, x2: number, y2: number, laenge = 11): number[] {
   const winkel = Math.atan2(y2 - y1, x2 - x1);
-  const laenge = 11;
   const a = winkel + Math.PI - 0.5;
   const b = winkel + Math.PI + 0.5;
   return [x2 + laenge * Math.cos(a), y2 + laenge * Math.sin(a), x2, y2, x2 + laenge * Math.cos(b), y2 + laenge * Math.sin(b)];
+}
+
+/** Handgezeichneter Kreis als geschlossener Strich, etwas ueber eine Umdrehung. */
+export function kreisStrich(cx: number, cy: number, r: number, rnd: () => number, umlauf = 1.08, wackeln = 1.6): number[] {
+  const schritte = Math.max(16, Math.round(r * 1.3));
+  const start = rnd() * 0.4;
+  const punkte: number[] = [];
+  for (let i = 0; i <= schritte; i++) {
+    const w = start + (i / schritte) * Math.PI * 2 * umlauf;
+    punkte.push(cx + Math.cos(w) * r + rnd() * wackeln, cy + Math.sin(w) * r + rnd() * wackeln);
+  }
+  return punkte;
+}
+
+/** Bogen (Teil einer Ellipse) von Winkel a0 bis a1 im Bogenmass. */
+export function bogenStrich(cx: number, cy: number, rx: number, ry: number, a0: number, a1: number, rnd: () => number, wackeln = 1.3): number[] {
+  const schritte = Math.max(8, Math.round(Math.abs(a1 - a0) * 9));
+  const punkte: number[] = [];
+  for (let i = 0; i <= schritte; i++) {
+    const w = a0 + (a1 - a0) * (i / schritte);
+    punkte.push(cx + Math.cos(w) * rx + rnd() * wackeln, cy + Math.sin(w) * ry + rnd() * wackeln);
+  }
+  return punkte;
+}
+
+/** Gedrehte Ellipse als geschlossener Strich (fuer Umlaufbahnen, Globus). */
+export function ellipseRotStrich(cx: number, cy: number, rx: number, ry: number, drehung: number, rnd: () => number, wackeln = 1.3): number[] {
+  const cos = Math.cos(drehung);
+  const sin = Math.sin(drehung);
+  const schritte = 30;
+  const punkte: number[] = [];
+  const start = rnd() * 0.4;
+  for (let i = 0; i <= schritte + 2; i++) {
+    const w = start + (i / schritte) * Math.PI * 2;
+    const ex = Math.cos(w) * rx;
+    const ey = Math.sin(w) * ry;
+    punkte.push(cx + ex * cos - ey * sin + rnd() * wackeln, cy + ex * sin + ey * cos + rnd() * wackeln);
+  }
+  return punkte;
+}
+
+/** Jittered Linienzug durch Eckpunkte [x0,y0,x1,y1,...]; je Segment mehrere Punkte. */
+export function polyStrich(ecken: number[], rnd: () => number, proSegment = 4, wackeln = 1.4): number[] {
+  const punkte: number[] = [];
+  const anzahl = Math.floor(ecken.length / 2);
+  for (let seg = 0; seg + 1 < anzahl; seg++) {
+    const x1 = ecken[seg * 2];
+    const y1 = ecken[seg * 2 + 1];
+    const x2 = ecken[seg * 2 + 2];
+    const y2 = ecken[seg * 2 + 3];
+    for (let j = seg === 0 ? 0 : 1; j <= proSegment; j++) {
+      const t = j / proSegment;
+      punkte.push(x1 + (x2 - x1) * t + rnd() * wackeln, y1 + (y2 - y1) * t + rnd() * wackeln);
+    }
+  }
+  return punkte;
 }
