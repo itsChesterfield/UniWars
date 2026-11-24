@@ -40,6 +40,8 @@
   --text-md: 14px;
   --text-lg: 16px;
   --text-lead: 18px;
+  /* Lesegröße für längeren Fließtext (Notizen, Studio-Antworten), angenehm wie in den Notizen */
+  --text-lesen: 15px;
   --text-xl: 20px;
   --text-2xl: 28px;
   --text-3xl: 40px;
@@ -192,6 +194,7 @@
   --text-md: 15px;
   --text-lg: 17px;
   --text-lead: 19px;
+  --text-lesen: 16px;
   --text-xl: 22px;
   --text-2xl: 30px;
 }
@@ -12945,7 +12948,7 @@ html[data-studio-vollbild] {
 
 .ki-blase {
   max-width: 100%;
-  font-size: var(--text-md);
+  font-size: var(--text-lesen);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -12979,7 +12982,7 @@ html[data-studio-vollbild] {
 }
 
 .ki-blase .md-inhalt {
-  font-size: var(--text-md);
+  font-size: var(--text-lesen);
   line-height: 1.6;
 }
 
