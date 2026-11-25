@@ -83,6 +83,9 @@ export const ICONS = {
   schloss: "rect:5,11,14,9,2|M8 11V8a4 4 0 0 1 8 0v3",
   tipp: "M9 18h6M10 21h4|M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z",
 
+  // Idee oder Fehler melden (Flagge je Bereich)
+  flagge: "M6.5 21V4|M6.5 4.5h12l-3 3.25 3 3.25h-12Z",
+
   // Zustände
   warnung: "M12 3.5 21.5 20h-19Z|M12 10v4.5M12 17.2v.3",
   info: "circle:12,12,8.5|M12 11v5.5M12 7.8v.3",

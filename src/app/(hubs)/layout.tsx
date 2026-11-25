@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { pruefeUndAktualisiereStreak } from "@/lib/streak";
 import { Sidebar } from "@/components/sidebar";
 import { QuickAdd } from "@/components/quick-add";
+import { IdeaFlagAuto } from "@/components/idee/idea-flag-auto";
 import { anzeigeName } from "@/lib/anzeige-name";
 import { profilbildUrl } from "@/lib/profilbild";
 import { GeteilteAnsicht } from "@/components/geteilte-ansicht";
@@ -78,6 +79,7 @@ export default async function HubLayout({ children }: { children: ReactNode }) {
         </GeteilteAnsicht>
       </div>
       <FokusraumPraesenz name={name} faecher={faecher ?? []} />
+      <IdeaFlagAuto />
       <QuickAdd faecher={faecher ?? []} todos={todos ?? []} pruefungen={pruefungen ?? []} ohneKnopf />
     </DesignRahmen>
   );

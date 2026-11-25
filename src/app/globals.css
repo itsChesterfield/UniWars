@@ -20087,3 +20087,96 @@ dialog.dat-workflow-dialog {
   flex: none;
   color: var(--text-2);
 }
+
+/* Ideen und Fehler melden: kleine Flagge je Bereich, Formular legt eine Rohidee in YouTrack an */
+.idee-flagge {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: var(--z-sticky);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-10);
+  height: var(--space-10);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--akzent) 14%, transparent);
+  color: var(--akzent-text);
+  box-shadow: 0 6px 20px -8px var(--schatten);
+  cursor: pointer;
+  transition:
+    transform var(--dur-micro) var(--ease-out),
+    background var(--dur-micro) var(--ease-out);
+}
+
+.idee-flagge:hover {
+  background: color-mix(in srgb, var(--akzent) 22%, transparent);
+  transform: translateY(-1px);
+}
+
+.idee-flagge:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idee-flagge {
+    transition: none;
+  }
+}
+
+html[data-bewegung="reduziert"] .idee-flagge {
+  transition: none;
+}
+
+@media (max-width: 760px) {
+  .idee-flagge {
+    bottom: calc(var(--space-16) + var(--space-3) + env(safe-area-inset-bottom));
+  }
+}
+
+.idee-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.idee-feld {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.idee-feld input,
+.idee-feld textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--flaeche);
+  box-shadow: inset 0 0 0 1px var(--linie-2);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-md);
+}
+
+.idee-feld input {
+  height: var(--space-10);
+}
+
+.idee-feld textarea {
+  min-height: var(--space-24);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.idee-feld input:focus,
+.idee-feld textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--akzent);
+}
