@@ -13,6 +13,7 @@ const PROJEKT_KEY = "FEA";
 
 // Hub -> Epic. Nicht geheim, aber hier die massgebliche Quelle (Client schickt nur den Hub-Schluessel).
 const HUB_EPIC: Record<string, string> = {
+  hub: "FEA-122",
   dateiablage: "FEA-1",
   notizen: "FEA-2",
   karteikarten: "FEA-3",

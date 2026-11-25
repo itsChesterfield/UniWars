@@ -9,6 +9,7 @@
 
 /** Die Bereiche, die eine eigene Flagge tragen. Deckt sich mit dem Hub-Epic-Mapping der Edge Function. */
 export const IDEE_HUBS = [
+  "hub",
   "dateiablage",
   "notizen",
   "karteikarten",
@@ -28,6 +29,7 @@ export type IdeeHub = (typeof IDEE_HUBS)[number];
 
 /** Lesbarer Name des Bereichs für die Überschrift im Formular. */
 export const HUB_LABEL: Record<IdeeHub, string> = {
+  hub: "Zentraler Hub",
   dateiablage: "Dateiablage",
   notizen: "Notizen",
   karteikarten: "Karteikarten",
@@ -45,6 +47,7 @@ export const HUB_LABEL: Record<IdeeHub, string> = {
 
 /** Erstes Pfadsegment eines Bereichs auf den Hub-Schlüssel. Nur Bereiche hier bekommen eine Flagge. */
 const ROUTE_HUB: Record<string, IdeeHub> = {
+  "": "hub",
   dateiablage: "dateiablage",
   notizen: "notizen",
   karteikarten: "karteikarten",
