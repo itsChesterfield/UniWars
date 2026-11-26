@@ -11,6 +11,8 @@ import { inZweiterAnsichtOeffnen } from "@/lib/geteilte-ansicht";
 import { NOTIZ_EINFUEGEN, STUDIO_NEU } from "@/lib/ki/studio-kontext";
 import { STUDIO_NAME, type Aktion, type Block, type Erledigt, type Gemerkt, type QuellInfo } from "@/lib/ki/studio";
 import { AktionskarteAnzeige } from "@/components/assistent/aktionskarte";
+import { WhiteboardKarte } from "@/components/ki/whiteboard/whiteboard-karte";
+import { istGrafischeBitte } from "@/lib/ki/whiteboard/ausloeser";
 import { KiEinwilligungInhalt } from "@/components/ki/ki-einwilligung-dialog";
 import { DiktatKnopf } from "@/components/ki/diktat-knopf";
 import { VorlesenKnopf } from "@/components/ki/vorlesen-knopf";
@@ -95,6 +97,8 @@ export function AssistentChat({
   const [verlaufLaedt, setVerlaufLaedt] = useState(Boolean(unterhaltungId));
 
   const [laufend, setLaufend] = useState<Laufend | null>(null);
+  /** KI-16: offene grafische Erklaerung (Whiteboard-Karte) zu einer Frage */
+  const [whiteboardFrage, setWhiteboardFrage] = useState<{ frage: string; key: number } | null>(null);
   useEffect(() => {
     aktivHalten("studio", laufend !== null);
     return () => aktivHalten("studio", false);
@@ -232,6 +236,16 @@ export function AssistentChat({
     async (text: string, art: "text" | "sprache" = eingabeArt) => {
       const frage = text.trim();
       if (!frage || laufend || verbleibend === 0) return;
+      // KI-16: Bittet der Nutzer um eine Zeichnung, oeffnet sich die Whiteboard-Karte statt der Textantwort.
+      if (istGrafischeBitte(frage)) {
+        setFehler(null);
+        setEingabe("");
+        setEingabeArt("text");
+        const jetzt = new Date().toISOString();
+        setNachrichten((alt) => [...alt, { id: `f-${jetzt}`, rolle: "nutzer", inhalt: frage, karten: [], erstellt_am: jetzt }]);
+        setWhiteboardFrage({ frage, key: Date.now() });
+        return;
+      }
       setFehler(null);
       setEingabe("");
       setEingabeArt("text");
@@ -417,7 +431,7 @@ export function AssistentChat({
             </ul>
           </div>
         )}
-        {nachrichten.map((n) =>
+        {nachrichten.map((n, i) =>
           n.rolle === "nutzer" ? (
             <div key={n.id} className="ki-blase ki-blase-nutzer">
               {n.inhalt}
@@ -442,6 +456,20 @@ export function AssistentChat({
                       void senden(art === "einfacher" ? "Bitte erklär das nochmal einfacher." : art === "kuerzer" ? "Bitte nochmal kürzer." : "Bitte nochmal mit konkreten Beispielen.")
                     }
                   />
+                  {(() => {
+                    const frageDazu = [...nachrichten.slice(0, i)].reverse().find((m) => m.rolle === "nutzer")?.inhalt ?? "";
+                    return (
+                      <button
+                        type="button"
+                        className="knopf leise klein"
+                        disabled={!frageDazu || verbleibend === 0}
+                        onClick={() => setWhiteboardFrage({ frage: frageDazu, key: Date.now() })}
+                      >
+                        <Icon name="whiteboard" groesse={16} />
+                        grafisch erklären
+                      </button>
+                    );
+                  })()}
                 </span>
               )}
               {n.karten.map((k) => (
@@ -476,6 +504,20 @@ export function AssistentChat({
               {laufend.fehler && <p className="auth-error">{laufend.fehler}</p>}
             </div>
           </>
+        )}
+        {whiteboardFrage && (
+          <div className="ki-blase ki-blase-ki">
+            <p className="ki-wer">
+              <Icon name="studio" groesse={14} />
+              Studio
+            </p>
+            <WhiteboardKarte
+              key={whiteboardFrage.key}
+              frage={whiteboardFrage.frage}
+              onEinwilligung={() => setPhase("einwilligung")}
+              onSchliessen={() => setWhiteboardFrage(null)}
+            />
+          </div>
         )}
         <div ref={ende} />
       </div>
